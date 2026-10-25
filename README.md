@@ -38,12 +38,17 @@ Once vibelight is published on crates.io, `cargo install vibelight` will build a
 ## Run
 
 ```
-vibelight <crate-dir-or-file.rs>... [-o <out-dir>] [--no-source-links] [--workspace] [--follow <glob>]
+vibelight [<crate-dir-or-file.rs>...] [-o <dir>] [--md-out <dir>] [--html-out <dir>]
+          [--no-source-links] [--md-source-links on|off] [--html-source-links on|off]
+          [--workspace] [--follow <glob>] [--check] [--check-html]
 ```
 
-- `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file. Several crates can be named at once (see [Several crates in one run](#several-crates-in-one-run)); a single `.rs` file cannot be mixed with them.
-- `-o` (or `--out`) is the directory to write into. It defaults to the current directory and is created if it is missing.
-- `--no-source-links` leaves out the links back to files and lines. The output then depends only on the declarations themselves, so moving code between files, reordering items, or reformatting leaves the files byte for byte the same.
+- `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file. Several crates can be named at once (see [Several crates in one run](#several-crates-in-one-run)); a single `.rs` file cannot be mixed with them. With no crate named and no `--workspace`, a [`vibelight.toml`](#vibelighttoml) chooses the crates.
+- `-o` (or `--out`) is the directory to write both formats into. It defaults to the current directory and is created if it is missing.
+- `--md-out` and `--html-out` set the directory of one format, in place of `-o`, so the markdown and HTML files can live apart.
+- `--no-source-links` leaves out the links back to files and lines in both formats. The output then depends only on the declarations themselves, so moving code between files, reordering items, or reformatting leaves the files byte for byte the same.
+- `--md-source-links on|off` and `--html-source-links on|off` turn the source links of one format on or off, whatever `--no-source-links` says.
+- `--check` and `--check-html` write nothing and compare the files on disk with what the run would write (see [Checking the files](#checking-the-files)).
 
 Existing files with the same names are overwritten. vibelight prints the path of each file it writes on stdout, sorted. For example, `vibelight ../my-crate -o outline` on a library crate named `my-crate` writes `outline/my_crate.md` and `outline/my_crate.html`.
 
@@ -56,11 +61,11 @@ In a crate directory, vibelight reads `Cargo.toml` for the package name and any 
 - Without a manifest, the library and `src/main.rs` take the directory's name, and each `src/bin/*.rs` takes its file stem.
 - A single `.rs` file is named after its file stem.
 
-Tests, benches, examples, and `build.rs` are not outlined. A workspace root is not a crate, so point vibelight at a member crate's directory, or use `--workspace`.
+Tests, benches, examples, and `build.rs` are not outlined. A root `Cargo.toml` with only a `[workspace]` table is not a crate, so point vibelight at a member crate's directory, or use `--workspace`. A root `Cargo.toml` that is also a package counts as one of the members.
 
 ## Several crates in one run
 
-A run can cover several crates, and every crate in it gets its files. There are three ways to choose them:
+A run can cover several crates, and every crate in it gets its files. There are three ways to choose them on the command line, and a [`vibelight.toml`](#vibelighttoml) can hold the same choice:
 
 - **Paths:** `vibelight crates/alpha crates/beta` names the crates one by one.
 - **`--workspace`:** `vibelight --workspace` reads the `[workspace] members` of the root `Cargo.toml`, found at the given directory or the first one above it with a `[workspace]` table. Globs such as `crates/*` expand to the folders that hold a `Cargo.toml`, and `exclude` takes folders out of the globs, while a member written out in full always counts.
@@ -70,9 +75,100 @@ A crate in the run with nothing to outline, such as one with only tests, is skip
 
 In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they never depend on which crates are in the run, and no file depends on the order the crates are named in.
 
+## vibelight.toml
+
+A `vibelight.toml` file keeps a repository's settings, so a plain `vibelight` with no arguments does the whole run. vibelight looks for it in the current directory and then in each parent directory, the way Cargo looks for its files, and uses the first one it finds. Every path in it is relative to the folder that holds it, so the run is the same from any folder below it.
+
+```toml
+workspace = true
+follow = ["vendor/*"]
+
+[markdown]
+out = "vibelight"
+source_links = false
+
+[html]
+out = "vibelight/html"
+source_links = true
+```
+
+The file has three keys that choose the crates and two tables that place the files:
+
+- `workspace = true` outlines every member of the workspace that holds the config's folder, the same as `--workspace`. `workspace = "<dir>"` starts the search from that directory instead.
+- `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
+- `follow = ["<glob>", ...]` works like `--follow`.
+- `[markdown]` and `[html]` take the same three keys, each for its own format. `out = "<dir>"` is the folder for the files, and defaults to the config's folder. `source_links = true` or `false` turns the links back to source files and lines on or off, and defaults to on. `enabled = false` turns the format off, and defaults to true.
+
+A key vibelight does not know, or a value of the wrong type, is an error that names the key, such as ``unknown key `markdown.dir` ``. A config that turns both formats off is an error too.
+
+### Which setting wins
+
+A flag wins over the config, and the config wins over the defaults. For each format:
+
+- The folder comes from that format's own flag (`--md-out` or `--html-out`), then `-o`, then the config's `out`, then the config's folder, or the current directory when there is no config.
+- The source links come from that format's own flag (`--md-source-links` or `--html-source-links`), then `--no-source-links`, then the config's `source_links`, then on.
+- A format with `enabled = false` is not written, unless its own folder flag names a folder for it.
+
+Crate paths or `--workspace` on the command line replace the config's `workspace`, `crates`, and `follow`, but the config still places the files. With neither, the config chooses the crates, and `--follow` on the command line replaces the config's `follow`. With no crates named anywhere, vibelight stops with a usage error.
+
+## Checking the files
+
+`vibelight --check` does the whole run in memory and writes nothing. It compares each markdown file the run would write with the file on disk, and prints one line for each problem on stdout:
+
+- `differs: <file> (first difference at line N)`: the file is not what the run would write.
+- `missing: <file>`: the run would write the file, but it is not there.
+- `stale: <file>`: no crate of the run writes this markdown outline any more, for example after a crate was renamed or removed. Only `.md` files directly in the markdown folder count, and only those whose first line is the crate anchor every outline starts with, so a README beside them, other file types, and subfolders such as `html/` are left alone.
+
+A last line says `check passed: N files match` or `check failed: N problems`, and the exit code is 0 or 1. `--check-html` compares the HTML files too. A CRLF line ending on disk counts as LF, so a checkout on Windows still passes. Paths are shown relative to the current directory when they are inside it.
+
+The check covers exactly the crates and settings of its run, so a file that only another set of crates writes shows up as stale. With a `vibelight.toml`, a plain `vibelight --check` from anywhere in the repository checks the same run that a plain `vibelight` writes. Crate arguments and flags work with `--check` the same way as without it.
+
+A normal run never deletes a file. For each stale outline it prints `warning: <file> is stale: no crate of this run writes it` on stderr instead, so you can remove the file yourself.
+
+## Using it in a repository
+
+A layout that works well keeps one outline in git for reviewers to read in diffs, and a linked copy beside it for browsing:
+
+- `vibelight/` holds the markdown files, committed, with source links off. They change only when a declaration or a comment changes, so every diff of them shows a change to the crate's surface and nothing else.
+- `vibelight/html/` holds the HTML files, with source links on, for reading locally. It is gitignored, because its links change whenever code moves.
+- Each crate's library gets one file in each folder, named after the library with hyphens turned into underscores, such as `vibelight/runvil_engine.md` and `vibelight/html/runvil_engine.html`. A binary gets its own pair, named after the binary.
+
+For a workspace like Runvil, put this `vibelight.toml` at the root:
+
+```toml
+workspace = true
+
+[markdown]
+out = "vibelight"
+source_links = false
+
+[html]
+out = "vibelight/html"
+source_links = true
+```
+
+And this line in `.gitignore`:
+
+```
+/vibelight/html/
+```
+
+Run `vibelight` from anywhere in the repository to refresh both folders, and commit the markdown together with the change that caused it.
+
+To keep the committed outline current, add a CI step that fails when it is out of date. In GitHub Actions, after the checkout step:
+
+```yaml
+      - name: Check the vibelight outline
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cppalliance/vibelight/releases/download/v0.2.0/vibelight-installer.sh | sh
+          vibelight --check
+```
+
+The step pins one release, because a newer vibelight can lay out the same code a little differently. The pinned version and the committed outline change together: when you move to a newer release, change the version in the step and commit the markdown that release writes in the same commit, so the check passes on every commit.
+
 ## Colors
 
-The HTML file colors code the way an editor does. A link inside the page uses the link color, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With `--no-source-links`, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
+The HTML file colors code the way an editor does. A link inside the page uses the link color, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With the HTML source links off, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
 
 ## What the output looks like
 
@@ -133,9 +229,11 @@ Names of the crate's own items are left out, because `crate::model::X`, `X`, and
 
 When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way. In a run of several crates, a warning's path starts from the workspace root (or else the first crate), such as `crates/alpha/src/lib.rs:9`, and a skipped crate gets a `note:` line, which is not a warning.
 
-- `0`: the files were written, warnings included.
-- `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, or a root file cannot be read. The reason is printed on stderr.
-- `2`: a usage error, such as a missing argument or an unknown flag, reported by clap.
+A stale outline in the markdown folder also gets a warning line (see [Checking the files](#checking-the-files)).
+
+- `0`: the files were written, warnings included. With `--check`, every file matches.
+- `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, a root file cannot be read, or `vibelight.toml` has an unknown key. The reason is printed on stderr. With `--check`, a file differs, is missing, or is stale.
+- `2`: a usage error, such as an unknown flag, or no crate named on the command line or in a `vibelight.toml`, reported by clap.
 
 ## Requirements and license
 
