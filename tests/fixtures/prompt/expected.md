@@ -40,11 +40,8 @@
 
 ```
 /// A fully parsed prompt file.
-struct Prompt : Debug, Eq
+struct Prompt : Clone, Debug, Eq, PartialEq
 {
-    Prompt(Prompt&) = default;
-    bool operator==(Prompt&) = default;
-
     /// Parses the full source text of a prompt file into a Prompt and
     /// returns the events reported during parsing alongside the result.
     ///
@@ -156,11 +153,8 @@ struct Frontmatter;
 
 ```
 /// One section of a prompt: a heading, ordered blocks, and children.
-struct Section : Debug, Eq
+struct Section : Clone, Debug, Eq, PartialEq
 {
-    Section(Section&) = default;
-    bool operator==(Section&) = default;
-
     /// Returns the ordered Lua and prose blocks of this section.
     blocks() -> [Block]&;
 
@@ -229,7 +223,7 @@ using Result<T> = std::result::Result<T, Error>;
 
 ```
 /// One executable block inside a section: a compiled Lua fence or prose.
-enum Block : Debug, Eq
+enum Block : Clone, Debug, Eq, PartialEq
 {
     /// An exact lua fence compiled at parse time.
     Lua(LuaProgram),
@@ -244,9 +238,6 @@ enum Block : Debug, Eq
         /// Captured Markdown, trimmed of surrounding blank lines.
         text: BodyText,
     },
-
-    Block(Block&) = default;
-    bool operator==(Block&) = default;
 }
 ```
 

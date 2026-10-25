@@ -37,40 +37,18 @@ pub(crate) fn special_entry(specials: &[Special], name: &str, refs: &[TypeRef]) 
     })
 }
 
-/// Returns one member line, such as `Type(Type&) = default;`.
+/// Returns one member line, such as `Type() = default;`.
 fn special_line(special: &Special, name: &str) -> Line {
     let named = |text: String| Span::Name(text, special.loc);
-    let argument = || {
-        special
-            .arg
-            .as_ref()
-            .map_or_else(|| vec![plain(&format!("{name}&"))], code)
-    };
     let mut spans = match special.kind {
         SpecialKind::Default => vec![named(name.to_owned()), plain("()")],
-        SpecialKind::Clone | SpecialKind::From => {
+        SpecialKind::From => {
             let mut spans = vec![named(name.to_owned()), plain("(")];
-            spans.extend(argument());
+            spans.extend(special.arg.iter().flat_map(code));
             spans.push(plain(")"));
             spans
         }
         SpecialKind::Drop => vec![named(format!("~{name}")), plain("()")],
-        SpecialKind::PartialEq | SpecialKind::PartialOrd => {
-            let (result, operator) = if special.kind == SpecialKind::PartialEq {
-                ("bool", "operator==")
-            } else {
-                ("auto", "operator<=>")
-            };
-            let mut spans = vec![
-                key(result),
-                plain(" "),
-                named(operator.to_owned()),
-                plain("("),
-            ];
-            spans.extend(argument());
-            spans.push(plain(")"));
-            spans
-        }
     };
     if special.derived {
         spans.extend([plain(" = "), key("default")]);

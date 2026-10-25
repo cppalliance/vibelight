@@ -89,11 +89,25 @@ const PRELUDE: &[(&str, &str)] = &[
 ];
 
 /// Returns the `std` path a bare prelude name stands for.
-pub(crate) fn prelude_path(name: &str) -> Option<&'static str> {
+fn prelude_path(name: &str) -> Option<&'static str> {
     PRELUDE
         .iter()
         .find(|(prelude, _)| *prelude == name)
         .map(|(_, path)| *path)
+}
+
+/// Returns the full path of the item a canonical path names: a bare prelude
+/// name stands for its `std` path, and a `core` or `alloc` path for the
+/// `std` path that re-exports it.
+pub(crate) fn item_path(path: &[String]) -> Option<String> {
+    let joined = match path {
+        [name] => prelude_path(name)?.to_owned(),
+        _ => path.join("::"),
+    };
+    Some(match joined.split_once("::") {
+        Some(("core" | "alloc", rest)) => format!("std::{rest}"),
+        _ => joined,
+    })
 }
 
 /// Tells whether a canonical path names an item of `std`, `core`, `alloc`,

@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, Loc, RefId, Seg, TypeRef, name_order, path_order};
-use crate::resolve::prelude_path;
+use crate::resolve::item_path;
 use crate::route::derive_path;
 
 /// One way an item is written: the path as written, how many times, and
@@ -105,16 +105,11 @@ fn item(r: &TypeRef, derive: bool) -> Option<String> {
     if r.target.is_some() {
         return None;
     }
-    let path = match (r.canonical.as_deref(), r.path.as_slice()) {
-        (Some([name]), _) => prelude_path(name)?.to_owned(),
-        (Some(path), _) => path.join("::"),
-        (None, [name]) if derive => derive_path(name)?.to_owned(),
-        _ => return None,
-    };
-    Some(match path.split_once("::") {
-        Some(("core" | "alloc", rest)) => format!("std::{rest}"),
-        _ => path,
-    })
+    match (r.canonical.as_deref(), r.path.as_slice()) {
+        (Some(path), _) => item_path(path),
+        (None, [name]) if derive => derive_path(name).map(str::to_owned),
+        _ => None,
+    }
 }
 
 /// Returns a name as written, without generic arguments or `r#` prefixes.

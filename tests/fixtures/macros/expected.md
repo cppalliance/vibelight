@@ -31,12 +31,9 @@
 
 ```
 /// A type with derives and an attribute macro.
-struct Event : Debug
+struct Event : Clone, Debug, PartialEq
 {
     name: String,
-
-    Event(Event&) = default;
-    bool operator==(Event&) = default;
 
     /// Has an attribute macro.
     // MACRO attribute: tracing::instrument

@@ -2,7 +2,8 @@
 # special_members
 
 ```
-//! Special members: the standard traits with a C++ equivalent.
+//! Special members: the standard traits that become C++ constructors and
+//! destructors.
 ```
 
 - [Unconnected types](#unconnected)
@@ -44,15 +45,12 @@ private:
 **MACRO** derive: serde::Serialize
 
 ```
-/// Every derivable special member, and a derive from another crate.
-struct Derived : Debug
+/// The one derivable special member, and a derive from another crate.
+struct Derived
 {
     value: u8,
 
     Derived() = default;
-    Derived(Derived&) = default;
-    bool operator==(Derived&) = default;
-    auto operator<=>(Derived&) = default;
 }
 ```
 
@@ -60,11 +58,10 @@ struct Derived : Debug
 ### Handle
 
 ```
-/// A tuple struct with derived and hand-written members.
+/// A tuple struct with a derived and a hand-written member.
 struct Handle(u32)
 {
     Handle() = default;
-    Handle(Handle&) = default;
     ~Handle();
 }
 ```
@@ -73,15 +70,14 @@ struct Handle(u32)
 ### Mode
 
 ```
-/// An enum with derived members.
-enum Mode : Copy, Debug, Eq
+/// An enum with a derived default.
+enum Mode
 {
     On,
 
     Off,
 
-    Mode(Mode&) = default;
-    bool operator==(Mode&) = default;
+    Mode() = default;
 }
 ```
 
@@ -116,15 +112,12 @@ struct Written
     value: u8,
 
     Written();
-    Written(Written&);
     Written(str&);
 
     /// Converts from a byte.
     Written(u8&);
 
     ~Written();
-    bool operator==(Written&);
-    auto operator<=>(u8&);
 
     static new() -> Self;
 

@@ -42,14 +42,11 @@ struct Line
 
 ```
 /// A point whose standard names each have one spelling.
-struct Point : Display
+struct Point : Clone, Display, PartialEq
 {
     label: Option<String>,
 
     tags: Vec<String>,
-
-    Point(Point&) = default;
-    bool operator==(Point&) = default;
 }
 ```
 

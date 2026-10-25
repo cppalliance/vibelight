@@ -96,7 +96,7 @@ Since nothing in it is public, it prints as a `class` with no label. A type with
 
 The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, and a function that takes no receiver or takes `self` by value is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group.
 
-Traits a type implements or derives print the C++ way. `Default`, `Clone`, `From<T>`, `Drop`, `PartialEq`, and `PartialOrd` become a default constructor, a copy constructor, converting constructors, a destructor, `operator==`, and `operator<=>`, packed together after the fields, with `= default` when derived. Other standard traits form the base list by their short names, as in `struct Seed : Debug, Display`, and every other trait follows on its own line by its full path. A derive from another crate keeps its bold **MACRO** line above the block.
+Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together after the fields, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A derive from another crate keeps its bold **MACRO** line above the block.
 
 ## Spellings
 

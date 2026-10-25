@@ -17,6 +17,7 @@
 - [Unconnected types](#unconnected)
   - [Bits](#type.base_lists.Bits)
   - [Marker](#type.base_lists.Marker)
+  - [Ordered](#type.base_lists.Ordered)
   - [Plain](#type.base_lists.Plain)
   - [Run](#type.base_lists.Run)
   - [RunError](#type.base_lists.RunError)
@@ -144,6 +145,18 @@ union Bits : Copy, Debug
 struct Marker : Debug, Eq, Hash;
 ```
 
+<a id="type.base_lists.Ordered"></a>
+### Ordered
+
+```
+/// Standard derives that are not special members, and comparisons with
+/// another type written by hand. The crate's own Clone makes the standard
+/// one keep its full path.
+struct Ordered(u8)
+    : std::clone::Clone, Eq, Ord, PartialEq, PartialEq<u8>, PartialOrd
+    , PartialOrd<u8>;
+```
+
 <a id="type.base_lists.Plain"></a>
 ### Plain
 
@@ -230,6 +243,7 @@ struct Wrapped(u8) : Debug;
 - [Marker](#type.base_lists.Marker)
 - [Mixed](#type.base_lists.Mixed)
 - [Named](#type.base_lists.Named)
+- [Ordered](#type.base_lists.Ordered)
 - [Plain](#type.base_lists.Plain)
 - [Run](#type.base_lists.Run)
 - [RunError](#type.base_lists.RunError)

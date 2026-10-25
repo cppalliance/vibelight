@@ -24,10 +24,9 @@
 
 ```
 /// The base list is sorted.
-struct Based : AsRef<str>, Debug
+struct Based : AsRef<str>, Clone, Debug
 {
     Based();
-    Based(Based&);
 }
 ```
 

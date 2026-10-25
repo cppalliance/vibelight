@@ -1,7 +1,8 @@
-//! Special members: the standard traits with a C++ equivalent.
+//! Special members: the standard traits that become C++ constructors and
+//! destructors.
 
-/// Every derivable special member, and a derive from another crate.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, serde::Serialize)]
+/// The one derivable special member, and a derive from another crate.
+#[derive(Default, serde::Serialize)]
 pub struct Derived {
     pub value: u8,
 }
@@ -14,12 +15,6 @@ pub struct Written {
 impl Default for Written {
     fn default() -> Self {
         Written { value: 0 }
-    }
-}
-
-impl Clone for Written {
-    fn clone(&self) -> Self {
-        Written { value: self.value }
     }
 }
 
@@ -38,18 +33,6 @@ impl From<&str> for Written {
 
 impl Drop for Written {
     fn drop(&mut self) {}
-}
-
-impl PartialEq for Written {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl PartialOrd<u8> for Written {
-    fn partial_cmp(&self, other: &u8) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(other)
-    }
 }
 
 impl Written {
@@ -71,15 +54,16 @@ impl<T: Into<String>> From<T> for Name {
     }
 }
 
-/// An enum with derived members.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// An enum with a derived default.
+#[derive(Default)]
 pub enum Mode {
+    #[default]
     On,
     Off,
 }
 
-/// A tuple struct with derived and hand-written members.
-#[derive(Clone, Default)]
+/// A tuple struct with a derived and a hand-written member.
+#[derive(Default)]
 pub struct Handle(u32);
 
 impl Drop for Handle {

@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use crate::model::{
     Base, Crate, DeclId, Holder, MacroKind, Seg, Shape, Special, SpecialKind, Text, TypeRef,
 };
-use crate::resolve::is_standard;
+use crate::resolve::{is_standard, item_path};
 use crate::typerefs::strip_raw;
 
 /// The derive macros of the standard prelude, each with the `std` path of
@@ -48,11 +48,8 @@ pub(crate) fn special_kind(refs: &[TypeRef], base: &Base) -> Option<SpecialKind>
 fn kind_of(name: &str) -> Option<SpecialKind> {
     Some(match name {
         "Default" => SpecialKind::Default,
-        "Clone" => SpecialKind::Clone,
         "From" => SpecialKind::From,
         "Drop" => SpecialKind::Drop,
-        "PartialEq" => SpecialKind::PartialEq,
-        "PartialOrd" => SpecialKind::PartialOrd,
         _ => return None,
     })
 }
@@ -78,42 +75,46 @@ pub(crate) fn finish(krate: &mut Crate) {
 
 /// Sends each standard derive to a `= default` special member or to the
 /// short list, and leaves the rest on the `derive:` mark, which goes away
-/// with its kill list entry when no name is left.
+/// with its kill list entry when no name is left. A derive names a macro,
+/// never a type, so a bare standard derive name stays standard even when a
+/// type of the crate has that name.
 fn route_derives(krate: &mut Crate, id: DeclId) {
     let decl = &mut krate.decls[id];
     let mut kept = Vec::new();
     for (name, &r) in decl.derives.iter().zip(&decl.derive_refs) {
         let reference = &krate.refs[r];
-        let path = reference
-            .canonical
-            .clone()
-            .unwrap_or_else(|| reference.path.clone());
-        let standard = reference.target.is_none()
-            && match &reference.canonical {
-                Some(canonical) => is_standard(canonical),
-                None => matches!(path.as_slice(), [one] if derive_path(one).is_some()),
-            };
-        let last = path.last().cloned().unwrap_or_default();
+        let full: Option<Vec<String>> = match (&reference.canonical, reference.target) {
+            (Some(path), None) if path.len() > 1 => is_standard(path).then(|| path.clone()),
+            _ => match reference.path.as_slice() {
+                [one] => derive_path(one).map(|p| p.split("::").map(str::to_owned).collect()),
+                _ => None,
+            },
+        };
+        let Some(full) = full else {
+            kept.push(name.clone());
+            continue;
+        };
+        let last = full.last().cloned().unwrap_or_default();
         match kind_of(&last) {
-            _ if !standard => kept.push(name.clone()),
-            Some(
-                kind @ (SpecialKind::Default
-                | SpecialKind::Clone
-                | SpecialKind::PartialEq
-                | SpecialKind::PartialOrd),
-            ) => decl.special.push(Special {
-                kind,
+            Some(SpecialKind::Default) => decl.special.push(Special {
+                kind: SpecialKind::Default,
                 arg: None,
                 derived: true,
                 notes: Vec::new(),
                 loc: decl.loc,
             }),
             Some(_) => kept.push(name.clone()),
-            None => decl.bases.push(Base {
-                text: Text::plain(last.clone()),
-                name: last,
-                ..Base::default()
-            }),
+            None => {
+                let reference = &mut krate.refs[r];
+                reference.target = None;
+                reference.canonical = Some(full);
+                decl.bases.push(Base {
+                    text: Text(vec![Seg::Ref(r)]),
+                    name: last,
+                    path_ref: Some(r),
+                    ..Base::default()
+                });
+            }
         }
     }
     decl.derives = kept;
@@ -132,11 +133,12 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
 
 /// Gives each entry its printed text and list. A standard trait keeps its
 /// short name, or its full path when that name is also a type in the crate
-/// or another entry's name. A trait of this crate prints its crate-relative
-/// path and stays a link, and any other trait prints the path it resolves
-/// to, or the text as written when nothing resolves.
+/// or the name of another entry for a different trait. A trait of this
+/// crate prints its crate-relative path and stays a link, and any other
+/// trait prints the path it resolves to, or the text as written when
+/// nothing resolves.
 fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, bases: &mut [Base]) {
-    let mut short: Vec<(usize, usize, String, String)> = Vec::new();
+    let mut short: Vec<(usize, usize, String, String, String)> = Vec::new();
     for (index, base) in bases.iter_mut().enumerate() {
         let Some(id) = base.path_ref else {
             continue;
@@ -161,7 +163,13 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
             }
             (None, Some(path)) if is_standard(path) => {
                 let name = path.last().cloned().unwrap_or_default();
-                short.push((index, at, name, path.join("::")));
+                let item = item_path(path).unwrap_or_else(|| path.join("::"));
+                let full = if path.len() == 1 {
+                    item.clone()
+                } else {
+                    path.join("::")
+                };
+                short.push((index, at, name, full, item));
             }
             (None, Some(path)) => {
                 base.long = true;
@@ -170,8 +178,10 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
             (None, None) => base.long = true,
         }
     }
-    for (index, at, name, full) in &short {
-        let repeated = short.iter().filter(|other| other.2 == *name).count() > 1;
+    for (index, at, name, full, item) in &short {
+        let repeated = short
+            .iter()
+            .any(|other| other.2 == *name && other.4 != *item);
         let printed = if repeated || names.contains(name) {
             full.clone()
         } else {
@@ -211,12 +221,15 @@ mod tests {
     }
 
     #[test]
-    fn only_a_standard_trait_in_an_impl_without_generics_is_a_special_member() {
+    fn only_default_from_and_drop_without_impl_generics_are_special_members() {
         let refs = vec![
             reference("From", Some("From"), None),
             reference("fmt::Debug", Some("std::fmt::Debug"), None),
             reference("Clone", None, Some(0)),
             reference("cmp::PartialEq", Some("core::cmp::PartialEq"), None),
+            reference("Drop", Some("Drop"), None),
+            reference("clone::Clone", Some("std::clone::Clone"), None),
+            reference("Default", Some("Default"), None),
         ];
         let mut from = base(0, "From");
         assert_eq!(special_kind(&refs, &from), None, "From needs its argument");
@@ -226,9 +239,15 @@ mod tests {
         assert_eq!(special_kind(&refs, &from), None);
         assert_eq!(special_kind(&refs, &base(1, "Debug")), None);
         assert_eq!(special_kind(&refs, &base(2, "Clone")), None);
+        assert_eq!(special_kind(&refs, &base(3, "PartialEq")), None);
         assert_eq!(
-            special_kind(&refs, &base(3, "PartialEq")),
-            Some(SpecialKind::PartialEq)
+            special_kind(&refs, &base(4, "Drop")),
+            Some(SpecialKind::Drop)
+        );
+        assert_eq!(special_kind(&refs, &base(5, "Clone")), None);
+        assert_eq!(
+            special_kind(&refs, &base(6, "Default")),
+            Some(SpecialKind::Default)
         );
     }
 
@@ -242,6 +261,8 @@ mod tests {
             reference("Named", None, Some(0)),
             reference("serde::Serialize", Some("serde::Serialize"), None),
             reference("Unknown", None, None),
+            reference("PartialEq", Some("PartialEq"), None),
+            reference("PartialEq", Some("std::cmp::PartialEq"), None),
         ];
         let names: BTreeSet<String> = ["Error".to_owned(), "Named".to_owned()].into();
         let paths = vec!["traits::Named".to_owned()];
@@ -253,11 +274,14 @@ mod tests {
             "Named",
             "Serialize",
             "Unknown",
+            "PartialEq",
+            "PartialEq",
         ]
         .iter()
         .enumerate()
         .map(|(id, name)| base(id, name))
         .collect();
+        bases[7].text.push_str("<u8>");
         spell(&mut refs, &paths, &names, &mut bases);
         let printed: Vec<(String, bool)> = bases
             .iter()
@@ -271,6 +295,8 @@ mod tests {
             ("traits::Named", true),
             ("serde::Serialize", true),
             ("Unknown", true),
+            ("PartialEq<u8>", false),
+            ("PartialEq", false),
         ]
         .map(|(text, long)| (text.to_owned(), long));
         assert_eq!(printed, expected);

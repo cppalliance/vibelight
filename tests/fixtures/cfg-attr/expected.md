@@ -29,7 +29,7 @@ struct Plain;
 
 ```
 /// Derives through cfg_attr.
-struct Settings : Debug
+struct Settings : Clone, Debug
 {
     // cfg: feature = "fast"
     // cfg: unix
@@ -38,8 +38,6 @@ struct Settings : Debug
     /// Only with a feature.
     // cfg: feature = "extra"
     extra: u32,
-
-    Settings(Settings&) = default;
 
     /// Also gated, with its own cfg.
     // cfg: feature = "methods"

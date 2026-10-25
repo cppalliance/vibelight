@@ -184,29 +184,24 @@ pub(crate) struct Base {
     pub(crate) long: bool,
 }
 
-/// The standard trait behind a C++ special member, in print order.
+/// The standard trait behind a C++ special member function, a constructor
+/// or the destructor, in print order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum SpecialKind {
     /// The default constructor, `Type();`
     Default,
-    /// The copy constructor, `Type(Type&);`
-    Clone,
     /// A converting constructor, `Type(T&);`
     From,
     /// The destructor, `~Type();`
     Drop,
-    /// `bool operator==(Rhs&);`
-    PartialEq,
-    /// `auto operator<=>(Rhs&);`
-    PartialOrd,
 }
 
 /// One special member of a type.
 #[derive(Clone, Debug)]
 pub(crate) struct Special {
     pub(crate) kind: SpecialKind,
-    /// The argument of a converting constructor or a comparison with its
-    /// own right-hand type, already ending in a reference.
+    /// The argument of a converting constructor, already ending in a
+    /// reference.
     pub(crate) arg: Option<Text>,
     /// Whether a derive wrote it, which prints `= default`.
     pub(crate) derived: bool,

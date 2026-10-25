@@ -23,13 +23,11 @@
 
 ```
 /// The type.
+// Above the Clone impl.
 /// Above the Display impl.
 // Above the inherent impl.
-struct Engine : Display
+struct Engine : Clone, Display
 {
-    // Above the Clone impl.
-    Engine(Engine&);
-
     /// Stays the method's doc comment.
     start();
 }

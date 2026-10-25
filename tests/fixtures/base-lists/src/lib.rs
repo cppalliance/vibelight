@@ -142,3 +142,21 @@ impl Dbg for Local {}
 /// A bare derive of From comes from another crate, so it stays on the mark.
 #[derive(From, Debug)]
 pub struct Wrapped(u8);
+
+/// Standard derives that are not special members, and comparisons with
+/// another type written by hand. The crate's own Clone makes the standard
+/// one keep its full path.
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+pub struct Ordered(u8);
+
+impl PartialEq<u8> for Ordered {
+    fn eq(&self, other: &u8) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialOrd<u8> for Ordered {
+    fn partial_cmp(&self, other: &u8) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
