@@ -1,0 +1,50 @@
+[package]
+name = "vibelight"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "BSL-1.0"
+description = "Writes a C++-header-style outline of a Rust crate's declarations and comments, as markdown and linked HTML"
+repository = "https://github.com/cppalliance/vibelight"
+homepage = "https://github.com/cppalliance/vibelight"
+readme = "README.md"
+keywords = ["outline", "header", "documentation", "syn", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = [
+    "/plans/",
+    "/research/",
+    "/.cargo/",
+    "/.github/",
+    "/AGENTS.md",
+    "/dist-workspace.toml",
+]
+# One integration-test binary, declared below, so no fixture file can ever
+# become a test target by accident.
+autotests = false
+
+[[test]]
+name = "it"
+path = "tests/it/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+proc-macro2 = { version = "1", features = ["span-locations"] }
+syn = { version = "3", features = ["full", "visit"] }
+toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

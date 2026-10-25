@@ -1,0 +1,5 @@
+# Build and test on the current stable toolchain. The gates and the
+# arrangement tests run rustfmt and clippy, so both components are required.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]

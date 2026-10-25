@@ -1,0 +1,3 @@
+- When executing a plan, copy the plan to the plans/ directory, and the copied file will be named YYYY-MM-DD-{up-to-three-kebab-words}.plan.md
+- When a rendering case is not covered by a written rule, make the output look like a C++ header. A written rule always beats the C++ look. Pin every such choice with a golden test.
+- The golden files (`expected.md`, `expected.html`) are the specification. Change one only for an intended output change, in the same commit, after reading its diff. Never regenerate goldens to make a failing test pass.

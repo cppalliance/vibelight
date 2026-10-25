@@ -1,0 +1,111 @@
+# Every cargo command here fails on any warning: .cargo/config.toml passes
+# -D warnings to the compiler, and that is intended.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Format
+        run: cargo fmt --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Clippy
+        run: cargo clippy --all-targets --locked
+
+  # The tests run rustfmt, and they compare goldens byte for byte, which
+  # .gitattributes keeps LF on every checkout, Windows included.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Test
+        run: cargo test --locked
+
+  # Checks the build at the rust-version Cargo.toml declares, read from the
+  # manifest so the two cannot drift.
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install the declared minimum Rust
+        id: floor
+        shell: bash
+        run: |
+          set -euo pipefail
+          floor="$(sed -n 's/^rust-version = "\([0-9.]*\)"$/\1/p' Cargo.toml)"
+          if [[ ! "$floor" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "expected one rust-version in Cargo.toml, found: '$floor'"
+            exit 1
+          fi
+          rustup toolchain install "$floor" --profile minimal
+          echo "floor=$floor" >> "$GITHUB_OUTPUT"
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Check at the minimum Rust
+        run: cargo +${{ steps.floor.outputs.floor }} check --all-targets --locked
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Package
+        run: cargo package --locked

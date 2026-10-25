@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>names</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+:target{background:var(--target)}
+</style>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="#level.1">Level 1: top-level types</a>
+<ul>
+<li><a href="#type.names.Catalog">Catalog</a></li>
+<li><a href="#type.names.Pairs">Pairs</a></li>
+</ul>
+</li>
+<li><a href="#level.2">Level 2</a>
+<ul>
+<li><a href="#type.names.model.Record">model::Record</a></li>
+<li><a href="#type.names.api.Token">api::Token</a></li>
+<li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
+</ul>
+</li>
+<li><a href="#unconnected">Unconnected types</a>
+<ul>
+<li><a href="#type.names.api.inner.Shared">api::inner::Shared</a></li>
+<li><a href="#type.names.model.Shared">model::Shared</a></li>
+<li><a href="#type.names.Twin">Twin</a></li>
+<li><a href="#type.names.Twin-2">Twin</a></li>
+<li><a href="#type.names.Wrapper">Wrapper</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.names">names</a></li>
+<li><a href="#mod.names.api">api</a></li>
+<li><a href="#mod.names.api.inner">api::inner</a></li>
+<li><a href="#mod.names.model">model</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<main>
+<h1 id="crate.names">names</h1>
+<pre><code><span class="c">//! Name resolution.</span></code></pre>
+<p class="kill"><b class="m">MACROS:</b> none</p>
+<h2 id="level.1">Level 1: top-level types</h2>
+<h3 id="type.names.Catalog">Catalog</h3>
+<pre><code><span class="c">/// Uses names resolved every way rule 39 allows.</span>
+<span class="k">struct</span> Catalog
+{
+    <span class="c">/// An ambiguous name stays plain.</span>
+    fifth: Shared,
+
+    <span class="c">/// Through a prefix path.</span>
+    first: <a href="#type.names.model.Record">crate::model::Record</a>,
+
+    <span class="c">/// A unique name across the target.</span>
+    fourth: <a href="#type.names.api.Token">Token</a>,
+
+    <span class="c">/// Through a pub use rename at the root.</span>
+    second: <a href="#type.names.model.Record">Entry</a>,
+
+    <span class="c">/// Through a glob import.</span>
+    third: <a href="#type.names.api.inner.Handle">api::Handle</a>,
+}</code></pre>
+<h3 id="type.names.Pairs">Pairs</h3>
+<pre><code><span class="c">/// Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span>
+<span class="k">using</span> Pairs&lt;'a&gt; = &amp;'a [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)];</code></pre>
+<h2 id="level.2">Level 2</h2>
+<h3 id="type.names.model.Record">model::Record</h3>
+<pre><code><span class="c">/// A record.</span>
+<span class="k">struct</span> Record
+{
+    id: u32,
+}</code></pre>
+<h3 id="type.names.api.Token">api::Token</h3>
+<pre><code><span class="c">/// A unique token type.</span>
+<span class="k">struct</span> Token;</code></pre>
+<h3 id="type.names.api.inner.Handle">api::inner::Handle</h3>
+<pre><code><span class="c">/// A handle.</span>
+<span class="k">struct</span> Handle;</code></pre>
+<h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.names.api.inner.Shared">api::inner::Shared</h3>
+<pre><code><span class="c">/// The other type named Shared.</span>
+<span class="k">struct</span> Shared;</code></pre>
+<h3 id="type.names.model.Shared">model::Shared</h3>
+<pre><code><span class="c">/// One of two types named Shared.</span>
+<span class="k">struct</span> Shared;</code></pre>
+<h3 id="type.names.Twin">Twin</h3>
+<pre><code><span class="c">/// The first of two types named Twin, under different cfgs.</span>
+<span class="c">// cfg: unix</span>
+<span class="k">struct</span> Twin;</code></pre>
+<h3 id="type.names.Twin-2">Twin</h3>
+<pre><code><span class="c">/// The second Twin.</span>
+<span class="c">// cfg: windows</span>
+<span class="k">struct</span> Twin;</code></pre>
+<h3 id="type.names.Wrapper">Wrapper</h3>
+<pre><code><span class="c">/// A generic parameter that shares a type's name stays plain.</span>
+<span class="k">struct</span> Wrapper&lt;Record&gt;
+{
+    inner: Record,
+}</code></pre>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.names">names</h3>
+<ul>
+<li><a href="#type.names.Catalog">Catalog</a></li>
+<li><a href="#type.names.Pairs">Pairs</a></li>
+<li><a href="#type.names.Twin">Twin</a></li>
+<li><a href="#type.names.Twin-2">Twin</a></li>
+<li><a href="#type.names.Wrapper">Wrapper</a></li>
+</ul>
+<pre><code><span class="k">using</span> Entry = <a href="#type.names.model.Record">model::Record</a>;</code></pre>
+<h3 id="mod.names.api">api</h3>
+<pre><code><span class="c">//! Re-exports through a glob.</span></code></pre>
+<ul>
+<li><a href="#type.names.api.Token">api::Token</a></li>
+</ul>
+<pre><code><span class="k">using</span> self::inner::*;</code></pre>
+<h3 id="mod.names.api.inner">api::inner</h3>
+<ul>
+<li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
+<li><a href="#type.names.api.inner.Shared">api::inner::Shared</a></li>
+</ul>
+<h3 id="mod.names.model">model</h3>
+<pre><code><span class="c">//! The record types.</span></code></pre>
+<ul>
+<li><a href="#type.names.model.Record">model::Record</a></li>
+<li><a href="#type.names.model.Shared">model::Shared</a></li>
+</ul>
+</main>
+</body>
+</html>

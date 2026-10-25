@@ -1,0 +1,116 @@
+//! Attaches impl blocks to the types they belong to.
+
+use crate::model::{Crate, DeclKind, Holder, Note, name_order};
+
+/// The comments above one attached impl line and how they sort: trait
+/// impls (group 0) by trait name, then inherent impls (group 1) by their
+/// first member's name.
+#[derive(Clone)]
+struct ImplNotes {
+    group: u8,
+    key: String,
+    tiebreak: String,
+    notes: Vec<Note>,
+}
+
+/// Moves every impl whose self type resolves to a struct, enum, or union
+/// into that type: inherent members, base-list entries, comments, and
+/// marks. Returns the ids of the impls left for the Other impls section.
+pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
+    let mut others = Vec::new();
+    let mut notes: Vec<Vec<ImplNotes>> = vec![Vec::new(); krate.decls.len()];
+    for id in 0..krate.impls.len() {
+        let target = krate.impls[id]
+            .self_ref
+            .and_then(|r| krate.refs[r].target)
+            .filter(|&d| {
+                matches!(
+                    krate.decls[d].kind,
+                    DeclKind::Struct | DeclKind::Enum | DeclKind::Union
+                )
+            });
+        let Some(decl_id) = target else {
+            others.push(id);
+            continue;
+        };
+        let item = &mut krate.impls[id];
+        item.attached = Some(decl_id);
+        let members = std::mem::take(&mut item.members);
+        let marks = std::mem::take(&mut item.marks);
+        let dangling = std::mem::take(&mut item.dangling);
+        let attributes = item.attributes.clone();
+        let impl_notes = std::mem::take(&mut item.notes);
+        let trait_ = item.trait_.clone();
+        let loc = item.loc;
+        let first_member = members
+            .iter()
+            .map(|m| m.name.clone())
+            .min_by(|a, b| name_order(a, b))
+            .unwrap_or_default();
+        let decl = &mut krate.decls[decl_id];
+        let adds = !members.is_empty() || trait_.is_some();
+        if adds {
+            decl.impl_locs.push(loc);
+        }
+        decl.members.extend(members);
+        for mark in marks {
+            if !decl.end_marks.contains(&mark) {
+                decl.end_marks.push(mark);
+            }
+        }
+        decl.dangling.extend(dangling);
+        for name in attributes {
+            if !decl.attributes.contains(&name) {
+                decl.attributes.push(name);
+            }
+        }
+        decl.attributes.sort_by(|a, b| name_order(a, b));
+        if !impl_notes.is_empty() {
+            let (group, key) = match &trait_ {
+                Some(base) => (0, base.name.clone()),
+                None => (1, first_member),
+            };
+            notes[decl_id].push(ImplNotes {
+                group,
+                key,
+                tiebreak: notes_text(&impl_notes, &krate.refs),
+                notes: impl_notes,
+            });
+        }
+        if let Some(base) = trait_ {
+            decl.bases.push(base);
+        }
+    }
+    for (decl, mut list) in krate.decls.iter_mut().zip(notes) {
+        list.sort_by(|a, b| {
+            a.group
+                .cmp(&b.group)
+                .then_with(|| name_order(&a.key, &b.key))
+                .then_with(|| a.tiebreak.cmp(&b.tiebreak))
+        });
+        decl.impl_notes = list.into_iter().flat_map(|entry| entry.notes).collect();
+    }
+    for mark in &mut krate.macros {
+        if let Holder::Impl(id) = mark.holder {
+            if let Some(decl) = krate.impls[id].attached {
+                mark.holder = Holder::Decl(decl);
+            }
+        }
+    }
+    others
+}
+
+/// Returns the visible text of notes, for ordering them.
+fn notes_text(notes: &[Note], refs: &[crate::model::TypeRef]) -> String {
+    let mut out = String::new();
+    for note in notes {
+        match note {
+            Note::Doc(lines) => lines
+                .iter()
+                .for_each(|line| out.push_str(&line.visible(refs))),
+            Note::Plain(lines) => lines.iter().for_each(|line| out.push_str(line)),
+        }
+        out.push('\n');
+    }
+    out
+}

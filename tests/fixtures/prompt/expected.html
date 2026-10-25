@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>runvil_parser</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+:target{background:var(--target)}
+</style>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="#level.1">Level 1: top-level types</a>
+<ul>
+<li><a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a></li>
+</ul>
+</li>
+<li><a href="#level.2">Level 2</a>
+<ul>
+<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
+<li><a href="#type.runvil_parser.Frontmatter">Frontmatter</a></li>
+<li><a href="#type.runvil_parser.prompt.Section">prompt::Section</a></li>
+<li><a href="#type.runvil_parser.Result">Result</a></li>
+</ul>
+</li>
+<li><a href="#level.3">Level 3</a>
+<ul>
+<li><a href="#type.runvil_parser.prompt.Block">prompt::Block</a></li>
+<li><a href="#type.runvil_parser.Error">Error</a></li>
+</ul>
+</li>
+<li><a href="#level.4">Level 4</a>
+<ul>
+<li><a href="#type.runvil_parser.BodyText">BodyText</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.runvil_parser">runvil_parser</a></li>
+<li><a href="#mod.runvil_parser.parse">parse</a></li>
+<li><a href="#mod.runvil_parser.prompt">prompt</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<main>
+<h1 id="crate.runvil_parser">runvil_parser</h1>
+<pre><code><span class="c">//! Prompt file parser.</span>
+<span class="c">//!</span>
+<span class="c">//! A prompt is one markdown file: YAML frontmatter, a required H1, optional H1</span>
+<span class="c">//! blocks, then H2 sections.</span>
+<span class="c">//! H1 and section content are alternating sequences of exact lua fences and</span>
+<span class="c">//! prose (<a href="#type.runvil_parser.prompt.Block">Block</a>). Sections nest recursively (H3 under H2, H4 under H3, and</span>
+<span class="c">//! so on through H6). Classic prologue/prose/epilog is exactly [Lua, Prose, Lua].</span>
+<span class="c">//!</span>
+<span class="c">//! The parser turns bytes into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> tree without executing any of it.</span></code></pre>
+<p class="kill"><b class="m">MACROS:</b> 3 derive lists</p>
+<ul class="kill">
+<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.3">prompt::Block</a></li>
+<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.1">prompt::Prompt</a></li>
+<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.2">prompt::Section</a></li>
+</ul>
+<h2 id="level.1">Level 1: top-level types</h2>
+<h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
+<p class="mark" id="macro.1"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
+<pre><code><span class="c">/// A fully parsed prompt file.</span>
+<span class="k">struct</span> Prompt
+{
+    <span class="c">/// Parses the full source text of a prompt file into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> and</span>
+    <span class="c">/// returns the events reported during parsing alongside the result.</span>
+    <span class="c">///</span>
+    <span class="c">/// The caller supplies execution, an identifier that every event</span>
+    <span class="c">/// carries. Every event is reported under task 0 because parsing happens</span>
+    <span class="c">/// before any run starts.</span>
+    <span class="c">///</span>
+    <span class="c">/// The events come in this order: ParseStarted, then a</span>
+    <span class="c">/// LuaCompilationStarted event and a LuaCompilationSucceeded or</span>
+    <span class="c">/// LuaCompilationFailed event for each Lua block the parser compiles,</span>
+    <span class="c">/// then ParseSucceeded or ParseFailed. They exist only for the caller</span>
+    <span class="c">/// to log.</span>
+    <span class="c">///</span>
+    <span class="c">/// # Errors</span>
+    <span class="c">/// On failure, the first element of the pair is a <a href="#type.runvil_parser.ParseError">ParseError</a> whose</span>
+    <span class="c">/// kind is:</span>
+    <span class="c">///</span>
+    <span class="c">/// - <a href="#type.runvil_parser.Frontmatter">Frontmatter</a> when the --- delimiters are missing, the frontmatter</span>
+    <span class="c">///   fails to decode, a uses: entry is neither a Pack id nor</span>
+    <span class="c">///   vendor/name, or two entries share a Pack id.</span>
+    <span class="c">/// - Structure when the H1 is missing, there is more than one H1, the H1</span>
+    <span class="c">///   title is empty, a section heading skips a level (such as an H4</span>
+    <span class="c">///   directly under an H2), a section heading is empty, or two sibling</span>
+    <span class="c">///   sections have the same name.</span>
+    <span class="c">/// - Fence when a lua fence is left open, or anywhere in the body a</span>
+    <span class="c">///   fence or line breaks the strict Lua fence rule. A lua fence opens</span>
+    <span class="c">///   with a line that is exactly three backticks then lua and closes</span>
+    <span class="c">///   with a line that is exactly three backticks. Label: a fence's label</span>
+    <span class="c">///   starts with lua in any letter case without being exactly lua,</span>
+    <span class="c">///   such as Lua or lua extra. Opener: a fence labeled lua opens</span>
+    <span class="c">///   with any other line, such as one that is indented, uses tildes or</span>
+    <span class="c">///   four backticks, or sits in a block quote or list item. Closer: a</span>
+    <span class="c">///   fence with an exact opening line closes with any other line.</span>
+    <span class="c">///   Lookalike: a line outside every fence looks like a lua opening</span>
+    <span class="c">///   line, such as one in an indented code block. The first violation in</span>
+    <span class="c">///   source order fails the parse at its line, before any Lua compiles.</span>
+    <span class="c">///   Lines inside the body of another fenced code block are never</span>
+    <span class="c">///   inspected, so a document can show a Lua fence as an example.</span>
+    <span class="c">/// - List when a section made up only of list items has an empty item.</span>
+    <span class="c">/// - Lua when a Lua block in the H1 or in a section fails to compile as</span>
+    <span class="c">///   Lua.</span>
+    <span class="c">/// - Internal when the parser fails through no fault of the prompt: one</span>
+    <span class="c">///   of its own invariants breaks, or the Lua compiler cannot start.</span>
+    <span class="k">static</span> parse(input: &amp;str, execution: &amp;str) -&gt;
+        (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;);
+
+    <span class="c">/// Returns the parsed frontmatter.</span>
+    frontmatter() <span class="k">const</span> -&gt; &amp;<a href="#type.runvil_parser.Frontmatter">Frontmatter</a>;
+
+    <span class="c">/// Returns the prompt's title, the text of its required H1 heading.</span>
+    title() <span class="k">const</span> -&gt; &amp;str;
+
+<span class="k">private:</span>
+    <span class="c">/// The parsed YAML frontmatter.</span>
+    frontmatter: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
+
+    <span class="c">/// Ordered live Lua and prose blocks from the H1.</span>
+    h1_blocks: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
+
+    <span class="c">/// Top-level sections (H2s) in file order.</span>
+    sections: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
+
+    <span class="c">/// The required H1 title.</span>
+    title: String,
+
+    <span class="k">static</span> parse_body(
+        frontmatter: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
+        shared: &amp;Arc&lt;str&gt;,
+        frontmatter_lines: u32,
+        emitter: &amp;Emitter) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;;
+
+    <span class="k">static</span> parse_inner(input: &amp;str, emitter: &amp;Emitter) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;;
+
+    <span class="c">/// The entry-point section: the first top-level section in file order;</span>
+    <span class="c">/// the Engine reaches it through crate::detail::entry.</span>
+    entry() <span class="k">const</span> -&gt; Option&lt;&amp;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;;
+
+    <span class="c">/// Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
+    <span class="c">/// reaches them through crate::detail::h1_blocks.</span>
+    h1_blocks() <span class="k">const</span> -&gt; &amp;[<a href="#type.runvil_parser.prompt.Block">Block</a>];
+
+    <span class="c">/// Returns the top-level H2 sections in file order; the Engine reaches</span>
+    <span class="c">/// them through crate::detail::sections.</span>
+    sections() <span class="k">const</span> -&gt; &amp;[<a href="#type.runvil_parser.prompt.Section">Section</a>];
+}</code></pre>
+<h2 id="level.2">Level 2</h2>
+<h3 id="type.runvil_parser.ParseError">ParseError</h3>
+<pre><code><span class="c">/// A parse failure reported to callers.</span>
+<span class="k">struct</span> ParseError;</code></pre>
+<h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
+<pre><code><span class="c">/// The parsed YAML frontmatter.</span>
+<span class="k">struct</span> Frontmatter;</code></pre>
+<h3 id="type.runvil_parser.prompt.Section">prompt::Section</h3>
+<p class="mark" id="macro.2"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
+<pre><code><span class="c">/// One section of a prompt: a heading, ordered blocks, and children.</span>
+<span class="k">struct</span> Section
+{
+    <span class="c">/// Returns the ordered Lua and prose blocks of this section.</span>
+    blocks() <span class="k">const</span> -&gt; &amp;[<a href="#type.runvil_parser.prompt.Block">Block</a>];
+
+    <span class="c">/// Returns the child sections nested under this one.</span>
+    children() <span class="k">const</span> -&gt; &amp;[<a href="#type.runvil_parser.prompt.Section">Section</a>];
+
+    <span class="c">/// Classic trailing Lua fence when the last block is Lua and not the sole</span>
+    <span class="c">/// leading prologue (a section that is only one Lua block has no epilog).</span>
+    epilog() <span class="k">const</span> -&gt; Option&lt;&amp;LuaProgram&gt;;
+
+    <span class="c">/// Returns the pre-parsed bullet items for a list-only section.</span>
+    items() <span class="k">const</span> -&gt; &amp;[<a href="#type.runvil_parser.BodyText">BodyText</a>];
+
+    <span class="c">/// Returns the heading level (2 through 6).</span>
+    level() <span class="k">const</span> -&gt; u8;
+
+    <span class="c">/// The section's own raw Markdown: from just after its heading line to the next</span>
+    <span class="c">/// heading of any level, leading blank lines and trailing whitespace trimmed.</span>
+    markdown() <span class="k">const</span> -&gt; &amp;str;
+
+    <span class="c">/// Returns the heading text (the section's address).</span>
+    name() <span class="k">const</span> -&gt; &amp;str;
+
+    <span class="c">/// Classic leading Lua fence when the first block is Lua.</span>
+    prologue() <span class="k">const</span> -&gt; Option&lt;&amp;LuaProgram&gt;;
+
+    <span class="c">/// Text of the last prose block, or "" when the section has none.</span>
+    prose() <span class="k">const</span> -&gt; &amp;str;
+
+<span class="k">private:</span>
+    <span class="c">/// Ordered lua/prose blocks for this section.</span>
+    blocks: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
+
+    <span class="c">/// Child sections nested under this one (deeper heading levels).</span>
+    children: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
+
+    <span class="c">/// Pre-parsed bullet items for list-only sections (no lua blocks).</span>
+    <span class="c">///</span>
+    <span class="c">/// Empty for non-list sections.</span>
+    items: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
+
+    <span class="c">/// The heading level, 2 through 6.</span>
+    level: u8,
+
+    <span class="c">/// The section's own raw Markdown, without its heading line or children.</span>
+    markdown: <a href="#type.runvil_parser.BodyText">BodyText</a>,
+
+    <span class="c">/// The heading text (the section's address).</span>
+    name: String,
+}</code></pre>
+<h3 id="type.runvil_parser.Result">Result</h3>
+<pre><code><span class="c">/// The crate's result type.</span>
+<span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;;</code></pre>
+<h2 id="level.3">Level 3</h2>
+<h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
+<p class="mark" id="macro.3"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
+<pre><code><span class="c">/// One executable block inside a section: a compiled Lua fence or prose.</span>
+<span class="k">enum</span> Block
+{
+    <span class="c">/// An exact lua fence compiled at parse time.</span>
+    Lua(LuaProgram),
+
+    <span class="c">/// Author prose: the pending Markdown accumulated since the nearest</span>
+    <span class="c">/// preceding heading, lua fence, or thematic break.</span>
+    <span class="c">///</span>
+    <span class="c">/// The executor installs it as the following Lua block's lazy prose</span>
+    <span class="c">/// template.</span>
+    Prose
+    {
+        <span class="c">/// Captured Markdown, trimmed of surrounding blank lines.</span>
+        text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
+    },
+}</code></pre>
+<h3 id="type.runvil_parser.Error">Error</h3>
+<pre><code><span class="c">/// The crate's internal error.</span>
+<span class="k">struct</span> Error;</code></pre>
+<h2 id="level.4">Level 4</h2>
+<h3 id="type.runvil_parser.BodyText">BodyText</h3>
+<pre><code><span class="c">/// Shared Markdown text.</span>
+<span class="k">struct</span> BodyText;</code></pre>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.runvil_parser">runvil_parser</h3>
+<ul>
+<li><a href="#type.runvil_parser.BodyText">BodyText</a></li>
+<li><a href="#type.runvil_parser.Error">Error</a></li>
+<li><a href="#type.runvil_parser.Frontmatter">Frontmatter</a></li>
+<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
+<li><a href="#type.runvil_parser.Result">Result</a></li>
+</ul>
+<pre><code><span class="k">using</span> <a href="#type.runvil_parser.prompt.Block">prompt::Block</a>;
+
+<span class="k">using</span> runvil_lua::LuaProgram;
+
+<span class="k">using</span> <a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a>;
+
+<span class="k">using</span> <a href="#type.runvil_parser.prompt.Section">prompt::Section</a>;</code></pre>
+<h3 id="mod.runvil_parser.parse">parse</h3>
+<pre><code><span class="c">//! Parses a prompt's source into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a>: frontmatter, H1, and sections.</span></code></pre>
+<h3 id="mod.runvil_parser.prompt">prompt</h3>
+<pre><code><span class="c">//! Holds the parsed prompt tree: <a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, its <a href="#type.runvil_parser.prompt.Section">Section</a>s, and their <a href="#type.runvil_parser.prompt.Block">Block</a>s.</span>
+<span class="c">//!</span>
+<span class="c">//! Code outside the Engine reads a prompt's title and frontmatter; the tree</span>
+<span class="c">//! below them is the Engine's, reached through crate::detail.</span>
+<span class="c">//!</span>
+<span class="c">//! Construction happens in the parsing modules; this module holds the value</span>
+<span class="c">//! types and the invariant-preserving operations on them.</span></code></pre>
+<ul>
+<li><a href="#type.runvil_parser.prompt.Block">prompt::Block</a></li>
+<li><a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a></li>
+<li><a href="#type.runvil_parser.prompt.Section">prompt::Section</a></li>
+</ul>
+</main>
+</body>
+</html>

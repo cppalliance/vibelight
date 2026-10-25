@@ -1,0 +1,3 @@
+# Every text file is LF in the checkout, so goldens compare byte for byte on
+# Windows too.
+* text=auto eol=lf

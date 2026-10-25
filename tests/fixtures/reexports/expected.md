@@ -1,0 +1,68 @@
+<a id="crate.reexports"></a>
+# reexports
+
+```
+//! Re-exports.
+```
+
+- [Unconnected types](#unconnected)
+  - [inner::Other](#type.reexports.inner.Other)
+  - [inner::Thing](#type.reexports.inner.Thing)
+- [Modules](#modules)
+  - [reexports](#mod.reexports)
+  - [inner](#mod.reexports.inner)
+
+**MACROS:** none
+
+<a id="unconnected"></a>
+## Unconnected types
+
+<a id="type.reexports.inner.Other"></a>
+### inner::Other
+
+```
+/// Another thing.
+struct Other;
+```
+
+<a id="type.reexports.inner.Thing"></a>
+### inner::Thing
+
+```
+/// A thing.
+struct Thing;
+```
+
+<a id="modules"></a>
+## Modules
+
+<a id="mod.reexports"></a>
+### reexports
+
+```
+using inner::*;
+
+using assist = inner::helper;
+
+using inner::Other;
+
+using inner::Thing;
+
+private:
+using CrateThing = inner::Thing;
+```
+
+<a id="mod.reexports.inner"></a>
+### inner
+
+```
+//! Holds the items.
+```
+
+- [inner::Other](#type.reexports.inner.Other)
+- [inner::Thing](#type.reexports.inner.Thing)
+
+```
+/// A helper.
+helper();
+```

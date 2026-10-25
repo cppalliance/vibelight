@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>macros</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+:target{background:var(--target)}
+</style>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="#unconnected">Unconnected types</a>
+<ul>
+<li><a href="#type.macros.Event">Event</a></li>
+<li><a href="#type.macros.Started">Started</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.macros">macros</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<main>
+<h1 id="crate.macros">macros</h1>
+<pre><code><span class="c">//! Macros of every kind.</span></code></pre>
+<p class="kill"><b class="m">MACROS:</b> 1 definition, 4 invocations, 1 derive list, 3 attribute lists</p>
+<ul class="kill">
+<li><b class="m">MACRO</b> <code>macro_rules! events</code>, in <a href="#macro.8">macros</a></li>
+<li><b class="m">MACRO</b> <code>events!</code>, in <a href="#macro.7">macros</a></li>
+<li><b class="m">MACRO</b> <code>forward_methods!</code>, in <a href="#macro.4">Event</a></li>
+<li><b class="m">MACRO</b> <code>lifecycle_constants!</code>, in <a href="#macro.9">macros</a></li>
+<li><b class="m">MACRO</b> <code>stringify!</code>, in <a href="#macro.10">macros</a></li>
+<li><b class="m">MACRO</b> <code>derive: Clone, Debug, PartialEq</code>, in <a href="#macro.1">Event</a></li>
+<li><b class="m">MACRO</b> <code>attribute: serde_like::tag</code>, in <a href="#macro.2">Event</a></li>
+<li><b class="m">MACRO</b> <code>attribute: tokio::main</code>, in <a href="#macro.11">macros</a></li>
+<li><b class="m">MACRO</b> <code>attribute: tracing::instrument</code>, in <a href="#macro.3">Event</a></li>
+</ul>
+<h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.macros.Event">Event</h3>
+<p class="mark" id="macro.1"><b class="m">MACRO</b> derive: Clone, Debug, PartialEq</p>
+<p class="mark" id="macro.2"><b class="m">MACRO</b> attribute: serde_like::tag</p>
+<pre><code><span class="c">/// A type with derives and an attribute macro.</span>
+<span class="k">struct</span> Event
+{
+    name: String,
+
+    <span class="c">/// Has an attribute macro.</span>
+    <span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tracing::instrument</span>
+    emit() <span class="k">const</span>;
+
+    <span class="c">// </span><b class="m">MACRO</b><span class="c"> forward_methods!</span>
+}</code></pre>
+<p class="mark" id="macro.3"><b class="m">MACRO</b> attribute: tracing::instrument</p>
+<p class="mark" id="macro.4"><b class="m">MACRO</b> forward_methods!</p>
+<h3 id="type.macros.Started">Started</h3>
+<pre><code><span class="c">/// Named by the module-level invocations.</span>
+<span class="k">struct</span> Started
+{
+    <span class="c">// </span><b class="m">MACRO</b><span class="c"> events!</span>
+    <span class="c">// </span><b class="m">MACRO</b><span class="c"> lifecycle_constants!</span>
+}</code></pre>
+<p class="mark" id="macro.5"><b class="m">MACRO</b> events!</p>
+<p class="mark" id="macro.6"><b class="m">MACRO</b> lifecycle_constants!</p>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.macros">macros</h3>
+<ul>
+<li><a href="#type.macros.Event">Event</a></li>
+<li><a href="#type.macros.Started">Started</a></li>
+</ul>
+<pre><code><span class="c">// </span><b class="m">MACRO</b><span class="c"> events!</span>
+
+<span class="c">/// Defines the events.</span>
+<span class="c">// </span><b class="m">MACRO</b><span class="c"> macro_rules! events</span>
+
+<span class="c">// </span><b class="m">MACRO</b><span class="c"> lifecycle_constants!</span>
+
+<span class="c">/// A value with a macro.</span>
+<span class="c">// </span><b class="m">MACRO</b><span class="c"> stringify!</span>
+<span class="k">constexpr</span> NAME: &amp;str;
+
+<span class="c">/// The entry point.</span>
+<span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tokio::main</span>
+<span class="k">async</span> main();</code></pre>
+<p class="mark" id="macro.7"><b class="m">MACRO</b> events!</p>
+<p class="mark" id="macro.8"><b class="m">MACRO</b> macro_rules! events</p>
+<p class="mark" id="macro.9"><b class="m">MACRO</b> lifecycle_constants!</p>
+<p class="mark" id="macro.10"><b class="m">MACRO</b> stringify!</p>
+<p class="mark" id="macro.11"><b class="m">MACRO</b> attribute: tokio::main</p>
+</main>
+</body>
+</html>

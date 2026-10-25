@@ -1,0 +1,13 @@
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# A hash seed or the clock must never reach the output: every map and set is
+# B-tree based, and nothing reads the time.
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "iteration order depends on a random seed; use BTreeMap" },
+    { path = "std::collections::HashSet", reason = "iteration order depends on a random seed; use BTreeSet" },
+    { path = "std::time::SystemTime", reason = "the output must never depend on the clock" },
+]
+disallowed-methods = [
+    { path = "std::time::SystemTime::now", reason = "the output must never depend on the clock" },
+]

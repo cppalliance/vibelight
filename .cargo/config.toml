@@ -1,0 +1,6 @@
+# Dev-only: in a checkout, `cargo build`, `cargo clippy`, and `cargo test`
+# fail on any warning, clippy's pedantic group included. Cargo does not read
+# this file when someone installs the published crate, and the package's
+# exclude list keeps it out of the tarball.
+[build]
+rustflags = ["-D", "warnings"]

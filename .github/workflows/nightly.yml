@@ -1,0 +1,172 @@
+# Builds the release targets once a day when master has moved, and replaces
+# the assets of one rolling prerelease named nightly. The nightly tag always
+# points at the commit those assets were built from.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.repository == 'cppalliance/vibelight' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.compare.outputs.build }}
+      sha: ${{ steps.compare.outputs.sha }}
+      version: ${{ steps.compare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compare master with the nightly tag
+        id: compare
+        shell: bash
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          tagged="$(git rev-parse --quiet --verify 'refs/tags/nightly^{commit}' || true)"
+          if [ "$head" = "$tagged" ]; then
+            echo "master is still at the last nightly, $head; nothing to build."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)"
+          {
+            echo "build=true"
+            echo "sha=$head"
+            echo "version=$base-nightly ($(git rev-parse --short=9 HEAD) $(date -u +%Y-%m-%d))"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # The runners dist uses for the versioned releases.
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-22.04
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-22.04-arm
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin
+            runner: macos-14
+          - target: x86_64-pc-windows-msvc
+            runner: windows-2022
+    runs-on: ${{ matrix.runner }}
+    env:
+      # src/main.rs reads this at compile time for `vibelight --version`.
+      VIBELIGHT_NIGHTLY: ${{ needs.check.outputs.version }}
+      NAME: vibelight-${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Build
+        run: cargo build --locked --profile dist --target ${{ matrix.target }}
+
+      - name: Stage the archive folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          exe=""
+          if [ "$RUNNER_OS" = "Windows" ]; then exe=".exe"; fi
+          bin="target/${{ matrix.target }}/dist/vibelight$exe"
+          reported="$("$bin" --version | tr -d '\r')"
+          if [ "$reported" != "vibelight $VIBELIGHT_NIGHTLY" ]; then
+            echo "expected 'vibelight $VIBELIGHT_NIGHTLY', the binary says '$reported'"
+            exit 1
+          fi
+          mkdir "$NAME"
+          cp "$bin" README.md LICENSE "$NAME/"
+
+      - name: Archive (tar.xz)
+        if: runner.os != 'Windows'
+        run: tar -cJf "$NAME.tar.xz" "$NAME"
+
+      - name: Archive (zip)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path $env:NAME -DestinationPath "$($env:NAME).zip"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nightly-${{ matrix.target }}
+          path: |
+            ${{ env.NAME }}.tar.xz
+            ${{ env.NAME }}.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ needs.check.outputs.sha }}
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      # Keeps its credentials: this job pushes the nightly tag.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.check.outputs.sha }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: nightly-*
+          path: assets
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: assets
+        run: |
+          set -euo pipefail
+          for archive in vibelight-*; do
+            sha256sum "$archive" > "$archive.sha256"
+          done
+          sha256sum vibelight-*.tar.xz vibelight-*.zip > sha256.sum
+          cat sha256.sum
+
+      - name: Move the nightly tag
+        run: |
+          git tag --force nightly "$SHA"
+          git push --force origin refs/tags/nightly
+
+      - name: Replace the nightly prerelease's assets
+        run: |
+          set -euo pipefail
+          title="Nightly: vibelight $VERSION"
+          notes="Built from master at $SHA. Each nightly replaces these assets; for a stable version, use a versioned release."
+          if gh release view nightly > /dev/null 2>&1; then
+            gh release edit nightly --prerelease --title "$title" --notes "$notes"
+            gh release upload nightly assets/* --clobber
+            ls assets > keep.txt
+            gh release view nightly --json assets --jq '.assets[].name' | while read -r name; do
+              if ! grep -qxF "$name" keep.txt; then
+                gh release delete-asset nightly "$name" --yes
+              fi
+            done
+          else
+            gh release create nightly assets/* --prerelease --verify-tag --title "$title" --notes "$notes"
+          fi
