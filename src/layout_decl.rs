@@ -4,12 +4,13 @@ use crate::layout::{
     Block, Entry, Line, Span, above, code, join_groups, key, mark_line, note_lines, plain,
     sort_entries, where_spans,
 };
-use crate::layout_members::{member_entry, param_lines, variant_entry};
+use crate::layout_head::header_lines;
+use crate::layout_members::{member_entry, variant_entry};
+use crate::layout_special::special_entry;
 use crate::model::{
-    Base, Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Text, TypeRef,
-    Variant, name_order,
+    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, Variant,
+    name_order,
 };
-use crate::wrap;
 
 /// Builds the block of one declaration.
 pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
@@ -30,6 +31,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     let class = is_class(decl);
     let has_body = !matches!(decl.shape, Shape::Unit | Shape::Tuple(_))
         || !decl.members.is_empty()
+        || !decl.special.is_empty()
         || !decl.end_marks.is_empty()
         || !decl.dangling.is_empty();
     block
@@ -51,6 +53,8 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
             all_public: matches!(decl.shape, Shape::Trait { .. }),
             dangling: &decl.dangling,
             end_marks: &decl.end_marks,
+            special: &decl.special,
+            name: &decl.name,
         },
     );
     block.lines.push(brace("{"));
@@ -105,15 +109,10 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
     }
 }
 
-/// Returns the start of a header: the keyword, the name, the generics, and
-/// a trait's supertraits.
+/// Returns the start of a header: the keyword, the name, and the generics.
 fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
     let mut spans = Vec::new();
-    if let Shape::Trait {
-        prefix,
-        supertraits,
-    } = &decl.shape
-    {
+    if let Shape::Trait { prefix, .. } = &decl.shape {
         if !prefix.is_empty() {
             spans.push(key(prefix.trim_end()));
             spans.push(plain(" "));
@@ -121,10 +120,6 @@ fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
         spans.push(key("trait"));
         spans.push(plain(&format!(" {}", decl.name)));
         spans.extend(code(&decl.generics));
-        if let Some(supertraits) = supertraits {
-            spans.push(plain(": "));
-            spans.extend(code(supertraits));
-        }
         return spans;
     }
     let keyword = match decl.kind {
@@ -139,53 +134,6 @@ fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
     spans
 }
 
-/// Finishes a header with any tuple fields, the base list, and the `where`
-/// clause; a type with no body ends in `;`.
-fn header_lines(decl: &Decl, mut header: Vec<Span>, has_body: bool, refs: &[TypeRef]) -> Vec<Line> {
-    let mut bases = bases(&decl.bases, refs);
-    let where_clause = decl.where_clause.as_ref().map(where_spans);
-    if let Shape::Tuple(fields) = &decl.shape {
-        header.push(plain("("));
-        if fields.iter().any(|f| !f.meta.notes.is_empty()) {
-            let mut lines = vec![Line {
-                indent: 0,
-                spans: header,
-                trailing: None,
-            }];
-            let mut fields = param_lines(fields, 4);
-            let mut last = fields.pop().unwrap_or_default();
-            last.spans.push(plain(")"));
-            last.spans.append(&mut bases);
-            if !has_body {
-                last.spans.push(plain(";"));
-            }
-            lines.extend(fields);
-            lines.push(last);
-            return lines;
-        }
-        for (i, field) in fields.iter().enumerate() {
-            if i > 0 {
-                header.push(plain(", "));
-            }
-            header.extend(code(&field.text));
-        }
-        header.push(plain(")"));
-    }
-    header.append(&mut bases);
-    if has_body {
-        return wrap::header(header, where_clause, refs);
-    }
-    if let Some(clause) = where_clause {
-        header.push(plain(" "));
-        header.extend(clause);
-    }
-    header.push(plain(";"));
-    vec![Line {
-        indent: 0,
-        spans: header,
-        trailing: decl.meta.trailing.clone(),
-    }]
-}
 /// What goes between a type's braces.
 pub(crate) struct BodyParts<'b> {
     pub(crate) members: &'b [Member],
@@ -197,6 +145,10 @@ pub(crate) struct BodyParts<'b> {
     pub(crate) all_public: bool,
     pub(crate) dangling: &'b [Note],
     pub(crate) end_marks: &'b [String],
+    /// The special members, printed after the fields as one packed group.
+    pub(crate) special: &'b [Special],
+    /// The type's name, which the special members spell.
+    pub(crate) name: &'b str,
 }
 
 /// Builds the lines between a type's braces: the public groups, then
@@ -204,8 +156,8 @@ pub(crate) struct BodyParts<'b> {
 /// them, macro marks, and unsupported lines.
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
-    let mut public: Vec<Vec<Entry>> = (0..5).map(|_| Vec::new()).collect();
-    let mut private: Vec<Vec<Entry>> = (0..5).map(|_| Vec::new()).collect();
+    let mut public: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
+    let mut private: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
     let real = parts
         .members
         .iter()
@@ -215,8 +167,8 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
             MemberKind::Type(_) => 0,
             MemberKind::Const { .. } => 1,
             MemberKind::Field(_) => 2,
-            MemberKind::Fn(_) if member.kind.is_static_fn() => 3,
-            _ => 4,
+            MemberKind::Fn(_) if member.kind.is_static_fn() => 4,
+            _ => 5,
         };
         let entry = member_entry(krate, member);
         if member.public || parts.all_public {
@@ -230,6 +182,14 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     }
     if let Some(variants) = parts.variants {
         public[2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
+    }
+    if let Some(entry) = special_entry(parts.special, parts.name, refs) {
+        let section = if parts.class {
+            &mut private
+        } else {
+            &mut public
+        };
+        section[3].push(entry);
     }
     let mut block = Block::default();
     join_groups(public, &mut block);
@@ -292,18 +252,4 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         }
     }
     block
-}
-
-/// Returns a base list, ` : A, B`, sorted by trait name.
-fn bases(bases: &[Base], refs: &[TypeRef]) -> Vec<Span> {
-    let mut sorted: Vec<&Base> = bases.iter().collect();
-    sorted.sort_by(|a, b| {
-        name_order(&a.name, &b.name).then_with(|| a.text.visible(refs).cmp(&b.text.visible(refs)))
-    });
-    let mut spans = Vec::new();
-    for (i, base) in sorted.into_iter().enumerate() {
-        spans.push(plain(if i == 0 { " : " } else { ", " }));
-        spans.extend(code(&base.text));
-    }
-    spans
 }

@@ -30,10 +30,7 @@
   - [parse](#mod.runvil_parser.parse)
   - [prompt](#mod.runvil_parser.prompt)
 
-**MACROS:** 3 derive lists
-- **MACRO** `derive: Clone, Debug, Eq, PartialEq`, in [prompt::Block](#type.runvil_parser.prompt.Block)
-- **MACRO** `derive: Clone, Debug, Eq, PartialEq`, in [prompt::Prompt](#type.runvil_parser.prompt.Prompt)
-- **MACRO** `derive: Clone, Debug, Eq, PartialEq`, in [prompt::Section](#type.runvil_parser.prompt.Section)
+**MACROS:** none
 
 <a id="level.1"></a>
 ## Level 1: top-level types
@@ -41,12 +38,13 @@
 <a id="type.runvil_parser.prompt.Prompt"></a>
 ### prompt::Prompt
 
-**MACRO** derive: Clone, Debug, Eq, PartialEq
-
 ```
 /// A fully parsed prompt file.
-struct Prompt
+struct Prompt : Debug, Eq
 {
+    Prompt(Prompt&) = default;
+    bool operator==(Prompt&) = default;
+
     /// Parses the full source text of a prompt file into a Prompt and
     /// returns the events reported during parsing alongside the result.
     ///
@@ -156,12 +154,13 @@ struct Frontmatter;
 <a id="type.runvil_parser.prompt.Section"></a>
 ### prompt::Section
 
-**MACRO** derive: Clone, Debug, Eq, PartialEq
-
 ```
 /// One section of a prompt: a heading, ordered blocks, and children.
-struct Section
+struct Section : Debug, Eq
 {
+    Section(Section&) = default;
+    bool operator==(Section&) = default;
+
     /// Returns the ordered Lua and prose blocks of this section.
     blocks() -> [Block]&;
 
@@ -228,11 +227,9 @@ using Result<T> = std::result::Result<T, Error>;
 <a id="type.runvil_parser.prompt.Block"></a>
 ### prompt::Block
 
-**MACRO** derive: Clone, Debug, Eq, PartialEq
-
 ```
 /// One executable block inside a section: a compiled Lua fence or prose.
-enum Block
+enum Block : Debug, Eq
 {
     /// An exact lua fence compiled at parse time.
     Lua(LuaProgram),
@@ -247,6 +244,9 @@ enum Block
         /// Captured Markdown, trimmed of surrounding blank lines.
         text: BodyText,
     },
+
+    Block(Block&) = default;
+    bool operator==(Block&) = default;
 }
 ```
 

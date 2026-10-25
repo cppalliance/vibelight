@@ -10,7 +10,7 @@ vibelight reads a Rust crate and writes an outline of it in the style of a C++ h
 - **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, the contents list sits in a sticky sidebar, and the colors follow your system's light or dark setting.
 - **Top-down order.** Declarations are ordered by how they name each other. The types nothing else names come first, and every type comes after the types that use it. A by-module index comes last.
 - **Comments kept.** Doc comments and ordinary comments stay with the item they belong to.
-- **Every macro marked.** Macro definitions, invocations, derives, and attribute macros each get a bold **MACRO** label, and a kill list at the top gathers them all in one place, with a link to where each one sits.
+- **Every macro marked.** Macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and a kill list at the top gathers them all in one place, with a link to where each one sits.
 - **Links back to the source.** Each declaration, impl block, module, and macro links back to where it is written, such as `src/prompt.rs:136`. The links are relative to the output file and end in `#L136`, which GitHub, VS Code, and Cursor open at that line. They are on by default.
 
 vibelight parses the source with [syn](https://crates.io/crates/syn) and never builds the crate. It needs no Cargo build, no nightly toolchain, and no network, so it works on a fresh clone and on code that does not compile right now.
@@ -93,7 +93,9 @@ class Cursor
 
 Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`, with a `private:` label before its private part.
 
-The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, and a function that takes no receiver or takes `self` by value is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group. Trait impls show up as a base list, as in `struct Seed : Display`, and derives as a bold **MACRO** line above the block.
+The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, and a function that takes no receiver or takes `self` by value is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group.
+
+Traits a type implements or derives print the C++ way. `Default`, `Clone`, `From<T>`, `Drop`, `PartialEq`, and `PartialOrd` become a default constructor, a copy constructor, converting constructors, a destructor, `operator==`, and `operator<=>`, packed together after the fields, with `= default` when derived. Other standard traits form the base list by their short names, as in `struct Seed : Debug, Display`, and every other trait follows on its own line by its full path. A derive from another crate keeps its bold **MACRO** line above the block.
 
 ## Warnings and exit codes
 

@@ -76,11 +76,14 @@ pub(crate) struct TypeRef {
     pub(crate) module: ModId,
     /// Generic parameter names in scope where the name is written.
     pub(crate) generics: Vec<String>,
-    /// True for a name from a comment or a re-export, which never counts
-    /// for naming or toward the unresolved tally.
+    /// True for a name from a comment, a re-export, or a derive, which never
+    /// counts for naming or toward the unresolved tally.
     pub(crate) comment: bool,
     /// The declaration the name resolves to, filled in by resolve.
     pub(crate) target: Option<DeclId>,
+    /// The full path of a name outside the crate, filled in by resolve:
+    /// through `use` items, or the bare name of a prelude item.
+    pub(crate) canonical: Option<Vec<String>>,
 }
 
 #[cfg(test)]
@@ -102,6 +105,7 @@ mod tests {
             generics: Vec::new(),
             comment: false,
             target: None,
+            canonical: None,
         }];
         assert_eq!(text.visible(&refs), "Vec<Block>,");
     }

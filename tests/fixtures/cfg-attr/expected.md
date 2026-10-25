@@ -11,8 +11,7 @@
 - [Modules](#modules)
   - [cfg_attr](#mod.cfg_attr)
 
-**MACROS:** 1 derive list
-- **MACRO** `derive: Clone, Debug`, in [Settings](#type.cfg_attr.Settings)
+**MACROS:** none
 
 <a id="unconnected"></a>
 ## Unconnected types
@@ -28,11 +27,9 @@ struct Plain;
 <a id="type.cfg_attr.Settings"></a>
 ### Settings
 
-**MACRO** derive: Clone, Debug
-
 ```
 /// Derives through cfg_attr.
-struct Settings
+struct Settings : Debug
 {
     // cfg: feature = "fast"
     // cfg: unix
@@ -41,6 +38,8 @@ struct Settings
     /// Only with a feature.
     // cfg: feature = "extra"
     extra: u32,
+
+    Settings(Settings&) = default;
 
     /// Also gated, with its own cfg.
     // cfg: feature = "methods"

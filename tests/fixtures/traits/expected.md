@@ -50,7 +50,7 @@ trait Lender
 
 ```
 /// Watches a run.
-trait Observer: Send + Sync
+trait Observer : Send, Sync
 {
     /// The item type.
     using Item: Clone;

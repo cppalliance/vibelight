@@ -7,6 +7,7 @@ use syn::{Attribute, ImplItem, ItemImpl, TraitItem, Type};
 
 use crate::attrs;
 use crate::collect::{Collector, Here, delimiter_range, is_public, loc, sort_marks, tokens_span};
+use crate::collect_bases::single_arg;
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
@@ -61,13 +62,26 @@ impl Collector<'_> {
             if i.modifiers.polarity.is_some() {
                 text.push_str("!");
             }
-            text.append(&self.slicer(&here).node(path, |f| f.bare_path(path)));
+            let path_range = range_of(path, file);
+            let start = path_range.start;
+            let (slice, ids) = self.slicer(&here).range(path_range, |f| f.bare_path(path));
+            text.append(&slice);
             let name = path
                 .segments
                 .last()
                 .map(|s| s.ident.to_string())
                 .unwrap_or_default();
-            Base { text, name }
+            Base {
+                text,
+                name,
+                path_ref: ids
+                    .iter()
+                    .find(|(r, _)| r.start == start)
+                    .map(|(_, id)| *id),
+                arg: single_arg(path).map(|ty| self.argument(&here, ty)),
+                generic: !i.generics.params.is_empty() || i.generics.where_clause.is_some(),
+                long: false,
+            }
         });
         let loc = loc(&here, i.impl_token.span);
         let scope = file.end(i.brace_token.span.open())..file.start(i.brace_token.span.close());

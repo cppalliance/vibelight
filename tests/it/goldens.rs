@@ -56,6 +56,7 @@ macro_rules! goldens {
 
 goldens! {
     aliases => "aliases",
+    base_lists => "base-lists",
     cfg_attr => "cfg-attr",
     cfg_test => "cfg-test",
     comments_attach => "comments-attach",
@@ -82,6 +83,7 @@ goldens! {
     reexports => "reexports",
     references => "references",
     single => "single",
+    special_members => "special-members",
     struct_class => "struct-class",
     structs => "structs",
     traits => "traits",

@@ -11,13 +11,12 @@
 - [Modules](#modules)
   - [macros](#mod.macros)
 
-**MACROS:** 1 definition, 4 invocations, 1 derive list, 3 attribute lists
+**MACROS:** 1 definition, 4 invocations, 3 attribute lists
 - **MACRO** `macro_rules! events`, in [macros](#mod.macros)
 - **MACRO** `events!`, in [macros](#mod.macros)
 - **MACRO** `forward_methods!`, in [Event](#type.macros.Event)
 - **MACRO** `lifecycle_constants!`, in [macros](#mod.macros)
 - **MACRO** `stringify!`, in [macros](#mod.macros)
-- **MACRO** `derive: Clone, Debug, PartialEq`, in [Event](#type.macros.Event)
 - **MACRO** `attribute: serde_like::tag`, in [Event](#type.macros.Event)
 - **MACRO** `attribute: tokio::main`, in [macros](#mod.macros)
 - **MACRO** `attribute: tracing::instrument`, in [Event](#type.macros.Event)
@@ -28,15 +27,16 @@
 <a id="type.macros.Event"></a>
 ### Event
 
-**MACRO** derive: Clone, Debug, PartialEq
-
 **MACRO** attribute: serde_like::tag
 
 ```
 /// A type with derives and an attribute macro.
-struct Event
+struct Event : Debug
 {
     name: String,
+
+    Event(Event&) = default;
+    bool operator==(Event&) = default;
 
     /// Has an attribute macro.
     // MACRO attribute: tracing::instrument

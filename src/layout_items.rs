@@ -326,6 +326,8 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
                     all_public: false,
                     dangling: &item.dangling,
                     end_marks: &item.marks,
+                    special: &[],
+                    name: "",
                 },
             );
             block.lines.extend(inner.lines);

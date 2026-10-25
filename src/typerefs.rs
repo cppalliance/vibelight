@@ -251,6 +251,7 @@ impl Slicer<'_> {
                     generics: self.generics.to_vec(),
                     comment: false,
                     target: None,
+                    canonical: None,
                 });
                 out.push_ref(id);
                 ids.push((item.range.clone(), id));

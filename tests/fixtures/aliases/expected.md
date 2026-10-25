@@ -14,8 +14,7 @@
 - [Modules](#modules)
   - [aliases](#mod.aliases)
 
-**MACROS:** 1 derive list
-- **MACRO** `derive: Debug`, in [Error](#type.aliases.Error)
+**MACROS:** none
 
 <a id="level.1"></a>
 ## Level 1: top-level types
@@ -45,11 +44,9 @@ using Result<T> = std::result::Result<T, Error>;
 <a id="type.aliases.Error"></a>
 ### Error
 
-**MACRO** derive: Debug
-
 ```
 /// The crate's error.
-class Error
+class Error : Debug
 {
     message: String,
 }

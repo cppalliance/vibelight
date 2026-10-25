@@ -12,8 +12,8 @@ use crate::collect::{Collector, Here, loc};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, Shape, Text, Variant,
-    VariantFields,
+    Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, RefId, Shape, Text,
+    Variant, VariantFields,
 };
 use crate::source::Comment;
 use crate::typerefs::range_of;
@@ -27,6 +27,7 @@ struct Head {
     where_clause: Option<Text>,
     meta: Meta,
     derives: Vec<String>,
+    derive_refs: Vec<RefId>,
     attributes: Vec<String>,
 }
 
@@ -191,18 +192,11 @@ impl Collector<'_> {
         if t.modifiers.auto_token.is_some() {
             prefix.push_str("auto ");
         }
-        let supertraits = match (t.supertraits.first(), t.supertraits.last()) {
-            (Some(first), Some(last)) => {
-                let range = range_of(first, file).start..range_of(last, file).end;
-                let (text, _) = self.slicer(&here).range(range, |f| {
-                    for bound in &t.supertraits {
-                        f.visit_type_param_bound(bound);
-                    }
-                });
-                Some(text)
-            }
-            _ => None,
-        };
+        let supertraits = t
+            .supertraits
+            .iter()
+            .map(|bound| self.bound_base(&here, bound))
+            .collect();
         let scope = file.end(t.brace_token.span.open())..file.start(t.brace_token.span.close());
         let (members, dangling) = self.trait_items(&here, &t.items, scope, id);
         let range = range_of(t, file);
@@ -319,6 +313,10 @@ impl Collector<'_> {
         let where_clause = self.where_text(here, generics.where_clause.as_ref());
         let notes = self.node_notes(here, attrs, lead, range);
         let derives = macros::derives(attrs);
+        let derive_refs = derives
+            .iter()
+            .map(|name| self.derive_ref(here, name))
+            .collect();
         let attributes = macros::attribute_macros(attrs, !derives.is_empty());
         let id = self.decls.len();
         if !derives.is_empty() {
@@ -350,6 +348,7 @@ impl Collector<'_> {
                 marks: Vec::new(),
             },
             derives,
+            derive_refs,
             attributes,
         }
     }
@@ -373,6 +372,8 @@ impl Collector<'_> {
             members,
             meta: head.meta,
             derives: head.derives,
+            derive_refs: head.derive_refs,
+            special: Vec::new(),
             attributes: head.attributes,
             end_marks: Vec::new(),
             dangling,

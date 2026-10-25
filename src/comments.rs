@@ -232,6 +232,7 @@ impl NoteCx<'_> {
                             generics: self.generics.to_vec(),
                             comment: true,
                             target: None,
+                            canonical: None,
                         });
                         text.push_ref(id);
                     }

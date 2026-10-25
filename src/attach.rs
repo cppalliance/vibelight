@@ -1,6 +1,7 @@
 //! Attaches impl blocks to the types they belong to.
 
-use crate::model::{Crate, DeclKind, Holder, Note, name_order};
+use crate::model::{Crate, DeclKind, Holder, Note, Special, name_order};
+use crate::route;
 
 /// The comments above one attached impl line and how they sort: trait
 /// impls (group 0) by trait name, then inherent impls (group 1) by their
@@ -39,9 +40,12 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let marks = std::mem::take(&mut item.marks);
         let dangling = std::mem::take(&mut item.dangling);
         let attributes = item.attributes.clone();
-        let impl_notes = std::mem::take(&mut item.notes);
+        let mut impl_notes = std::mem::take(&mut item.notes);
         let trait_ = item.trait_.clone();
         let loc = item.loc;
+        let special = trait_
+            .as_ref()
+            .and_then(|base| route::special_kind(&krate.refs, base));
         let first_member = members
             .iter()
             .map(|m| m.name.clone())
@@ -65,6 +69,15 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
             }
         }
         decl.attributes.sort_by(|a, b| name_order(a, b));
+        if let (Some(kind), Some(base)) = (special, &trait_) {
+            decl.special.push(Special {
+                kind,
+                arg: base.arg.clone(),
+                derived: false,
+                notes: std::mem::take(&mut impl_notes),
+                loc,
+            });
+        }
         if !impl_notes.is_empty() {
             let (group, key) = match &trait_ {
                 Some(base) => (0, base.name.clone()),
@@ -77,7 +90,7 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
                 notes: impl_notes,
             });
         }
-        if let Some(base) = trait_ {
+        if let Some(base) = trait_.filter(|_| special.is_none()) {
             decl.bases.push(base);
         }
     }
@@ -97,6 +110,7 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
             }
         }
     }
+    route::finish(krate);
     others
 }
 

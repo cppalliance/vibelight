@@ -6,12 +6,13 @@ use crate::model::{Crate, DeclId, ModId, TypeRef};
 use crate::typerefs::strip_raw;
 
 /// What a path names.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum Res {
     Decl(DeclId),
     Module(ModId),
-    /// A path into another crate.
-    External,
+    /// A path into another crate, spelled out through the `use` items it
+    /// passed.
+    External(Vec<String>),
 }
 
 /// How many names stayed plain.
@@ -88,6 +89,16 @@ const PRELUDE: &[&str] = &[
     "usize",
 ];
 
+/// Tells whether a canonical path names an item of `std`, `core`, `alloc`,
+/// or the prelude, whose canonical path is its bare name.
+pub(crate) fn is_standard(path: &[String]) -> bool {
+    match path {
+        [name] => PRELUDE.contains(&name.as_str()),
+        [first, ..] => matches!(first.as_str(), "std" | "core" | "alloc"),
+        [] => false,
+    }
+}
+
 struct Scope<'a> {
     krate: &'a Crate,
     decls: Vec<BTreeMap<String, Vec<DeclId>>>,
@@ -96,18 +107,19 @@ struct Scope<'a> {
     unique: BTreeMap<String, Vec<DeclId>>,
 }
 
-/// Fills in the target of every type reference and returns how many names
-/// stayed plain.
+/// Fills in the target or the canonical path of every type reference and
+/// returns how many names stayed plain.
 pub(crate) fn resolve(krate: &mut Crate) -> Tally {
     let scope = Scope::new(krate);
     let mut tally = Tally::default();
-    let targets: Vec<Option<DeclId>> = krate
+    let found: Vec<(Option<DeclId>, Option<Vec<String>>)> = krate
         .refs
         .iter()
         .map(|r| scope.lookup(r, &mut tally))
         .collect();
-    for (r, target) in krate.refs.iter_mut().zip(targets) {
+    for (r, (target, canonical)) in krate.refs.iter_mut().zip(found) {
         r.target = target;
+        r.canonical = canonical;
     }
     tally
 }
@@ -153,40 +165,48 @@ impl<'a> Scope<'a> {
         }
     }
 
-    fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> Option<DeclId> {
-        let first = r.path.first()?;
+    /// Finds the declaration a name resolves to, or the full path of a name
+    /// from outside the crate.
+    fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> (Option<DeclId>, Option<Vec<String>>) {
+        let Some(first) = r.path.first() else {
+            return (None, None);
+        };
         if r.path.len() == 1 && (r.generics.contains(first) || first == "Self") {
-            return None;
+            return (None, None);
         }
         if r.global {
-            return None;
+            return (None, Some(r.path.clone()));
         }
         let mut seen = Seen::default();
         match self.walk(r.module, &r.path, &mut seen) {
-            Some(Res::Decl(id)) => return Some(id),
-            Some(Res::External | Res::Module(_)) => return None,
+            Some(Res::Decl(id)) => return (Some(id), None),
+            Some(Res::External(path)) => return (None, Some(path)),
+            Some(Res::Module(_)) => return (None, None),
             None => {}
         }
         if r.path.len() == 1 {
             match self.unique.get(first).map(Vec::as_slice) {
-                Some([only]) => return Some(*only),
+                Some([only]) => return (Some(*only), None),
                 Some([_, _, ..]) => {
                     if !r.comment {
                         tally.ambiguous += 1;
                     }
-                    return None;
+                    return (None, None);
                 }
                 _ => {}
             }
-            if !r.comment && !seen.external_glob && !PRELUDE.contains(&first.as_str()) {
+            if PRELUDE.contains(&first.as_str()) {
+                return (None, Some(r.path.clone()));
+            }
+            if !r.comment && !seen.external_glob {
                 tally.unresolved += 1;
             }
-            return None;
+            return (None, None);
         }
         if !r.comment {
             tally.unresolved += 1;
         }
-        None
+        (None, None)
     }
 
     /// Walks a path from `module`; `None` means a local name was not found.
@@ -215,7 +235,7 @@ impl<'a> Scope<'a> {
             let found = self.lookup_in(current, segment, seen);
             let Some(found) = found else {
                 return if i == 0 && !prefixed && rest.len() > 1 {
-                    Some(Res::External)
+                    Some(Res::External(rest.to_vec()))
                 } else {
                     None
                 };
@@ -226,7 +246,10 @@ impl<'a> Scope<'a> {
             match found {
                 Res::Module(next) => current = next,
                 Res::Decl(_) => return None,
-                Res::External => return Some(Res::External),
+                Res::External(mut outside) => {
+                    outside.extend(rest[i + 1..].iter().cloned());
+                    return Some(Res::External(outside));
+                }
             }
         }
         None
@@ -243,9 +266,12 @@ impl<'a> Scope<'a> {
         let uses = &self.krate.modules[module].uses;
         if let Some(u) = uses.iter().find(|u| u.name.as_deref() == Some(name)) {
             if u.global {
-                return Some(Res::External);
+                return Some(Res::External(u.path.clone()));
             }
-            return Some(self.walk(module, &u.path, seen).unwrap_or(Res::External));
+            return Some(
+                self.walk(module, &u.path, seen)
+                    .unwrap_or_else(|| Res::External(u.path.clone())),
+            );
         }
         for u in uses.iter().filter(|u| u.name.is_none()) {
             match self.walk(module, &u.path, seen) {
@@ -254,7 +280,7 @@ impl<'a> Scope<'a> {
                         return Some(found);
                     }
                 }
-                Some(Res::External) | None => seen.external_glob = true,
+                Some(Res::External(_)) | None => seen.external_glob = true,
                 Some(_) => {}
             }
         }
@@ -326,5 +352,27 @@ mod tests {
             tally.unresolved, 1,
             "only Gone counts; Missing may come from a glob"
         );
+    }
+
+    #[test]
+    fn standard_paths_start_with_std_core_or_alloc_or_name_a_prelude_item() {
+        let path = |s: &str| -> Vec<String> { s.split("::").map(str::to_owned).collect() };
+        for standard in [
+            "std::fmt::Debug",
+            "core::cmp::Ord",
+            "alloc::vec::Vec",
+            "Option",
+        ] {
+            assert!(is_standard(&path(standard)), "{standard}");
+        }
+        for other in [
+            "serde::Serialize",
+            "runvil_lua::ErrorValue",
+            "Named",
+            "Debug",
+        ] {
+            assert!(!is_standard(&path(other)), "{other}");
+        }
+        assert!(!is_standard(&[]));
     }
 }

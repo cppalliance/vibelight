@@ -63,7 +63,7 @@ trait Render
 
 ```
 /// A type with split impls and trait impls.
-struct Widget : fmt::Display, From<str& 'a>, unsafe Send, !Sync
+struct Widget : Display, From<str& 'a>, unsafe Send, !Sync
 {
     /// Makes a widget.
     static new(id: u32) -> Widget;

@@ -24,7 +24,11 @@
 
 ```
 /// The base list is sorted.
-struct Based : AsRef<str>, Clone, std::fmt::Debug, Default;
+struct Based : AsRef<str>, Debug
+{
+    Based();
+    Based(Based&);
+}
 ```
 
 <a id="type.member_order.Grouped"></a>

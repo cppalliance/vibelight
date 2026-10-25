@@ -72,18 +72,15 @@ a.src{color:inherit}
 <span class="c">//! so on through H6). Classic prologue/prose/epilog is exactly [Lua, Prose, Lua].</span>
 <span class="c">//!</span>
 <span class="c">//! The parser turns bytes into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> tree without executing any of it.</span></code></pre>
-<p class="kill"><b class="m">MACROS:</b> 3 derive lists</p>
-<ul class="kill">
-<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.3">prompt::Block</a></li>
-<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.1">prompt::Prompt</a></li>
-<li><b class="m">MACRO</b> <code>derive: Clone, Debug, Eq, PartialEq</code>, in <a href="#macro.2">prompt::Section</a></li>
-</ul>
+<p class="kill"><b class="m">MACROS:</b> none</p>
 <h2 id="level.1">Level 1: top-level types</h2>
 <h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
-<p class="mark" id="macro.1"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
 <pre><code><span class="c">/// A fully parsed prompt file.</span>
-<span class="k">struct</span> Prompt
+<span class="k">struct</span> Prompt : Debug, Eq
 {
+    Prompt(Prompt&amp;) = <span class="k">default</span>;
+    <span class="k">bool</span> operator==(Prompt&amp;) = <span class="k">default</span>;
+
     <span class="c">/// Parses the full source text of a prompt file into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> and</span>
     <span class="c">/// returns the events reported during parsing alongside the result.</span>
     <span class="c">///</span>
@@ -177,10 +174,12 @@ a.src{color:inherit}
 <pre><code><span class="c">/// The parsed YAML frontmatter.</span>
 <span class="k">struct</span> Frontmatter;</code></pre>
 <h3 id="type.runvil_parser.prompt.Section">prompt::Section</h3>
-<p class="mark" id="macro.2"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
 <pre><code><span class="c">/// One section of a prompt: a heading, ordered blocks, and children.</span>
-<span class="k">struct</span> Section
+<span class="k">struct</span> Section : Debug, Eq
 {
+    Section(Section&amp;) = <span class="k">default</span>;
+    <span class="k">bool</span> operator==(Section&amp;) = <span class="k">default</span>;
+
     <span class="c">/// Returns the ordered Lua and prose blocks of this section.</span>
     blocks() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp;;
 
@@ -236,9 +235,8 @@ a.src{color:inherit}
 <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;;</code></pre>
 <h2 id="level.3">Level 3</h2>
 <h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
-<p class="mark" id="macro.3"><b class="m">MACRO</b> derive: Clone, Debug, Eq, PartialEq</p>
 <pre><code><span class="c">/// One executable block inside a section: a compiled Lua fence or prose.</span>
-<span class="k">enum</span> Block
+<span class="k">enum</span> Block : Debug, Eq
 {
     <span class="c">/// An exact lua fence compiled at parse time.</span>
     Lua(LuaProgram),
@@ -253,6 +251,9 @@ a.src{color:inherit}
         <span class="c">/// Captured Markdown, trimmed of surrounding blank lines.</span>
         text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
     },
+
+    Block(Block&amp;) = <span class="k">default</span>;
+    <span class="k">bool</span> operator==(Block&amp;) = <span class="k">default</span>;
 }</code></pre>
 <h3 id="type.runvil_parser.Error">Error</h3>
 <pre><code><span class="c">/// The crate's internal error.</span>

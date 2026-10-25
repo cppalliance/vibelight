@@ -142,7 +142,7 @@ pub(crate) enum Shape {
     /// A trait: the keyword prefix (`unsafe `, `auto `) and supertraits.
     Trait {
         prefix: String,
-        supertraits: Option<Text>,
+        supertraits: Vec<Base>,
     },
     /// A type alias target, or a trait alias's bounds.
     Alias(Text),
@@ -167,12 +167,52 @@ pub(crate) enum VariantFields {
 }
 
 /// A trait in a type's base list, or the trait of an impl.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Base {
     /// The entry as printed, such as `unsafe Send` or `From<String>`.
     pub(crate) text: Text,
     /// The trait's own name, which base lists sort by.
     pub(crate) name: String,
+    /// The reference to the trait's path, which routing classifies.
+    pub(crate) path_ref: Option<RefId>,
+    /// The type argument of a one-argument trait such as `From<T>`.
+    pub(crate) arg: Option<Text>,
+    /// Whether the impl has its own generic parameters or a `where`
+    /// clause, which keeps it out of the special members.
+    pub(crate) generic: bool,
+    /// Whether routing put the entry in the long list.
+    pub(crate) long: bool,
+}
+
+/// The standard trait behind a C++ special member, in print order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum SpecialKind {
+    /// The default constructor, `Type();`
+    Default,
+    /// The copy constructor, `Type(Type&);`
+    Clone,
+    /// A converting constructor, `Type(T&);`
+    From,
+    /// The destructor, `~Type();`
+    Drop,
+    /// `bool operator==(Rhs&);`
+    PartialEq,
+    /// `auto operator<=>(Rhs&);`
+    PartialOrd,
+}
+
+/// One special member of a type.
+#[derive(Clone, Debug)]
+pub(crate) struct Special {
+    pub(crate) kind: SpecialKind,
+    /// The argument of a converting constructor or a comparison with its
+    /// own right-hand type, already ending in a reference.
+    pub(crate) arg: Option<Text>,
+    /// Whether a derive wrote it, which prints `= default`.
+    pub(crate) derived: bool,
+    /// Comments above the impl it came from.
+    pub(crate) notes: Vec<Note>,
+    pub(crate) loc: Loc,
 }
 
 /// A struct, enum, union, trait, or type alias.
@@ -190,8 +230,13 @@ pub(crate) struct Decl {
     pub(crate) members: Vec<Member>,
     /// The type's own comments and `cfg` lines.
     pub(crate) meta: Meta,
-    /// Traits from every derive attribute, merged and sorted.
+    /// Traits from every derive attribute, merged and sorted; after routing,
+    /// only the ones the `derive:` mark still shows.
     pub(crate) derives: Vec<String>,
+    /// A reference for each name in `derives` as collected, for routing.
+    pub(crate) derive_refs: Vec<RefId>,
+    /// The special members routing builds from standard traits.
+    pub(crate) special: Vec<Special>,
     /// Attribute macros on the type, sorted.
     pub(crate) attributes: Vec<String>,
     /// Macro marks printed at the end of the block.

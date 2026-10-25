@@ -44,26 +44,27 @@ a.src{color:inherit}
 <main>
 <h1 id="crate.macros">macros</h1>
 <pre><code><span class="c">//! Macros of every kind.</span></code></pre>
-<p class="kill"><b class="m">MACROS:</b> 1 definition, 4 invocations, 1 derive list, 3 attribute lists</p>
+<p class="kill"><b class="m">MACROS:</b> 1 definition, 4 invocations, 3 attribute lists</p>
 <ul class="kill">
-<li><b class="m">MACRO</b> <code>macro_rules! events</code>, in <a href="#macro.8">macros</a></li>
-<li><b class="m">MACRO</b> <code>events!</code>, in <a href="#macro.7">macros</a></li>
-<li><b class="m">MACRO</b> <code>forward_methods!</code>, in <a href="#macro.4">Event</a></li>
-<li><b class="m">MACRO</b> <code>lifecycle_constants!</code>, in <a href="#macro.9">macros</a></li>
-<li><b class="m">MACRO</b> <code>stringify!</code>, in <a href="#macro.10">macros</a></li>
-<li><b class="m">MACRO</b> <code>derive: Clone, Debug, PartialEq</code>, in <a href="#macro.1">Event</a></li>
-<li><b class="m">MACRO</b> <code>attribute: serde_like::tag</code>, in <a href="#macro.2">Event</a></li>
-<li><b class="m">MACRO</b> <code>attribute: tokio::main</code>, in <a href="#macro.11">macros</a></li>
-<li><b class="m">MACRO</b> <code>attribute: tracing::instrument</code>, in <a href="#macro.3">Event</a></li>
+<li><b class="m">MACRO</b> <code>macro_rules! events</code>, in <a href="#macro.7">macros</a></li>
+<li><b class="m">MACRO</b> <code>events!</code>, in <a href="#macro.6">macros</a></li>
+<li><b class="m">MACRO</b> <code>forward_methods!</code>, in <a href="#macro.3">Event</a></li>
+<li><b class="m">MACRO</b> <code>lifecycle_constants!</code>, in <a href="#macro.8">macros</a></li>
+<li><b class="m">MACRO</b> <code>stringify!</code>, in <a href="#macro.9">macros</a></li>
+<li><b class="m">MACRO</b> <code>attribute: serde_like::tag</code>, in <a href="#macro.1">Event</a></li>
+<li><b class="m">MACRO</b> <code>attribute: tokio::main</code>, in <a href="#macro.10">macros</a></li>
+<li><b class="m">MACRO</b> <code>attribute: tracing::instrument</code>, in <a href="#macro.2">Event</a></li>
 </ul>
 <h2 id="unconnected">Unconnected types</h2>
 <h3 id="type.macros.Event">Event</h3>
-<p class="mark" id="macro.1"><b class="m">MACRO</b> derive: Clone, Debug, PartialEq</p>
-<p class="mark" id="macro.2"><b class="m">MACRO</b> attribute: serde_like::tag</p>
+<p class="mark" id="macro.1"><b class="m">MACRO</b> attribute: serde_like::tag</p>
 <pre><code><span class="c">/// A type with derives and an attribute macro.</span>
-<span class="k">struct</span> Event
+<span class="k">struct</span> Event : Debug
 {
     name: String,
+
+    Event(Event&amp;) = <span class="k">default</span>;
+    <span class="k">bool</span> operator==(Event&amp;) = <span class="k">default</span>;
 
     <span class="c">/// Has an attribute macro.</span>
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tracing::instrument</span>
@@ -71,8 +72,8 @@ a.src{color:inherit}
 
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> forward_methods!</span>
 }</code></pre>
-<p class="mark" id="macro.3"><b class="m">MACRO</b> attribute: tracing::instrument</p>
-<p class="mark" id="macro.4"><b class="m">MACRO</b> forward_methods!</p>
+<p class="mark" id="macro.2"><b class="m">MACRO</b> attribute: tracing::instrument</p>
+<p class="mark" id="macro.3"><b class="m">MACRO</b> forward_methods!</p>
 <h3 id="type.macros.Started">Started</h3>
 <pre><code><span class="c">/// Named by the module-level invocations.</span>
 <span class="k">struct</span> Started
@@ -80,8 +81,8 @@ a.src{color:inherit}
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> events!</span>
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> lifecycle_constants!</span>
 }</code></pre>
-<p class="mark" id="macro.5"><b class="m">MACRO</b> events!</p>
-<p class="mark" id="macro.6"><b class="m">MACRO</b> lifecycle_constants!</p>
+<p class="mark" id="macro.4"><b class="m">MACRO</b> events!</p>
+<p class="mark" id="macro.5"><b class="m">MACRO</b> lifecycle_constants!</p>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.macros">macros</h3>
 <ul>
@@ -102,11 +103,11 @@ a.src{color:inherit}
 <span class="c">/// The entry point.</span>
 <span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tokio::main</span>
 <span class="k">async</span> main();</code></pre>
-<p class="mark" id="macro.7"><b class="m">MACRO</b> events!</p>
-<p class="mark" id="macro.8"><b class="m">MACRO</b> macro_rules! events</p>
-<p class="mark" id="macro.9"><b class="m">MACRO</b> lifecycle_constants!</p>
-<p class="mark" id="macro.10"><b class="m">MACRO</b> stringify!</p>
-<p class="mark" id="macro.11"><b class="m">MACRO</b> attribute: tokio::main</p>
+<p class="mark" id="macro.6"><b class="m">MACRO</b> events!</p>
+<p class="mark" id="macro.7"><b class="m">MACRO</b> macro_rules! events</p>
+<p class="mark" id="macro.8"><b class="m">MACRO</b> lifecycle_constants!</p>
+<p class="mark" id="macro.9"><b class="m">MACRO</b> stringify!</p>
+<p class="mark" id="macro.10"><b class="m">MACRO</b> attribute: tokio::main</p>
 </main>
 </body>
 </html>

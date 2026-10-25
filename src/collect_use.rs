@@ -122,6 +122,7 @@ impl Collector<'_> {
             generics: Vec::new(),
             comment: true,
             target: None,
+            canonical: None,
         });
         text.push_ref(id);
         text
