@@ -62,3 +62,27 @@ impl Wrapper<std::string::String> {
         self.inner.is_empty()
     }
 }
+
+/// The crate's own Duration, so the standard one has no bare spelling to
+/// prefer.
+pub struct Duration;
+
+/// The standard Display written bare after a use.
+pub mod bare {
+    use std::fmt::Display;
+
+    /// A label that shows itself through the standard Display.
+    pub struct Label;
+
+    impl Display for Label {}
+}
+
+/// Another crate's Display, which never merges with the standard one.
+pub mod other {
+    use other_crate::Display;
+
+    /// A badge that shows itself through the other crate's Display.
+    pub struct Badge;
+
+    impl Display for Badge {}
+}

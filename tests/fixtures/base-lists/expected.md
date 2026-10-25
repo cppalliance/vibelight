@@ -365,7 +365,7 @@ struct Wrapped(u8) : Debug;
 <a id="spellings"></a>
 ## Spellings
 
-- `std::fmt::Debug` is written 3 ways; pick one and search for the rest:
+- `std::fmt::Debug` is written 3 ways; prefer `Debug`:
   - `Dbg`, once
   - `Debug`, 5 times
   - `fmt::Debug`, 4 times

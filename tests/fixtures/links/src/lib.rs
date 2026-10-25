@@ -24,5 +24,5 @@ impl Clone for Box<Engine> {
 
 /// A dial with an optional limit.
 pub struct Dial {
-    pub limit: Option<u32>,
+    pub limit: std::option::Option<u32>,
 }

@@ -10,9 +10,14 @@
 - [Level 2](#level.2)
   - [Clock](#type.spellings.Clock)
 - [Unconnected types](#unconnected)
+  - [bare::Label](#type.spellings.bare.Label)
+  - [Duration](#type.spellings.Duration)
+  - [other::Badge](#type.spellings.other.Badge)
   - [Wrapper](#type.spellings.Wrapper)
 - [Modules](#modules)
   - [spellings](#mod.spellings)
+  - [bare](#mod.spellings.bare)
+  - [other](#mod.spellings.other)
 - [Spellings](#spellings)
 
 **MACROS:** 2 derive lists
@@ -69,6 +74,32 @@ struct Clock : Display
 <a id="unconnected"></a>
 ## Unconnected types
 
+<a id="type.spellings.bare.Label"></a>
+### bare::Label
+
+```
+/// A label that shows itself through the standard Display.
+struct Label : Display;
+```
+
+<a id="type.spellings.Duration"></a>
+### Duration
+
+```
+/// The crate's own Duration, so the standard one has no bare spelling to
+/// prefer.
+struct Duration;
+```
+
+<a id="type.spellings.other.Badge"></a>
+### other::Badge
+
+```
+/// A badge that shows itself through the other crate's Display.
+struct Badge
+    : other_crate::Display;
+```
+
 <a id="type.spellings.Wrapper"></a>
 ### Wrapper
 
@@ -92,8 +123,27 @@ struct Wrapper<T>
 ### spellings
 
 - [Clock](#type.spellings.Clock)
+- [Duration](#type.spellings.Duration)
 - [Timer](#type.spellings.Timer)
 - [Wrapper](#type.spellings.Wrapper)
+
+<a id="mod.spellings.bare"></a>
+### bare
+
+```
+//! The standard Display written bare after a use.
+```
+
+- [bare::Label](#type.spellings.bare.Label)
+
+<a id="mod.spellings.other"></a>
+### other
+
+```
+//! Another crate's Display, which never merges with the standard one.
+```
+
+- [other::Badge](#type.spellings.other.Badge)
 
 <a id="spellings"></a>
 ## Spellings
@@ -101,13 +151,14 @@ struct Wrapper<T>
 - `serde::Serialize` is written 2 ways; pick one and search for the rest:
   - `serde::Serialize`, once
   - `Serialize`, once
-- `std::collections::BTreeMap` is written 2 ways; pick one and search for the rest:
+- `std::collections::BTreeMap` is written 2 ways; prefer `BTreeMap`, which is not used yet:
   - `Map`, once
   - `std::collections::BTreeMap`, once
-- `std::fmt::Display` is written 2 ways; pick one and search for the rest:
+- `std::fmt::Display` is written 3 ways; prefer `Display`:
+  - `Display`, once
   - `fmt::Display`, once
   - `std::fmt::Display`, once
-- `std::option::Option` is written 2 ways; pick one and search for the rest:
+- `std::option::Option` is written 2 ways; prefer `Option`:
   - `Option`, 2 times
   - `std::option::Option`, once
 - `std::time::Duration` is written 3 ways; pick one and search for the rest:

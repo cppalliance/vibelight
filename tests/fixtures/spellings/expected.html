@@ -40,12 +40,17 @@ a.src{color:inherit}
 </li>
 <li><a href="#unconnected">Unconnected types</a>
 <ul>
+<li><a href="#type.spellings.bare.Label">bare::Label</a></li>
+<li><a href="#type.spellings.Duration">Duration</a></li>
+<li><a href="#type.spellings.other.Badge">other::Badge</a></li>
 <li><a href="#type.spellings.Wrapper">Wrapper</a></li>
 </ul>
 </li>
 <li><a href="#modules">Modules</a>
 <ul>
 <li><a href="#mod.spellings">spellings</a></li>
+<li><a href="#mod.spellings.bare">bare</a></li>
+<li><a href="#mod.spellings.other">other</a></li>
 </ul>
 </li>
 <li><a href="#spellings">Spellings</a></li>
@@ -91,6 +96,17 @@ a.src{color:inherit}
     step: core::time::Duration,
 }</code></pre>
 <h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.spellings.bare.Label">bare::Label</h3>
+<pre><code><span class="c">/// A label that shows itself through the standard Display.</span>
+<span class="k">struct</span> Label : Display;</code></pre>
+<h3 id="type.spellings.Duration">Duration</h3>
+<pre><code><span class="c">/// The crate's own Duration, so the standard one has no bare spelling to</span>
+<span class="c">/// prefer.</span>
+<span class="k">struct</span> Duration;</code></pre>
+<h3 id="type.spellings.other.Badge">other::Badge</h3>
+<pre><code><span class="c">/// A badge that shows itself through the other crate's Display.</span>
+<span class="k">struct</span> Badge
+    : other_crate::Display;</code></pre>
 <h3 id="type.spellings.Wrapper">Wrapper</h3>
 <pre><code><span class="c">/// A wrapper whose impl names std::string::String only in its self type,</span>
 <span class="c">/// which does not count.</span>
@@ -106,8 +122,19 @@ a.src{color:inherit}
 <h3 id="mod.spellings">spellings</h3>
 <ul>
 <li><a href="#type.spellings.Clock">Clock</a></li>
+<li><a href="#type.spellings.Duration">Duration</a></li>
 <li><a href="#type.spellings.Timer">Timer</a></li>
 <li><a href="#type.spellings.Wrapper">Wrapper</a></li>
+</ul>
+<h3 id="mod.spellings.bare">bare</h3>
+<pre><code><span class="c">//! The standard Display written bare after a use.</span></code></pre>
+<ul>
+<li><a href="#type.spellings.bare.Label">bare::Label</a></li>
+</ul>
+<h3 id="mod.spellings.other">other</h3>
+<pre><code><span class="c">//! Another crate's Display, which never merges with the standard one.</span></code></pre>
+<ul>
+<li><a href="#type.spellings.other.Badge">other::Badge</a></li>
 </ul>
 <h2 id="spellings">Spellings</h2>
 <ul class="spellings">
@@ -117,19 +144,20 @@ a.src{color:inherit}
 <li><code>Serialize</code>, once</li>
 </ul>
 </li>
-<li><code>std::collections::BTreeMap</code> is written 2 ways; pick one and search for the rest:
+<li><code>std::collections::BTreeMap</code> is written 2 ways; prefer <code>BTreeMap</code>, which is not used yet:
 <ul>
 <li><code>Map</code>, once</li>
 <li><code>std::collections::BTreeMap</code>, once</li>
 </ul>
 </li>
-<li><code>std::fmt::Display</code> is written 2 ways; pick one and search for the rest:
+<li><code>std::fmt::Display</code> is written 3 ways; prefer <code>Display</code>:
 <ul>
+<li><code>Display</code>, once</li>
 <li><code>fmt::Display</code>, once</li>
 <li><code>std::fmt::Display</code>, once</li>
 </ul>
 </li>
-<li><code>std::option::Option</code> is written 2 ways; pick one and search for the rest:
+<li><code>std::option::Option</code> is written 2 ways; prefer <code>Option</code>:
 <ul>
 <li><code>Option</code>, 2 times</li>
 <li><code>std::option::Option</code>, once</li>

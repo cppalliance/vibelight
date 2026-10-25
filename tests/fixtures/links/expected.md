@@ -31,7 +31,7 @@ Source: [src/lib.rs:26](../src/lib.rs#L26)
 /// A dial with an optional limit.
 struct Dial
 {
-    limit: Option<u32>,
+    limit: std::option::Option<u32>,
 }
 ```
 
@@ -116,6 +116,6 @@ Source: [src/parts.rs](../src/parts.rs)
 <a id="spellings"></a>
 ## Spellings
 
-- `std::option::Option` is written 2 ways; pick one and search for the rest:
-  - `Option`, 2 times (source: [src/lib.rs:27](../src/lib.rs#L27), [src/parts.rs:13](../src/parts.rs#L13))
-  - `std::option::Option`, once (source: [src/parts.rs:14](../src/parts.rs#L14))
+- `std::option::Option` is written 2 ways; prefer `Option`:
+  - `Option`, once
+  - `std::option::Option`, 2 times (source: [src/lib.rs:27](../src/lib.rs#L27), [src/parts.rs:14](../src/parts.rs#L14))
