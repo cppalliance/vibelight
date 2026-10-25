@@ -45,11 +45,11 @@ struct Settings
     /// Also gated, with its own cfg.
     // cfg: feature = "methods"
     // cfg: windows
-    doubly() const;
+    doubly();
 
     /// Gated by the impl's cfg.
     // cfg: feature = "methods"
-    gated() const;
+    gated();
 }
 ```
 

@@ -40,7 +40,7 @@ struct Keywords
     static r#async();
 
     /// A raw method.
-    r#as() const -> u8;
+    r#as() -> u8;
 
 private:
     kind: u8,

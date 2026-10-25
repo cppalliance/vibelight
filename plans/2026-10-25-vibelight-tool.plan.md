@@ -123,19 +123,19 @@ Type blocks:
 Functions:
 11. Remove the `fn` keyword. Qualifiers print in this order: `static` (rule 12), `constexpr` for `const fn`, `async`, `unsafe`, then `extern "ABI"` as written.
 12. In a type or trait, a function with no receiver, or with a by-value receiver (rule 14), gets `static`. Both kinds share the static group. A free function never gets `static`, because at namespace scope in C++ that means file-local. A non-`pub` free function goes under `private:` like any private item.
-13. Drop `&self` from the parameter list and put `const` right after the parameter list, as C++ does with a trailing return type: `title() const -> &str;`.
-14. Drop `&mut self` from the parameter list and add nothing. Every other receiver (`self`, `mut self`, `self: Box<Self>`, `self: Rc<Self>`, `self: Pin<&mut Self>`) stays as the first parameter, as written, and the function is `static`, like a C++ function that takes the object as an argument. `self: &Self` and `self: &mut Self` count as `&self` and `&mut self`.
+13. Drop `&self` from the parameter list and add nothing, because read-only is the default, as in Rust: `title() -> str&;`.
+14. Drop `&mut self` from the parameter list and put `mut` right after the parameter list, where C++ puts `const`: `bump() mut;`. Every other receiver (`self`, `mut self`, `self: Box<Self>`, `self: Rc<Self>`, `self: Pin<&mut Self>`) stays as the first parameter, spelled by rule 18 (so `self: Pin<Self mut&>`), and the function is `static`, like a C++ function that takes the object as an argument. `self: &Self` and `self: &mut Self` count as `&self` and `&mut self`.
 15. A declaration ends in `;` and has no body. The return type keeps the Rust arrow (`-> T`).
 16. Long lines. `MAX_WIDTH` is 80, counting the indent and visible text only. Your example line is 87 columns, so the limit has to be below that. A longer line is broken in this order, stopping as soon as every line fits:
     - after `->`, with the return type on the next line indented 4 more spaces than the declaration;
-    - if the first line still does not fit, or there is no return type, one parameter per line indented 4 more, with the closing parenthesis, any `const`, and the arrow and return type following the last parameter when they fit, or broken after `->` as in the first step;
+    - if the first line still does not fit, or there is no return type, one parameter per line indented 4 more, with the closing parenthesis, any `mut`, and the arrow and return type following the last parameter when they fit, or broken after `->` as in the first step;
     - a `where` clause that still does not fit moves to its own line indented 4 more, and this step also applies to type headers.
 
     A line that still does not fit stays as it is. Fields, comment lines, and variants (apart from the struct-like expansion in the construct table) are never broken.
 
 Text:
 17. A field is written `name: Type,` with a trailing comma.
-18. Types and signatures print as written in the source, assembled from per-node slices (see Behavior that needs care). `Vec<Block>` stays short, and `std::result::Result` stays spelled out where the source spells it out.
+18. Types and signatures print as written in the source, assembled from per-node slices (see Behavior that needs care), except that a reference or a raw pointer puts its sigil after the inner type: `&T` prints `T&`, `&mut T` prints `T mut&`, `&'a T` prints `T& 'a`, `&'a mut T` prints `T mut& 'a`, `*const T` prints `T*`, and `*mut T` prints `T mut*`, nested types inside out (`&Vec<&T>` prints `Vec<T&>&`). Behind a reference or a pointer, a trait object or `impl` type with a return type or more than one bound, and a function pointer with a return type, print inside parentheses, so `&'a dyn Fn(&str) -> R` prints `(dyn Fn(str&) -> R)& 'a` and never reads like a closure that returns a reference; parentheses already in the source stay and are not doubled. Read-only is the default, as in Rust, so no `const` qualifier is written, and `mut` marks what can change. Expressions, such as initializers, and a type the parser keeps as tokens stay as written. `Vec<Block>` stays short, and `std::result::Result` stays spelled out where the source spells it out.
 19. Indent members 4 spaces. The `private:` label sits at the same column as the type header.
 
 Comments and attributes:
@@ -252,13 +252,13 @@ struct Prompt
     /// before any run starts.
     ///
     /// [36 more lines, through the # Errors section]
-    static parse(input: &str, execution: &str) ->
+    static parse(input: str&, execution: str&) ->
         (std::result::Result<Prompt, ParseError>, Vec<Event>);
 
     /// Returns the parsed frontmatter.
-    frontmatter() const -> &Frontmatter;
+    frontmatter() -> Frontmatter&;
     /// Returns the prompt's title, the text of its required H1 heading.
-    title() const -> &str;
+    title() -> str&;
 
 private:
     /// The parsed YAML frontmatter.
@@ -272,20 +272,20 @@ private:
 
     static parse_body(
         frontmatter: Frontmatter,
-        shared: &Arc<str>,
+        shared: Arc<str>&,
         frontmatter_lines: u32,
-        emitter: &Emitter) -> Result<Prompt>;
-    static parse_inner(input: &str, emitter: &Emitter) -> Result<Prompt>;
+        emitter: Emitter&) -> Result<Prompt>;
+    static parse_inner(input: str&, emitter: Emitter&) -> Result<Prompt>;
 
     /// The entry-point section: the first top-level section in file order;
     /// the Engine reaches it through crate::detail::entry.
-    entry() const -> Option<&Section>;
+    entry() -> Option<Section&>;
     /// Returns the ordered live Lua and prose blocks from the H1; the Engine
     /// reaches them through crate::detail::h1_blocks.
-    h1_blocks() const -> &[Block];
+    h1_blocks() -> [Block]&;
     /// Returns the top-level H2 sections in file order; the Engine reaches
     /// them through crate::detail::sections.
-    sections() const -> &[Section];
+    sections() -> [Section]&;
 }
 ```
 ````
@@ -308,8 +308,8 @@ class Cursor
     static into_text(self) -> String;
     static new(text: String) -> Cursor;
 
-    bump();
-    peek() const -> Option<char>;
+    bump() mut;
+    peek() -> Option<char>;
 }
 ```
 
@@ -334,15 +334,15 @@ trait Observer: Send + Sync
 
     static finish(self) -> Summary;
 
-    flush();
-    record(event: &Event) const;
+    flush() mut;
+    record(event: Event&);
 }
 
 struct Seed : Display
 {
     static constexpr from_bytes(bytes: [u8; 32]) -> Seed;
 
-    constexpr as_bytes() const -> &[u8; 32];
+    constexpr as_bytes() -> [u8; 32]&;
 
 private:
     bytes: [u8; 32],
@@ -356,9 +356,9 @@ using config::RunContext;
 
 private:
 request<const N: usize>(
-    lua: &Lua,
-    op: &str,
-    fields: [(&str, Value); N]) -> mlua::Result<Value>;
+    lua: Lua&,
+    op: str&,
+    fields: [(str&, Value); N]) -> mlua::Result<Value>;
 ```
 
 ## Macro marking
@@ -499,8 +499,8 @@ Each step gets what it needs from the steps before it. Ordering runs after layou
   - the Modules section listing each module's declarations.
 - **Struct versus class tests:** a type with public and private members is a `struct` with a `private:` label, and a type with only private members is a `class` with no label. A type with no members stays a `struct`, an enum with only private methods stays an `enum`, and a tuple struct stays a one-line `struct`.
 - **Receiver tests:**
-  - `&self` is dropped and `const` follows the parameter list;
-  - `&mut self` is dropped with nothing added;
+  - `&self` is dropped with nothing added;
+  - `&mut self` is dropped and `mut` follows the parameter list;
   - `self`, `mut self`, and `self: Box<Self>` stay as the first parameter, and the function is `static`;
   - `self: &Self` behaves as `&self`;
   - free functions never get `static`.

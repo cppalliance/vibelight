@@ -30,7 +30,7 @@
 /// Generics with a lifetime, a bound, a default, and a const generic.
 struct Buffer<'a, T: Clone = u8, const N: usize = 16>
 {
-    data: &'a [T; N],
+    data: [T; N]& 'a,
 
 private:
     len: usize,
@@ -55,7 +55,7 @@ struct Empty
 struct Index(usize)
 {
     /// Returns the index.
-    get() const -> usize;
+    get() -> usize;
 }
 ```
 

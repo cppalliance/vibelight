@@ -67,7 +67,7 @@ a.src{color:inherit}
 
     <span class="c">/// Has an attribute macro.</span>
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tracing::instrument</span>
-    emit() <span class="k">const</span>;
+    emit();
 
     <span class="c">// </span><b class="m">MACRO</b><span class="c"> forward_methods!</span>
 }</code></pre>
@@ -97,7 +97,7 @@ a.src{color:inherit}
 
 <span class="c">/// A value with a macro.</span>
 <span class="c">// </span><b class="m">MACRO</b><span class="c"> stringify!</span>
-<span class="k">constexpr</span> NAME: &amp;str;
+<span class="k">constexpr</span> NAME: str&amp;;
 
 <span class="c">/// The entry point.</span>
 <span class="c">// </span><b class="m">MACRO</b><span class="c"> attribute: tokio::main</span>

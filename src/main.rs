@@ -28,6 +28,7 @@ mod source;
 mod source_links;
 mod text;
 mod typerefs;
+mod typerefs_edits;
 mod wrap;
 
 use std::fs;

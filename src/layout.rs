@@ -1,6 +1,7 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
 use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, name_order};
+use crate::typerefs_edits::MUT;
 use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts};
 
 /// One styled run of a line.
@@ -257,8 +258,8 @@ pub(crate) fn fn_lines(
             text: code(&p.text),
         })
         .collect();
-    let after = if sig.receiver == crate::model::Receiver::Shared {
-        vec![plain(" "), key("const")]
+    let after = if sig.receiver == crate::model::Receiver::Mutable {
+        vec![plain(" "), key(MUT)]
     } else {
         Vec::new()
     };

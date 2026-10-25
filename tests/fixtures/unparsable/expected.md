@@ -24,7 +24,7 @@
 struct Fine
 {
     /// Collected normally.
-    kept() const;
+    kept();
 
     // UNSUPPORTED: verbatim impl item
 }

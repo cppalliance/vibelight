@@ -60,7 +60,7 @@ enum Level
     static max() -> Level;
 
 private:
-    rank() const -> u8;
+    rank() -> u8;
 }
 ```
 

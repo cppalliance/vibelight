@@ -26,7 +26,7 @@
 trait Convert<T> where T: Clone
 {
     /// Converts a value.
-    convert(value: T) const -> T;
+    convert(value: T) -> T;
 }
 ```
 
@@ -41,7 +41,7 @@ trait Lender
     using Loan<'a> where Self: 'a;
 
     /// Lends an item.
-    lend() -> Self::Loan<'_>;
+    lend() mut -> Self::Loan<'_>;
 }
 ```
 
@@ -65,10 +65,10 @@ trait Observer: Send + Sync
     static make() -> Self where Self: Sized;
 
     /// Clears the buffer.
-    flush();
+    flush() mut;
 
     /// Records one event.
-    record(event: &str) const;
+    record(event: str&);
 }
 ```
 

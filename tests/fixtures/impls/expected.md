@@ -27,7 +27,7 @@
 trait Describe
 {
     /// Returns a description.
-    describe() const -> String;
+    describe() -> String;
 }
 ```
 
@@ -39,10 +39,10 @@ trait Describe
 struct Holder<'a, T>
 {
     /// Returns the held item.
-    item() const -> &'a T;
+    item() -> T& 'a;
 
 private:
-    item: &'a T,
+    item: T& 'a,
 }
 ```
 
@@ -54,7 +54,7 @@ private:
 trait Render
 {
     /// Renders to a string.
-    render() const -> String;
+    render() -> String;
 }
 ```
 
@@ -63,13 +63,13 @@ trait Render
 
 ```
 /// A type with split impls and trait impls.
-struct Widget : fmt::Display, From<&'a str>, unsafe Send, !Sync
+struct Widget : fmt::Display, From<str& 'a>, unsafe Send, !Sync
 {
     /// Makes a widget.
     static new(id: u32) -> Widget;
 
     /// Returns the identifier.
-    id() const -> u32;
+    id() -> u32;
 
 private:
     id: u32,
@@ -80,10 +80,10 @@ private:
 ## Other impls
 
 - `implements: Describe for T;`
-- `implements: Render for &Widget;`
 - `implements: Render for (u8, u8);`
 - `implements: Render for [Widget];`
 - `implements: Render for Box<Widget>;`
+- `implements: Render for Widget&;`
 
 <a id="modules"></a>
 ## Modules

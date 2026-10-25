@@ -21,7 +21,7 @@
 constexpr unsafe extern "C" all_qualifiers();
 
 /// Uses a higher-ranked bound.
-apply<F>(f: F) -> usize where F: for<'a> Fn(&'a str) -> usize;
+apply<F>(f: F) -> usize where F: for<'a> Fn(str& 'a) -> usize;
 
 /// Exported to C.
 extern "C" callback(code: i32) -> i32;
@@ -31,17 +31,17 @@ merge<A, B, C>(a: A, b: B) ->
     C where A: Into<C>, B: Into<C>, C: std::ops::Add<Output = C>;
 
 /// A rustfmt-style signature over several lines.
-parse(input: &str, execution: &str) ->
+parse(input: str&, execution: str&) ->
     (std::result::Result<String, String>, Vec<String>);
 
 /// Reads raw memory.
 ///
 /// # Safety
 /// The pointer must be valid.
-unsafe peek(ptr: *const u8) -> u8;
+unsafe peek(ptr: u8*) -> u8;
 
 /// Takes impl and dyn traits.
-render(out: &mut impl std::io::Write, items: &[Box<dyn std::fmt::Display>]);
+render(out: impl std::io::Write mut&, items: [Box<dyn std::fmt::Display>]&);
 
 /// Computes at compile time.
 constexpr square(x: u32) -> u32;

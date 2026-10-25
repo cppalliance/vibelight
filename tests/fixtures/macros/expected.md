@@ -40,7 +40,7 @@ struct Event
 
     /// Has an attribute macro.
     // MACRO attribute: tracing::instrument
-    emit() const;
+    emit();
 
     // MACRO forward_methods!
 }
@@ -85,7 +85,7 @@ struct Started
 
 /// A value with a macro.
 // MACRO stringify!
-constexpr NAME: &str;
+constexpr NAME: str&;
 
 /// The entry point.
 // MACRO attribute: tokio::main

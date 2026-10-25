@@ -80,6 +80,7 @@ goldens! {
     raw_idents => "raw-idents",
     receivers => "receivers",
     reexports => "reexports",
+    references => "references",
     single => "single",
     struct_class => "struct-class",
     structs => "structs",

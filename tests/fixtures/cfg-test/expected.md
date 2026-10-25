@@ -28,7 +28,7 @@ struct Kept
     value: u32,
 
     /// A kept method.
-    get() const -> u32;
+    get() -> u32;
 }
 ```
 
@@ -54,7 +54,7 @@ enum Mode
 trait Probe
 {
     /// Kept.
-    check() const;
+    check();
 }
 ```
 

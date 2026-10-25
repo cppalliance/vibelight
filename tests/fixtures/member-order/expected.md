@@ -40,7 +40,7 @@ trait Grouped
 
     static build() -> Self;
 
-    member() const;
+    member();
 }
 ```
 
@@ -76,11 +76,11 @@ struct Scrambled
 
     static make() -> Scrambled;
 
-    Apply() const;
+    Apply();
 
-    apply() const;
+    apply();
 
-    zed() const;
+    zed();
 
 private:
     beta: u8,

@@ -60,13 +60,13 @@ struct Wide
         std::collections::BTreeMap<String, Vec<u64>>;
 
     register(
-        name_of_the_thing: &str,
+        name_of_the_thing: str&,
         handler_for_the_thing: Box<dyn Fn(u32)>,
-        priority: u8);
+        priority: u8) mut;
 
     register_bounded<T>(
-        name: &str,
-        value: T)
+        name: str&,
+        value: T) mut
         where T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash;
 }
 ```

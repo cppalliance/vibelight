@@ -90,14 +90,14 @@ struct Prompt
     ///   Lua.
     /// - Internal when the parser fails through no fault of the prompt: one
     ///   of its own invariants breaks, or the Lua compiler cannot start.
-    static parse(input: &str, execution: &str) ->
+    static parse(input: str&, execution: str&) ->
         (std::result::Result<Prompt, ParseError>, Vec<Event>);
 
     /// Returns the parsed frontmatter.
-    frontmatter() const -> &Frontmatter;
+    frontmatter() -> Frontmatter&;
 
     /// Returns the prompt's title, the text of its required H1 heading.
-    title() const -> &str;
+    title() -> str&;
 
 private:
     /// The parsed YAML frontmatter.
@@ -114,23 +114,23 @@ private:
 
     static parse_body(
         frontmatter: Frontmatter,
-        shared: &Arc<str>,
+        shared: Arc<str>&,
         frontmatter_lines: u32,
-        emitter: &Emitter) -> Result<Prompt>;
+        emitter: Emitter&) -> Result<Prompt>;
 
-    static parse_inner(input: &str, emitter: &Emitter) -> Result<Prompt>;
+    static parse_inner(input: str&, emitter: Emitter&) -> Result<Prompt>;
 
     /// The entry-point section: the first top-level section in file order;
     /// the Engine reaches it through crate::detail::entry.
-    entry() const -> Option<&Section>;
+    entry() -> Option<Section&>;
 
     /// Returns the ordered live Lua and prose blocks from the H1; the Engine
     /// reaches them through crate::detail::h1_blocks.
-    h1_blocks() const -> &[Block];
+    h1_blocks() -> [Block]&;
 
     /// Returns the top-level H2 sections in file order; the Engine reaches
     /// them through crate::detail::sections.
-    sections() const -> &[Section];
+    sections() -> [Section]&;
 }
 ```
 
@@ -163,33 +163,33 @@ struct Frontmatter;
 struct Section
 {
     /// Returns the ordered Lua and prose blocks of this section.
-    blocks() const -> &[Block];
+    blocks() -> [Block]&;
 
     /// Returns the child sections nested under this one.
-    children() const -> &[Section];
+    children() -> [Section]&;
 
     /// Classic trailing Lua fence when the last block is Lua and not the sole
     /// leading prologue (a section that is only one Lua block has no epilog).
-    epilog() const -> Option<&LuaProgram>;
+    epilog() -> Option<LuaProgram&>;
 
     /// Returns the pre-parsed bullet items for a list-only section.
-    items() const -> &[BodyText];
+    items() -> [BodyText]&;
 
     /// Returns the heading level (2 through 6).
-    level() const -> u8;
+    level() -> u8;
 
     /// The section's own raw Markdown: from just after its heading line to the next
     /// heading of any level, leading blank lines and trailing whitespace trimmed.
-    markdown() const -> &str;
+    markdown() -> str&;
 
     /// Returns the heading text (the section's address).
-    name() const -> &str;
+    name() -> str&;
 
     /// Classic leading Lua fence when the first block is Lua.
-    prologue() const -> Option<&LuaProgram>;
+    prologue() -> Option<LuaProgram&>;
 
     /// Text of the last prose block, or "" when the section has none.
-    prose() const -> &str;
+    prose() -> str&;
 
 private:
     /// Ordered lua/prose blocks for this section.

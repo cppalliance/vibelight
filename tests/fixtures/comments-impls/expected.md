@@ -29,7 +29,7 @@
 struct Engine : Clone, std::fmt::Display
 {
     /// Stays the method's doc comment.
-    start() const;
+    start();
 }
 ```
 

@@ -58,7 +58,7 @@ struct Catalog
 
 ```
 /// Escapes in HTML: <, >, and & in types and comments.
-using Pairs<'a> = &'a [(Token, Option<Vec<Token>>)];
+using Pairs<'a> = [(Token, Option<Vec<Token>>)]& 'a;
 ```
 
 <a id="level.2"></a>

@@ -42,7 +42,7 @@ struct Config
     /// Holds a comment inside its type.
     typed(
         /* the count */
-        items: Vec<u32>) const;
+        items: Vec<u32>);
 
     // Nothing follows this comment in the struct.
 }
@@ -73,7 +73,7 @@ struct Holder
 // MACRO macro_rules! noop
 
 /// Holds a string with comment-like text.
-constexpr PATTERN: &str = "// not a comment";
+constexpr PATTERN: str& = "// not a comment";
 ```
 
 **MACRO** macro_rules! noop

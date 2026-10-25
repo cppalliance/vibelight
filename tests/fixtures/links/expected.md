@@ -31,10 +31,10 @@ struct Engine
     speed: u32,
 
     /// Starts the engine.
-    start() const;
+    start();
 
     /// Stops the engine.
-    stop() const;
+    stop();
 }
 ```
 

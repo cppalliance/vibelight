@@ -41,14 +41,14 @@ struct Config
 
 ```
 /// A long value that does not fit.
-constexpr GREETING: &str;
+constexpr GREETING: str&;
 
 /// The default limit.
 constexpr LIMIT: usize = 64;
 
 /// A value with a macro call.
 // MACRO concat!
-constexpr NAME: &str;
+constexpr NAME: str&;
 
 /// A counter.
 static COUNTER: AtomicUsize = AtomicUsize::new(0);

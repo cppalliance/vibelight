@@ -32,17 +32,17 @@ struct Node
 
     static none();
 
-    static pinned(self: Pin<&mut Self>);
+    static pinned(self: Pin<Self mut&>);
 
-    exclusive();
+    exclusive() mut;
 
-    explicit() const -> u8;
+    explicit() -> u8;
 
-    explicit_mut();
+    explicit_mut() mut;
 
-    lifetime<'a>() const -> &'a str;
+    lifetime<'a>() -> str& 'a;
 
-    shared() const -> u8;
+    shared() -> u8;
 }
 ```
 
@@ -56,5 +56,5 @@ struct Node
 
 ```
 /// A free function never gets static.
-free(node: &Node);
+free(node: Node&);
 ```

@@ -44,9 +44,9 @@ class Cursor
 
     static new(text: String) -> Cursor;
 
-    bump();
+    bump() mut;
 
-    peek() const -> Option<char>;
+    peek() -> Option<char>;
 }
 ```
 
@@ -76,7 +76,7 @@ enum Toggle
     Off,
 
 private:
-    flip();
+    flip() mut;
 }
 ```
 

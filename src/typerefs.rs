@@ -2,12 +2,14 @@
 
 use std::ops::Range;
 
+use proc_macro2::Span;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
-use syn::{Path, TraitBound, TypePath};
+use syn::{Path, PointerMutability, TraitBound, Type, TypePath, TypePtr, TypeReference};
 
 use crate::model::{ModId, RefId, Text, TypeRef};
 use crate::source::{SourceFile, normalize, scan};
+use crate::typerefs_edits::{Piece, marked, needs_parens, pieces};
 
 /// Returns the byte range a syn node covers in its file.
 pub(crate) fn range_of<T: Spanned + ?Sized>(node: &T, file: &SourceFile) -> Range<usize> {
@@ -27,10 +29,16 @@ pub(crate) struct Found {
     pub(crate) global: bool,
 }
 
-/// Collects the type paths and trait-bound paths a node holds.
+/// Collects the type paths and trait-bound paths a node holds, and the edits
+/// that move each reference's and raw pointer's sigil after its inner type.
 pub(crate) struct Finder<'a> {
     file: &'a SourceFile,
     pub(crate) found: Vec<Found>,
+    /// Source to drop, such as the `&'a mut ` before an inner type.
+    cuts: Vec<Range<usize>>,
+    /// Text to write where an inner type ends, recorded innermost first so
+    /// that suffixes at one position nest.
+    inserts: Vec<(usize, String)>,
 }
 
 impl<'a> Finder<'a> {
@@ -38,6 +46,26 @@ impl<'a> Finder<'a> {
         Finder {
             file,
             found: Vec::new(),
+            cuts: Vec::new(),
+            inserts: Vec::new(),
+        }
+    }
+
+    /// Visits `elem`, then records the edits that drop the sigil starting at
+    /// `sigil` and write `suffix` after `elem`, with `elem` in parentheses
+    /// when `needs_parens` says so.
+    fn move_sigil(&mut self, sigil: Span, elem: &Type, suffix: String) {
+        let start = self.file.start(sigil);
+        let inner = range_of(elem, self.file);
+        self.visit_type(elem);
+        if start < inner.start {
+            self.cuts.push(start..inner.start);
+            if needs_parens(elem) {
+                self.inserts.push((inner.start, "(".to_owned()));
+                self.inserts.push((inner.end, format!("){suffix}")));
+            } else {
+                self.inserts.push((inner.end, suffix));
+            }
         }
     }
 
@@ -95,6 +123,20 @@ impl<'ast> Visit<'ast> for Finder<'_> {
         }
     }
 
+    fn visit_type_reference(&mut self, node: &'ast TypeReference) {
+        let sigil = marked('&', node.mutability.is_some());
+        let suffix = match &node.lifetime {
+            Some(lifetime) => format!("{sigil} {lifetime}"),
+            None => sigil,
+        };
+        self.move_sigil(node.and_token.spans[0], &node.elem, suffix);
+    }
+
+    fn visit_type_ptr(&mut self, node: &'ast TypePtr) {
+        let mutable = matches!(node.mutability, PointerMutability::Mut(_));
+        self.move_sigil(node.star_token.spans[0], &node.elem, marked('*', mutable));
+    }
+
     fn visit_macro(&mut self, _: &'ast syn::Macro) {}
 
     fn visit_expr(&mut self, node: &'ast syn::Expr) {
@@ -143,7 +185,12 @@ impl Slicer<'_> {
     ) -> (Text, Vec<(Range<usize>, RefId)>) {
         let mut finder = Finder::new(self.file);
         visit(&mut finder);
-        let mut found = finder.found;
+        let Finder {
+            mut found,
+            cuts,
+            inserts,
+            ..
+        } = finder;
         found.sort_by(|a, b| {
             a.range
                 .start
@@ -172,11 +219,17 @@ impl Slicer<'_> {
         let mut at = range.start;
         let comments = scan(text, range.clone());
         let mut comment = comments.iter().peekable();
-        for (index, item) in kept.iter().enumerate() {
-            push_without_comments(&mut raw, text, at..item.range.start, &mut comment);
-            let code = MARK + u32::try_from(index).unwrap_or(0);
-            raw.push(char::from_u32(code).unwrap_or(' '));
-            at = item.range.end;
+        for (span, piece) in pieces(&kept, &cuts, &inserts, &range) {
+            push_without_comments(&mut raw, text, at..span.start, &mut comment);
+            match piece {
+                Piece::Mark(index) => {
+                    let code = MARK + u32::try_from(index).unwrap_or(0);
+                    raw.push(char::from_u32(code).unwrap_or(' '));
+                }
+                Piece::Cut => {}
+                Piece::Insert(suffix) => raw.push_str(suffix),
+            }
+            at = span.end;
             while comment.peek().is_some_and(|c| c.range.start < at) {
                 comment.next();
             }
@@ -264,7 +317,7 @@ mod tests {
     fn spacing_survives_around_references() {
         let (text, refs) =
             slice_type("type A = &'a   std::result::Result<\n    Prompt,\n    ParseError,\n>;");
-        assert_eq!(text, "&'a std::result::Result<Prompt, ParseError>");
+        assert_eq!(text, "std::result::Result<Prompt, ParseError>& 'a");
         assert_eq!(refs, ["std::result::Result", "Prompt", "ParseError"]);
     }
 

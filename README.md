@@ -85,15 +85,15 @@ class Cursor
 
     static new(text: String) -> Cursor;
 
-    bump();
+    bump() mut;
 
-    peek() const -> Option<char>;
+    peek() -> Option<char>;
 }
 ```
 
 Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`, with a `private:` label before its private part.
 
-The `fn` keyword and the bodies are gone. A method that takes `&self` gets `const` after its parameter list, `&mut self` is dropped, and a function that takes no receiver or takes `self` by value is `static`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group. Trait impls show up as a base list, as in `struct Seed : Display`, and derives as a bold **MACRO** line above the block.
+The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, and a function that takes no receiver or takes `self` by value is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group. Trait impls show up as a base list, as in `struct Seed : Display`, and derives as a bold **MACRO** line above the block.
 
 ## Warnings and exit codes
 
