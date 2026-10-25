@@ -67,9 +67,25 @@ fn lexical(path: &Path) -> PathBuf {
     out
 }
 
-/// Joins a manifest's relative path to the manifest's directory.
-fn join(dir: &Path, rel: &str) -> PathBuf {
+/// Joins a relative path written in a file to that file's directory.
+pub(crate) fn join(dir: &Path, rel: &str) -> PathBuf {
     lexical(&dir.join(rel))
+}
+
+/// Returns the crate directories below `dir` that a glob such as
+/// `crates/*` matches: the matched folders that hold a `Cargo.toml`, sorted.
+pub(crate) fn crate_dirs(dir: &Path, pattern: &str) -> Vec<PathBuf> {
+    let parts: Vec<&str> = pattern
+        .split(['/', '\\'])
+        .filter(|s| !s.is_empty() && *s != ".")
+        .collect();
+    let mut matched = Vec::new();
+    expand(dir, &parts, &mut matched);
+    let found: BTreeSet<PathBuf> = matched
+        .into_iter()
+        .filter(|dir| dir.join("Cargo.toml").is_file())
+        .collect();
+    found.into_iter().collect()
 }
 
 /// Finds the workspace that holds `dir`: the first manifest with a
@@ -149,15 +165,11 @@ pub(crate) fn members(workspace: &Workspace) -> Vec<PathBuf> {
             found.insert(join(&workspace.root, member));
             continue;
         }
-        let parts: Vec<&str> = member
-            .split(['/', '\\'])
-            .filter(|s| !s.is_empty() && *s != ".")
-            .collect();
-        let mut matched = Vec::new();
-        expand(&workspace.root, &parts, &mut matched);
-        found.extend(matched.into_iter().filter(|dir| {
-            dir.join("Cargo.toml").is_file() && !excluded.iter().any(|e| dir.starts_with(e))
-        }));
+        found.extend(
+            crate_dirs(&workspace.root, member)
+                .into_iter()
+                .filter(|dir| !excluded.iter().any(|e| dir.starts_with(e))),
+        );
     }
     found.into_iter().collect()
 }
@@ -338,6 +350,26 @@ mod tests {
                 "tools/nested/y",
                 "tools/x"
             ]
+        );
+    }
+
+    #[test]
+    fn a_root_manifest_that_is_also_a_package_is_a_member() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = normalize(tmp.path()).unwrap();
+        write(
+            &root,
+            "Cargo.toml",
+            "[package]\nname = \"top\"\n[workspace]\nmembers = [\"crates/*\"]\n",
+        );
+        write(&root, "crates/a/Cargo.toml", "[package]\nname = \"a\"\n");
+        let workspace = find_workspace(&root.join("crates").join("a"))
+            .unwrap()
+            .unwrap();
+        assert!(workspace.package);
+        assert_eq!(
+            members(&workspace),
+            [root.clone(), root.join("crates").join("a")]
         );
     }
 }

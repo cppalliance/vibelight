@@ -1,30 +1,32 @@
 //! Outlines the crates of a run in two phases: every crate is read and
 //! resolved against one fixed crate map, then each crate's documents are
-//! built, rendered, and written.
+//! built and rendered in memory, ready to write or to check.
 
 use std::collections::BTreeMap;
-use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
 use crate::layout::Block;
-use crate::model::{Loc, Warning};
+use crate::model::{Crate, Loc, Warning};
+use crate::order::Order;
 use crate::render_html::Anchors;
 use crate::root::Target;
+use crate::settings::Output;
 use crate::source_links::LinkBase;
+use crate::spellings::Entry;
 use crate::{
     attach, collect, document, layout_decl, modtree, order, render_html, render_md, resolve,
     resolve_run, spellings,
 };
 
-/// What a run wrote and reported.
+/// What a run would write and what it reports.
 #[derive(Debug, Default)]
 pub(crate) struct Outcome {
-    /// The paths of the written files.
-    pub(crate) written: Vec<String>,
+    /// Each file the run writes, with its text, in output-name order.
+    pub(crate) files: Vec<(PathBuf, String)>,
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
     pub(crate) ambiguous: usize,
@@ -32,15 +34,27 @@ pub(crate) struct Outcome {
     pub(crate) spelled: usize,
 }
 
-/// Outlines every target of the chosen crates into `out`, with source
-/// links when `links` is true. No output depends on the order the crates
-/// are processed in: targets are handled in output stem order, and each
-/// crate resolves against the same map.
+/// One format's document for a target, with the base its source links
+/// are measured from.
+struct Built {
+    doc: Document,
+    base: Option<LinkBase>,
+}
+
+/// Outlines every target of the chosen crates in memory: the markdown
+/// files for `markdown` and the HTML files for `html`, each in its own
+/// folder with its own source-link switch. No output depends on the order
+/// the crates are processed in: targets are handled in output stem order,
+/// and each crate resolves against the same map.
 ///
 /// # Errors
-/// Returns an error when two targets would write the same file, a crate
-/// cannot be read, or a file cannot be written.
-pub(crate) fn outline(chosen: &Chosen, out: &Path, links: bool) -> Result<Outcome> {
+/// Returns an error when two targets would write the same file or a crate
+/// cannot be read.
+pub(crate) fn outline(
+    chosen: &Chosen,
+    markdown: Option<&Output>,
+    html: Option<&Output>,
+) -> Result<Outcome> {
     let targets = targets(chosen)?;
     let mut outcome = Outcome::default();
     let mut krates = Vec::new();
@@ -54,7 +68,8 @@ pub(crate) fn outline(chosen: &Chosen, out: &Path, links: bool) -> Result<Outcom
         krates.push(krate);
     }
     resolve_run::link(&mut krates, &crate_map(chosen, &targets));
-    let mut docs: Vec<(Document, Option<LinkBase>)> = Vec::new();
+    let shared = markdown.is_some() && markdown == html;
+    let mut docs: Vec<(Option<Built>, Option<Built>)> = Vec::new();
     for (krate, &(p, _)) in krates.iter_mut().zip(&targets) {
         let others = attach::attach(krate);
         let blocks: Vec<Block> = (0..krate.decls.len())
@@ -63,39 +78,47 @@ pub(crate) fn outline(chosen: &Chosen, out: &Path, links: bool) -> Result<Outcom
         let order = order::order(krate, &blocks);
         let spellings = spellings::find(krate);
         outcome.spelled += spellings.len();
-        let base = if links {
-            Some(
-                LinkBase::new(&chosen.packages[p].input.dir, out)
-                    .context("cannot resolve the crate and output directories")?,
-            )
-        } else {
-            None
+        let parts = Parts {
+            krate,
+            others: &others,
+            order: &order,
+            blocks: &blocks,
+            spellings: &spellings,
+            crate_dir: &chosen.packages[p].input.dir,
         };
-        let doc = document::build(krate, &others, &order, &blocks, &spellings, base.as_ref());
-        docs.push((doc, base));
+        let md = parts.build(markdown)?;
+        let page = if shared { None } else { parts.build(html)? };
+        docs.push((md, page));
     }
     let run: Vec<Anchors> = targets
         .iter()
         .zip(&docs)
-        .map(|(&(_, target), (doc, _))| Anchors {
+        .map(|(&(_, target), (md, page))| Anchors {
             file: format!("{}.html", target.stem),
-            ids: doc.decl_ids.clone(),
+            ids: page
+                .as_ref()
+                .or(md.as_ref())
+                .map(|built| built.doc.decl_ids.clone())
+                .unwrap_or_default(),
         })
         .collect();
-    for ((&(p, target), (doc, base)), krate) in targets.iter().zip(&docs).zip(&krates) {
-        let markdown = render_md::render(doc);
-        let member_link = base
-            .as_ref()
-            .map(|base| move |loc: Loc| base.target(&krate.files[loc.file].rel, Some(loc.line)));
-        let html = render_html::render(
-            doc,
-            member_link.as_ref().map(|f| f as &dyn Fn(Loc) -> String),
-            &run,
-        );
-        for (extension, text) in [("md", markdown), ("html", html)] {
-            let path = out.join(format!("{}.{extension}", target.stem));
-            fs::write(&path, text).with_context(|| format!("cannot write {}", path.display()))?;
-            outcome.written.push(path.display().to_string());
+    for ((&(p, target), (md, page)), krate) in targets.iter().zip(&docs).zip(&krates) {
+        if let (Some(output), Some(built)) = (markdown, md) {
+            let path = output.dir.join(format!("{}.md", target.stem));
+            outcome.files.push((path, render_md::render(&built.doc)));
+        }
+        let page = if shared { md.as_ref() } else { page.as_ref() };
+        if let (Some(output), Some(built)) = (html, page) {
+            let member_link = built.base.as_ref().map(|base| {
+                move |loc: Loc| base.target(&krate.files[loc.file].rel, Some(loc.line))
+            });
+            let text = render_html::render(
+                &built.doc,
+                member_link.as_ref().map(|f| f as &dyn Fn(Loc) -> String),
+                &run,
+            );
+            let path = output.dir.join(format!("{}.html", target.stem));
+            outcome.files.push((path, text));
         }
         let prefix = (chosen.packages.len() > 1)
             .then(|| inputs::relative(&chosen.base, &chosen.packages[p].dir))
@@ -111,6 +134,43 @@ pub(crate) fn outline(chosen: &Chosen, out: &Path, links: bool) -> Result<Outcom
             }));
     }
     Ok(outcome)
+}
+
+/// What one target's documents are built from.
+struct Parts<'a> {
+    krate: &'a Crate,
+    others: &'a [usize],
+    order: &'a Order,
+    blocks: &'a [Block],
+    spellings: &'a [Entry],
+    crate_dir: &'a Path,
+}
+
+impl Parts<'_> {
+    /// Builds the document for one format, with source links measured from
+    /// that format's folder when it has them on.
+    fn build(&self, output: Option<&Output>) -> Result<Option<Built>> {
+        let Some(output) = output else {
+            return Ok(None);
+        };
+        let base = if output.links {
+            Some(
+                LinkBase::new(self.crate_dir, &output.dir)
+                    .context("cannot resolve the crate and output directories")?,
+            )
+        } else {
+            None
+        };
+        let doc = document::build(
+            self.krate,
+            self.others,
+            self.order,
+            self.blocks,
+            self.spellings,
+            base.as_ref(),
+        );
+        Ok(Some(Built { doc, base }))
+    }
 }
 
 /// Lists every target of the run in output stem order, each with the index

@@ -1,0 +1,257 @@
+//! Settles what a run covers and where each format goes, from the command
+//! line and `vibelight.toml`: a flag wins over the config, and the config
+//! wins over the defaults.
+
+use std::path::{Path, PathBuf};
+
+use anyhow::{Result, bail};
+
+use crate::config::{Config, Crates, Format};
+use crate::inputs::Selection;
+
+/// The command-line values that settle a run.
+#[derive(Debug, Default, Clone)]
+pub(crate) struct Flags {
+    pub(crate) paths: Vec<PathBuf>,
+    pub(crate) workspace: bool,
+    pub(crate) follow: Vec<String>,
+    /// The folder for both formats.
+    pub(crate) out: Option<PathBuf>,
+    pub(crate) md_out: Option<PathBuf>,
+    pub(crate) html_out: Option<PathBuf>,
+    /// True turns the source links of both formats off.
+    pub(crate) no_source_links: bool,
+    pub(crate) md_source_links: Option<bool>,
+    pub(crate) html_source_links: Option<bool>,
+}
+
+/// Where one format is written, and whether it carries source links.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Output {
+    pub(crate) dir: PathBuf,
+    pub(crate) links: bool,
+}
+
+/// What a run covers and writes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Plan {
+    /// `None` when neither the command line nor the config names a crate.
+    pub(crate) selection: Option<Selection>,
+    pub(crate) follow: Vec<String>,
+    /// `None` for a format the config turns off.
+    pub(crate) markdown: Option<Output>,
+    pub(crate) html: Option<Output>,
+}
+
+/// Settles a run. Crate paths or the workspace switch choose the crates,
+/// and the config's `workspace`, `crates`, and `follow` are then ignored.
+/// Otherwise the config chooses the crates, and follow globs on the command
+/// line replace the config's. Each format's folder and source links come
+/// from that format's own flag, then the flag for both formats, then the
+/// config, then the defaults: the config's folder, or the current
+/// directory without a config, with source links on. A format the config
+/// turns off is not written, unless its own folder flag names a folder for
+/// it.
+///
+/// # Errors
+/// Returns an error when the workspace switch has more than one path, or
+/// when the config turns both formats off.
+pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
+    let (selection, follow) = if !flags.paths.is_empty() || flags.workspace {
+        let selection = if flags.workspace {
+            if flags.paths.len() > 1 {
+                bail!("the workspace switch takes at most one path, the directory to start from");
+            }
+            let start = flags.paths.first().cloned();
+            Selection::Workspace(start.unwrap_or_else(|| PathBuf::from(".")))
+        } else {
+            Selection::Paths {
+                paths: flags.paths.clone(),
+                globbed: Vec::new(),
+            }
+        };
+        (Some(selection), flags.follow.clone())
+    } else {
+        let selection = config.and_then(|config| match &config.crates {
+            Crates::Unset => None,
+            Crates::Workspace(dir) => Some(Selection::Workspace(dir.clone())),
+            Crates::Listed { paths, globbed } => Some(Selection::Paths {
+                paths: paths.clone(),
+                globbed: globbed.clone(),
+            }),
+        });
+        let follow = if flags.follow.is_empty() {
+            config.map(|c| c.follow.clone()).unwrap_or_default()
+        } else {
+            flags.follow.clone()
+        };
+        (selection, follow)
+    };
+    let unset = Format::default();
+    let home = config.map(|c| c.dir.as_path());
+    let markdown = output(
+        config.map_or(&unset, |c| &c.markdown),
+        home,
+        flags.md_out.as_ref(),
+        flags.md_source_links,
+        flags,
+    );
+    let html = output(
+        config.map_or(&unset, |c| &c.html),
+        home,
+        flags.html_out.as_ref(),
+        flags.html_source_links,
+        flags,
+    );
+    if markdown.is_none() && html.is_none() {
+        bail!("the config turns both formats off, so there is nothing to write");
+    }
+    Ok(Plan {
+        selection,
+        follow,
+        markdown,
+        html,
+    })
+}
+
+fn output(
+    config: &Format,
+    home: Option<&Path>,
+    out: Option<&PathBuf>,
+    links: Option<bool>,
+    flags: &Flags,
+) -> Option<Output> {
+    if config.enabled == Some(false) && out.is_none() {
+        return None;
+    }
+    let dir = out
+        .or(flags.out.as_ref())
+        .or(config.out.as_ref())
+        .cloned()
+        .or_else(|| home.map(Path::to_path_buf))
+        .unwrap_or_else(|| PathBuf::from("."));
+    let links = links
+        .or(flags.no_source_links.then_some(false))
+        .or(config.source_links)
+        .unwrap_or(true);
+    Some(Output { dir, links })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config() -> Config {
+        Config {
+            dir: PathBuf::from("/repo"),
+            crates: Crates::Workspace(PathBuf::from("/repo")),
+            follow: vec!["vendor/*".to_owned()],
+            markdown: Format {
+                out: Some(PathBuf::from("/repo/vibelight")),
+                source_links: Some(false),
+                enabled: None,
+            },
+            html: Format {
+                out: Some(PathBuf::from("/repo/vibelight/html")),
+                source_links: None,
+                enabled: None,
+            },
+        }
+    }
+
+    fn output(dir: &str, links: bool) -> Output {
+        Output {
+            dir: PathBuf::from(dir),
+            links,
+        }
+    }
+
+    #[test]
+    fn with_nothing_set_both_formats_go_to_the_current_directory_with_links() {
+        let plan = plan(&Flags::default(), None).unwrap();
+        assert_eq!(plan.selection, None);
+        assert_eq!(plan.markdown, Some(output(".", true)));
+        assert_eq!(plan.html, Some(output(".", true)));
+    }
+
+    #[test]
+    fn the_config_chooses_crates_folders_and_links_when_no_flag_does() {
+        let plan = plan(&Flags::default(), Some(&config())).unwrap();
+        assert_eq!(
+            plan.selection,
+            Some(Selection::Workspace(PathBuf::from("/repo")))
+        );
+        assert_eq!(plan.follow, ["vendor/*"]);
+        assert_eq!(plan.markdown, Some(output("/repo/vibelight", false)));
+        assert_eq!(plan.html, Some(output("/repo/vibelight/html", true)));
+    }
+
+    #[test]
+    fn a_config_without_folders_writes_both_formats_beside_itself() {
+        let mut config = config();
+        config.markdown.out = None;
+        config.html.out = None;
+        let plan = plan(&Flags::default(), Some(&config)).unwrap();
+        assert_eq!(plan.markdown, Some(output("/repo", false)));
+        assert_eq!(plan.html, Some(output("/repo", true)));
+    }
+
+    #[test]
+    fn crate_arguments_replace_the_config_crates_but_keep_its_outputs() {
+        let flags = Flags {
+            paths: vec![PathBuf::from("crates/a")],
+            ..Flags::default()
+        };
+        let plan = plan(&flags, Some(&config())).unwrap();
+        assert_eq!(
+            plan.selection,
+            Some(Selection::Paths {
+                paths: vec![PathBuf::from("crates/a")],
+                globbed: Vec::new(),
+            })
+        );
+        assert!(plan.follow.is_empty(), "the config's follow globs go too");
+        assert_eq!(plan.markdown, Some(output("/repo/vibelight", false)));
+    }
+
+    #[test]
+    fn format_flags_win_over_the_flags_for_both_and_those_win_over_the_config() {
+        let flags = Flags {
+            out: Some(PathBuf::from("both")),
+            html_out: Some(PathBuf::from("pages")),
+            no_source_links: true,
+            md_source_links: Some(true),
+            follow: vec!["extra/*".to_owned()],
+            ..Flags::default()
+        };
+        let plan = plan(&flags, Some(&config())).unwrap();
+        assert_eq!(plan.follow, ["extra/*"]);
+        assert_eq!(plan.markdown, Some(output("both", true)));
+        assert_eq!(plan.html, Some(output("pages", false)));
+    }
+
+    #[test]
+    fn a_format_the_config_turns_off_is_written_only_when_its_own_folder_flag_names_one() {
+        let mut config = config();
+        config.html.enabled = Some(false);
+        let both = Flags {
+            out: Some(PathBuf::from("both")),
+            ..Flags::default()
+        };
+        assert_eq!(plan(&both, Some(&config)).unwrap().html, None);
+        let own = Flags {
+            html_out: Some(PathBuf::from("pages")),
+            ..Flags::default()
+        };
+        assert_eq!(
+            plan(&own, Some(&config)).unwrap().html,
+            Some(output("pages", true))
+        );
+        config.markdown.enabled = Some(false);
+        let error = super::plan(&Flags::default(), Some(&config)).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "the config turns both formats off, so there is nothing to write"
+        );
+    }
+}

@@ -3,6 +3,7 @@
 //! resolve, same-page and cross-page.
 
 use std::collections::BTreeSet;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -188,4 +189,70 @@ fn one_named_crate_with_nothing_to_outline_still_fails() {
     let result = vibelight(&[text(&testonly)], tmp.path(), false);
     assert_eq!(result.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&result.stderr).contains("not a crate"));
+}
+
+const ROOTED: &str = "<a id=\"crate.rooted\"></a>
+# rooted
+
+```
+//! The root package.
+```
+
+- [Unconnected types](#unconnected)
+  - [Root](#type.rooted.Root)
+- [Modules](#modules)
+  - [rooted](#mod.rooted)
+
+**MACROS:** none
+
+<a id=\"unconnected\"></a>
+## Unconnected types
+
+<a id=\"type.rooted.Root\"></a>
+### Root
+
+```
+/// A root type.
+struct Root;
+```
+
+<a id=\"modules\"></a>
+## Modules
+
+<a id=\"mod.rooted\"></a>
+### rooted
+
+- [Root](#type.rooted.Root)
+";
+
+#[test]
+fn a_root_manifest_that_is_also_a_package_is_outlined_with_its_members() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let root = tmp.path().join("rooted");
+    let package = |dir: &Path, name: &str, lib: &str, extra: &str| {
+        fs::create_dir_all(dir.join("src")).expect("a crate folder can be made");
+        let manifest = format!("[package]\nname = \"{name}\"\nedition = \"2024\"\n{extra}");
+        fs::write(dir.join("Cargo.toml"), manifest).expect("a manifest can be written");
+        fs::write(dir.join("src").join("lib.rs"), lib).expect("a source can be written");
+    };
+    let root_lib = "//! The root package.\n\n/// A root type.\npub struct Root;\n";
+    let member_lib = "//! A member.\n\n/// A member type.\npub struct Leaf;\n";
+    package(
+        &root,
+        "rooted",
+        root_lib,
+        "\n[workspace]\nmembers = [\"sub\"]\n",
+    );
+    package(&root.join("sub"), "sub", member_lib, "");
+    let out = tmp.path().join("out");
+    let result = vibelight(&["--workspace", text(&root)], &out, false);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let files = read_outputs(&out);
+    let names: Vec<&str> = files.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(names, ["rooted.html", "rooted.md", "sub.html", "sub.md"]);
+    assert!(files[1].1 == ROOTED, "rooted.md differs:\n{}", files[1].1);
 }
