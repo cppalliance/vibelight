@@ -7,3 +7,4 @@ mod links;
 mod parity;
 mod structure;
 mod support;
+mod workspaces;

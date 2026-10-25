@@ -38,10 +38,10 @@ Once vibelight is published on crates.io, `cargo install vibelight` will build a
 ## Run
 
 ```
-vibelight <crate-dir-or-file.rs> [-o <out-dir>] [--no-source-links]
+vibelight <crate-dir-or-file.rs>... [-o <out-dir>] [--no-source-links] [--workspace] [--follow <glob>]
 ```
 
-- `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, or a single `.rs` file.
+- `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file. Several crates can be named at once (see [Several crates in one run](#several-crates-in-one-run)); a single `.rs` file cannot be mixed with them.
 - `-o` (or `--out`) is the directory to write into. It defaults to the current directory and is created if it is missing.
 - `--no-source-links` leaves out the links back to files and lines. The output then depends only on the declarations themselves, so moving code between files, reordering items, or reformatting leaves the files byte for byte the same.
 
@@ -56,7 +56,23 @@ In a crate directory, vibelight reads `Cargo.toml` for the package name and any 
 - Without a manifest, the library and `src/main.rs` take the directory's name, and each `src/bin/*.rs` takes its file stem.
 - A single `.rs` file is named after its file stem.
 
-Tests, benches, examples, and `build.rs` are not outlined. A workspace root is not a crate, so point vibelight at a member crate's directory instead.
+Tests, benches, examples, and `build.rs` are not outlined. A workspace root is not a crate, so point vibelight at a member crate's directory, or use `--workspace`.
+
+## Several crates in one run
+
+A run can cover several crates, and every crate in it gets its files. There are three ways to choose them:
+
+- **Paths:** `vibelight crates/alpha crates/beta` names the crates one by one.
+- **`--workspace`:** `vibelight --workspace` reads the `[workspace] members` of the root `Cargo.toml`, found at the given directory or the first one above it with a `[workspace]` table. Globs such as `crates/*` expand to the folders that hold a `Cargo.toml`, and `exclude` takes folders out of the globs, while a member written out in full always counts.
+- **`--follow <glob>`:** from the crates named, follow their path dependencies, again and again, but only into folders that match a glob, measured from the workspace root (or else the first crate). It can be given more than once. For example, `vibelight crates/harness --follow "crates/harness-internal/*"` adds the harness's private crates and nothing else.
+
+A crate in the run with nothing to outline, such as one with only tests, is skipped with a `note:` line on stderr. A single named crate with nothing to outline is still an error. Two crates that would write the same file name stop the run with an error that names both.
+
+In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they never depend on which crates are in the run, and no file depends on the order the crates are named in.
+
+## Colors
+
+The HTML file colors code the way an editor does. A link inside the page uses the link color, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With `--no-source-links`, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
 
 ## What the output looks like
 
@@ -115,7 +131,7 @@ Names of the crate's own items are left out, because `crate::model::X`, `X`, and
 
 ## Warnings and exit codes
 
-When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way.
+When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way. In a run of several crates, a warning's path starts from the workspace root (or else the first crate), such as `crates/alpha/src/lib.rs:9`, and a skipped crate gets a `note:` line, which is not a warning.
 
 - `0`: the files were written, warnings included.
 - `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, or a root file cannot be read. The reason is printed on stderr.

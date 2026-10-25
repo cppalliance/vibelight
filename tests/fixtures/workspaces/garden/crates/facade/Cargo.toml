@@ -1,0 +1,8 @@
+[package]
+name = "facade"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+alpha.workspace = true
+beta = { workspace = true }

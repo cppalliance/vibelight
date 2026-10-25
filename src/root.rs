@@ -19,6 +19,8 @@ pub(crate) struct Target {
     pub(crate) crate_name: String,
     /// The root file, relative to the crate directory, with forward slashes.
     pub(crate) root: String,
+    /// True for the library target, the one dependencies name.
+    pub(crate) lib: bool,
 }
 
 /// The crate being outlined: its directory and its targets, sorted by stem.
@@ -38,25 +40,43 @@ pub(crate) struct Input {
 pub(crate) fn find(path: &Path) -> Result<Input> {
     let meta = fs::metadata(path).with_context(|| format!("cannot read {}", path.display()))?;
     if meta.is_file() {
+        if path.file_name().is_some_and(|n| n == "Cargo.toml") {
+            let dir = path
+                .parent()
+                .filter(|p| !p.as_os_str().is_empty())
+                .unwrap_or(Path::new("."));
+            return find(dir);
+        }
         return single_file(path);
     }
-    let manifest = path.join("Cargo.toml");
-    let mut targets = if manifest.is_file() {
-        from_manifest(path, &manifest)?
-    } else {
-        without_manifest(path)?
-    };
+    let targets = dir_targets(path)?;
     if targets.is_empty() {
         bail!(
             "{} is not a crate: it has no library or binary target",
             path.display()
         );
     }
-    targets.sort_by(|a, b| a.stem.cmp(&b.stem));
     Ok(Input {
         dir: path.to_path_buf(),
         targets,
     })
+}
+
+/// Reads the targets of a crate directory, sorted by output stem; the list
+/// is empty for a crate with nothing to outline.
+///
+/// # Errors
+/// Returns an error when the manifest is unreadable, holds no package, or
+/// is a workspace-only manifest.
+pub(crate) fn dir_targets(dir: &Path) -> Result<Vec<Target>> {
+    let manifest = dir.join("Cargo.toml");
+    let mut targets = if manifest.is_file() {
+        from_manifest(dir, &manifest)?
+    } else {
+        without_manifest(dir)?
+    };
+    targets.sort_by(|a, b| a.stem.cmp(&b.stem));
+    Ok(targets)
 }
 
 fn single_file(path: &Path) -> Result<Input> {
@@ -85,6 +105,7 @@ fn single_file(path: &Path) -> Result<Input> {
             title: stem.to_owned(),
             crate_name: stem.replace('-', "_"),
             root: name.to_owned(),
+            lib: false,
         }],
     })
 }
@@ -98,7 +119,7 @@ fn from_manifest(dir: &Path, manifest: &Path) -> Result<Vec<Target>> {
     let Some(package) = table.get("package").and_then(Value::as_table) else {
         if table.contains_key("workspace") {
             bail!(
-                "{} is a workspace manifest; point vibelight at a crate directory",
+                "{} is a workspace manifest; point vibelight at a crate directory, or pass --workspace",
                 manifest.display()
             );
         }
@@ -183,6 +204,7 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             title: name.clone(),
             crate_name: name,
             root,
+            lib: true,
         });
     }
     for (name, root) in bins {
@@ -196,6 +218,7 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             crate_name: name.replace('-', "_"),
             title: name,
             root,
+            lib: false,
         });
     }
     targets

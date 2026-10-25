@@ -120,11 +120,14 @@ pub(crate) fn is_standard(path: &[String]) -> bool {
     }
 }
 
-struct Scope<'a> {
-    krate: &'a Crate,
-    decls: Vec<BTreeMap<String, Vec<DeclId>>>,
-    children: Vec<BTreeMap<String, Vec<ModId>>>,
-    parents: Vec<Option<ModId>>,
+/// The names one crate declares, by module, for lookups.
+pub(crate) struct Scope<'a> {
+    pub(crate) krate: &'a Crate,
+    /// Each module's declarations by name.
+    pub(crate) decls: Vec<BTreeMap<String, Vec<DeclId>>>,
+    /// Each module's child modules by name.
+    pub(crate) children: Vec<BTreeMap<String, Vec<ModId>>>,
+    pub(crate) parents: Vec<Option<ModId>>,
     unique: BTreeMap<String, Vec<DeclId>>,
 }
 
@@ -146,7 +149,7 @@ pub(crate) fn resolve(krate: &mut Crate) -> Tally {
 }
 
 impl<'a> Scope<'a> {
-    fn new(krate: &'a Crate) -> Scope<'a> {
+    pub(crate) fn new(krate: &'a Crate) -> Scope<'a> {
         let n = krate.modules.len();
         let mut by_path: BTreeMap<&[String], ModId> = BTreeMap::new();
         for (id, module) in krate.modules.iter().enumerate() {

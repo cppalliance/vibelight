@@ -180,7 +180,16 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
             }
             (None, Some(path)) => {
                 base.long = true;
-                base.text.0[at] = Seg::Plain(path.join("::"));
+                let text = path.join("::");
+                base.text.0[at] = if reference.foreign.is_some() {
+                    refs.push(TypeRef {
+                        text,
+                        ..reference.clone()
+                    });
+                    Seg::Ref(refs.len() - 1)
+                } else {
+                    Seg::Plain(text)
+                };
             }
             (None, None) => base.long = true,
         }
@@ -215,6 +224,7 @@ mod tests {
             target,
             canonical: canonical.map(split),
             written: None,
+            foreign: None,
         }
     }
 

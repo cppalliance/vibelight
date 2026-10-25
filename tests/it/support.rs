@@ -12,7 +12,8 @@ pub(crate) fn fixtures() -> PathBuf {
 }
 
 /// The fixtures the no-link checks run over: every folder but `links`,
-/// whose golden is rendered with source links on.
+/// whose golden is rendered with source links on, and `workspaces`, which
+/// holds multi-crate runs.
 pub(crate) fn fixture_names() -> Vec<String> {
     let mut names: Vec<String> = fs::read_dir(fixtures())
         .expect("the fixtures folder is readable")
@@ -23,7 +24,7 @@ pub(crate) fn fixture_names() -> Vec<String> {
                 .is_dir()
                 .then(|| entry.file_name().to_string_lossy().into_owned())
         })
-        .filter(|name| name != "links")
+        .filter(|name| name != "links" && name != "workspaces")
         .collect();
     names.sort();
     names
@@ -246,8 +247,9 @@ pub(crate) fn strip_markdown_links(md: &str) -> String {
     out
 }
 
-/// Removes the source links from an HTML outline: each `Source:` line,
-/// each ` (source: ...)` span, and each link around a member name.
+/// Removes the source links from an HTML outline: each `Source:` line and
+/// each ` (source: ...)` span go, and each link around a member name turns
+/// into the span the no-links output has.
 pub(crate) fn strip_html_links(html: &str) -> String {
     let mut out = String::new();
     for line in html.split_inclusive('\n') {
@@ -263,8 +265,8 @@ pub(crate) fn strip_html_links(html: &str) -> String {
         while let Some(at) = line.find("<a class=\"src\" href=\"") {
             let open_end = line[at..].find('>').expect("a link tag closes") + at + 1;
             let close = line[open_end..].find("</a>").expect("a link closes") + open_end;
-            line.replace_range(close..close + "</a>".len(), "");
-            line.replace_range(at..open_end, "");
+            line.replace_range(close..close + "</a>".len(), "</span>");
+            line.replace_range(at..open_end, "<span class=\"src\">");
         }
         out.push_str(&line);
     }

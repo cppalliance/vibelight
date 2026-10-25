@@ -95,6 +95,7 @@ impl Collector<'_> {
             target: None,
             canonical: None,
             written,
+            foreign: None,
         });
         self.refs.len() - 1
     }

@@ -14,6 +14,8 @@ mod document;
 mod document_kill;
 mod document_spellings;
 mod flatten;
+mod glob;
+mod inputs;
 mod layout;
 mod layout_decl;
 mod layout_head;
@@ -21,12 +23,15 @@ mod layout_items;
 mod layout_members;
 mod layout_special;
 mod macros;
+mod manifest;
 mod model;
 mod modtree;
 mod order;
+mod pipeline;
 mod render_html;
 mod render_md;
 mod resolve;
+mod resolve_run;
 mod root;
 mod route;
 mod source;
@@ -44,9 +49,6 @@ use std::process::ExitCode;
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use crate::model::{Loc, Warning};
-use crate::source_links::LinkBase;
-
 /// The `--version` text; the nightly workflow sets `VIBELIGHT_NIGHTLY` at
 /// build time to name its build.
 const VERSION: &str = match option_env!("VIBELIGHT_NIGHTLY") {
@@ -59,14 +61,26 @@ const VERSION: &str = match option_env!("VIBELIGHT_NIGHTLY") {
 #[derive(Debug, Parser)]
 #[command(version = VERSION, about)]
 struct Args {
-    /// A crate directory, or a single `.rs` file.
-    crate_path: PathBuf,
+    /// Crate directories or their `Cargo.toml` files, or a single `.rs`
+    /// file. With the workspace switch, the one directory to start looking
+    /// for the workspace from.
+    #[arg(required_unless_present = "workspace")]
+    crate_paths: Vec<PathBuf>,
     /// The directory to write the outline files into; created if missing.
     #[arg(short, long, default_value = ".")]
     out: PathBuf,
     /// Leave out the links back to source files and lines.
     #[arg(long)]
     no_source_links: bool,
+    /// Outline every member of the workspace that holds the given
+    /// directory, or the current one.
+    #[arg(long)]
+    workspace: bool,
+    /// Also outline each path dependency whose directory, relative to the
+    /// workspace root or else the first crate, matches this glob; repeat it
+    /// for more globs.
+    #[arg(long, value_name = "GLOB")]
+    follow: Vec<String>,
 }
 
 fn main() -> ExitCode {
@@ -81,54 +95,22 @@ fn main() -> ExitCode {
 }
 
 fn run(args: &Args) -> Result<()> {
-    let input = root::find(&args.crate_path)?;
+    let chosen = inputs::choose(&args.crate_paths, args.workspace, &args.follow)?;
     fs::create_dir_all(&args.out)
         .with_context(|| format!("cannot create output directory {}", args.out.display()))?;
-    let links = if args.no_source_links {
-        None
-    } else {
-        Some(
-            LinkBase::new(&input.dir, &args.out)
-                .context("cannot resolve the crate and output directories")?,
-        )
-    };
-    let mut written = Vec::new();
-    let mut warnings: Vec<Warning> = Vec::new();
-    let mut unresolved = 0;
-    let mut ambiguous = 0;
-    let mut spelled = 0;
-    for target in &input.targets {
-        let tree = modtree::walk(&input.dir, &target.root)?;
-        let mut krate = collect::collect(tree, &input.dir, &target.crate_name, &target.title);
-        let tally = resolve::resolve(&mut krate);
-        unresolved += tally.unresolved;
-        ambiguous += tally.ambiguous;
-        let others = attach::attach(&mut krate);
-        let blocks: Vec<layout::Block> = (0..krate.decls.len())
-            .map(|d| layout_decl::decl_block(&krate, d))
-            .collect();
-        let order = order::order(&krate, &blocks);
-        let spellings = spellings::find(&krate);
-        spelled += spellings.len();
-        let doc = document::build(&krate, &others, &order, &blocks, &spellings, links.as_ref());
-        let markdown = render_md::render(&doc);
-        let member_link = links
-            .as_ref()
-            .map(|base| move |loc: Loc| base.target(&krate.files[loc.file].rel, Some(loc.line)));
-        let html = render_html::render(
-            &doc,
-            member_link.as_ref().map(|f| f as &dyn Fn(Loc) -> String),
-        );
-        for (extension, text) in [("md", markdown), ("html", html)] {
-            let path = args.out.join(format!("{}.{extension}", target.stem));
-            fs::write(&path, text).with_context(|| format!("cannot write {}", path.display()))?;
-            written.push(path.display().to_string());
-        }
-        warnings.extend(krate.warnings);
-    }
+    let pipeline::Outcome {
+        mut written,
+        mut warnings,
+        unresolved,
+        ambiguous,
+        spelled,
+    } = pipeline::outline(&chosen, &args.out, !args.no_source_links)?;
     written.sort();
     for path in &written {
         println!("{path}");
+    }
+    for note in &chosen.notes {
+        eprintln!("note: {note}");
     }
     warnings.sort();
     warnings.dedup();

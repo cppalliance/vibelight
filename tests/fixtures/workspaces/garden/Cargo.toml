@@ -1,0 +1,7 @@
+[workspace]
+members = ["crates/*"]
+exclude = ["crates/delta"]
+
+[workspace.dependencies]
+alpha = { path = "crates/alpha" }
+beta = { path = "crates/beta" }

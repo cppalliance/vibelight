@@ -260,6 +260,7 @@ impl Slicer<'_> {
                         },
                         offset: item.range.start,
                     }),
+                    foreign: None,
                 });
                 out.push_ref(id);
                 ids.push((item.range.clone(), id));

@@ -71,6 +71,14 @@ pub(crate) struct Written {
     pub(crate) offset: usize,
 }
 
+/// A declaration in another crate of the run: the crate's index in the run
+/// and the declaration's id in that crate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct CrossRef {
+    pub(crate) krate: usize,
+    pub(crate) decl: DeclId,
+}
+
 /// A type name found in a declaration, a comment, or a re-export.
 #[derive(Clone, Debug)]
 pub(crate) struct TypeRef {
@@ -95,6 +103,9 @@ pub(crate) struct TypeRef {
     /// Where the name is written, for a name sliced from the source or a
     /// derive name.
     pub(crate) written: Option<Written>,
+    /// The declaration in another crate of the run that the name reaches,
+    /// filled in after every crate of the run is resolved.
+    pub(crate) foreign: Option<CrossRef>,
 }
 
 #[cfg(test)]
@@ -118,6 +129,7 @@ mod tests {
             target: None,
             canonical: None,
             written: None,
+            foreign: None,
         }];
         assert_eq!(text.visible(&refs), "Vec<Block>,");
     }

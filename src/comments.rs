@@ -234,6 +234,7 @@ impl NoteCx<'_> {
                             target: None,
                             canonical: None,
                             written: None,
+                            foreign: None,
                         });
                         text.push_ref(id);
                     }
