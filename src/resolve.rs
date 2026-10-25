@@ -51,7 +51,9 @@ const PRELUDE: &[(&str, &str)] = &[
     ("FnOnce", "std::ops::FnOnce"),
     ("From", "std::convert::From"),
     ("FromIterator", "std::iter::FromIterator"),
+    ("Future", "std::future::Future"),
     ("Into", "std::convert::Into"),
+    ("IntoFuture", "std::future::IntoFuture"),
     ("IntoIterator", "std::iter::IntoIterator"),
     ("Iterator", "std::iter::Iterator"),
     ("Option", "std::option::Option"),
@@ -408,6 +410,35 @@ mod tests {
         let shown = krate.decls.iter().position(|d| d.name == "Shown");
         assert_eq!(targets, [None, shown], "the glob may bring its own Shown");
         assert_eq!(tally.unresolved, 0);
+    }
+
+    #[test]
+    fn the_futures_of_the_2024_prelude_resolve_without_a_use() {
+        let tmp = tempfile::tempdir().unwrap();
+        let src = tmp.path().join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(
+            src.join("lib.rs"),
+            "pub fn run<F: Future<Output = ()>, I: IntoFuture>(f: F, i: I) {}\n",
+        )
+        .unwrap();
+        let tree = crate::modtree::walk(tmp.path(), "src/lib.rs").unwrap();
+        let mut krate = crate::collect::collect(tree, tmp.path(), "t", "t");
+        let tally = resolve(&mut krate);
+        let item = |name: &str| {
+            krate
+                .refs
+                .iter()
+                .find(|r| r.path.first().is_some_and(|first| first == name))
+                .and_then(|r| r.canonical.as_deref())
+                .and_then(item_path)
+        };
+        assert_eq!(item("Future").as_deref(), Some("std::future::Future"));
+        assert_eq!(
+            item("IntoFuture").as_deref(),
+            Some("std::future::IntoFuture")
+        );
+        assert_eq!(tally, Tally::default());
     }
 
     #[test]
