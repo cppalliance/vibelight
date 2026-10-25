@@ -4,7 +4,8 @@
 use std::collections::BTreeSet;
 
 use crate::model::{
-    Base, Crate, DeclId, Holder, MacroKind, Seg, Shape, Special, SpecialKind, Text, TypeRef,
+    Base, Crate, DeclId, DeclKind, Holder, MacroKind, Seg, Shape, Special, SpecialKind, Text,
+    TypeRef,
 };
 use crate::resolve::{is_standard, item_path};
 use crate::typerefs::strip_raw;
@@ -63,7 +64,12 @@ pub(crate) fn finish(krate: &mut Crate) {
     let paths: Vec<String> = (0..krate.decls.len())
         .map(|d| krate.decl_path(d).join("::"))
         .collect();
-    let names: BTreeSet<String> = krate.decls.iter().map(|d| strip_raw(&d.name)).collect();
+    let names: BTreeSet<String> = krate
+        .decls
+        .iter()
+        .filter(|d| !matches!(d.kind, DeclKind::Trait | DeclKind::TraitAlias))
+        .map(|d| strip_raw(&d.name))
+        .collect();
     for decl in &mut krate.decls {
         let bases = match &mut decl.shape {
             Shape::Trait { supertraits, .. } => supertraits,
@@ -133,7 +139,8 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
 
 /// Gives each entry its printed text and list. A standard trait keeps its
 /// short name, or its full path when that name is also a type in the crate
-/// or the name of another entry for a different trait. A trait of this
+/// or the name of another entry for a different trait. A trait of the
+/// crate never collides, because it prints on its own line. A trait of this
 /// crate prints its crate-relative path and stays a link, and any other
 /// trait prints the path it resolves to, or the text as written when
 /// nothing resolves.

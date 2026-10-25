@@ -187,7 +187,8 @@ impl<'a> Scope<'a> {
     }
 
     /// Finds the declaration a name resolves to, or the full path of a name
-    /// from outside the crate.
+    /// from outside the crate. A name unique across the target counts only
+    /// when no glob from another crate could have brought the name in.
     fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> (Option<DeclId>, Option<Vec<String>>) {
         let Some(first) = r.path.first() else {
             return (None, None);
@@ -206,7 +207,12 @@ impl<'a> Scope<'a> {
             None => {}
         }
         if r.path.len() == 1 {
-            match self.unique.get(first).map(Vec::as_slice) {
+            let unique = if seen.external_glob {
+                None
+            } else {
+                self.unique.get(first).map(Vec::as_slice)
+            };
+            match unique {
                 Some([only]) => return (Some(*only), None),
                 Some([_, _, ..]) => {
                     if !r.comment {
@@ -373,6 +379,32 @@ mod tests {
             tally.unresolved, 1,
             "only Gone counts; Missing may come from a glob"
         );
+    }
+
+    #[test]
+    fn a_glob_from_another_crate_keeps_a_unique_name_from_resolving() {
+        let tmp = tempfile::tempdir().unwrap();
+        let src = tmp.path().join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(
+            src.join("lib.rs"),
+            "pub mod custom { pub struct Shown; }\n\
+             pub mod globbed { use something::*; pub struct Starred { pub shown: Shown } }\n\
+             pub mod plain { pub struct Bare { pub shown: Shown } }\n",
+        )
+        .unwrap();
+        let tree = crate::modtree::walk(tmp.path(), "src/lib.rs").unwrap();
+        let mut krate = crate::collect::collect(tree, tmp.path(), "t", "t");
+        let tally = resolve(&mut krate);
+        let targets: Vec<Option<DeclId>> = krate
+            .refs
+            .iter()
+            .filter(|r| r.text == "Shown")
+            .map(|r| r.target)
+            .collect();
+        let shown = krate.decls.iter().position(|d| d.name == "Shown");
+        assert_eq!(targets, [None, shown], "the glob may bring its own Shown");
+        assert_eq!(tally.unresolved, 0);
     }
 
     #[test]

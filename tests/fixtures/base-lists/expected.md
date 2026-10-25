@@ -6,27 +6,38 @@
 ```
 
 - [Level 1: top-level types](#level.1)
+  - [custom::Homemade](#type.base_lists.custom.Homemade)
   - [Error](#type.base_lists.Error)
   - [Holder](#type.base_lists.Holder)
   - [Labeled](#type.base_lists.Labeled)
   - [Local](#type.base_lists.Local)
   - [Mixed](#type.base_lists.Mixed)
 - [Level 2](#level.2)
+  - [custom::Display](#type.base_lists.custom.Display)
   - [Named](#type.base_lists.Named)
   - [Clone](#type.base_lists.Clone)
 - [Unconnected types](#unconnected)
+  - [bare::Imported](#type.base_lists.bare.Imported)
   - [Bits](#type.base_lists.Bits)
+  - [globbed::Starred](#type.base_lists.globbed.Starred)
   - [Marker](#type.base_lists.Marker)
   - [Ordered](#type.base_lists.Ordered)
+  - [other::Foreign](#type.base_lists.other.Foreign)
   - [Plain](#type.base_lists.Plain)
+  - [Renamed](#type.base_lists.Renamed)
   - [Run](#type.base_lists.Run)
   - [RunError](#type.base_lists.RunError)
   - [Secret](#type.base_lists.Secret)
   - [Sink](#type.base_lists.Sink)
+  - [Spelled](#type.base_lists.Spelled)
   - [Wide](#type.base_lists.Wide)
   - [Wrapped](#type.base_lists.Wrapped)
 - [Modules](#modules)
   - [base_lists](#mod.base_lists)
+  - [bare](#mod.base_lists.bare)
+  - [custom](#mod.base_lists.custom)
+  - [globbed](#mod.base_lists.globbed)
+  - [other](#mod.base_lists.other)
 - [Spellings](#spellings)
 
 **MACROS:** 1 derive list
@@ -34,6 +45,15 @@
 
 <a id="level.1"></a>
 ## Level 1: top-level types
+
+<a id="type.base_lists.custom.Homemade"></a>
+### custom::Homemade
+
+```
+/// The crate's Display, which prints its path on its own line.
+struct Homemade
+    : custom::Display;
+```
 
 <a id="type.base_lists.Error"></a>
 ### Error
@@ -100,6 +120,16 @@ struct Mixed
 <a id="level.2"></a>
 ## Level 2
 
+<a id="type.base_lists.custom.Display"></a>
+### custom::Display
+
+```
+/// The crate's own Display.
+trait Display
+{
+}
+```
+
 <a id="type.base_lists.Named"></a>
 ### Named
 
@@ -124,6 +154,14 @@ trait Clone
 <a id="unconnected"></a>
 ## Unconnected types
 
+<a id="type.base_lists.bare.Imported"></a>
+### bare::Imported
+
+```
+/// Display through the use, which is the standard one.
+struct Imported : Display;
+```
+
 <a id="type.base_lists.Bits"></a>
 ### Bits
 
@@ -135,6 +173,15 @@ union Bits : Copy, Debug
 
     int: u32,
 }
+```
+
+<a id="type.base_lists.globbed.Starred"></a>
+### globbed::Starred
+
+```
+/// A Display from the glob, which prints as written.
+struct Starred
+    : Display;
 ```
 
 <a id="type.base_lists.Marker"></a>
@@ -150,11 +197,19 @@ struct Marker : Debug, Eq, Hash;
 
 ```
 /// Standard derives that are not special members, and comparisons with
-/// another type written by hand. The crate's own Clone makes the standard
-/// one keep its full path.
+/// another type written by hand. The crate's own Clone trait never sits on
+/// the shared line, so the standard Clone keeps its short name.
 struct Ordered(u8)
-    : std::clone::Clone, Eq, Ord, PartialEq, PartialEq<u8>, PartialOrd
-    , PartialOrd<u8>;
+    : Clone, Eq, Ord, PartialEq, PartialEq<u8>, PartialOrd, PartialOrd<u8>;
+```
+
+<a id="type.base_lists.other.Foreign"></a>
+### other::Foreign
+
+```
+/// The other crate's Display, which stays apart from the standard one.
+struct Foreign
+    : other_crate::Display;
 ```
 
 <a id="type.base_lists.Plain"></a>
@@ -165,6 +220,14 @@ struct Ordered(u8)
 trait Plain : 'static, Send, Sync
 {
 }
+```
+
+<a id="type.base_lists.Renamed"></a>
+### Renamed
+
+```
+/// The standard Display through a renaming use.
+struct Renamed : Display;
 ```
 
 <a id="type.base_lists.Run"></a>
@@ -208,6 +271,14 @@ class Secret : Display
 struct Sink : std::fmt::Write, std::io::Write;
 ```
 
+<a id="type.base_lists.Spelled"></a>
+### Spelled
+
+```
+/// The standard Display written in full, with no use.
+struct Spelled : Display;
+```
+
 <a id="type.base_lists.Wide"></a>
 ### Wide
 
@@ -245,12 +316,51 @@ struct Wrapped(u8) : Debug;
 - [Named](#type.base_lists.Named)
 - [Ordered](#type.base_lists.Ordered)
 - [Plain](#type.base_lists.Plain)
+- [Renamed](#type.base_lists.Renamed)
 - [Run](#type.base_lists.Run)
 - [RunError](#type.base_lists.RunError)
 - [Secret](#type.base_lists.Secret)
 - [Sink](#type.base_lists.Sink)
+- [Spelled](#type.base_lists.Spelled)
 - [Wide](#type.base_lists.Wide)
 - [Wrapped](#type.base_lists.Wrapped)
+
+<a id="mod.base_lists.bare"></a>
+### bare
+
+```
+//! The standard Display after a use of the trait itself.
+```
+
+- [bare::Imported](#type.base_lists.bare.Imported)
+
+<a id="mod.base_lists.custom"></a>
+### custom
+
+```
+//! A trait of this crate named Display.
+```
+
+- [custom::Display](#type.base_lists.custom.Display)
+- [custom::Homemade](#type.base_lists.custom.Homemade)
+
+<a id="mod.base_lists.globbed"></a>
+### globbed
+
+```
+//! A Display that can only come from a glob import.
+```
+
+- [globbed::Starred](#type.base_lists.globbed.Starred)
+
+<a id="mod.base_lists.other"></a>
+### other
+
+```
+//! Another crate's trait that is also named Display.
+```
+
+- [other::Foreign](#type.base_lists.other.Foreign)
 
 <a id="spellings"></a>
 ## Spellings
@@ -259,3 +369,8 @@ struct Wrapped(u8) : Debug;
   - `Dbg`, once
   - `Debug`, 5 times
   - `fmt::Debug`, 4 times
+- `std::fmt::Display` is written 4 ways; pick one and search for the rest:
+  - `D`, once
+  - `Display`, once
+  - `fmt::Display`, 5 times
+  - `std::fmt::Display`, once

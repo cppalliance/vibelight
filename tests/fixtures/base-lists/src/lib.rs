@@ -2,6 +2,7 @@
 
 use std::fmt;
 use std::fmt::Debug as Dbg;
+use std::fmt::Display as D;
 use std::io;
 
 /// The crate's own error, whose name collides with std::error::Error.
@@ -144,8 +145,8 @@ impl Dbg for Local {}
 pub struct Wrapped(u8);
 
 /// Standard derives that are not special members, and comparisons with
-/// another type written by hand. The crate's own Clone makes the standard
-/// one keep its full path.
+/// another type written by hand. The crate's own Clone trait never sits on
+/// the shared line, so the standard Clone keeps its short name.
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Ordered(u8);
 
@@ -159,4 +160,55 @@ impl PartialOrd<u8> for Ordered {
     fn partial_cmp(&self, other: &u8) -> Option<std::cmp::Ordering> {
         self.0.partial_cmp(other)
     }
+}
+
+/// The standard Display written in full, with no use.
+pub struct Spelled;
+
+impl std::fmt::Display for Spelled {}
+
+/// The standard Display through a renaming use.
+pub struct Renamed;
+
+impl D for Renamed {}
+
+/// The standard Display after a use of the trait itself.
+pub mod bare {
+    use std::fmt::Display;
+
+    /// Display through the use, which is the standard one.
+    pub struct Imported;
+
+    impl Display for Imported {}
+}
+
+/// Another crate's trait that is also named Display.
+pub mod other {
+    use other_crate::Display;
+
+    /// The other crate's Display, which stays apart from the standard one.
+    pub struct Foreign;
+
+    impl Display for Foreign {}
+}
+
+/// A trait of this crate named Display.
+pub mod custom {
+    /// The crate's own Display.
+    pub trait Display {}
+
+    /// The crate's Display, which prints its path on its own line.
+    pub struct Homemade;
+
+    impl Display for Homemade {}
+}
+
+/// A Display that can only come from a glob import.
+pub mod globbed {
+    use something::*;
+
+    /// A Display from the glob, which prints as written.
+    pub struct Starred;
+
+    impl Display for Starred {}
 }
