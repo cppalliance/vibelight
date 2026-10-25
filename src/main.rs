@@ -30,6 +30,7 @@ mod model;
 mod modtree;
 mod order;
 mod pipeline;
+mod prelude;
 mod render_html;
 mod render_md;
 mod resolve;

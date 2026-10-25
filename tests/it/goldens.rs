@@ -77,6 +77,7 @@ goldens! {
     names => "names",
     order_cycles => "order-cycles",
     order_levels => "order-levels",
+    prelude_order => "prelude-order",
     prompt => "prompt",
     raw_idents => "raw-idents",
     receivers => "receivers",

@@ -3,6 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, DeclId, ModId, TypeRef};
+use crate::prelude::prelude_path;
 use crate::typerefs::strip_raw;
 
 /// What a path names.
@@ -30,96 +31,6 @@ struct Seen {
     /// True once the lookup passed a glob from another crate, which may be
     /// where an unfound name comes from.
     external_glob: bool,
-}
-
-/// Names the standard prelude and the language provide, which never count
-/// as unresolved, each with the `std` path it stands for.
-const PRELUDE: &[(&str, &str)] = &[
-    ("AsMut", "std::convert::AsMut"),
-    ("AsRef", "std::convert::AsRef"),
-    ("Box", "std::boxed::Box"),
-    ("Clone", "std::clone::Clone"),
-    ("Copy", "std::marker::Copy"),
-    ("Default", "std::default::Default"),
-    ("DoubleEndedIterator", "std::iter::DoubleEndedIterator"),
-    ("Drop", "std::ops::Drop"),
-    ("Eq", "std::cmp::Eq"),
-    ("ExactSizeIterator", "std::iter::ExactSizeIterator"),
-    ("Extend", "std::iter::Extend"),
-    ("Fn", "std::ops::Fn"),
-    ("FnMut", "std::ops::FnMut"),
-    ("FnOnce", "std::ops::FnOnce"),
-    ("From", "std::convert::From"),
-    ("FromIterator", "std::iter::FromIterator"),
-    ("Future", "std::future::Future"),
-    ("Into", "std::convert::Into"),
-    ("IntoFuture", "std::future::IntoFuture"),
-    ("IntoIterator", "std::iter::IntoIterator"),
-    ("Iterator", "std::iter::Iterator"),
-    ("Option", "std::option::Option"),
-    ("Ord", "std::cmp::Ord"),
-    ("PartialEq", "std::cmp::PartialEq"),
-    ("PartialOrd", "std::cmp::PartialOrd"),
-    ("Result", "std::result::Result"),
-    ("Send", "std::marker::Send"),
-    ("Sized", "std::marker::Sized"),
-    ("String", "std::string::String"),
-    ("Sync", "std::marker::Sync"),
-    ("ToOwned", "std::borrow::ToOwned"),
-    ("ToString", "std::string::ToString"),
-    ("TryFrom", "std::convert::TryFrom"),
-    ("TryInto", "std::convert::TryInto"),
-    ("Unpin", "std::marker::Unpin"),
-    ("Vec", "std::vec::Vec"),
-    ("bool", "std::primitive::bool"),
-    ("char", "std::primitive::char"),
-    ("f32", "std::primitive::f32"),
-    ("f64", "std::primitive::f64"),
-    ("i128", "std::primitive::i128"),
-    ("i16", "std::primitive::i16"),
-    ("i32", "std::primitive::i32"),
-    ("i64", "std::primitive::i64"),
-    ("i8", "std::primitive::i8"),
-    ("isize", "std::primitive::isize"),
-    ("str", "std::primitive::str"),
-    ("u128", "std::primitive::u128"),
-    ("u16", "std::primitive::u16"),
-    ("u32", "std::primitive::u32"),
-    ("u64", "std::primitive::u64"),
-    ("u8", "std::primitive::u8"),
-    ("usize", "std::primitive::usize"),
-];
-
-/// Returns the `std` path a bare prelude name stands for.
-fn prelude_path(name: &str) -> Option<&'static str> {
-    PRELUDE
-        .iter()
-        .find(|(prelude, _)| *prelude == name)
-        .map(|(_, path)| *path)
-}
-
-/// Returns the full path of the item a canonical path names: a bare prelude
-/// name stands for its `std` path, and a `core` or `alloc` path for the
-/// `std` path that re-exports it.
-pub(crate) fn item_path(path: &[String]) -> Option<String> {
-    let joined = match path {
-        [name] => prelude_path(name)?.to_owned(),
-        _ => path.join("::"),
-    };
-    Some(match joined.split_once("::") {
-        Some(("core" | "alloc", rest)) => format!("std::{rest}"),
-        _ => joined,
-    })
-}
-
-/// Tells whether a canonical path names an item of `std`, `core`, `alloc`,
-/// or the prelude, whose canonical path is its bare name.
-pub(crate) fn is_standard(path: &[String]) -> bool {
-    match path {
-        [name] => prelude_path(name).is_some(),
-        [first, ..] => matches!(first.as_str(), "std" | "core" | "alloc"),
-        [] => false,
-    }
 }
 
 /// The names one crate declares, by module, for lookups.
@@ -192,8 +103,11 @@ impl<'a> Scope<'a> {
     }
 
     /// Finds the declaration a name resolves to, or the full path of a name
-    /// from outside the crate. A name unique across the target counts only
-    /// when no glob from another crate could have brought the name in.
+    /// from outside the crate. A bare name that no `use`, glob, or
+    /// declaration of the module provides is the prelude's when the prelude
+    /// has it, as in Rust, before any declaration in another module. A name
+    /// unique across the target counts only after that, and only when no
+    /// glob from another crate could have brought the name in.
     fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> (Option<DeclId>, Option<Vec<String>>) {
         let Some(first) = r.path.first() else {
             return (None, None);
@@ -212,6 +126,9 @@ impl<'a> Scope<'a> {
             None => {}
         }
         if r.path.len() == 1 {
+            if prelude_path(first).is_some() {
+                return (None, Some(r.path.clone()));
+            }
             let unique = if seen.external_glob {
                 None
             } else {
@@ -226,9 +143,6 @@ impl<'a> Scope<'a> {
                     return (None, None);
                 }
                 _ => {}
-            }
-            if prelude_path(first).is_some() {
-                return (None, Some(r.path.clone()));
             }
             if !r.comment && !seen.external_glob {
                 tally.unresolved += 1;
@@ -343,6 +257,7 @@ mod tests {
     use std::fs;
 
     use super::*;
+    use crate::prelude::item_path;
 
     #[test]
     fn glob_cycles_and_external_globs_end_quickly() {
@@ -412,6 +327,71 @@ mod tests {
         assert_eq!(tally.unresolved, 0);
     }
 
+    /// Resolves a crate made of one `lib.rs`.
+    fn resolved(lib: &str) -> (tempfile::TempDir, Crate, Tally) {
+        let tmp = tempfile::tempdir().unwrap();
+        let src = tmp.path().join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("lib.rs"), lib).unwrap();
+        let tree = crate::modtree::walk(tmp.path(), "src/lib.rs").unwrap();
+        let mut krate = crate::collect::collect(tree, tmp.path(), "t", "t");
+        let tally = resolve(&mut krate);
+        (tmp, krate, tally)
+    }
+
+    /// The declaration and the outside item that the first reference to
+    /// `name` in `module` resolves to, as paths.
+    fn found(krate: &Crate, module: &str, name: &str) -> (Option<String>, Option<String>) {
+        let r = krate
+            .refs
+            .iter()
+            .find(|r| krate.modules[r.module].path.join("::") == module && r.path == [name])
+            .expect("the module names it");
+        let decl = r.target.map(|d| {
+            let decl = &krate.decls[d];
+            let mut path = krate.modules[decl.module].path.clone();
+            path.push(decl.name.clone());
+            path.join("::")
+        });
+        (decl, r.canonical.as_deref().and_then(item_path))
+    }
+
+    #[test]
+    fn a_bare_prelude_name_never_resolves_to_a_declaration_in_another_module() {
+        let (_tmp, krate, tally) = resolved(
+            "pub mod a { type Result<T> = std::result::Result<T, ()>; pub struct Vec; }\n\
+             pub mod b { type Result<T> = std::result::Result<T, ()>; pub struct Config; }\n\
+             pub mod c { pub struct C { pub r: Result<u8, String>, pub v: Vec<u8>, pub k: Config } }\n",
+        );
+        let prelude = |item: &str| (None, Some(item.to_owned()));
+        assert_eq!(found(&krate, "c", "Result"), prelude("std::result::Result"));
+        assert_eq!(found(&krate, "c", "Vec"), prelude("std::vec::Vec"));
+        assert_eq!(
+            found(&krate, "c", "Config"),
+            (Some("b::Config".to_owned()), None),
+            "a name outside the prelude still falls back to the one in the crate"
+        );
+        assert_eq!(tally, Tally::default());
+    }
+
+    #[test]
+    fn a_declaration_a_use_or_a_glob_in_the_module_wins_over_the_prelude() {
+        let (_tmp, krate, tally) = resolved(
+            "pub mod own { pub type Result<T> = std::result::Result<T, ()>; \
+             pub struct O { pub r: Result<u8> } }\n\
+             pub mod used { use crate::own::Result; pub struct U { pub r: Result<u8> } }\n\
+             pub mod starred { use crate::own::*; pub struct S { pub r: Result<u8> } }\n",
+        );
+        for module in ["own", "used", "starred"] {
+            assert_eq!(
+                found(&krate, module, "Result"),
+                (Some("own::Result".to_owned()), None),
+                "{module}"
+            );
+        }
+        assert_eq!(tally, Tally::default());
+    }
+
     #[test]
     fn the_futures_of_the_2024_prelude_resolve_without_a_use() {
         let tmp = tempfile::tempdir().unwrap();
@@ -439,27 +419,5 @@ mod tests {
             Some("std::future::IntoFuture")
         );
         assert_eq!(tally, Tally::default());
-    }
-
-    #[test]
-    fn standard_paths_start_with_std_core_or_alloc_or_name_a_prelude_item() {
-        let path = |s: &str| -> Vec<String> { s.split("::").map(str::to_owned).collect() };
-        for standard in [
-            "std::fmt::Debug",
-            "core::cmp::Ord",
-            "alloc::vec::Vec",
-            "Option",
-        ] {
-            assert!(is_standard(&path(standard)), "{standard}");
-        }
-        for other in [
-            "serde::Serialize",
-            "runvil_lua::ErrorValue",
-            "Named",
-            "Debug",
-        ] {
-            assert!(!is_standard(&path(other)), "{other}");
-        }
-        assert!(!is_standard(&[]));
     }
 }

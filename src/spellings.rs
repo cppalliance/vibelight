@@ -4,7 +4,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, Loc, RefId, Seg, TypeRef, name_order, path_order};
-use crate::resolve::item_path;
+use crate::prelude::item_path;
 use crate::route::derive_path;
 use crate::typerefs::strip_raw;
 

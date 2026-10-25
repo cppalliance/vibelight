@@ -7,7 +7,7 @@ use crate::model::{
     Base, Crate, DeclId, DeclKind, Holder, MacroKind, Seg, Shape, Special, SpecialKind, Text,
     TypeRef,
 };
-use crate::resolve::{is_standard, item_path};
+use crate::prelude::{is_standard, item_path};
 use crate::typerefs::strip_raw;
 
 /// The derive macros of the standard prelude, each with the `std` path of
