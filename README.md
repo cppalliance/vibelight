@@ -1,5 +1,7 @@
 # vibelight
 
+[![CI](https://github.com/cppalliance/vibelight/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/cppalliance/vibelight/actions/workflows/ci.yml) [![crates.io](https://img.shields.io/crates/v/vibelight)](https://crates.io/crates/vibelight) [![Latest release](https://img.shields.io/github/v/release/cppalliance/vibelight)](https://github.com/cppalliance/vibelight/releases/latest) [![License](https://img.shields.io/github/license/cppalliance/vibelight)](LICENSE) [![Minimum Rust version](https://img.shields.io/badge/rust-1.85%2B-orange)](Cargo.toml)
+
 vibelight reads a Rust crate and writes an outline of it in the style of a C++ header: every type, trait, function, and module with its comments, and no function bodies. You see the shape of a whole crate on one page that you can skim, search, or hand to a reviewer.
 
 ## What it does
