@@ -6,18 +6,34 @@
 ```
 
 - [Unconnected types](#unconnected)
+  - [Dial](#type.links.Dial)
   - [Engine](#type.links.Engine)
+  - [parts::Gauge](#type.links.parts.Gauge)
   - [parts::Part](#type.links.parts.Part)
 - [Other impls](#impls)
 - [Modules](#modules)
   - [links](#mod.links)
   - [parts](#mod.links.parts)
+- [Spellings](#spellings)
 
 **MACROS:** 1 definition
 - **MACRO** `macro_rules! noop`, in [links](#mod.links) (source: [src/lib.rs:15](../src/lib.rs#L15))
 
 <a id="unconnected"></a>
 ## Unconnected types
+
+<a id="type.links.Dial"></a>
+### Dial
+
+Source: [src/lib.rs:26](../src/lib.rs#L26)
+
+```
+/// A dial with an optional limit.
+struct Dial
+{
+    limit: Option<u32>,
+}
+```
 
 <a id="type.links.Engine"></a>
 ### Engine
@@ -35,6 +51,21 @@ struct Engine
 
     /// Stops the engine.
     stop();
+}
+```
+
+<a id="type.links.parts.Gauge"></a>
+### parts::Gauge
+
+Source: [src/parts.rs:12](../src/parts.rs#L12)
+
+```
+/// A gauge that writes one standard type two ways.
+struct Gauge
+{
+    reading: Option<u32>,
+
+    spare: std::option::Option<u32>,
 }
 ```
 
@@ -61,6 +92,7 @@ struct Part;
 
 Source: [src/lib.rs](../src/lib.rs)
 
+- [Dial](#type.links.Dial)
 - [Engine](#type.links.Engine)
 
 ```
@@ -78,4 +110,12 @@ Source: [src/parts.rs](../src/parts.rs)
 //! Parts of the engine.
 ```
 
+- [parts::Gauge](#type.links.parts.Gauge)
 - [parts::Part](#type.links.parts.Part)
+
+<a id="spellings"></a>
+## Spellings
+
+- `std::option::Option` is written 2 ways; pick one and search for the rest:
+  - `Option`, 2 times (source: [src/lib.rs:27](../src/lib.rs#L27), [src/parts.rs:13](../src/parts.rs#L13))
+  - `std::option::Option`, once (source: [src/parts.rs:14](../src/parts.rs#L14))

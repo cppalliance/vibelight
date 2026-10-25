@@ -117,8 +117,9 @@ fn list(out: &mut String, items: &[Item], depth: usize, refs: &[TypeRef]) {
                 } => {
                     let _ = write!(out, "[{text}](#{id})");
                 }
-                Inline::Source(link) => {
-                    let _ = write!(out, " (source: {})", link_text(link));
+                Inline::Source(links) => {
+                    let links: Vec<String> = links.iter().map(link_text).collect();
+                    let _ = write!(out, " (source: {})", links.join(", "));
                 }
                 Inline::Break => {
                     let _ = write!(out, "\\\n{indent}  ");

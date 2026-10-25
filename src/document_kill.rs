@@ -82,7 +82,7 @@ impl Builder<'_> {
                     },
                 ];
                 if let Some(link) = self.link(loc, true) {
-                    inlines.push(Inline::Source(link));
+                    inlines.push(Inline::Source(vec![link]));
                 }
                 Item {
                     inlines,

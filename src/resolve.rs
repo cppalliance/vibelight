@@ -33,67 +33,74 @@ struct Seen {
 }
 
 /// Names the standard prelude and the language provide, which never count
-/// as unresolved.
-const PRELUDE: &[&str] = &[
-    "AsMut",
-    "AsRef",
-    "Box",
-    "Clone",
-    "Copy",
-    "Default",
-    "DoubleEndedIterator",
-    "Drop",
-    "Eq",
-    "ExactSizeIterator",
-    "Extend",
-    "Fn",
-    "FnMut",
-    "FnOnce",
-    "From",
-    "FromIterator",
-    "Into",
-    "IntoIterator",
-    "Iterator",
-    "Option",
-    "Ord",
-    "PartialEq",
-    "PartialOrd",
-    "Result",
-    "Self",
-    "Send",
-    "Sized",
-    "String",
-    "Sync",
-    "ToOwned",
-    "ToString",
-    "TryFrom",
-    "TryInto",
-    "Unpin",
-    "Vec",
-    "bool",
-    "char",
-    "f32",
-    "f64",
-    "i128",
-    "i16",
-    "i32",
-    "i64",
-    "i8",
-    "isize",
-    "str",
-    "u128",
-    "u16",
-    "u32",
-    "u64",
-    "u8",
-    "usize",
+/// as unresolved, each with the `std` path it stands for.
+const PRELUDE: &[(&str, &str)] = &[
+    ("AsMut", "std::convert::AsMut"),
+    ("AsRef", "std::convert::AsRef"),
+    ("Box", "std::boxed::Box"),
+    ("Clone", "std::clone::Clone"),
+    ("Copy", "std::marker::Copy"),
+    ("Default", "std::default::Default"),
+    ("DoubleEndedIterator", "std::iter::DoubleEndedIterator"),
+    ("Drop", "std::ops::Drop"),
+    ("Eq", "std::cmp::Eq"),
+    ("ExactSizeIterator", "std::iter::ExactSizeIterator"),
+    ("Extend", "std::iter::Extend"),
+    ("Fn", "std::ops::Fn"),
+    ("FnMut", "std::ops::FnMut"),
+    ("FnOnce", "std::ops::FnOnce"),
+    ("From", "std::convert::From"),
+    ("FromIterator", "std::iter::FromIterator"),
+    ("Into", "std::convert::Into"),
+    ("IntoIterator", "std::iter::IntoIterator"),
+    ("Iterator", "std::iter::Iterator"),
+    ("Option", "std::option::Option"),
+    ("Ord", "std::cmp::Ord"),
+    ("PartialEq", "std::cmp::PartialEq"),
+    ("PartialOrd", "std::cmp::PartialOrd"),
+    ("Result", "std::result::Result"),
+    ("Send", "std::marker::Send"),
+    ("Sized", "std::marker::Sized"),
+    ("String", "std::string::String"),
+    ("Sync", "std::marker::Sync"),
+    ("ToOwned", "std::borrow::ToOwned"),
+    ("ToString", "std::string::ToString"),
+    ("TryFrom", "std::convert::TryFrom"),
+    ("TryInto", "std::convert::TryInto"),
+    ("Unpin", "std::marker::Unpin"),
+    ("Vec", "std::vec::Vec"),
+    ("bool", "std::primitive::bool"),
+    ("char", "std::primitive::char"),
+    ("f32", "std::primitive::f32"),
+    ("f64", "std::primitive::f64"),
+    ("i128", "std::primitive::i128"),
+    ("i16", "std::primitive::i16"),
+    ("i32", "std::primitive::i32"),
+    ("i64", "std::primitive::i64"),
+    ("i8", "std::primitive::i8"),
+    ("isize", "std::primitive::isize"),
+    ("str", "std::primitive::str"),
+    ("u128", "std::primitive::u128"),
+    ("u16", "std::primitive::u16"),
+    ("u32", "std::primitive::u32"),
+    ("u64", "std::primitive::u64"),
+    ("u8", "std::primitive::u8"),
+    ("usize", "std::primitive::usize"),
 ];
+
+/// Returns the `std` path a bare prelude name stands for.
+pub(crate) fn prelude_path(name: &str) -> Option<&'static str> {
+    PRELUDE
+        .iter()
+        .find(|(prelude, _)| *prelude == name)
+        .map(|(_, path)| *path)
+}
 
 /// Tells whether a canonical path names an item of `std`, `core`, `alloc`,
 /// or the prelude, whose canonical path is its bare name.
 pub(crate) fn is_standard(path: &[String]) -> bool {
     match path {
-        [name] => PRELUDE.contains(&name.as_str()),
+        [name] => prelude_path(name).is_some(),
         [first, ..] => matches!(first.as_str(), "std" | "core" | "alloc"),
         [] => false,
     }
@@ -171,7 +178,7 @@ impl<'a> Scope<'a> {
         let Some(first) = r.path.first() else {
             return (None, None);
         };
-        if r.path.len() == 1 && (r.generics.contains(first) || first == "Self") {
+        if !r.global && (r.generics.contains(first) || first == "Self") {
             return (None, None);
         }
         if r.global {
@@ -195,7 +202,7 @@ impl<'a> Scope<'a> {
                 }
                 _ => {}
             }
-            if PRELUDE.contains(&first.as_str()) {
+            if prelude_path(first).is_some() {
                 return (None, Some(r.path.clone()));
             }
             if !r.comment && !seen.external_glob {

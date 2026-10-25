@@ -233,6 +233,7 @@ impl NoteCx<'_> {
                             comment: true,
                             target: None,
                             canonical: None,
+                            written: None,
                         });
                         text.push_ref(id);
                     }

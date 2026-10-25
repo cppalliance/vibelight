@@ -313,9 +313,13 @@ impl Collector<'_> {
         let where_clause = self.where_text(here, generics.where_clause.as_ref());
         let notes = self.node_notes(here, attrs, lead, range);
         let derives = macros::derives(attrs);
+        let written = macros::derive_paths(attrs);
         let derive_refs = derives
             .iter()
-            .map(|name| self.derive_ref(here, name))
+            .map(|name| {
+                let span = written.iter().find(|(n, _)| n == name).map(|(_, s)| *s);
+                self.derive_ref(here, name, span)
+            })
             .collect();
         let attributes = macros::attribute_macros(attrs, !derives.is_empty());
         let id = self.decls.len();

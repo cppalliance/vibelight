@@ -26,6 +26,7 @@
   - [Wrapped](#type.base_lists.Wrapped)
 - [Modules](#modules)
   - [base_lists](#mod.base_lists)
+- [Spellings](#spellings)
 
 **MACROS:** 1 derive list
 - **MACRO** `derive: From`, in [Wrapped](#type.base_lists.Wrapped)
@@ -236,3 +237,11 @@ struct Wrapped(u8) : Debug;
 - [Sink](#type.base_lists.Sink)
 - [Wide](#type.base_lists.Wide)
 - [Wrapped](#type.base_lists.Wrapped)
+
+<a id="spellings"></a>
+## Spellings
+
+- `std::fmt::Debug` is written 3 ways; pick one and search for the rest:
+  - `Dbg`, once
+  - `Debug`, 5 times
+  - `fmt::Debug`, 4 times

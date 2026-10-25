@@ -84,6 +84,8 @@ goldens! {
     references => "references",
     single => "single",
     special_members => "special-members",
+    spellings => "spellings",
+    spellings_none => "spellings-none",
     struct_class => "struct-class",
     structs => "structs",
     traits => "traits",

@@ -365,6 +365,7 @@ impl Collector<'_> {
         let files = self.files;
         Slicer {
             file: &files[here.file],
+            file_id: here.file,
             refs: &mut self.refs,
             module: here.module,
             generics: &here.generics,

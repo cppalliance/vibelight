@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{Path, PointerMutability, TraitBound, Type, TypePath, TypePtr, TypeReference};
 
-use crate::model::{ModId, RefId, Text, TypeRef};
+use crate::model::{FileId, Loc, ModId, RefId, Text, TypeRef, Written};
 use crate::source::{SourceFile, normalize, scan};
 use crate::typerefs_edits::{Piece, marked, needs_parens, pieces};
 
@@ -160,6 +160,7 @@ const MARKS: u32 = 0x1900;
 /// Builds text from source slices, recording type references as it goes.
 pub(crate) struct Slicer<'a> {
     pub(crate) file: &'a SourceFile,
+    pub(crate) file_id: FileId,
     pub(crate) refs: &'a mut Vec<TypeRef>,
     pub(crate) module: ModId,
     pub(crate) generics: &'a [String],
@@ -252,6 +253,13 @@ impl Slicer<'_> {
                     comment: false,
                     target: None,
                     canonical: None,
+                    written: Some(Written {
+                        loc: Loc {
+                            file: self.file_id,
+                            line: self.file.line_of(item.range.start),
+                        },
+                        offset: item.range.start,
+                    }),
                 });
                 out.push_ref(id);
                 ids.push((item.range.clone(), id));
@@ -298,6 +306,7 @@ mod tests {
         let mut refs = Vec::new();
         let mut slicer = Slicer {
             file: &file,
+            file_id: 0,
             refs: &mut refs,
             module: 0,
             generics: &[],

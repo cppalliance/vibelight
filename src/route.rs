@@ -9,19 +9,28 @@ use crate::model::{
 use crate::resolve::is_standard;
 use crate::typerefs::strip_raw;
 
-/// The derive macros of the standard prelude. A derive macro is not a type,
-/// so resolve finds no path for one written bare.
-const DERIVES: [&str; 9] = [
-    "Clone",
-    "Copy",
-    "Debug",
-    "Default",
-    "Eq",
-    "Hash",
-    "Ord",
-    "PartialEq",
-    "PartialOrd",
+/// The derive macros of the standard prelude, each with the `std` path of
+/// its trait. A derive macro is not a type, so resolve finds no path for
+/// one written bare.
+const DERIVES: [(&str, &str); 9] = [
+    ("Clone", "std::clone::Clone"),
+    ("Copy", "std::marker::Copy"),
+    ("Debug", "std::fmt::Debug"),
+    ("Default", "std::default::Default"),
+    ("Eq", "std::cmp::Eq"),
+    ("Hash", "std::hash::Hash"),
+    ("Ord", "std::cmp::Ord"),
+    ("PartialEq", "std::cmp::PartialEq"),
+    ("PartialOrd", "std::cmp::PartialOrd"),
 ];
+
+/// Returns the `std` path of a standard derive written bare.
+pub(crate) fn derive_path(name: &str) -> Option<&'static str> {
+    DERIVES
+        .iter()
+        .find(|(derive, _)| *derive == name)
+        .map(|(_, path)| *path)
+}
 
 /// Returns the special member a trait impl becomes: a standard trait with a
 /// C++ equivalent, in an impl with no generic parameters or `where` clause
@@ -82,7 +91,7 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
         let standard = reference.target.is_none()
             && match &reference.canonical {
                 Some(canonical) => is_standard(canonical),
-                None => matches!(path.as_slice(), [one] if DERIVES.contains(&one.as_str())),
+                None => matches!(path.as_slice(), [one] if derive_path(one).is_some()),
             };
         let last = path.last().cloned().unwrap_or_default();
         match kind_of(&last) {
@@ -188,6 +197,7 @@ mod tests {
             comment: false,
             target,
             canonical: canonical.map(split),
+            written: None,
         }
     }
 

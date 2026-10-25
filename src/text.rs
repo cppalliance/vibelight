@@ -1,6 +1,6 @@
 //! Text assembled from source slices, with type names split out.
 
-use crate::model::{DeclId, ModId, RefId};
+use crate::model::{DeclId, Loc, ModId, RefId};
 
 /// One run of text: plain characters or a type name to resolve.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -63,6 +63,14 @@ impl Text {
     }
 }
 
+/// Where a name is written: its line, and its byte offset, which tells two
+/// slices of one written name apart from two names on one line.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Written {
+    pub(crate) loc: Loc,
+    pub(crate) offset: usize,
+}
+
 /// A type name found in a declaration, a comment, or a re-export.
 #[derive(Clone, Debug)]
 pub(crate) struct TypeRef {
@@ -84,6 +92,9 @@ pub(crate) struct TypeRef {
     /// The full path of a name outside the crate, filled in by resolve:
     /// through `use` items, or the bare name of a prelude item.
     pub(crate) canonical: Option<Vec<String>>,
+    /// Where the name is written, for a name sliced from the source or a
+    /// derive name.
+    pub(crate) written: Option<Written>,
 }
 
 #[cfg(test)]
@@ -106,6 +117,7 @@ mod tests {
             comment: false,
             target: None,
             canonical: None,
+            written: None,
         }];
         assert_eq!(text.visible(&refs), "Vec<Block>,");
     }

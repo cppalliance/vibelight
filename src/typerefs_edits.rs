@@ -101,6 +101,7 @@ mod tests {
         let mut refs = Vec::new();
         let mut slicer = Slicer {
             file: &file,
+            file_id: 0,
             refs: &mut refs,
             module: 0,
             generics: &[],

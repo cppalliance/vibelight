@@ -21,3 +21,8 @@ impl Clone for Box<Engine> {
         Box::new(Engine { speed: 0 })
     }
 }
+
+/// A dial with an optional limit.
+pub struct Dial {
+    pub limit: Option<u32>,
+}

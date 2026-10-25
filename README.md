@@ -68,8 +68,9 @@ Each file opens with the target's name and its crate docs, then has these parts:
 - **Unconnected types:** types that name nothing and that nothing names.
 - **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `implements: Trait for Type;` lines.
 - **Modules:** one heading per module, with its docs, links to its declarations, and its re-exports, macros, constants, statics, free functions, and extern blocks.
+- **Spellings:** each item from outside the crate that the source writes in more than one way, with every spelling (see [Spellings](#spellings)).
 
-A level, Unconnected types, or Other impls shows up only when it has something in it. The markdown and HTML files hold the same headings, marks, and blocks. Markdown cannot put a link inside a code block, so only the HTML file links type names.
+A level, Unconnected types, Other impls, or Spellings shows up only when it has something in it. The markdown and HTML files hold the same headings, marks, and blocks. Markdown cannot put a link inside a code block, so only the HTML file links type names.
 
 Every type prints as one C++-style block, with the members of all its inherent impls merged in, wherever they are written. Here is a type whose fields and methods are all private:
 
@@ -97,9 +98,21 @@ The `fn` keyword and the bodies are gone. A method that takes `&self` gets no ma
 
 Traits a type implements or derives print the C++ way. `Default`, `Clone`, `From<T>`, `Drop`, `PartialEq`, and `PartialOrd` become a default constructor, a copy constructor, converting constructors, a destructor, `operator==`, and `operator<=>`, packed together after the fields, with `= default` when derived. Other standard traits form the base list by their short names, as in `struct Seed : Debug, Display`, and every other trait follows on its own line by its full path. A derive from another crate keeps its bold **MACRO** line above the block.
 
+## Spellings
+
+The Spellings section lists each item from outside the crate that the declarations write in more than one way, such as `fmt::Debug` in one place and `std::fmt::Debug` in another, so you can pick one and change the rest. It covers `std`, `core`, `alloc`, and other crates. A bare prelude name such as `Option` counts as `std::option::Option`, a `core::` or `alloc::` path counts as the `std` path that re-exports it, and a `use ... as` rename is one more spelling. Each entry gives every spelling with how often it is written and, when source links are on, a link to each line:
+
+```
+- `std::fmt::Debug` is written 2 ways; pick one and search for the rest:
+  - `Debug`, 2 times (source: [src/lib.rs:4](src/lib.rs#L4), [src/lib.rs:9](src/lib.rs#L9))
+  - `fmt::Debug`, once (source: [src/lib.rs:12](src/lib.rs#L12))
+```
+
+Names of the crate's own items are left out, because `crate::model::X`, `X`, and `super::X` are all normal in different modules. So are names in comments, re-exports, `use` lines, and function bodies. Glob imports such as `use std::fmt::*` are not followed, so a name that only comes through one is not counted.
+
 ## Warnings and exit codes
 
-When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links.
+When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way.
 
 - `0`: the files were written, warnings included.
 - `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, or a root file cannot be read. The reason is printed on stderr.

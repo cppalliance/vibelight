@@ -147,6 +147,36 @@ fn warnings_name_file_and_line_and_end_with_a_count() {
 }
 
 #[test]
+fn spellings_add_one_warning_line_only_when_an_item_has_two_spellings() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let result = run(
+        &fixtures().join("spellings"),
+        &tmp.path().join("two"),
+        false,
+    );
+    assert!(result.status.success());
+    let stderr = String::from_utf8(result.stderr).expect("stderr is UTF-8");
+    assert_eq!(
+        stderr.lines().collect::<Vec<_>>(),
+        [
+            "warning: 5 items written more than one way; see Spellings",
+            "1 warning"
+        ]
+    );
+    let result = run(
+        &fixtures().join("spellings-none"),
+        &tmp.path().join("one"),
+        false,
+    );
+    assert!(result.status.success());
+    assert!(
+        result.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+#[test]
 fn changing_a_declaration_changes_the_output() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let copy = tmp.path().join("structs");

@@ -226,11 +226,12 @@ impl Page<'_> {
                         let target = mark.as_ref().unwrap_or(heading);
                         let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(target), escape(text));
                     }
-                    Inline::Source(link) => {
+                    Inline::Source(links) => {
+                        let links: Vec<String> = links.iter().map(source_link).collect();
                         let _ = write!(
                             out,
                             " <span class=\"src\">(source: {})</span>",
-                            source_link(link)
+                            links.join(", ")
                         );
                     }
                     Inline::Break => out.push_str("<br>"),

@@ -12,6 +12,7 @@ mod collect_use;
 mod comments;
 mod document;
 mod document_kill;
+mod document_spellings;
 mod flatten;
 mod layout;
 mod layout_decl;
@@ -30,6 +31,7 @@ mod root;
 mod route;
 mod source;
 mod source_links;
+mod spellings;
 mod text;
 mod typerefs;
 mod typerefs_edits;
@@ -94,6 +96,7 @@ fn run(args: &Args) -> Result<()> {
     let mut warnings: Vec<Warning> = Vec::new();
     let mut unresolved = 0;
     let mut ambiguous = 0;
+    let mut spelled = 0;
     for target in &input.targets {
         let tree = modtree::walk(&input.dir, &target.root)?;
         let mut krate = collect::collect(tree, &input.dir, &target.crate_name, &target.title);
@@ -105,7 +108,9 @@ fn run(args: &Args) -> Result<()> {
             .map(|d| layout_decl::decl_block(&krate, d))
             .collect();
         let order = order::order(&krate, &blocks);
-        let doc = document::build(&krate, &others, &order, &blocks, links.as_ref());
+        let spellings = spellings::find(&krate);
+        spelled += spellings.len();
+        let doc = document::build(&krate, &others, &order, &blocks, &spellings, links.as_ref());
         let markdown = render_md::render(&doc);
         let member_link = links
             .as_ref()
@@ -138,7 +143,14 @@ fn run(args: &Args) -> Result<()> {
             "warning: {unresolved} type names unresolved, {ambiguous} ambiguous; they stay plain"
         );
     }
-    let count = warnings.len() + usize::from(unresolved > 0 || ambiguous > 0);
+    if spelled > 0 {
+        eprintln!(
+            "warning: {spelled} item{} written more than one way; see Spellings",
+            if spelled == 1 { "" } else { "s" }
+        );
+    }
+    let count =
+        warnings.len() + usize::from(unresolved > 0 || ambiguous > 0) + usize::from(spelled > 0);
     if count > 0 {
         eprintln!("{count} warning{}", if count == 1 { "" } else { "s" });
     }

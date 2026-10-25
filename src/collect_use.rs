@@ -123,6 +123,7 @@ impl Collector<'_> {
             comment: true,
             target: None,
             canonical: None,
+            written: None,
         });
         text.push_ref(id);
         text

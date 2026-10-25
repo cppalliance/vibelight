@@ -7,6 +7,7 @@ use crate::layout_items::{docs_block, module_block, other_impls};
 use crate::model::{Crate, DeclId, Loc, ModId, path_order};
 use crate::order::{Order, path_cmp};
 use crate::source_links::LinkBase;
+use crate::spellings::Entry;
 
 /// A link to a source file and line.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,8 +34,8 @@ pub(crate) enum Inline {
         heading: String,
         mark: Option<String>,
     },
-    /// ` (source: ...)`.
-    Source(Link),
+    /// ` (source: ...)`, with one link or more.
+    Source(Vec<Link>),
     /// A hard line break inside a list item.
     Break,
 }
@@ -104,6 +105,7 @@ pub(crate) fn build(
     others: &[usize],
     order: &Order,
     blocks: &[Block],
+    spellings: &[Entry],
     links: Option<&LinkBase>,
 ) -> Document {
     let texts = crate::order::block_texts(krate, blocks);
@@ -167,6 +169,18 @@ pub(crate) fn build(
     b.heading(2, "modules", "Modules");
     for &m in &modules {
         b.module(m);
+    }
+    if !spellings.is_empty() {
+        contents.push(Item {
+            inlines: vec![anchor("Spellings", "spellings")],
+            children: Vec::new(),
+        });
+        b.heading(2, "spellings", "Spellings");
+        let items = b.spelling_items(spellings);
+        b.nodes.push(Node::List {
+            class: "spellings",
+            items,
+        });
     }
     let (kill_summary, kill) = b.kill_list();
     Document {
@@ -398,7 +412,7 @@ impl Builder<'_> {
                     }
                     inlines.push(Inline::Code(entry.spans));
                     if let Some(link) = self.link(entry.loc, true) {
-                        inlines.push(Inline::Source(link));
+                        inlines.push(Inline::Source(vec![link]));
                     }
                     for mark in entry.marks {
                         inlines.push(Inline::Break);

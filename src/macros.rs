@@ -2,8 +2,9 @@
 
 use std::collections::BTreeSet;
 
-use proc_macro2::{TokenStream, TokenTree};
+use proc_macro2::{Span, TokenStream, TokenTree};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{Attribute, Expr, Macro, Meta, Path, Token};
 
@@ -118,7 +119,18 @@ fn test_only(meta: &Meta) -> bool {
 
 /// Returns the traits from every derive attribute, merged and sorted.
 pub(crate) fn derives(attrs: &[Attribute]) -> Vec<String> {
-    let mut names = Vec::new();
+    sorted(
+        derive_paths(attrs)
+            .into_iter()
+            .map(|(name, _)| name)
+            .collect(),
+    )
+}
+
+/// Returns each trait name in every derive attribute with where it is
+/// written, in written order.
+pub(crate) fn derive_paths(attrs: &[Attribute]) -> Vec<(String, Span)> {
+    let mut out = Vec::new();
     for meta in effective(attrs) {
         let Meta::List(list) = meta else {
             continue;
@@ -127,10 +139,10 @@ pub(crate) fn derives(attrs: &[Attribute]) -> Vec<String> {
             continue;
         }
         if let Ok(paths) = list.parse_args_with(Punctuated::<Path, Token![,]>::parse_terminated) {
-            names.extend(paths.iter().map(path_text));
+            out.extend(paths.iter().map(|path| (path_text(path), path.span())));
         }
     }
-    sorted(names)
+    out
 }
 
 /// Returns the attribute macros among `attrs`, sorted. A single-segment

@@ -20,7 +20,7 @@ pub(crate) struct Loc {
     pub(crate) line: u32,
 }
 
-pub(crate) use crate::text::{Seg, Text, TypeRef};
+pub(crate) use crate::text::{Seg, Text, TypeRef, Written};
 
 /// One comment printed above a node.
 #[derive(Clone, Debug, PartialEq, Eq)]
