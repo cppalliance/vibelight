@@ -1,3 +1,4 @@
 - When executing a plan, copy the plan to the plans/ directory, and the copied file will be named YYYY-MM-DD-{up-to-three-kebab-words}.plan.md
 - When a rendering case is not covered by a written rule, make the output look like a C++ header. A written rule always beats the C++ look. Pin every such choice with a golden test.
 - The golden files (`expected.md`, `expected.html`) are the specification. Change one only for an intended output change, in the same commit, after reading its diff. Never regenerate goldens to make a failing test pass.
+- Never push a tag. Tagging is reserved for the human, because a version tag starts the release workflow, which builds the release and publishes the crate to crates.io. So no `git tag` followed by a push, no `git push --tags`, no `git push origin <tag>`, no force-moving the `nightly` tag, and no `gh release create`, which creates a tag. Pushing branches to `master` stays allowed when the user has said to push.
