@@ -9,7 +9,7 @@ use syn::{
 };
 
 use crate::attrs;
-use crate::collect::{Collector, Here, is_public, loc, tokens_span};
+use crate::collect::{Collector, Here, loc};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
@@ -92,7 +92,7 @@ impl Collector<'_> {
             };
             self.modules[here.module].items.push(Item {
                 name,
-                public: is_public(&u.vis),
+                public: attrs::is_public(&u.vis),
                 kind: ItemKind::Reexport(text),
                 meta,
                 loc,
@@ -214,7 +214,7 @@ impl Collector<'_> {
         };
         self.modules[here.module].items.push(Item {
             name,
-            public: is_public(vis),
+            public: attrs::is_public(vis),
             kind,
             meta,
             loc,
@@ -340,7 +340,7 @@ impl Collector<'_> {
                     continue;
                 }
                 ForeignItem::Verbatim(tokens) => {
-                    let loc = loc(here, tokens_span(tokens));
+                    let loc = loc(here, macros::tokens_span(tokens));
                     self.unsupported_item(here, "verbatim foreign item", loc, true);
                     continue;
                 }
@@ -360,7 +360,7 @@ impl Collector<'_> {
             notes.extend(self.node_notes(here, attrs, lead_i, range));
             let mut item_cfgs = attrs::cfgs(attrs, file);
             item_cfgs.extend(cfgs.iter().cloned());
-            crate::collect::sort_marks(&mut item_cfgs);
+            attrs::sort_marks(&mut item_cfgs);
             let meta = Meta {
                 notes,
                 trailing: self.trailing(here, &trail_i),
@@ -369,7 +369,7 @@ impl Collector<'_> {
             };
             self.modules[here.module].items.push(Item {
                 name,
-                public: is_public(vis),
+                public: attrs::is_public(vis),
                 kind: ItemKind::Foreign {
                     abi: abi.clone(),
                     item: foreign,

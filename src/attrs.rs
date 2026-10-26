@@ -1,7 +1,9 @@
 //! Reads the attributes the outline cares about: `cfg`, `path`, and docs.
 
 use syn::punctuated::Punctuated;
-use syn::{AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Token};
+use syn::{
+    AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Token, Visibility,
+};
 
 use crate::model::name_order;
 use crate::source::SourceFile;
@@ -34,9 +36,19 @@ pub(crate) fn cfgs(attrs: &[Attribute], file: &SourceFile) -> Vec<String> {
             _ => None,
         })
         .collect();
-    out.sort_by(|a, b| name_order(a, b));
-    out.dedup();
+    sort_marks(&mut out);
     out
+}
+
+/// Sorts `cfg` lines by name and drops repeats.
+pub(crate) fn sort_marks(marks: &mut Vec<String>) {
+    marks.sort_by(|a, b| name_order(a, b));
+    marks.dedup();
+}
+
+/// Tells whether a visibility is plain `pub`.
+pub(crate) fn is_public(vis: &Visibility) -> bool {
+    matches!(vis, Visibility::Public(_))
 }
 
 /// Returns the normalized source text inside a meta list's delimiters.

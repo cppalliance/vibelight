@@ -6,7 +6,7 @@ use syn::visit::Visit;
 use syn::{Field, FieldsNamed, FieldsUnnamed};
 
 use crate::attrs;
-use crate::collect::{Collector, Here, is_public, loc};
+use crate::collect::{Collector, Here, loc};
 use crate::comments::{Attached, attach};
 use crate::model::{DeclId, Holder, Member, MemberKind, Meta, Note, Param, Text};
 use crate::typerefs::range_of;
@@ -48,7 +48,7 @@ impl Collector<'_> {
             let mark = self.attribute_mark(&field.attrs, helpers, Holder::Decl(id), loc);
             members.push(Member {
                 name: ident.to_string(),
-                public: is_public(&field.vis),
+                public: attrs::is_public(&field.vis),
                 kind: MemberKind::Field(ty),
                 meta: Meta {
                     notes,

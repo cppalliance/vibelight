@@ -1,14 +1,16 @@
 //! Finds macros: derive lists, attribute macros, and invocations.
 
 use std::collections::BTreeSet;
+use std::ops::Range;
 
 use proc_macro2::{Span, TokenStream, TokenTree};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
-use syn::{Attribute, Expr, Macro, Meta, Path, Token};
+use syn::{Attribute, Expr, Macro, MacroDelimiter, Meta, Path, Token};
 
 use crate::model::name_order;
+use crate::source::SourceFile;
 use crate::typerefs::strip_raw;
 
 /// Attributes the compiler or a tool owns, which are never macros.
@@ -219,6 +221,25 @@ fn sorted(mut names: Vec<String>) -> Vec<String> {
     names.sort_by(|a, b| name_order(a, b));
     names.dedup();
     names
+}
+
+/// Returns the bytes inside a macro's delimiters, delimiters included.
+pub(crate) fn delimiter_range(delimiter: &MacroDelimiter, file: &SourceFile) -> Range<usize> {
+    let span = match delimiter {
+        MacroDelimiter::Paren(d) => d.span,
+        MacroDelimiter::Brace(d) => d.span,
+        MacroDelimiter::Bracket(d) => d.span,
+    };
+    file.start(span.open())..file.end(span.close())
+}
+
+/// Returns the span of a token stream's first token.
+pub(crate) fn tokens_span(tokens: &TokenStream) -> Span {
+    tokens
+        .clone()
+        .into_iter()
+        .next()
+        .map_or_else(Span::call_site, |t| t.span())
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ use syn::visit::Visit;
 use syn::{Attribute, ImplItem, ItemImpl, TraitItem, Type};
 
 use crate::attrs;
-use crate::collect::{Collector, Here, delimiter_range, is_public, loc, sort_marks, tokens_span};
+use crate::collect::{Collector, Here, loc};
 use crate::collect_bases::single_arg;
 use crate::comments::{Attached, attach};
 use crate::macros;
@@ -152,7 +152,7 @@ impl Collector<'_> {
                     let loc = loc(&here, c.ident.span());
                     let (value, marks) = self.value(&here, &c.expr, Holder::Impl(id), loc);
                     let kind = MemberKind::Const { ty, value };
-                    let public = is_public(&c.vis);
+                    let public = attrs::is_public(&c.vis);
                     let parts = Parts {
                         attrs: &c.attrs,
                         ident: &c.ident,
@@ -176,7 +176,7 @@ impl Collector<'_> {
                         .into_iter()
                         .collect();
                     let kind = MemberKind::Fn(sig);
-                    let public = is_public(&f.vis);
+                    let public = attrs::is_public(&f.vis);
                     let parts = Parts {
                         attrs: &f.attrs,
                         ident: &f.sig.ident,
@@ -198,7 +198,7 @@ impl Collector<'_> {
                     text.append(&self.slicer(&here).node(&t.ty, |f| f.visit_type(&t.ty)));
                     let loc = loc(&here, t.ident.span());
                     let kind = MemberKind::Type(text);
-                    let public = is_public(&t.vis);
+                    let public = attrs::is_public(&t.vis);
                     let parts = Parts {
                         attrs: &t.attrs,
                         ident: &t.ident,
@@ -213,7 +213,7 @@ impl Collector<'_> {
                     Some(self.member(&here, parts))
                 }
                 ImplItem::Macro(m) if !attrs::is_test_only(&m.attrs) => {
-                    self.discard(here, delimiter_range(&m.mac.delimiter, file));
+                    self.discard(here, macros::delimiter_range(&m.mac.delimiter, file));
                     let text = format!("{}!", macros::path_text(&m.mac.path));
                     let loc = loc(here, m.mac.path.segments[0].ident.span());
                     self.macros.push(MacroUse {
@@ -226,7 +226,7 @@ impl Collector<'_> {
                     None
                 }
                 ImplItem::Verbatim(tokens) if !trait_impl => {
-                    let loc = loc(here, tokens_span(tokens));
+                    let loc = loc(here, macros::tokens_span(tokens));
                     self.warn(loc, "unsupported verbatim impl item".to_owned());
                     Some(Member {
                         name: String::new(),
@@ -258,7 +258,7 @@ impl Collector<'_> {
             };
             if let Some(mut member) = member {
                 member.meta.cfgs.extend(impl_cfgs.iter().cloned());
-                sort_marks(&mut member.meta.cfgs);
+                attrs::sort_marks(&mut member.meta.cfgs);
                 members.push(member);
             }
         }
@@ -360,7 +360,7 @@ impl Collector<'_> {
                     Some(self.member(&here, parts))
                 }
                 TraitItem::Macro(m) if !attrs::is_test_only(&m.attrs) => {
-                    self.discard(here, delimiter_range(&m.mac.delimiter, file));
+                    self.discard(here, macros::delimiter_range(&m.mac.delimiter, file));
                     let text = format!("{}!", macros::path_text(&m.mac.path));
                     let loc = loc(here, m.mac.path.segments[0].ident.span());
                     self.macros.push(MacroUse {
@@ -378,7 +378,7 @@ impl Collector<'_> {
                     })
                 }
                 TraitItem::Verbatim(tokens) => {
-                    let loc = loc(here, tokens_span(tokens));
+                    let loc = loc(here, macros::tokens_span(tokens));
                     self.warn(loc, "unsupported verbatim trait item".to_owned());
                     Some(Member {
                         name: String::new(),

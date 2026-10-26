@@ -20,6 +20,7 @@ pub(crate) struct Loc {
     pub(crate) line: u32,
 }
 
+pub(crate) use crate::model_impl::{Impl, Special, SpecialKind};
 pub(crate) use crate::text::{CrossRef, Seg, Text, TypeRef, Written};
 
 /// One comment printed above a node.
@@ -184,32 +185,6 @@ pub(crate) struct Base {
     pub(crate) long: bool,
 }
 
-/// The standard trait behind a C++ special member function, a constructor
-/// or the destructor, in print order.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum SpecialKind {
-    /// The default constructor, `Type();`
-    Default,
-    /// A converting constructor, `Type(T&);`
-    From,
-    /// The destructor, `~Type();`
-    Drop,
-}
-
-/// One special member of a type.
-#[derive(Clone, Debug)]
-pub(crate) struct Special {
-    pub(crate) kind: SpecialKind,
-    /// The argument of a converting constructor, already ending in a
-    /// reference.
-    pub(crate) arg: Option<Text>,
-    /// Whether a derive wrote it, which prints `= default`.
-    pub(crate) derived: bool,
-    /// Comments above the impl it came from.
-    pub(crate) notes: Vec<Note>,
-    pub(crate) loc: Loc,
-}
-
 /// A struct, enum, union, trait, or type alias.
 #[derive(Clone, Debug)]
 pub(crate) struct Decl {
@@ -244,32 +219,6 @@ pub(crate) struct Decl {
     pub(crate) impl_notes: Vec<Note>,
     /// Impl blocks that add members or base-list entries.
     pub(crate) impl_locs: Vec<Loc>,
-}
-
-/// One impl block.
-#[derive(Clone, Debug)]
-pub(crate) struct Impl {
-    /// The `impl` line.
-    pub(crate) loc: Loc,
-    /// The self type as written.
-    pub(crate) self_text: Text,
-    /// The self type's path when it is a plain path, generic arguments
-    /// left out.
-    pub(crate) self_ref: Option<RefId>,
-    /// The trait of a trait impl.
-    pub(crate) trait_: Option<Base>,
-    /// An inherent impl's members; a trait impl shows none.
-    pub(crate) members: Vec<Member>,
-    /// Macro invocations in the impl's body.
-    pub(crate) marks: Vec<String>,
-    /// Attribute macros on the impl, sorted.
-    pub(crate) attributes: Vec<String>,
-    /// Comments above the impl line.
-    pub(crate) notes: Vec<Note>,
-    /// Comments with nothing after them in an inherent impl's body.
-    pub(crate) dangling: Vec<Note>,
-    /// The declaration this impl attached to, filled in by attach.
-    pub(crate) attached: Option<DeclId>,
 }
 
 /// One entry in a module's trailing block.

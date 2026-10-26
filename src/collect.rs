@@ -5,14 +5,14 @@ use std::ops::Range;
 use std::path::Path;
 
 use proc_macro2::Span;
-use syn::{Attribute, Generics, Item, ItemMacro, ItemMod, MacroDelimiter, Visibility, WhereClause};
+use syn::{Attribute, Generics, Item, ItemMacro, ItemMod, WhereClause};
 
 use crate::attrs;
 use crate::comments::{Attached, NoteCx, Pool, attach};
 use crate::macros;
 use crate::model::{
     Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, ModId,
-    Module, Note, Text, TypeRef, Warning, name_order,
+    Module, Note, Text, TypeRef, Warning,
 };
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile};
@@ -194,7 +194,7 @@ impl Collector<'_> {
             Item::Union(u) => self.item_union(here, u, lead, trail),
             Item::Use(u) => self.item_use(here, u, lead, trail),
             Item::Verbatim(tokens) => {
-                let loc = loc(here, tokens_span(tokens));
+                let loc = loc(here, macros::tokens_span(tokens));
                 self.unsupported_item(here, "verbatim item", loc, true);
             }
             _ => {
@@ -214,7 +214,7 @@ impl Collector<'_> {
         }
         self.discard(
             here,
-            delimiter_range(&m.mac.delimiter, &self.files[here.file]),
+            macros::delimiter_range(&m.mac.delimiter, &self.files[here.file]),
         );
         let notes = self.node_notes(here, &m.attrs, lead, range_of(m, &self.files[here.file]));
         let name = macros::path_text(&m.mac.path);
@@ -460,34 +460,4 @@ pub(crate) fn generic_names(generics: &Generics) -> Vec<String> {
             syn::GenericParam::Lifetime(_) => None,
         })
         .collect()
-}
-
-/// Tells whether a visibility is plain `pub`.
-pub(crate) fn is_public(vis: &Visibility) -> bool {
-    matches!(vis, Visibility::Public(_))
-}
-
-/// Returns the bytes inside a macro's delimiters, delimiters included.
-pub(crate) fn delimiter_range(delimiter: &MacroDelimiter, file: &SourceFile) -> Range<usize> {
-    let span = match delimiter {
-        MacroDelimiter::Paren(d) => d.span,
-        MacroDelimiter::Brace(d) => d.span,
-        MacroDelimiter::Bracket(d) => d.span,
-    };
-    file.start(span.open())..file.end(span.close())
-}
-
-/// Returns the span of a token stream's first token.
-pub(crate) fn tokens_span(tokens: &proc_macro2::TokenStream) -> Span {
-    tokens
-        .clone()
-        .into_iter()
-        .next()
-        .map_or_else(Span::call_site, |t| t.span())
-}
-
-/// Sorts marks by name and drops repeats.
-pub(crate) fn sort_marks(marks: &mut Vec<String>) {
-    marks.sort_by(|a, b| name_order(a, b));
-    marks.dedup();
 }

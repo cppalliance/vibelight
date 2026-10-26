@@ -6,7 +6,7 @@ use syn::visit::Visit;
 use syn::{Attribute, FnArg, ItemFn, ReceiverKind, ReturnType, Safety, Signature, Type};
 
 use crate::attrs;
-use crate::collect::{Collector, Here, is_public, loc};
+use crate::collect::{Collector, Here, loc};
 use crate::comments::{Attached, attach};
 use crate::model::{Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
 use crate::source::Comment;
@@ -39,7 +39,7 @@ impl Collector<'_> {
         };
         self.modules[here.module].items.push(Item {
             name: f.sig.ident.to_string(),
-            public: is_public(&f.vis),
+            public: attrs::is_public(&f.vis),
             kind: ItemKind::Fn(sig),
             meta,
             loc,
