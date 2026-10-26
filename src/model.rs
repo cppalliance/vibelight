@@ -237,6 +237,9 @@ pub(crate) struct Decl {
     /// The declaration's own visibility, which the public surface reads and
     /// the block never prints.
     pub(crate) vis: Vis,
+    /// Whether it is test support (`test_support::mark`), which keeps it
+    /// out of the levels.
+    pub(crate) test_support: bool,
 }
 
 /// One entry in a module's trailing block.
@@ -324,6 +327,8 @@ pub(crate) struct Module {
     pub(crate) dangling: Vec<Note>,
     /// The visibility on the `mod` line; the root module is public.
     pub(crate) vis: Vis,
+    /// Whether it, or a module around it, is test support.
+    pub(crate) test_support: bool,
 }
 
 /// The kind of a macro, in kill list order.

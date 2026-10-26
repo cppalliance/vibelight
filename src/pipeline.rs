@@ -19,7 +19,7 @@ use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
     attach, collect, document, layout_decl, modtree, order, render_html, render_md, resolve,
-    resolve_run, spellings, surface,
+    resolve_run, spellings, surface, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -64,6 +64,7 @@ pub(crate) fn outline(
         let dir = &chosen.packages[p].input.dir;
         let tree = modtree::walk(dir, &target.root)?;
         let mut krate = collect::collect(tree, dir, &target.crate_name, &target.title);
+        test_support::mark(&mut krate);
         let tally = resolve::resolve(&mut krate);
         outcome.unresolved += tally.unresolved;
         outcome.ambiguous += tally.ambiguous;

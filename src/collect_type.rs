@@ -396,6 +396,7 @@ impl Collector<'_> {
             impl_notes: Vec::new(),
             impl_locs: Vec::new(),
             vis: head.vis,
+            test_support: false,
         });
     }
 }

@@ -47,6 +47,7 @@ mod source_links;
 mod spellings;
 mod stamp;
 mod surface;
+mod test_support;
 mod text;
 mod typerefs;
 mod typerefs_edits;

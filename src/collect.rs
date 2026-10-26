@@ -92,6 +92,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
             uses: Vec::new(),
             dangling: Vec::new(),
             vis: Vis::Public,
+            test_support: false,
         });
         if let Some(decl) = source.decl {
             collector.children.insert(decl, id);

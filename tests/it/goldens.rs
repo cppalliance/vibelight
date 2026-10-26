@@ -92,6 +92,7 @@ goldens! {
     struct_class => "struct-class",
     structs => "structs",
     surface => "surface",
+    test_support => "test-support",
     traits => "traits",
     unions => "unions",
     unparsable => "unparsable",

@@ -2,6 +2,7 @@
 //! name, by the path they name it with.
 
 use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Text, Vis, path_order};
+use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
 
 /// One path of the public surface.
@@ -10,6 +11,8 @@ pub(crate) struct Entry {
     /// The path a user of the crate writes, below the crate root.
     pub(crate) path: Vec<String>,
     pub(crate) kind: Kind,
+    /// Whether the path names test support (`test_support::mark`).
+    pub(crate) test_support: bool,
 }
 
 /// What a surface path names, and so where its entry links.
@@ -34,8 +37,10 @@ pub(crate) enum Kind {
 enum Found {
     Decl(DeclId),
     Module(ModId),
-    Function(ModId),
-    Value(ModId),
+    /// A function, with whether it is test support.
+    Function(ModId, bool),
+    /// A constant or a static, with whether it is test support.
+    Value(ModId, bool),
 }
 
 /// Walks from the crate root through public modules and public re-exports,
@@ -45,10 +50,11 @@ pub(crate) fn walk(krate: &Crate) -> Vec<Entry> {
         krate,
         out: Vec::new(),
         stack: Vec::new(),
+        inherited: false,
     };
     walk.module(0, &[]);
     for (name, m) in &krate.exported_macros {
-        walk.push(&[], name, Kind::Macro(*m));
+        walk.push(&[], name, Kind::Macro(*m), krate.modules[*m].test_support);
     }
     let mut out = walk.out;
     out.sort_by(|a, b| path_order(&a.path, &b.path).then(a.kind.cmp(&b.kind)));
@@ -61,6 +67,9 @@ struct Walk<'a> {
     out: Vec<Entry>,
     /// The modules being walked, which guards against re-export cycles.
     stack: Vec<ModId>,
+    /// Whether everything the walk now adds is test support, as inside a
+    /// test-support module or a test-support glob.
+    inherited: bool,
 }
 
 impl Walk<'_> {
@@ -71,9 +80,11 @@ impl Walk<'_> {
         }
         self.stack.push(m);
         let krate = self.krate;
+        let outer = self.inherited;
+        self.inherited |= krate.modules[m].test_support;
         for (d, decl) in krate.decls.iter().enumerate() {
             if decl.module == m && decl.vis == Vis::Public {
-                self.push(prefix, &decl.name, Kind::Decl(d));
+                self.push(prefix, &decl.name, Kind::Decl(d), decl.test_support);
             }
         }
         for child in children(krate, m) {
@@ -83,7 +94,8 @@ impl Walk<'_> {
                     .last()
                     .cloned()
                     .unwrap_or_default();
-                self.push(prefix, &name, Kind::Module(child));
+                let support = krate.modules[child].test_support;
+                self.push(prefix, &name, Kind::Module(child), support);
                 self.module(child, &joined(prefix, &name));
             }
         }
@@ -91,6 +103,7 @@ impl Walk<'_> {
             if item.vis != Vis::Public {
                 continue;
             }
+            let support = is_test_support(&item.meta.cfgs);
             let kind = match &item.kind {
                 ItemKind::Fn(_)
                 | ItemKind::Foreign {
@@ -101,26 +114,31 @@ impl Walk<'_> {
                     Kind::Value(m)
                 }
                 ItemKind::Reexport { text, .. } => {
-                    self.reexport(m, prefix, &item.name, text);
+                    self.reexport(m, prefix, &item.name, text, support);
                     continue;
                 }
                 ItemKind::Mark(_) | ItemKind::Unsupported(_) => continue,
             };
-            self.push(prefix, &item.name, kind);
+            self.push(prefix, &item.name, kind, support);
         }
+        self.inherited = outer;
         self.stack.pop();
     }
 
     /// Adds what a re-export in module `m` names under its new name, and
     /// walks a re-exported module under that name. A glob adds the target
-    /// module's public items under `prefix` itself.
-    fn reexport(&mut self, m: ModId, prefix: &[String], name: &str, text: &Text) {
+    /// module's public items under `prefix` itself. An entry is test
+    /// support when the re-export is or when what it names is.
+    fn reexport(&mut self, m: ModId, prefix: &[String], name: &str, text: &Text, support: bool) {
         let krate = self.krate;
         let Some(id) = text.0.iter().find_map(|seg| match seg {
             Seg::Ref(id) => Some(*id),
             Seg::Plain(_) => None,
         }) else {
+            let outer = self.inherited;
+            self.inherited |= support;
             self.glob(m, prefix, &text.visible(&krate.refs));
+            self.inherited = outer;
             return;
         };
         let reference = &krate.refs[id];
@@ -135,14 +153,26 @@ impl Walk<'_> {
             ),
         };
         match found {
-            Some(Found::Decl(d)) => self.push(prefix, name, Kind::Decl(d)),
-            Some(Found::Module(target)) => {
-                self.push(prefix, name, Kind::Module(target));
-                self.module(target, &joined(prefix, name));
+            Some(Found::Decl(d)) => {
+                let support = support || krate.decls[d].test_support;
+                self.push(prefix, name, Kind::Decl(d), support);
             }
-            Some(Found::Function(at)) => self.push(prefix, name, Kind::Function(at)),
-            Some(Found::Value(at)) => self.push(prefix, name, Kind::Value(at)),
-            None => self.push(prefix, name, Kind::Unlinked(reference.text.clone())),
+            Some(Found::Module(target)) => {
+                let support = support || krate.modules[target].test_support;
+                self.push(prefix, name, Kind::Module(target), support);
+                let outer = self.inherited;
+                self.inherited |= support;
+                self.module(target, &joined(prefix, name));
+                self.inherited = outer;
+            }
+            Some(Found::Function(at, own)) => {
+                self.push(prefix, name, Kind::Function(at), support || own);
+            }
+            Some(Found::Value(at, own)) => self.push(prefix, name, Kind::Value(at), support || own),
+            None => {
+                let kind = Kind::Unlinked(reference.text.clone());
+                self.push(prefix, name, kind, support);
+            }
         }
     }
 
@@ -158,14 +188,15 @@ impl Walk<'_> {
             .collect();
         match module_at(self.krate, m, &segments, global) {
             Some(target) => self.module(target, prefix),
-            None => self.push(prefix, "*", Kind::Unlinked(written.to_owned())),
+            None => self.push(prefix, "*", Kind::Unlinked(written.to_owned()), false),
         }
     }
 
-    fn push(&mut self, prefix: &[String], name: &str, kind: Kind) {
+    fn push(&mut self, prefix: &[String], name: &str, kind: Kind, support: bool) {
         self.out.push(Entry {
             path: joined(prefix, name),
             kind,
+            test_support: self.inherited || support,
         });
     }
 }
@@ -243,14 +274,15 @@ fn lookup(
         .iter()
         .filter(|i| strip_raw(&i.name) == name)
     {
+        let support = krate.modules[m].test_support || is_test_support(&item.meta.cfgs);
         match &item.kind {
             ItemKind::Fn(_)
             | ItemKind::Foreign {
                 item: Foreign::Fn(_),
                 ..
-            } => return Some(Found::Function(m)),
+            } => return Some(Found::Function(m, support)),
             ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => {
-                return Some(Found::Value(m));
+                return Some(Found::Value(m, support));
             }
             ItemKind::Reexport { text, .. } => {
                 let next = text.0.iter().find_map(|seg| match seg {

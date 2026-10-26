@@ -90,3 +90,7 @@ pub fn start() {}
 
 /// A crate-only type.
 pub(crate) struct Internal;
+
+/// A fake for tests and benches.
+#[cfg(any(test, feature = "test-support"))]
+pub struct Fake;

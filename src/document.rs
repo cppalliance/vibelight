@@ -124,38 +124,8 @@ pub(crate) fn build(
         heading: String::new(),
     };
     let mut contents = Vec::new();
-    if !surface.is_empty() {
-        contents.push(Item {
-            inlines: vec![anchor("Public surface", "surface")],
-            children: Vec::new(),
-        });
-        b.heading(2, "surface", "Public surface");
-        let items = b.surface_items(surface);
-        b.nodes.push(Node::List {
-            class: "surface",
-            items,
-        });
-    }
-    for (index, level) in order.levels.iter().enumerate() {
-        let id = format!("level.{}", index + 1);
-        let text = if index == 0 {
-            "Level 1: top-level types".to_owned()
-        } else {
-            format!("Level {}", index + 1)
-        };
-        contents.push(b.section_item(&text, &id, level));
-        b.heading(2, &id, &text);
-        for &decl in level {
-            b.decl(decl);
-        }
-    }
-    if !order.unconnected.is_empty() {
-        contents.push(b.section_item("Unconnected types", "unconnected", &order.unconnected));
-        b.heading(2, "unconnected", "Unconnected types");
-        for &decl in &order.unconnected {
-            b.decl(decl);
-        }
-    }
+    contents.extend(b.surface(surface));
+    contents.extend(b.ordered(order));
     if !others.is_empty() {
         contents.push(Item {
             inlines: vec![anchor("Other impls", "impls")],

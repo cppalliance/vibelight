@@ -4,10 +4,44 @@ use crate::document::{Builder, Inline, Item, Link, Node, anchor};
 use crate::layout::Block;
 use crate::layout_items::{self, docs_block, module_block};
 use crate::model::{DeclId, Loc, ModId};
-use crate::order::path_cmp;
+use crate::order::{Order, path_cmp};
 
 impl Builder<'_> {
-    pub(crate) fn section_item(&self, text: &str, id: &str, decls: &[DeclId]) -> Item {
+    /// Adds the level sections, then Test support and Unconnected types,
+    /// and returns their contents entries.
+    pub(crate) fn ordered(&mut self, order: &Order) -> Vec<Item> {
+        let mut contents = Vec::new();
+        for (index, level) in order.levels.iter().enumerate() {
+            let id = format!("level.{}", index + 1);
+            let text = if index == 0 {
+                "Level 1: top-level types".to_owned()
+            } else {
+                format!("Level {}", index + 1)
+            };
+            contents.push(self.section_item(&text, &id, level));
+            self.heading(2, &id, &text);
+            for &decl in level {
+                self.decl(decl);
+            }
+        }
+        let rest = [
+            ("Test support", "test-support", &order.test_support),
+            ("Unconnected types", "unconnected", &order.unconnected),
+        ];
+        for (text, id, decls) in rest {
+            if decls.is_empty() {
+                continue;
+            }
+            contents.push(self.section_item(text, id, decls));
+            self.heading(2, id, text);
+            for &decl in decls {
+                self.decl(decl);
+            }
+        }
+        contents
+    }
+
+    fn section_item(&self, text: &str, id: &str, decls: &[DeclId]) -> Item {
         Item {
             inlines: vec![anchor(text, id)],
             children: decls

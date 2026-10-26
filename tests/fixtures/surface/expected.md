@@ -11,6 +11,8 @@
 - [Level 1: top-level types](#level.1)
   - [api::v1::Request](#type.surface.api.v1.Request)
   - [detail::Handle](#type.surface.detail.Handle)
+- [Test support](#test-support)
+  - [Fake](#type.surface.Fake)
 - [Unconnected types](#unconnected)
   - [detail::tools::Tool](#type.surface.detail.tools.Tool)
   - [Internal](#type.surface.Internal)
@@ -41,6 +43,7 @@
 - [CALLS](#mod.surface)
 - [CURRENT](#mod.surface.values)
 - [deep()](#mod.surface.values.inner)
+- [Fake](#type.surface.Fake) (test support)
 - [Handle](#type.surface.detail.Handle)
 - [hello!](#mod.surface)
 - [kit](#mod.surface.detail.tools)
@@ -67,6 +70,18 @@ struct Request;
 ```
 /// A handle made public through a re-export.
 struct Handle;
+```
+
+<a id="test-support"></a>
+## Test support
+
+<a id="type.surface.Fake"></a>
+### Fake
+
+```
+/// A fake for tests and benches.
+// cfg: any(test, feature = "test-support")
+struct Fake;
 ```
 
 <a id="unconnected"></a>
@@ -102,6 +117,7 @@ struct Marker;
 <a id="mod.surface"></a>
 ### surface
 
+- [Fake](#type.surface.Fake)
 - [Internal](#type.surface.Internal)
 
 ```

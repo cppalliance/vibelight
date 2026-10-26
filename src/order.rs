@@ -12,6 +12,8 @@ pub(crate) struct Order {
     pub(crate) levels: Vec<Vec<DeclId>>,
     /// Declarations that name nothing and that nothing names, in path order.
     pub(crate) unconnected: Vec<DeclId>,
+    /// Test-support declarations, which leave the levels, in path order.
+    pub(crate) test_support: Vec<DeclId>,
 }
 
 /// Compares declarations in path order (rule 30); declarations that share
@@ -45,22 +47,14 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
     let path_cmp = |a: DeclId, b: DeclId| path_cmp(krate, texts, a, b);
     let n = krate.decls.len();
     let mentions = block_mentions(krate, blocks);
-    let out: Vec<BTreeSet<DeclId>> = mentions
-        .iter()
-        .map(|m| m.iter().copied().collect())
-        .collect();
-    let mut named = vec![false; n];
-    for targets in &out {
-        for &t in targets {
-            named[t] = true;
-        }
-    }
-    for (d, modules) in module_mentions(krate).iter().enumerate() {
-        named[d] |= !modules.is_empty();
-    }
-    let mut unconnected: Vec<DeclId> = (0..n).filter(|&d| out[d].is_empty() && !named[d]).collect();
+    let Split {
+        out,
+        connected,
+        mut unconnected,
+        mut test_support,
+    } = split(krate, &mentions);
+    test_support.sort_by(|&a, &b| path_cmp(a, b));
     unconnected.sort_by(|&a, &b| path_cmp(a, b));
-    let connected: Vec<DeclId> = (0..n).filter(|&d| !out[d].is_empty() || named[d]).collect();
 
     let groups = strongly_connected(n, &out, &connected);
     let mut group_of = vec![usize::MAX; n];
@@ -137,6 +131,52 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
     Order {
         levels: result,
         unconnected,
+        test_support,
+    }
+}
+
+/// The declarations sorted into the three places they print, before
+/// ordering.
+struct Split {
+    /// The naming edges among the declarations that take part in the
+    /// levels.
+    out: Vec<BTreeSet<DeclId>>,
+    /// The declarations that name something or that something names.
+    connected: Vec<DeclId>,
+    unconnected: Vec<DeclId>,
+    /// Test-support declarations, which leave the levels. The names they
+    /// use still keep a type out of Unconnected.
+    test_support: Vec<DeclId>,
+}
+
+fn split(krate: &Crate, mentions: &[Vec<DeclId>]) -> Split {
+    let n = krate.decls.len();
+    let support = |d: DeclId| krate.decls[d].test_support;
+    let mut named = vec![false; n];
+    for targets in mentions {
+        for &t in targets {
+            named[t] = true;
+        }
+    }
+    for (d, modules) in module_mentions(krate).iter().enumerate() {
+        named[d] |= !modules.is_empty();
+    }
+    let out = mentions
+        .iter()
+        .enumerate()
+        .map(|(d, m)| {
+            m.iter()
+                .copied()
+                .filter(|&t| !support(d) && !support(t))
+                .collect()
+        })
+        .collect();
+    let in_use = |d: DeclId| !mentions[d].is_empty() || named[d];
+    Split {
+        out,
+        connected: (0..n).filter(|&d| !support(d) && in_use(d)).collect(),
+        unconnected: (0..n).filter(|&d| !support(d) && !in_use(d)).collect(),
+        test_support: (0..n).filter(|&d| support(d)).collect(),
     }
 }
 
