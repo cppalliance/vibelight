@@ -256,6 +256,7 @@ impl Collector<'_> {
             notes,
             trailing: self.trailing(here, trail),
             cfgs: attrs::cfgs(&m.attrs, &self.files[here.file]),
+            attrs: attrs::api(&m.attrs, &self.files[here.file]),
             marks: Vec::new(),
         };
         self.modules[here.module].items.push(ModItem {

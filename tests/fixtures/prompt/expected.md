@@ -55,6 +55,7 @@
 
 ```
 /// A fully parsed prompt file.
+[[non_exhaustive]]
 struct Prompt : Clone, Debug, Eq, PartialEq
 {
     /// Parses the full source text of a prompt file into a `Prompt` and
@@ -104,9 +105,11 @@ struct Prompt : Clone, Debug, Eq, PartialEq
         (std::result::Result<Prompt, ParseError>, Vec<Event>);
 
     /// Returns the parsed frontmatter.
+    [[must_use]]
     frontmatter() -> Frontmatter&;
 
     /// Returns the prompt's title, the text of its required H1 heading.
+    [[must_use]]
     title() -> str&;
 
 internal:
@@ -124,14 +127,17 @@ internal:
 
     /// The entry-point section: the first top-level section in file order;
     /// the Engine reaches it through `crate::detail::entry`.
+    [[must_use]]
     entry() -> Option<Section&>;
 
     /// Returns the ordered live Lua and prose blocks from the H1; the Engine
     /// reaches them through `crate::detail::h1_blocks`.
+    [[must_use]]
     h1_blocks() -> [Block]&;
 
     /// Returns the top-level H2 sections in file order; the Engine reaches
     /// them through `crate::detail::sections`.
+    [[must_use]]
     sections() -> [Section]&;
 
 private:
@@ -169,35 +175,45 @@ struct Frontmatter;
 
 ```
 /// One section of a prompt: a heading, ordered blocks, and children.
+[[non_exhaustive]]
 struct Section : Clone, Debug, Eq, PartialEq
 {
     /// Returns the ordered Lua and prose blocks of this section.
+    [[must_use]]
     blocks() -> [Block]&;
 
     /// Returns the child sections nested under this one.
+    [[must_use]]
     children() -> [Section]&;
 
     /// Classic trailing Lua fence when the last block is Lua and not the sole
     /// leading prologue (a section that is only one Lua block has no epilog).
+    [[must_use]]
     epilog() -> Option<LuaProgram&>;
 
     /// Returns the pre-parsed bullet items for a list-only section.
+    [[must_use]]
     items() -> [BodyText]&;
 
     /// Returns the heading level (2 through 6).
+    [[must_use]]
     level() -> u8;
 
     /// The section's own raw Markdown: from just after its heading line to the next
     /// heading of any level, leading blank lines and trailing whitespace trimmed.
+    [[must_use]]
     markdown() -> str&;
 
     /// Returns the heading text (the section's address).
+    [[must_use]]
     name() -> str&;
 
     /// Classic leading Lua fence when the first block is Lua.
+    [[must_use]]
     prologue() -> Option<LuaProgram&>;
 
     /// Text of the last prose block, or `""` when the section has none.
+    [[must_use]]
     prose() -> str&;
 
 internal:
@@ -239,6 +255,7 @@ using Result<T> = std::result::Result<T, Error>;
 
 ```
 /// One executable block inside a section: a compiled Lua fence or prose.
+[[non_exhaustive]]
 enum Block : Clone, Debug, Eq, PartialEq
 {
     /// An exact `lua` fence compiled at parse time.
@@ -249,6 +266,7 @@ enum Block : Clone, Debug, Eq, PartialEq
     ///
     /// The executor installs it as the following Lua block's lazy `prose`
     /// template.
+    [[non_exhaustive]]
     Prose
     {
         /// Captured Markdown, trimmed of surrounding blank lines.

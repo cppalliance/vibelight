@@ -44,6 +44,7 @@
 /// A type with derives and an attribute macro.
 struct Event : Clone, Debug, PartialEq
 {
+    [[serde(rename = "n")]]
     name: String,
 
     /// Has an attribute macro.

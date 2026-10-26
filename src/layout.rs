@@ -185,6 +185,13 @@ pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc) -> (Vec<Line>, Vec<Rep
             trailing: None,
         });
     }
+    for attr in &meta.attrs {
+        lines.push(Line {
+            indent,
+            spans: vec![Span::Code(format!("[[{attr}]]"))],
+            trailing: None,
+        });
+    }
     let mut repeats = Vec::new();
     for mark in &meta.marks {
         let (line, repeat) = mark_line("MACRO", mark, indent, Some(loc));

@@ -30,6 +30,7 @@
 
 ```
 /// Raw bits viewed two ways.
+[[repr(C)]]
 union Bits
 {
     /// As a float.

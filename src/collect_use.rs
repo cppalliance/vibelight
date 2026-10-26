@@ -164,6 +164,7 @@ impl Collector<'_> {
             notes,
             trailing: self.trailing(here, trail),
             cfgs: attrs::cfgs(attrs, &self.files[here.file]),
+            attrs: attrs::api(attrs, &self.files[here.file]),
             marks,
         };
         self.modules[here.module].items.push(Item {
@@ -319,6 +320,7 @@ impl Collector<'_> {
                 notes,
                 trailing: self.trailing(here, &trail_i),
                 cfgs: item_cfgs,
+                attrs: attrs::api(attrs, file),
                 marks: Vec::new(),
             };
             self.modules[here.module].items.push(Item {

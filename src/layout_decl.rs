@@ -24,6 +24,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     }
     let cfgs = Meta {
         cfgs: decl.meta.cfgs.clone(),
+        attrs: decl.meta.attrs.clone(),
         ..Meta::default()
     };
     block.lines.extend(above(&cfgs, 0, decl.loc).0);

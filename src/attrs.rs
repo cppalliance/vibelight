@@ -40,7 +40,36 @@ pub(crate) fn cfgs(attrs: &[Attribute], file: &SourceFile) -> Vec<String> {
     out
 }
 
-/// Sorts `cfg` lines by name and drops repeats.
+/// The attributes that shape an API or its wire format, which the outline
+/// prints; `doc(hidden)` is the one form of `doc` it prints.
+const API: &[&str] = &[
+    "deprecated",
+    "must_use",
+    "non_exhaustive",
+    "repr",
+    "serde",
+    "track_caller",
+];
+
+/// Returns a node's API attributes as written, normalized and sorted. An
+/// attribute inside a `cfg_attr` that is not test-only counts, without its
+/// condition.
+pub(crate) fn api(attrs: &[Attribute], file: &SourceFile) -> Vec<String> {
+    let mut out: Vec<String> = crate::macros::effective(attrs)
+        .iter()
+        .filter(|meta| {
+            let path = meta.path();
+            API.iter().any(|name| path.is_ident(name))
+                || matches!(meta, Meta::List(list)
+                    if list.path.is_ident("doc") && list.tokens.to_string() == "hidden")
+        })
+        .map(|meta| file.clean(crate::typerefs::range_of(meta, file)))
+        .collect();
+    sort_marks(&mut out);
+    out
+}
+
+/// Sorts `cfg` and attribute lines by name and drops repeats.
 pub(crate) fn sort_marks(marks: &mut Vec<String>) {
     marks.sort_by(|a, b| name_order(a, b));
     marks.dedup();

@@ -453,6 +453,7 @@ impl Collector<'_> {
                 notes,
                 trailing: self.trailing(here, parts.trail),
                 cfgs: attrs::cfgs(parts.attrs, &self.files[here.file]),
+                attrs: attrs::api(parts.attrs, &self.files[here.file]),
                 marks: parts.marks,
             },
             loc: parts.loc,

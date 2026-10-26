@@ -86,7 +86,7 @@ const TOOLS: &[&str] = &[
 
 /// Returns the attributes an item really has: every attribute, with each
 /// `cfg_attr` that is not test-only replaced by the attributes it holds.
-fn effective(attrs: &[Attribute]) -> Vec<Meta> {
+pub(crate) fn effective(attrs: &[Attribute]) -> Vec<Meta> {
     let mut out = Vec::new();
     for attr in attrs {
         if !attr.path().is_ident("cfg_attr") {

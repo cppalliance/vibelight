@@ -56,6 +56,7 @@ macro_rules! goldens {
 
 goldens! {
     aliases => "aliases",
+    attributes => "attributes",
     base_lists => "base-lists",
     cfg_attr => "cfg-attr",
     cfg_test => "cfg-test",

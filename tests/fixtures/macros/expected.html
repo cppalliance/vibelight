@@ -74,6 +74,7 @@ span.src{cursor:default}
 <pre><code><span class="c">/// A type with derives and an attribute macro.</span>
 <span class="k">struct</span> Event : Clone, Debug, PartialEq
 {
+    [[serde(rename = "n")]]
     <span class="src">name</span>: String,
 
     <span class="c">/// Has an attribute macro.</span>

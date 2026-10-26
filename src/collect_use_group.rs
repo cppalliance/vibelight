@@ -74,6 +74,7 @@ impl Collector<'_> {
         });
         let group = (!notes.is_empty() && named.len() > 1).then_some(range.start);
         let cfgs = attrs::cfgs(&u.attrs, file);
+        let api = attrs::api(&u.attrs, file);
         let trailing = self.trailing(here, trail);
         let loc = loc(here, u.use_token.span);
         let vis = attrs::vis(&u.vis);
@@ -82,6 +83,7 @@ impl Collector<'_> {
                 notes: entry.notes,
                 trailing: entry.trailing,
                 cfgs: cfgs.clone(),
+                attrs: api.clone(),
                 marks: Vec::new(),
             };
             if index == 0 {

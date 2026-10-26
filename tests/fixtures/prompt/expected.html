@@ -93,6 +93,7 @@ span.src{cursor:default}
 <h2 id="level.1">Level 1: top-level types</h2>
 <h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
 <pre><code><span class="c">/// A fully parsed prompt file.</span>
+[[non_exhaustive]]
 <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
 {
     <span class="c">/// Parses the full source text of a prompt file into a `<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>` and</span>
@@ -142,9 +143,11 @@ span.src{cursor:default}
         (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;);
 
     <span class="c">/// Returns the parsed frontmatter.</span>
+    [[must_use]]
     <span class="src">frontmatter</span>() -&gt; <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>&amp;;
 
     <span class="c">/// Returns the prompt's title, the text of its required H1 heading.</span>
+    [[must_use]]
     <span class="src">title</span>() -&gt; str&amp;;
 
 <span class="k">internal:</span>
@@ -162,14 +165,17 @@ span.src{cursor:default}
 
     <span class="c">/// The entry-point section: the first top-level section in file order;</span>
     <span class="c">/// the Engine reaches it through `crate::detail::entry`.</span>
+    [[must_use]]
     <span class="src">entry</span>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt;;
 
     <span class="c">/// Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
     <span class="c">/// reaches them through `crate::detail::h1_blocks`.</span>
+    [[must_use]]
     <span class="src">h1_blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp;;
 
     <span class="c">/// Returns the top-level H2 sections in file order; the Engine reaches</span>
     <span class="c">/// them through `crate::detail::sections`.</span>
+    [[must_use]]
     <span class="src">sections</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp;;
 
 <span class="k">private:</span>
@@ -190,35 +196,45 @@ span.src{cursor:default}
 <span class="k">struct</span> Frontmatter;</code></pre>
 <h3 id="type.runvil_parser.prompt.Section">prompt::Section</h3>
 <pre><code><span class="c">/// One section of a prompt: a heading, ordered blocks, and children.</span>
+[[non_exhaustive]]
 <span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
 {
     <span class="c">/// Returns the ordered Lua and prose blocks of this section.</span>
+    [[must_use]]
     <span class="src">blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp;;
 
     <span class="c">/// Returns the child sections nested under this one.</span>
+    [[must_use]]
     <span class="src">children</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp;;
 
     <span class="c">/// Classic trailing Lua fence when the last block is Lua and not the sole</span>
     <span class="c">/// leading prologue (a section that is only one Lua block has no epilog).</span>
+    [[must_use]]
     <span class="src">epilog</span>() -&gt; Option&lt;LuaProgram&amp;&gt;;
 
     <span class="c">/// Returns the pre-parsed bullet items for a list-only section.</span>
+    [[must_use]]
     <span class="src">items</span>() -&gt; [<a href="#type.runvil_parser.BodyText">BodyText</a>]&amp;;
 
     <span class="c">/// Returns the heading level (2 through 6).</span>
+    [[must_use]]
     <span class="src">level</span>() -&gt; u8;
 
     <span class="c">/// The section's own raw Markdown: from just after its heading line to the next</span>
     <span class="c">/// heading of any level, leading blank lines and trailing whitespace trimmed.</span>
+    [[must_use]]
     <span class="src">markdown</span>() -&gt; str&amp;;
 
     <span class="c">/// Returns the heading text (the section's address).</span>
+    [[must_use]]
     <span class="src">name</span>() -&gt; str&amp;;
 
     <span class="c">/// Classic leading Lua fence when the first block is Lua.</span>
+    [[must_use]]
     <span class="src">prologue</span>() -&gt; Option&lt;LuaProgram&amp;&gt;;
 
     <span class="c">/// Text of the last prose block, or `""` when the section has none.</span>
+    [[must_use]]
     <span class="src">prose</span>() -&gt; str&amp;;
 
 <span class="k">internal:</span>
@@ -248,6 +264,7 @@ span.src{cursor:default}
 <h2 id="level.3">Level 3</h2>
 <h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
 <pre><code><span class="c">/// One executable block inside a section: a compiled Lua fence or prose.</span>
+[[non_exhaustive]]
 <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
     <span class="c">/// An exact `lua` fence compiled at parse time.</span>
@@ -258,6 +275,7 @@ span.src{cursor:default}
     <span class="c">///</span>
     <span class="c">/// The executor installs it as the following Lua block's lazy `prose`</span>
     <span class="c">/// template.</span>
+    [[non_exhaustive]]
     <span class="src">Prose</span>
     {
         <span class="c">/// Captured Markdown, trimmed of surrounding blank lines.</span>

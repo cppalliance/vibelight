@@ -42,6 +42,9 @@ pub(crate) struct Meta {
     pub(crate) trailing: Option<String>,
     /// One entry per `cfg` that is not test-only, sorted.
     pub(crate) cfgs: Vec<String>,
+    /// The attributes that shape an API or its wire format, as written,
+    /// sorted; each prints as a `[[...]]` line after the `cfg` lines.
+    pub(crate) attrs: Vec<String>,
     /// Macro marks printed directly above the node inside a block.
     pub(crate) marks: Vec<String>,
 }

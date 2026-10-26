@@ -54,6 +54,7 @@ impl Collector<'_> {
                     notes,
                     trailing: self.trailing(here, &trail),
                     cfgs: attrs::cfgs(&field.attrs, file),
+                    attrs: attrs::api(&field.attrs, file),
                     marks: mark.into_iter().collect(),
                 },
                 loc,
