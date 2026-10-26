@@ -558,3 +558,16 @@ These are optional, for seeing the problems this plan fixes:
   - Write each golden in its own phase, not early, because phases 4, 6, 7a, 7b, and 9 would change early goldens again.
   - Split the golden sweeps in phases 1, 5a, and 9 across subagents (see Goldens first).
   - Code, commits, and gates stay serial.
+
+## Execution notes
+
+What the run did differently from the text above, and why:
+
+- **Fatal warnings moved two fields.** An unread field fails the build, so `vis` on `Decl` and `Module` landed in phase 5a, where the surface walk reads it, and the namers in `Order` landed in phase 11, where the `Used by:` line reads them. Phase 7a added `order::module_mentions` alone.
+- **Identical sweeps were scripted.** The stamp (phase 1) and the legend (phase 9) are the same text in every golden, so each was written once by hand from its rule and inserted with a script, then every golden was checked against the build. Phase 5a's per-fixture sections were written by five subagents from the rule, and all 38 matched the build on the first comparison.
+- **Single `.rs` files have no Public surface.** Such a target is not a library (`Target.lib` is false), so rule 62 covers library targets only.
+- **A module's trailing block comes before its declarations** in the module order (phase 13), because a reader takes what follows an H3 as part of that declaration.
+- **The legend varies by option.** Its macro line follows `kill_list`, its levels line follows `order`, and the facts add one line.
+- **`document::build` takes `document::Inputs`,** so the options did not push it past the clippy argument limit; several long functions were split for the clippy line limit.
+- **The parity tests read `args.txt` too,** so the heading, mark, and id checks cover every mode.
+- **Dogfood** ran on the reference snapshot: a second run rewrote nothing, both checks passed, and every item in the confirm list held. One Runvil finding is out of scope here: in `engine/src/lua.rs`, the comment about store operations sits above the large `pub(crate) use runvil_lua::{...}` group but describes the next line.

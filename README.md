@@ -11,7 +11,10 @@ vibelight reads a Rust crate and writes an outline of it in the style of a C++ h
 - **Top-down order.** Declarations are ordered by how they name each other. The types nothing else names come first, and every type comes after the types that use it. A by-module index comes last.
 - **Comments kept.** Doc comments and ordinary comments stay with the item they belong to.
 - **Every macro marked.** Macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and a kill list at the top gathers them all in one place, with a link to where each one sits.
+- **The public surface first.** A library's file lists every path a user of the crate can name, through public modules and re-exports, before any type.
+- **A legend.** Each file explains its own notation, so a reader with only the file, a person or an AI, can follow it.
 - **Links back to the source.** Each declaration, impl block, module, and macro links back to where it is written, such as `src/prompt.rs:136`. The links are relative to the output file and end in `#L136`, which GitHub, VS Code, and Cursor open at that line. They are on by default.
+- **Facts for analysis, when you ask.** With `--facts`, each type gets counts and a list of what uses it, and two sections list the other crates' items the signatures name and the types that share a shape. `--profile analysis` turns on everything an API reviewer wants in one switch.
 
 vibelight parses the source with [syn](https://crates.io/crates/syn) and never builds the crate. It needs no Cargo build, no nightly toolchain, and no network, so it works on a fresh clone and on code that does not compile right now.
 
@@ -40,17 +43,23 @@ vibelight is also on crates.io, so `cargo install vibelight` builds and installs
 ```
 vibelight [<crate-dir-or-file.rs>...] [-o <dir>] [--md-out <dir>] [--html-out <dir>]
           [--no-source-links] [--md-source-links on|off] [--html-source-links on|off]
+          [--kill-list full|counts|off] [--facts] [--order levels|modules]
+          [--profile analysis]
           [--workspace] [--follow <glob>] [--check] [--check-html]
 ```
 
 - `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file. Several crates can be named at once (see [Several crates in one run](#several-crates-in-one-run)); a single `.rs` file cannot be mixed with them. With no crate named and no `--workspace`, a [`vibelight.toml`](#vibelighttoml) chooses the crates.
 - `-o` (or `--out`) is the directory to write both formats into. It defaults to the current directory and is created if it is missing.
 - `--md-out` and `--html-out` set the directory of one format, in place of `-o`, so the markdown and HTML files can live apart.
-- `--no-source-links` leaves out the links back to files and lines in both formats. The output then depends only on the declarations themselves, so moving code between files, reordering items, or reformatting leaves the files byte for byte the same.
+- `--no-source-links` leaves out the links back to files and lines in both formats. The output then depends only on the declarations themselves, so moving code between files, reordering items, or reformatting leaves the files byte for byte the same, and a run does not touch them (see the stamp in [Checking the files](#checking-the-files)).
 - `--md-source-links on|off` and `--html-source-links on|off` turn the source links of one format on or off, whatever `--no-source-links` says.
+- `--kill-list full|counts|off` chooses how much of the macro kill list to show: every entry (the default), only the counts line, or neither. The **MACRO** marks themselves always print.
+- `--facts` adds the facts: a `Counts:` and a `Used by:` line under each type, and the External items and Same shapes sections (see [What the output looks like](#what-the-output-looks-like)).
+- `--order levels|modules` orders the types by level, then a Modules section (the default), or in one section per module, with a Levels section that indexes them.
+- `--profile analysis` changes the defaults for analyzing an API: source links off, `--kill-list counts`, `--facts`, and `--order modules`. Any switch or config key you give still wins.
 - `--check` and `--check-html` write nothing and compare the files on disk with what the run would write (see [Checking the files](#checking-the-files)).
 
-Existing files with the same names are overwritten. vibelight prints the path of each file it writes on stdout, sorted. For example, `vibelight ../my-crate -o outline` on a library crate named `my-crate` writes `outline/my_crate.md` and `outline/my_crate.html`.
+A file whose content is the same as the one on disk is left alone; any other file of the same name is overwritten. vibelight prints the path of every file of the run on stdout, sorted, whether it wrote the file or the file was already current. For example, `vibelight ../my-crate -o outline` on a library crate named `my-crate` writes `outline/my_crate.md` and `outline/my_crate.html`.
 
 ## Targets
 
@@ -73,7 +82,7 @@ A run can cover several crates, and every crate in it gets its files. There are 
 
 A crate in the run with nothing to outline, such as one with only tests, is skipped with a `note:` line on stderr. A single named crate with nothing to outline is still an error. Two crates that would write the same file name stop the run with an error that names both.
 
-In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they never depend on which crates are in the run, and no file depends on the order the crates are named in.
+In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they do not depend on which crates are in the run, except with `--facts`: then External items shows the first doc line of an item from another crate of the run. No file depends on the order the crates are named in.
 
 ## vibelight.toml
 
@@ -92,22 +101,28 @@ out = "vibelight/html"
 source_links = true
 ```
 
-The file has three keys that choose the crates and two tables that place the files:
+The file has three keys that choose the crates, four keys that shape every file, and two tables that place the files:
 
 - `workspace = true` outlines every member of the workspace that holds the config's folder, the same as `--workspace`. `workspace = "<dir>"` starts the search from that directory instead.
 - `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
 - `follow = ["<glob>", ...]` works like `--follow`.
-- `[markdown]` and `[html]` take the same three keys, each for its own format. `out = "<dir>"` is the folder for the files, and defaults to the config's folder. `source_links = true` or `false` turns the links back to source files and lines on or off, and defaults to on. `enabled = false` turns the format off, and defaults to true.
+- `kill_list = "full"`, `"counts"`, or `"off"` works like `--kill-list`.
+- `facts = true` or `false` works like `--facts`.
+- `order = "levels"` or `"modules"` works like `--order`.
+- `profile = "analysis"` works like `--profile`.
+- `[markdown]` and `[html]` take the same three keys, each for its own format. `out = "<dir>"` is the folder for the files, and defaults to the config's folder. `source_links = true` or `false` turns the links back to source files and lines on or off, and defaults to on, or to off with the analysis profile. `enabled = false` turns the format off, and defaults to true.
 
-A key vibelight does not know, or a value of the wrong type, is an error that names the key, such as ``unknown key `markdown.dir` ``. A config that turns both formats off is an error too.
+A key vibelight does not know, or a value of the wrong type, is an error that names the key, such as ``unknown key `markdown.dir` ``. A key that takes one of a few words also lists them, such as ``kill_list` is one of `full`, `counts`, `off` ``. A config that turns both formats off is an error too.
 
 ### Which setting wins
 
-A flag wins over the config, and the config wins over the defaults. For each format:
+A flag wins over the config, the config wins over a profile, and a profile wins over the defaults; a profile changes nothing but defaults. For each format:
 
 - The folder comes from that format's own flag (`--md-out` or `--html-out`), then `-o`, then the config's `out`, then the config's folder, or the current directory when there is no config.
-- The source links come from that format's own flag (`--md-source-links` or `--html-source-links`), then `--no-source-links`, then the config's `source_links`, then on.
+- The source links come from that format's own flag (`--md-source-links` or `--html-source-links`), then `--no-source-links`, then the config's `source_links`, then on, or off with `--profile analysis`.
 - A format with `enabled = false` is not written, unless its own folder flag names a folder for it.
+
+The kill list, the facts, and the order come from their flag, then their config key, then the profile, then the defaults: the full kill list, no facts, and the level order. So `profile = "analysis"` with `order = "levels"` gives the analysis settings in the level order.
 
 Crate paths or `--workspace` on the command line replace the config's `workspace`, `crates`, and `follow`, but the config still places the files. With neither, the config chooses the crates, and `--follow` on the command line replaces the config's `follow`. With no crates named anywhere, vibelight stops with a usage error.
 
@@ -117,9 +132,11 @@ Crate paths or `--workspace` on the command line replace the config's `workspace
 
 - `differs: <file> (first difference at line N)`: the file is not what the run would write.
 - `missing: <file>`: the run would write the file, but it is not there.
-- `stale: <file>`: no crate of the run writes this markdown outline any more, for example after a crate was renamed or removed. Only `.md` files directly in the markdown folder count, and only those whose first line is the crate anchor every outline starts with, so a README beside them, other file types, and subfolders such as `html/` are left alone.
+- `stale: <file>`: no crate of the run writes this markdown outline any more, for example after a crate was renamed or removed. Only `.md` files directly in the markdown folder count, and only those that start the way every outline does: the stamp line, a blank line, and the crate anchor, or, for outlines from releases before the stamp, the crate anchor on the first line. So a README beside them, other file types, and subfolders such as `html/` are left alone.
 
 A last line says `check passed: N files match` or `check failed: N problems`, and the exit code is 0 or 1. `--check-html` compares the HTML files too. A CRLF line ending on disk counts as LF, so a checkout on Windows still passes. Paths are shown relative to the current directory when they are inside it.
+
+Every file starts with a stamp, the UTC time its content last changed, such as `*Updated 2026-01-01T00:00:00Z*` in markdown and an `<!-- Updated ... -->` comment and a line at the top of the page in HTML. A run rewrites a file only when its content changed, so the stamp moves only with the content, and the check ignores the stamp. The time comes from `SOURCE_DATE_EPOCH` when it is set, for reproducible builds, and otherwise from the clock; a value that is not a whole number of seconds stops a run that writes, and never a check.
 
 The check covers exactly the crates and settings of its run, so a file that only another set of crates writes shows up as stale. With a `vibelight.toml`, a plain `vibelight --check` from anywhere in the repository checks the same run that a plain `vibelight` writes. Crate arguments and flags work with `--check` the same way as without it.
 
@@ -129,7 +146,7 @@ A normal run never deletes a file. For each stale outline it prints `warning: <f
 
 A layout that works well keeps one outline in git for reviewers to read in diffs, and a linked copy beside it for browsing:
 
-- `vibelight/` holds the markdown files, committed, with source links off. They change only when a declaration or a comment changes, so every diff of them shows a change to the crate's surface and nothing else.
+- `vibelight/` holds the markdown files, committed, with source links off. They change only when a declaration or a comment changes, and the stamp on their first line changes with them, so every diff of them shows a change to the crate's surface and nothing else.
 - `vibelight/html/` holds the HTML files, with source links on, for reading locally. It is gitignored, because its links change whenever code moves.
 - Each crate's library gets one file in each folder, named after the library with hyphens turned into underscores, such as `vibelight/runvil_engine.md` and `vibelight/html/runvil_engine.html`. A binary gets its own pair, named after the binary.
 
@@ -166,23 +183,30 @@ To keep the committed outline current, add a CI step that fails when it is out o
 
 Version 0.1.0 predates the config file and `--check`, so pin v0.2.0 or later. The step pins one release, because a newer vibelight can lay out the same code a little differently. The pinned version and the committed outline change together: when you move to a newer release, change the version in the step and commit the markdown that release writes in the same commit, so the check passes on every commit.
 
+The release after 0.2.0 changes every outline: each file gains the stamp and the Legend, and most gain a Public surface section. Regenerate the committed outlines with it, in the same commit that moves the pinned version.
+
 ## Colors
 
 The HTML file colors code the way an editor does. A link inside the page uses the link color, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With the HTML source links off, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
 
 ## What the output looks like
 
-Each file opens with the target's name and its crate docs, then has these parts:
+Each file opens with the stamp (see [Checking the files](#checking-the-files)), the target's name, and its crate docs, then has these parts:
 
+- **Legend:** what the notation means, in fixed text, so the file explains itself.
 - **Contents:** links to every section and declaration.
-- **Kill list:** a count of macros by kind, then one entry per macro, linking to the declaration or module that holds it.
-- **Level 1, Level 2, and so on:** one heading per type. Level 1 holds the types nothing else names, and every other type sits one level below the deepest type that names it. Types that name each other in a cycle are placed together.
-- **Unconnected types:** types that name nothing and that nothing names.
+- **Kill list:** a count of macros by kind, then one entry per macro, linking to the declaration or module that holds it. `--kill-list` can shorten it to the counts or leave it out.
+- **Public surface:** for a library, every path a user of the crate can name, walking public modules and `pub use` re-exports, globs and `#[macro_export]` macros included. Each path links to what it names, a re-export of another crate's item shows the path it comes from, and test-support code is marked `(test support)`.
+- **Level 1, Level 2, and so on:** one heading per type. Level 1 holds the types no other type names, and every other type sits one level below the deepest type that names it. Types that name each other in a cycle are placed together.
+- **Test support:** types behind a `cfg` that lists `test` inside `any(...)`, such as `cfg(any(test, feature = "test-support"))`, kept apart from the production types.
+- **Unconnected types:** types that name nothing and that nothing names. A type that a free function, a constant, a static, or a re-export names is in use, so it sits at level 1 instead.
 - **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `implements: Trait for Type;` lines.
 - **Modules:** one heading per module, with its docs, links to its declarations, and its re-exports, macros, constants, statics, free functions, and extern blocks.
 - **Spellings:** each item from outside the crate that the source writes in more than one way, with every spelling (see [Spellings](#spellings)).
 
-A level, Unconnected types, Other impls, or Spellings shows up only when it has something in it. The markdown and HTML files hold the same headings, marks, and blocks. Markdown cannot put a link inside a code block, so only the HTML file links type names.
+With `--facts`, each type's heading also gets a `Counts:` line (variants, fields with how many are an `Option`, associated items, special members, and functions) and a `Used by:` line that links what names it, and two more sections follow: **External items**, each item of another crate that the signatures name, grouped by crate, with its uses and, for a crate of the run, its first doc line; and **Same shapes**, groups of types with the same variants or fields, which are candidates for merging. With `--order modules`, a Levels section indexes the types by level, and then each module gets its own section that holds its items and its types, in place of the level sections and the Modules section.
+
+A level, Test support, Unconnected types, Other impls, Spellings, External items, or Same shapes shows up only when it has something in it. The markdown and HTML files hold the same headings, marks, and blocks. Markdown cannot put a link inside a code block, so only the HTML file links type names.
 
 Every type prints as one C++-style block, with the members of all its inherent impls merged in, wherever they are written. Here is a type whose fields and methods are all private:
 
@@ -194,19 +218,21 @@ class Cursor
 
     text: String,
 
-    static into_text(self) -> String;
-
     static new(text: String) -> Cursor;
 
     bump() mut;
+
+    into_text(self) -> String;
 
     peek() -> Option<char>;
 }
 ```
 
-Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`, with a `private:` label before its private part.
+Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`. Its members sit in three sections: public ones first without a label, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. A module's trailing block uses the same three sections.
 
-The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, and a function that takes no receiver or takes `self` by value is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group.
+The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group.
+
+Comments stay with what they belong to. Each impl block's comments sit under an `// impl Trait` or `// impl Type` line in the type's block, a comment above a `pub use` group prints above the whole group, and a comment inside the braces stays with the name after it. Doc comments keep their backticks, so `` `args` `` still reads as code. Attributes that shape the API or its wire format print as `[[...]]` lines, such as `[[non_exhaustive]]`, `[[must_use]]`, `[[deprecated]]`, `[[repr(C)]]`, `[[track_caller]]`, `[[doc(hidden)]]`, and `[[serde(rename = "id")]]`; other attributes stay hidden. With source links on, each inherent impl's link in a `Source:` line is followed by the names of the members it adds, which shows how a large type's methods cluster by file.
 
 Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together after the fields, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A name counts as standard only when it really resolves to `std`, `core`, or `alloc`, so another crate's `Display`, the crate's own `Display`, or a `Display` that only comes through a glob import gets its own line. A derive from another crate keeps its bold **MACRO** line above the block.
 
@@ -232,7 +258,7 @@ When vibelight meets something it cannot fully handle, it keeps going and prints
 A stale outline in the markdown folder also gets a warning line (see [Checking the files](#checking-the-files)).
 
 - `0`: the files were written, warnings included. With `--check`, every file matches.
-- `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, a root file cannot be read, or `vibelight.toml` has an unknown key. The reason is printed on stderr. With `--check`, a file differs, is missing, or is stale.
+- `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, a root file cannot be read, `vibelight.toml` has an unknown key, or a run that writes finds a `SOURCE_DATE_EPOCH` that is not a whole number of seconds. The reason is printed on stderr. With `--check`, a file differs, is missing, or is stale.
 - `2`: a usage error, such as an unknown flag, or no crate named on the command line or in a `vibelight.toml`, reported by clap.
 
 ## Requirements and license
