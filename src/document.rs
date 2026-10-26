@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 
 use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
-use crate::model::{Crate, DeclId, ModId, path_order};
+use crate::model::{Crate, DeclId, ModId};
 use crate::order::Order;
-use crate::settings::{KillList, Options};
+use crate::settings::{KillList, Options, OrderBy};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 
@@ -166,33 +166,18 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         children: Vec::new(),
     }];
     contents.extend(b.surface(surface));
-    contents.extend(b.ordered(order));
-    if !others.is_empty() {
-        contents.push(Item {
-            inlines: vec![anchor("Other impls", "impls")],
-            children: Vec::new(),
-        });
-        b.heading(2, "impls", "Other impls");
-        b.other_impls(others);
-    }
-    let mut modules: Vec<ModId> = (0..krate.modules.len()).collect();
-    modules.sort_by(|&x, &y| {
-        path_order(&krate.modules[x].path, &krate.modules[y].path)
-            .then(b.mod_ids[x].cmp(&b.mod_ids[y]))
-    });
-    contents.push(Item {
-        inlines: vec![anchor("Modules", "modules")],
-        children: modules
-            .iter()
-            .map(|&m| Item {
-                inlines: vec![anchor(&b.mod_heading(m), &b.mod_ids[m])],
-                children: Vec::new(),
-            })
-            .collect(),
-    });
-    b.heading(2, "modules", "Modules");
-    for &m in &modules {
-        b.module(m);
+    let modules = b.sorted_modules();
+    match options.order {
+        OrderBy::Levels => {
+            contents.extend(b.ordered(order));
+            contents.extend(b.other_impls_section(others));
+            contents.push(b.modules_section(&modules));
+        }
+        OrderBy::Modules => {
+            contents.push(b.levels_index(order));
+            contents.extend(b.module_sections(order, &modules));
+            contents.extend(b.other_impls_section(others));
+        }
     }
     if !spellings.is_empty() {
         contents.push(Item {

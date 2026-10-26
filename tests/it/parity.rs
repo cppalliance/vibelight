@@ -4,14 +4,17 @@
 use std::collections::BTreeSet;
 
 use crate::support::{
-    fixture_names, fixtures, has_ext, html_parts, input_of, markdown_parts, outputs,
+    fixture_args, fixture_names, fixtures, has_ext, html_parts, input_of, markdown_parts, outputs,
+    outputs_with,
 };
 
-/// Returns each target's markdown and HTML text, for every fixture.
+/// Returns each target's markdown and HTML text, for every fixture, run
+/// with the switches of its `args.txt`.
 fn pairs() -> Vec<(String, String, String)> {
     let mut out = Vec::new();
     for name in fixture_names() {
-        let written = outputs(&input_of(&fixtures().join(&name)), false);
+        let dir = fixtures().join(&name);
+        let written = outputs_with(&input_of(&dir), false, &fixture_args(&dir));
         for (file, md) in written.iter().filter(|(f, _)| has_ext(f, "md")) {
             let stem = file.trim_end_matches(".md");
             let html = written

@@ -26,6 +26,17 @@ pub(crate) struct Flags {
     pub(crate) kill_list: Option<KillList>,
     /// True turns the facts on.
     pub(crate) facts: bool,
+    pub(crate) order: Option<OrderBy>,
+}
+
+/// How a file orders its declarations.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub(crate) enum OrderBy {
+    /// By level, then a Modules section.
+    #[default]
+    Levels,
+    /// In one section per module, with an index by level.
+    Modules,
 }
 
 /// How much of the macro kill list a file shows.
@@ -47,6 +58,7 @@ pub(crate) struct Options {
     pub(crate) kill_list: KillList,
     /// The `Counts:` and `Used by:` lines and the Same shapes section.
     pub(crate) facts: bool,
+    pub(crate) order: OrderBy,
 }
 
 /// Where one format is written, and whether it carries source links.
@@ -137,6 +149,10 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
             .or(config.and_then(|c| c.kill_list))
             .unwrap_or_default(),
         facts: flags.facts || config.and_then(|c| c.facts).unwrap_or(false),
+        order: flags
+            .order
+            .or(config.and_then(|c| c.order))
+            .unwrap_or_default(),
     };
     Ok(Plan {
         selection,
@@ -191,6 +207,7 @@ mod tests {
             },
             kill_list: Some(KillList::Counts),
             facts: Some(true),
+            order: Some(OrderBy::Modules),
         }
     }
 
@@ -251,6 +268,19 @@ mod tests {
             ..Flags::default()
         };
         assert!(plan(&flags, None).unwrap().options.facts);
+    }
+
+    #[test]
+    fn the_order_comes_from_its_switch_then_the_config_then_levels() {
+        let config = config();
+        let order = |flags: &Flags, config| plan(flags, config).unwrap().options.order;
+        assert_eq!(order(&Flags::default(), None), OrderBy::Levels);
+        assert_eq!(order(&Flags::default(), Some(&config)), OrderBy::Modules);
+        let flags = Flags {
+            order: Some(OrderBy::Levels),
+            ..Flags::default()
+        };
+        assert_eq!(order(&flags, Some(&config)), OrderBy::Levels);
     }
 
     #[test]

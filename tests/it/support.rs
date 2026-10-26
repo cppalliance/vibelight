@@ -43,6 +43,13 @@ pub(crate) fn input_of(dir: &Path) -> PathBuf {
         .expect("a fixture without src holds one .rs file")
 }
 
+/// Returns the extra switches in a fixture folder's `args.txt`, if any.
+pub(crate) fn fixture_args(dir: &Path) -> Vec<String> {
+    fs::read_to_string(dir.join("args.txt"))
+        .map(|text| text.split_whitespace().map(str::to_owned).collect())
+        .unwrap_or_default()
+}
+
 /// Tells whether a file name has the given extension.
 pub(crate) fn has_ext(name: &str, ext: &str) -> bool {
     Path::new(name)

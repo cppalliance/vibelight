@@ -17,6 +17,7 @@ mod document;
 mod document_external;
 mod document_facts;
 mod document_kill;
+mod document_modules;
 mod document_sections;
 mod document_shapes;
 mod document_spellings;
@@ -67,7 +68,7 @@ use anyhow::{Context, Result};
 use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser, ValueEnum};
 
-use crate::settings::{Flags, KillList};
+use crate::settings::{Flags, KillList, OrderBy};
 
 /// The `--version` text; the nightly workflow sets `VIBELIGHT_NIGHTLY` at
 /// build time to name its build.
@@ -115,6 +116,10 @@ struct Args {
     /// declaration, and a section of declarations with the same shape.
     #[arg(long)]
     facts: bool,
+    /// Order the declarations by level, then a Modules section, or in one
+    /// section per module, with an index by level.
+    #[arg(long, value_name = "levels|modules")]
+    order: Option<OrderBy>,
     /// Outline every member of the workspace that holds the given
     /// directory, or the current one.
     #[arg(long)]
@@ -165,6 +170,7 @@ fn flags(args: &Args) -> Flags {
         html_source_links: switch(args.html_source_links),
         kill_list: args.kill_list,
         facts: args.facts,
+        order: args.order,
     }
 }
 

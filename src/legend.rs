@@ -4,7 +4,7 @@
 
 use crate::document::{Inline, Item};
 use crate::layout::Span;
-use crate::settings::{KillList, Options};
+use crate::settings::{KillList, Options, OrderBy};
 
 /// The lines about how a block prints; backticks mark code.
 const BLOCKS: &[&str] = &[
@@ -21,10 +21,17 @@ const BLOCKS: &[&str] = &[
 /// shows.
 const MACROS: &str = "`MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro";
 
-/// The lines about the sections.
+/// The line about the surface.
+const SURFACE: &str = "Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.";
+
+/// The line about the levels, in the level order.
+const LEVELS: &str = "Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.";
+
+/// The line about the levels, in the module order.
+const MODULES: &str = "Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.";
+
+/// The lines about the other sections.
 const SECTIONS: &[&str] = &[
-    "Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.",
-    "Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.",
     "Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.",
     "With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.",
 ];
@@ -44,6 +51,11 @@ pub(crate) fn items(options: Options) -> Vec<Item> {
     };
     let mut lines: Vec<&str> = BLOCKS.to_vec();
     lines.push(&macros);
+    lines.push(SURFACE);
+    lines.push(match options.order {
+        OrderBy::Levels => LEVELS,
+        OrderBy::Modules => MODULES,
+    });
     lines.extend(SECTIONS);
     if options.facts {
         lines.push(FACTS);

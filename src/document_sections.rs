@@ -79,7 +79,7 @@ impl Builder<'_> {
         });
     }
 
-    fn code(&mut self, block: Block) {
+    pub(crate) fn code(&mut self, block: Block) {
         let repeats = block.repeats.clone();
         self.nodes.push(Node::Code(Block {
             lines: block.lines,
@@ -130,10 +130,65 @@ impl Builder<'_> {
         self.code(self.blocks[d].clone());
     }
 
-    pub(crate) fn module(&mut self, m: ModId) {
+    /// Adds the Other impls section and returns its contents entry, when
+    /// an impl has no declared type to attach to.
+    pub(crate) fn other_impls_section(&mut self, others: &[usize]) -> Option<Item> {
+        if others.is_empty() {
+            return None;
+        }
+        self.heading(2, "impls", "Other impls");
+        self.other_impls(others);
+        Some(Item {
+            inlines: vec![anchor("Other impls", "impls")],
+            children: Vec::new(),
+        })
+    }
+
+    /// Adds the Modules section, one H3 per module, and returns its
+    /// contents entry.
+    pub(crate) fn modules_section(&mut self, modules: &[ModId]) -> Item {
+        self.heading(2, "modules", "Modules");
+        for &m in modules {
+            self.module(m);
+        }
+        Item {
+            inlines: vec![anchor("Modules", "modules")],
+            children: modules
+                .iter()
+                .map(|&m| Item {
+                    inlines: vec![anchor(&self.mod_heading(m), &self.mod_ids[m])],
+                    children: Vec::new(),
+                })
+                .collect(),
+        }
+    }
+
+    fn module(&mut self, m: ModId) {
+        self.module_head(m, 3);
+        let mut decls: Vec<DeclId> = (0..self.krate.decls.len())
+            .filter(|&d| self.krate.decls[d].module == m)
+            .collect();
+        decls.sort_by(|&a, &b| path_cmp(self.krate, &self.texts, a, b));
+        if !decls.is_empty() {
+            let items = decls
+                .iter()
+                .map(|&d| Item {
+                    inlines: vec![anchor(&self.decl_heading(d), &self.decl_ids[d])],
+                    children: Vec::new(),
+                })
+                .collect();
+            self.nodes.push(Node::List { class: "", items });
+        }
+        if let Some(block) = module_block(self.krate, m) {
+            self.code(block);
+        }
+    }
+
+    /// Adds a module's heading at `level`, its `Source:` line, and its docs.
+    pub(crate) fn module_head(&mut self, m: ModId, level: u8) {
         let module = &self.krate.modules[m];
         let id = self.mod_ids[m].clone();
-        self.heading(3, &id, &self.mod_heading(m));
+        self.heading(level, &id, &self.mod_heading(m));
         if self.links.is_some() {
             let link = match module.inline {
                 Some(loc) => self.link(loc, true),
@@ -155,26 +210,9 @@ impl Builder<'_> {
         if let Some(docs) = docs {
             self.code(docs);
         }
-        let mut decls: Vec<DeclId> = (0..self.krate.decls.len())
-            .filter(|&d| self.krate.decls[d].module == m)
-            .collect();
-        decls.sort_by(|&a, &b| path_cmp(self.krate, &self.texts, a, b));
-        if !decls.is_empty() {
-            let items = decls
-                .iter()
-                .map(|&d| Item {
-                    inlines: vec![anchor(&self.decl_heading(d), &self.decl_ids[d])],
-                    children: Vec::new(),
-                })
-                .collect();
-            self.nodes.push(Node::List { class: "", items });
-        }
-        if let Some(block) = module_block(self.krate, m) {
-            self.code(block);
-        }
     }
 
-    pub(crate) fn other_impls(&mut self, ids: &[usize]) {
+    fn other_impls(&mut self, ids: &[usize]) {
         let (lines, blocks) = layout_items::other_impls(self.krate, ids);
         if !lines.is_empty() {
             let items = lines

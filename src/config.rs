@@ -10,7 +10,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::ValueEnum;
 use toml::{Table, Value};
 
-use crate::settings::KillList;
+use crate::settings::{KillList, OrderBy};
 use crate::{glob, manifest};
 
 /// The file looked up in the current directory and its parents.
@@ -50,6 +50,7 @@ pub(crate) struct Config {
     pub(crate) html: Format,
     pub(crate) kill_list: Option<KillList>,
     pub(crate) facts: Option<bool>,
+    pub(crate) order: Option<OrderBy>,
 }
 
 /// The top-level keys a config may hold.
@@ -59,6 +60,7 @@ const KEYS: &[&str] = &[
     "follow",
     "kill_list",
     "facts",
+    "order",
     "markdown",
     "html",
 ];
@@ -121,6 +123,7 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
                     .with_context(|| format!("{name}: `facts` is true or false"))
             })
             .transpose()?,
+        order: choice(&name, "order", table.get("order"))?,
     })
 }
 
@@ -294,6 +297,7 @@ mod tests {
         );
         assert!(error("kill_list = 1\n").contains("`kill_list` is one of"));
         assert!(error("facts = \"yes\"\n").contains("`facts` is true or false"));
+        assert!(error("order = \"files\"\n").contains("`order` is one of `levels`, `modules`"));
     }
 
     #[test]
@@ -309,5 +313,7 @@ mod tests {
         assert_eq!(config("").1.unwrap().kill_list, None);
         assert_eq!(config("facts = true\n").1.unwrap().facts, Some(true));
         assert_eq!(config("").1.unwrap().facts, None);
+        let modules = config("order = \"modules\"\n").1.unwrap();
+        assert_eq!(modules.order, Some(OrderBy::Modules));
     }
 }
