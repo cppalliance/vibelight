@@ -31,8 +31,8 @@
   - [Pairs](#type.names.Pairs)
 - [Level 2](#level.2)
   - [model::Record](#type.names.model.Record)
-  - [api::Token](#type.names.api.Token)
   - [api::inner::Handle](#type.names.api.inner.Handle)
+  - [api::Token](#type.names.api.Token)
 - [Unconnected types](#unconnected)
   - [api::inner::Shared](#type.names.api.inner.Shared)
   - [model::Shared](#type.names.model.Shared)
@@ -76,20 +76,20 @@
 /// Uses names resolved every way rule 39 allows.
 struct Catalog
 {
-    /// An ambiguous name stays plain.
-    fifth: Shared,
-
     /// Through a prefix path.
     first: crate::model::Record,
-
-    /// A unique name across the target.
-    fourth: Token,
 
     /// Through a pub use rename at the root.
     second: Entry,
 
     /// Through a glob import.
     third: api::Handle,
+
+    /// A unique name across the target.
+    fourth: Token,
+
+    /// An ambiguous name stays plain.
+    fifth: Shared,
 }
 ```
 
@@ -115,20 +115,20 @@ struct Record
 }
 ```
 
-<a id="type.names.api.Token"></a>
-### api::Token
-
-```
-/// A unique token type.
-struct Token;
-```
-
 <a id="type.names.api.inner.Handle"></a>
 ### api::inner::Handle
 
 ```
 /// A handle.
 struct Handle;
+```
+
+<a id="type.names.api.Token"></a>
+### api::Token
+
+```
+/// A unique token type.
+struct Token;
 ```
 
 <a id="unconnected"></a>

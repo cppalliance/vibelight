@@ -70,11 +70,11 @@ struct Run
     /// The largest run.
     static constexpr MAX: u32 = 9;
 
-    /// The limit, when there is one.
-    limit: Option<u32>,
-
     /// The name of the run.
     name: String,
+
+    /// The limit, when there is one.
+    limit: Option<u32>,
 
     /// When the run started.
     started: chrono::DateTime<chrono::Utc>,

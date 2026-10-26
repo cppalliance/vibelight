@@ -134,14 +134,14 @@ internal:
     /// The parsed YAML frontmatter.
     frontmatter: Frontmatter,
 
+    /// The required H1 title.
+    title: String,
+
     /// Ordered live Lua and prose blocks from the H1.
     h1_blocks: Vec<Block>,
 
     /// Top-level sections (H2s) in file order.
     sections: Vec<Section>,
-
-    /// The required H1 title.
-    title: String,
 
     /// The entry-point section: the first top-level section in file order;
     /// the Engine reaches it through `crate::detail::entry`.
@@ -235,6 +235,12 @@ struct Section : Clone, Debug, Eq, PartialEq
     prose() -> str&;
 
 internal:
+    /// The heading text (the section's address).
+    name: String,
+
+    /// The heading level, 2 through 6.
+    level: u8,
+
     /// Ordered lua/prose blocks for this section.
     blocks: Vec<Block>,
 
@@ -246,14 +252,8 @@ internal:
     /// Empty for non-list sections.
     items: Vec<BodyText>,
 
-    /// The heading level, 2 through 6.
-    level: u8,
-
     /// The section's own raw Markdown, without its heading line or children.
     markdown: BodyText,
-
-    /// The heading text (the section's address).
-    name: String,
 }
 ```
 

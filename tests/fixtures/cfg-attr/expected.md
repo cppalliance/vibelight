@@ -58,13 +58,13 @@ struct Plain;
 /// Derives through cfg_attr.
 struct Settings : Clone, Debug
 {
-    // cfg: feature = "fast"
-    // cfg: unix
-    both: u8,
-
     /// Only with a feature.
     // cfg: feature = "extra"
     extra: u32,
+
+    // cfg: feature = "fast"
+    // cfg: unix
+    both: u8,
 
     /// Also gated, with its own cfg.
     // cfg: feature = "methods"

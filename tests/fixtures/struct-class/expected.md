@@ -66,9 +66,9 @@ struct Bare
 /// Holds the text the lexer is still reading.
 class Cursor
 {
-    pos: usize,
-
     text: String,
+
+    pos: usize,
 
     static new(text: String) -> Cursor;
 

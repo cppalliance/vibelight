@@ -43,8 +43,8 @@ span.src{cursor:default}
 <li><a href="#level.2">Level 2</a>
 <ul>
 <li><a href="#type.names.model.Record">model::Record</a></li>
-<li><a href="#type.names.api.Token">api::Token</a></li>
 <li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
+<li><a href="#type.names.api.Token">api::Token</a></li>
 </ul>
 </li>
 <li><a href="#unconnected">Unconnected types</a>
@@ -110,20 +110,20 @@ span.src{cursor:default}
 <pre><code><span class="c">/// Uses names resolved every way rule 39 allows.</span>
 <span class="k">struct</span> Catalog
 {
-    <span class="c">/// An ambiguous name stays plain.</span>
-    <span class="src">fifth</span>: Shared,
-
     <span class="c">/// Through a prefix path.</span>
     <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>,
-
-    <span class="c">/// A unique name across the target.</span>
-    <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
 
     <span class="c">/// Through a pub use rename at the root.</span>
     <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>,
 
     <span class="c">/// Through a glob import.</span>
     <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
+
+    <span class="c">/// A unique name across the target.</span>
+    <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
+
+    <span class="c">/// An ambiguous name stays plain.</span>
+    <span class="src">fifth</span>: Shared,
 }</code></pre>
 <h3 id="type.names.Pairs">Pairs</h3>
 <pre><code><span class="c">/// Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span>
@@ -135,12 +135,12 @@ span.src{cursor:default}
 {
     <span class="src">id</span>: u32,
 }</code></pre>
-<h3 id="type.names.api.Token">api::Token</h3>
-<pre><code><span class="c">/// A unique token type.</span>
-<span class="k">struct</span> Token;</code></pre>
 <h3 id="type.names.api.inner.Handle">api::inner::Handle</h3>
 <pre><code><span class="c">/// A handle.</span>
 <span class="k">struct</span> Handle;</code></pre>
+<h3 id="type.names.api.Token">api::Token</h3>
+<pre><code><span class="c">/// A unique token type.</span>
+<span class="k">struct</span> Token;</code></pre>
 <h2 id="unconnected">Unconnected types</h2>
 <h3 id="type.names.api.inner.Shared">api::inner::Shared</h3>
 <pre><code><span class="c">/// The other type named Shared.</span>

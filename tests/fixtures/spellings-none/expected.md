@@ -53,9 +53,9 @@
 /// A local type written two ways, which the section leaves out.
 struct Line : Debug
 {
-    end: Point,
-
     start: crate::Point,
+
+    end: Point,
 
     /// Returns the label; see `std::option::Option`.
     label<T: Clone>(fallback: T) -> Option<T>;

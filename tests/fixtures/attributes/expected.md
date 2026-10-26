@@ -57,13 +57,13 @@
 [[serde(rename_all = "camelCase")]]
 struct Record
 {
-    /// Kept out of the docs.
-    [[doc(hidden)]]
-    cache: u8,
-
     /// The record's name.
     [[serde(rename = "id")]]
     name: String,
+
+    /// Kept out of the docs.
+    [[doc(hidden)]]
+    cache: u8,
 
     /// Makes an empty record.
     [[must_use = "a record does nothing until it is stored"]]

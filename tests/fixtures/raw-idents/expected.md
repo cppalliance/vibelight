@@ -61,10 +61,10 @@ struct Inner;
 /// Raw names in a struct.
 struct Keywords
 {
-    r#match: u8,
-
     /// A raw field.
     r#type: u8,
+
+    r#match: u8,
 
     static r#async();
 

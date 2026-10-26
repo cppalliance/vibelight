@@ -101,11 +101,11 @@ struct Scrambled
 {
     static constexpr MAX: u8 = 9;
 
-    Alpha: u8,
+    zeta: u8,
 
     alpha: u8,
 
-    zeta: u8,
+    Alpha: u8,
 
     static make() -> Scrambled;
 

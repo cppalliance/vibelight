@@ -51,11 +51,11 @@
 [[repr(C)]]
 union Bits
 {
-    /// As a float.
-    float: f32,
-
     /// As an integer.
     int: u32,
+
+    /// As a float.
+    float: f32,
 
 private:
     raw: [u8; 4],
@@ -70,9 +70,9 @@ private:
 union Hidden
 {
 private:
-    a: u8,
-
     b: i8,
+
+    a: u8,
 }
 ```
 

@@ -200,8 +200,13 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         };
         sections[section(vis)][group].push(member_entry(krate, member));
     }
-    for group in sections.iter_mut().flatten() {
-        sort_entries(group, refs);
+    for groups in &mut sections {
+        for (index, group) in groups.iter_mut().enumerate() {
+            // Fields keep their declared order, as variants do.
+            if index != 2 {
+                sort_entries(group, refs);
+            }
+        }
     }
     if let Some(variants) = parts.variants {
         sections[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();

@@ -171,14 +171,14 @@ span.src{cursor:default}
     <span class="c">/// The parsed YAML frontmatter.</span>
     <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
 
+    <span class="c">/// The required H1 title.</span>
+    <span class="src">title</span>: String,
+
     <span class="c">/// Ordered live Lua and prose blocks from the H1.</span>
     <span class="src">h1_blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
 
     <span class="c">/// Top-level sections (H2s) in file order.</span>
     <span class="src">sections</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-
-    <span class="c">/// The required H1 title.</span>
-    <span class="src">title</span>: String,
 
     <span class="c">/// The entry-point section: the first top-level section in file order;</span>
     <span class="c">/// the Engine reaches it through `crate::detail::entry`.</span>
@@ -255,6 +255,12 @@ span.src{cursor:default}
     <span class="src">prose</span>() -&gt; str&amp;;
 
 <span class="k">internal:</span>
+    <span class="c">/// The heading text (the section's address).</span>
+    <span class="src">name</span>: String,
+
+    <span class="c">/// The heading level, 2 through 6.</span>
+    <span class="src">level</span>: u8,
+
     <span class="c">/// Ordered lua/prose blocks for this section.</span>
     <span class="src">blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
 
@@ -266,14 +272,8 @@ span.src{cursor:default}
     <span class="c">/// Empty for non-list sections.</span>
     <span class="src">items</span>: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
 
-    <span class="c">/// The heading level, 2 through 6.</span>
-    <span class="src">level</span>: u8,
-
     <span class="c">/// The section's own raw Markdown, without its heading line or children.</span>
     <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
-
-    <span class="c">/// The heading text (the section's address).</span>
-    <span class="src">name</span>: String,
 }</code></pre>
 <h3 id="type.runvil_parser.Result">Result</h3>
 <pre><code><span class="c">/// The crate's result type.</span>

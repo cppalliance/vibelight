@@ -91,31 +91,31 @@ using Table<'a> = [(str& 'a, u8*)]& 'a;
 /// Borrowed and raw views of one value.
 struct Views<'a, T>
 {
-    both: (dyn Display + Send)& 'a,
-
-    callback: (dyn Fn(str&) -> usize)& 'a,
-
-    check: Box<dyn Fn(str&) -> usize>,
-
-    items: [T& 'a]& 'a,
-
-    name: str& 'static,
-
-    raw_call: (dyn Fn() -> bool)*,
-
-    read: T*,
-
     shared: T& 'a,
-
-    shown: dyn Display& 'a,
-
-    step: (fn(u8) -> u8)& 'a,
 
     unique: T mut& 'a,
 
-    wrapped: (dyn Fn(str&) -> usize)& 'a,
+    name: str& 'static,
+
+    items: [T& 'a]& 'a,
+
+    read: T*,
 
     write: T mut*,
+
+    shown: dyn Display& 'a,
+
+    check: Box<dyn Fn(str&) -> usize>,
+
+    callback: (dyn Fn(str&) -> usize)& 'a,
+
+    both: (dyn Display + Send)& 'a,
+
+    wrapped: (dyn Fn(str&) -> usize)& 'a,
+
+    raw_call: (dyn Fn() -> bool)*,
+
+    step: (fn(u8) -> u8)& 'a,
 
     clear() mut;
 

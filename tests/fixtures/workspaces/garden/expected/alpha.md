@@ -53,11 +53,11 @@ struct Meter
     /// Through a use of the re-export at beta's root.
     gauge: Gauge,
 
-    /// A crate outside the run stays plain.
-    stray: delta::Stray,
-
     /// Through beta's module path.
     valve: b::parts::Valve,
+
+    /// A crate outside the run stays plain.
+    stray: delta::Stray,
 
     /// A crate that no follow glob allows stays plain.
     vendored: gamma::Vendored,

@@ -5,8 +5,8 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+use syn::Item;
 use syn::spanned::Spanned;
-use syn::{Fields, FieldsNamed, Item};
 
 use crate::support::{copy_dir, fixture_names, fixtures, input_of, outputs, rust_files};
 
@@ -106,32 +106,6 @@ fn reversed_items_change_nothing() {
     });
 }
 
-/// Finds the named-field bodies of structs and unions: the line after each
-/// opening brace and each field's last line.
-fn bodies(items: &[Item], out: &mut Vec<(usize, Vec<usize>)>) {
-    fn push(named: &FieldsNamed, out: &mut Vec<(usize, Vec<usize>)>) {
-        let from = line(named.brace_token.span.open(), false) + 1;
-        let ends = named.named.iter().map(|f| line(f.span(), true)).collect();
-        out.push((from, ends));
-    }
-    for item in items {
-        match item {
-            Item::Struct(s) => {
-                if let Fields::Named(named) = &s.fields {
-                    push(named, out);
-                }
-            }
-            Item::Union(u) => push(&u.fields, out),
-            Item::Mod(m) => {
-                if let Some((_, inner)) = &m.content {
-                    bodies(inner, out);
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
 /// Reverses the names in a one-line derive attribute.
 fn reverse_derive(line: &str) -> String {
     let trimmed = line.trim_start();
@@ -149,18 +123,14 @@ fn reverse_derive(line: &str) -> String {
 }
 
 #[test]
-fn reversed_fields_derives_and_attributes_change_nothing() {
+fn reversed_derives_and_attributes_change_nothing() {
     check(|dir| {
         for path in rust_files(dir) {
-            edit(&path, |text, file| {
-                let mut lines = split_lines(text);
-                let mut found = Vec::new();
-                bodies(&file.items, &mut found);
-                found.sort_by_key(|b| std::cmp::Reverse(b.0));
-                for (from, ends) in found {
-                    reverse_chunks(&mut lines, from, &ends);
-                }
-                let mut lines: Vec<String> = lines.iter().map(|l| reverse_derive(l)).collect();
+            edit(&path, |text, _| {
+                let mut lines: Vec<String> = split_lines(text)
+                    .iter()
+                    .map(|l| reverse_derive(l))
+                    .collect();
                 let is_attr = |l: &String| {
                     let t = l.trim_start();
                     t.starts_with("#[") && !t.starts_with("#[doc")

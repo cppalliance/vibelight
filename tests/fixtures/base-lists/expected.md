@@ -222,9 +222,9 @@ struct Imported : Display;
 /// A union with standard derives.
 union Bits : Copy, Debug
 {
-    float: f32,
-
     int: u32,
+
+    float: f32,
 }
 ```
 
