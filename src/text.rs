@@ -50,6 +50,14 @@ impl Text {
         }
     }
 
+    /// Returns the ids of the type names in the text, in order.
+    pub(crate) fn refs(&self) -> impl Iterator<Item = RefId> + '_ {
+        self.0.iter().filter_map(|seg| match seg {
+            Seg::Ref(id) => Some(*id),
+            Seg::Plain(_) => None,
+        })
+    }
+
     /// Returns the text as printed, with type names as written.
     pub(crate) fn visible(&self, refs: &[TypeRef]) -> String {
         let mut out = String::new();

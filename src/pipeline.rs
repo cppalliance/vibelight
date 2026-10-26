@@ -16,8 +16,8 @@ use crate::root::Target;
 use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::{
-    attach, collect, document, layout_decl, modtree, order, render_html, render_md, resolve,
-    resolve_run, spellings, surface, test_support,
+    attach, collect, document, document_external, layout_decl, modtree, order, render_html,
+    render_md, resolve, resolve_run, spellings, surface, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -66,6 +66,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         krates.push(krate);
     }
     resolve_run::link(&mut krates, &crate_map(chosen, &targets));
+    let first_docs = document_external::first_docs(&krates);
     let shared = markdown.is_some() && markdown == html;
     let mut docs: Vec<(Option<Built>, Option<Built>)> = Vec::new();
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
@@ -89,6 +90,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
                 blocks: &blocks,
                 spellings: &spellings,
                 surface: &surface,
+                docs: &first_docs,
                 options: plan.options,
             },
             crate_dir: &chosen.packages[p].input.dir,

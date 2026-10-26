@@ -23,6 +23,8 @@ pub struct Run {
     pub name: String,
     /// The limit, when there is one.
     pub limit: Option<u32>,
+    /// When the run started.
+    pub started: chrono::DateTime<chrono::Utc>,
     chat: ChatDispatch,
 }
 
@@ -35,6 +37,7 @@ impl Run {
         Run {
             name,
             limit: None,
+            started: chrono::Utc::now(),
             chat: ChatDispatch::Stop,
         }
     }
@@ -64,6 +67,6 @@ pub struct Size {
 }
 
 /// Starts a tool call.
-pub fn dispatch(call: ToolCallDispatch) {
-    let _ = call;
+pub fn dispatch(call: ToolCallDispatch, at: chrono::Utc) {
+    let _ = (call, at);
 }

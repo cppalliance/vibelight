@@ -129,6 +129,8 @@ pub(crate) struct Inputs<'a> {
     pub(crate) blocks: &'a [Block],
     pub(crate) spellings: &'a [Entry],
     pub(crate) surface: &'a [crate::surface::Entry],
+    /// Every crate of the run's first doc line for each declaration.
+    pub(crate) docs: &'a [Vec<Option<String>>],
     pub(crate) options: Options,
 }
 
@@ -141,6 +143,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         blocks,
         spellings,
         surface,
+        docs,
         options,
     } = *inputs;
     let texts = crate::order::block_texts(krate, blocks);
@@ -203,6 +206,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
             items,
         });
     }
+    contents.extend(b.external(docs));
     contents.extend(b.shapes());
     let (summary, entries) = b.kill_list();
     let (kill_summary, kill) = match options.kill_list {

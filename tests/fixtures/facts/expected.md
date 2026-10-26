@@ -23,7 +23,7 @@
 - Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
 - With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; and Same shapes groups types with the same variants or fields.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
@@ -38,6 +38,7 @@
   - [Size](#type.facts.Size)
 - [Modules](#modules)
   - [facts](#mod.facts)
+- [External items](#external)
 - [Same shapes](#shapes)
 
 **MACROS:** none
@@ -58,7 +59,7 @@
 <a id="type.facts.Run"></a>
 ### Run
 
-Counts: 3 fields (1 Option), 1 associated item, 1 special member, 2 functions
+Counts: 4 fields (1 Option), 1 associated item, 1 special member, 2 functions
 
 Used by: nothing
 
@@ -74,6 +75,9 @@ struct Run
 
     /// The name of the run.
     name: String,
+
+    /// When the run started.
+    started: chrono::DateTime<chrono::Utc>,
 
     Run();
 
@@ -180,8 +184,15 @@ struct Size
 
 ```
 /// Starts a tool call.
-dispatch(call: ToolCallDispatch);
+dispatch(call: ToolCallDispatch, at: chrono::Utc);
 ```
+
+<a id="external"></a>
+## External items
+
+- `chrono`
+  - `chrono::DateTime`, 1 use by [Run](#type.facts.Run)
+  - `chrono::Utc`, 2 uses by [Run](#type.facts.Run), [facts](#mod.facts)
 
 <a id="shapes"></a>
 ## Same shapes

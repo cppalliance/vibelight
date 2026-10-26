@@ -256,24 +256,7 @@ pub(crate) fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
     let mut out: Vec<Vec<ModId>> = vec![Vec::new(); krate.decls.len()];
     for (m, module) in krate.modules.iter().enumerate() {
         for item in &module.items {
-            let texts: Vec<&Text> = match &item.kind {
-                ItemKind::Fn(sig)
-                | ItemKind::Foreign {
-                    item: Foreign::Fn(sig),
-                    ..
-                } => sig_texts(sig),
-                ItemKind::Const { ty, .. }
-                | ItemKind::Static { ty, .. }
-                | ItemKind::Foreign {
-                    item: Foreign::Static { ty, .. },
-                    ..
-                } => vec![ty],
-                ItemKind::Reexport { text, .. } => vec![text],
-                ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => {
-                    Vec::new()
-                }
-            };
-            for text in texts {
+            for text in item_texts(&item.kind) {
                 for seg in &text.0 {
                     if let Seg::Ref(id) = seg {
                         if let Some(t) = krate.refs[*id].target {
@@ -287,6 +270,26 @@ pub(crate) fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
         }
     }
     out
+}
+
+/// Returns the texts of a module item that can name types: a function's
+/// signature, a constant's or static's type, and a re-export's path.
+pub(crate) fn item_texts(kind: &ItemKind) -> Vec<&Text> {
+    match kind {
+        ItemKind::Fn(sig)
+        | ItemKind::Foreign {
+            item: Foreign::Fn(sig),
+            ..
+        } => sig_texts(sig),
+        ItemKind::Const { ty, .. }
+        | ItemKind::Static { ty, .. }
+        | ItemKind::Foreign {
+            item: Foreign::Static { ty, .. },
+            ..
+        } => vec![ty],
+        ItemKind::Reexport { text, .. } => vec![text],
+        ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => Vec::new(),
+    }
 }
 
 fn sig_texts(sig: &Sig) -> Vec<&Text> {

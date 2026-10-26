@@ -14,6 +14,7 @@ mod collect_use_group;
 mod comments;
 mod config;
 mod document;
+mod document_external;
 mod document_facts;
 mod document_kill;
 mod document_sections;

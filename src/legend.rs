@@ -30,7 +30,7 @@ const SECTIONS: &[&str] = &[
 ];
 
 /// The line about the facts, when they are on.
-const FACTS: &str = "A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; and Same shapes groups types with the same variants or fields.";
+const FACTS: &str = "A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.";
 
 /// The last line, about the stamp.
 const STAMP: &str = "The first line is the UTC time the file's content last changed.";

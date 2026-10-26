@@ -183,6 +183,39 @@ fn two_crates_that_would_write_one_file_name_are_an_error() {
 }
 
 #[test]
+fn external_items_show_the_doc_line_of_an_item_from_another_crate_of_the_run() {
+    let garden = workspaces().join("garden");
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let result = vibelight(
+        &["--workspace", text(&garden), "--facts"],
+        tmp.path(),
+        false,
+    );
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let facade = fs::read_to_string(tmp.path().join("facade.md")).expect("facade.md was written");
+    assert!(
+        facade.contains(
+            "## External items\n\n\
+             - `alpha`\n  \
+             - `alpha::Meter`, 1 use by [Panel](#type.facade.Panel)\n    \
+             - A meter that reads a gauge of beta.\n  \
+             - `alpha::Reads`, 2 uses by [Panel](#type.facade.Panel), [facade](#mod.facade)\n    \
+             - A trait other crates implement.\n"
+        ),
+        "{facade}"
+    );
+    let alpha = fs::read_to_string(tmp.path().join("alpha.md")).expect("alpha.md was written");
+    assert!(
+        alpha.contains("- `delta::Stray`, 1 use by [Meter](#type.alpha.Meter)\n- `gamma`"),
+        "a crate outside the run has no doc line:\n{alpha}"
+    );
+}
+
+#[test]
 fn one_named_crate_with_nothing_to_outline_still_fails() {
     let testonly = workspaces().join("garden").join("crates").join("testonly");
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
