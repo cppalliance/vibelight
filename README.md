@@ -183,7 +183,7 @@ To keep the committed outline current, add a CI step that fails when it is out o
 
 Version 0.1.0 predates the config file and `--check`, so pin v0.2.0 or later. The step pins one release, because a newer vibelight can lay out the same code a little differently. The pinned version and the committed outline change together: when you move to a newer release, change the version in the step and commit the markdown that release writes in the same commit, so the check passes on every commit.
 
-The release after 0.2.0 changes every outline: each file gains the stamp and the Legend, and most gain a Public surface section. Regenerate the committed outlines with it, in the same commit that moves the pinned version.
+If you committed outlines written by 0.1.0, 0.2.0 changes every one of them: each file gains the stamp and the Legend, and most gain a Public surface section. Regenerate them with 0.2.0 in the same commit that adds the check step.
 
 ## Colors
 
