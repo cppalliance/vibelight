@@ -15,6 +15,8 @@ pub(crate) fn render(doc: &Document, stamp: &str) -> String {
         out.push('\n');
         fence(&mut out, docs, &doc.refs);
     }
+    out.push_str("\n<a id=\"legend\"></a>\n## Legend\n\n");
+    list(&mut out, &doc.legend, 0, &doc.refs);
     out.push('\n');
     list(&mut out, &doc.contents, 0, &doc.refs);
     out.push('\n');

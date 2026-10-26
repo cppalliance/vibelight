@@ -27,6 +27,7 @@ mod layout_head;
 mod layout_items;
 mod layout_members;
 mod layout_special;
+mod legend;
 mod macros;
 mod manifest;
 mod model;

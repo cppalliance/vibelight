@@ -73,6 +73,8 @@ pub(crate) fn render(
     if let Some(docs) = &doc.crate_docs {
         page.pre(&mut out, docs);
     }
+    out.push_str("<h2 id=\"legend\">Legend</h2>\n");
+    page.list(&mut out, &doc.legend, "legend");
     let _ = writeln!(
         out,
         "<p class=\"kill\"><b class=\"m\">MACROS:</b> {}</p>",
@@ -377,6 +379,7 @@ mod tests {
             title: "a".into(),
             id: "crate.a".into(),
             crate_docs: None,
+            legend: Vec::new(),
             contents: Vec::new(),
             kill_summary: "none".into(),
             kill: Vec::new(),

@@ -86,6 +86,8 @@ pub(crate) struct Document {
     pub(crate) title: String,
     pub(crate) id: String,
     pub(crate) crate_docs: Option<Block>,
+    /// The Legend section, which both files print after the crate docs.
+    pub(crate) legend: Vec<Item>,
     pub(crate) contents: Vec<Item>,
     pub(crate) kill_summary: String,
     pub(crate) kill: Vec<Item>,
@@ -132,7 +134,10 @@ pub(crate) fn build(
         marks: Vec::new(),
         heading: String::new(),
     };
-    let mut contents = Vec::new();
+    let mut contents = vec![Item {
+        inlines: vec![anchor("Legend", "legend")],
+        children: Vec::new(),
+    }];
     contents.extend(b.surface(surface));
     contents.extend(b.ordered(order));
     if !others.is_empty() {
@@ -179,6 +184,7 @@ pub(crate) fn build(
         title: krate.title.clone(),
         id: format!("crate.{}", krate.name),
         crate_docs: docs_block(&krate.modules[0].docs, &[]),
+        legend: crate::legend::items(),
         contents,
         kill_summary,
         kill,

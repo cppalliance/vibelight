@@ -61,7 +61,7 @@ fn a_changed_declaration_differs_at_its_first_changed_line() {
         lines(&result.stdout),
         [
             format!(
-                "differs: {} (first difference at line 56)",
+                "differs: {} (first difference at line 74)",
                 shown(&["vibelight", "alpha.md"])
             ),
             "check failed: 1 problem".to_owned(),
@@ -73,7 +73,7 @@ fn a_changed_declaration_differs_at_its_first_changed_line() {
         lines(&result.stdout),
         [
             format!(
-                "differs: {} (first difference at line 56)",
+                "differs: {} (first difference at line 74)",
                 shown(&["vibelight", "alpha.md"])
             ),
             format!(

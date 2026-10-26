@@ -32,6 +32,7 @@ span.src{cursor:default}
 <body>
 <nav>
 <ul>
+<li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
 <li><a href="#level.1">Level 1: top-level types</a>
 <ul>
@@ -65,6 +66,22 @@ span.src{cursor:default}
 <p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
 <h1 id="crate.spellings">spellings</h1>
 <pre><code><span class="c">//! Spellings: items from outside the crate written in more than one way.</span></code></pre>
+<h2 id="legend">Legend</h2>
+<ul class="legend">
+<li>Each type is one C++-style block: a <code>struct</code> has a public member, and a <code>class</code> has none.</li>
+<li>Members sit under <code>public:</code>, <code>internal:</code> (for <code>pub(crate)</code>, <code>pub(super)</code>, and <code>pub(in path)</code>), and <code>private:</code>; the first label is left out when it is the default.</li>
+<li>A member function drops <code>&amp;self</code>, shows <code>&amp;mut self</code> as a trailing <code>mut</code>, and keeps any other receiver, such as <code>self</code>, as its first parameter; <code>static</code> means no receiver.</li>
+<li>References and pointers put the sigil after the type: <code>T&amp;</code> is <code>&amp;T</code>, <code>T mut&amp;</code> is <code>&amp;mut T</code>, <code>T*</code> is <code>*const T</code>, and <code>T mut*</code> is <code>*mut T</code>.</li>
+<li><code>constexpr</code> marks a <code>const fn</code> or a constant, and <code>using</code> marks a type alias, an associated type, or a re-export.</li>
+<li><code>Default</code>, <code>From&lt;T&gt;</code>, and <code>Drop</code> print as constructors and a destructor; every other trait goes in the base list after the type's name.</li>
+<li>A <code>// cfg:</code> line shows a condition, a <code>[[...]]</code> line shows an attribute that shapes the API, and a <code>// impl</code> line starts an impl block's comments.</li>
+<li><code>MACRO</code> marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.</li>
+<li>Public surface lists every path a user of the crate can name, and <code>(test support)</code> marks one that is test support.</li>
+<li>Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.</li>
+<li>Test support holds types behind a <code>cfg</code> that lists <code>test</code> inside <code>any(...)</code>, and Unconnected types holds types that name nothing and that nothing names.</li>
+<li>With source links on, a <code>Source:</code> line links to the definition and to each impl block, with the members each inherent impl adds.</li>
+<li>The first line is the UTC time the file's content last changed.</li>
+</ul>
 <p class="kill"><b class="m">MACROS:</b> 2 derive lists</p>
 <ul class="kill">
 <li><b class="m">MACRO</b> <code>derive: serde::Serialize</code>, in <a href="#macro.1">Timer</a></li>
