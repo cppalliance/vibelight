@@ -60,6 +60,7 @@ goldens! {
     cfg_attr => "cfg-attr",
     cfg_test => "cfg-test",
     comments_attach => "comments-attach",
+    comments_groups => "comments-groups",
     comments_impls => "comments-impls",
     comments_kinds => "comments-kinds",
     consts => "consts",

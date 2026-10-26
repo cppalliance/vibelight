@@ -25,8 +25,11 @@
 
 ```
 /// The type.
+// impl Clone
 // Above the Clone impl.
+// impl Display
 /// Above the Display impl.
+// impl Engine
 // Above the inherent impl.
 struct Engine : Clone, Display
 {

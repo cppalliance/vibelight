@@ -28,6 +28,17 @@ pub(crate) struct Special {
     pub(crate) loc: Loc,
 }
 
+/// The comments above one attached impl line, kept together so the outline
+/// can print an `// impl` header above them.
+#[derive(Clone, Debug)]
+pub(crate) struct ImplNotes {
+    /// The index of the impl's entry in the type's base list, or `None` for
+    /// an inherent impl. The header reads the entry after routing, so it
+    /// names the trait the way the base list prints it.
+    pub(crate) base: Option<usize>,
+    pub(crate) notes: Vec<Note>,
+}
+
 /// One impl block.
 #[derive(Clone, Debug)]
 pub(crate) struct Impl {

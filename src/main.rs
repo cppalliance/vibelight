@@ -10,6 +10,7 @@ mod collect_fn;
 mod collect_impl;
 mod collect_type;
 mod collect_use;
+mod collect_use_group;
 mod comments;
 mod config;
 mod document;

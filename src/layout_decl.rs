@@ -18,7 +18,10 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     let refs = &krate.refs;
     let mut block = Block::default();
     block.lines.extend(note_lines(&decl.meta.notes, 0, "///"));
-    block.lines.extend(note_lines(&decl.impl_notes, 0, "///"));
+    for group in &decl.impl_notes {
+        block.lines.push(impl_header(decl, group.base));
+        block.lines.extend(note_lines(&group.notes, 0, "///"));
+    }
     let cfgs = Meta {
         cfgs: decl.meta.cfgs.clone(),
         ..Meta::default()
@@ -68,6 +71,26 @@ fn brace(text: &str) -> Line {
     Line {
         indent: 0,
         spans: vec![plain(text)],
+        trailing: None,
+    }
+}
+
+/// Returns the `// impl` line above one impl's comments: the trait as the
+/// base list prints it, or the type's own name for an inherent impl. The
+/// trait is a comment reference, so it links in HTML and names nothing.
+fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
+    let mut spans = vec![Span::Comment("// impl ".to_owned())];
+    match base.and_then(|index| decl.bases.get(index)) {
+        Some(base) => spans.extend(code(&base.text).into_iter().map(|span| match span {
+            Span::Ref(id) => Span::DocRef(id),
+            Span::Code(text) => Span::Comment(text),
+            other => other,
+        })),
+        None => spans.push(Span::Comment(decl.name.clone())),
+    }
+    Line {
+        indent: 0,
+        spans,
         trailing: None,
     }
 }

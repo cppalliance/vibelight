@@ -1,5 +1,7 @@
 //! Lays out module trailing blocks, docs fences, and Other impls entries.
 
+use std::collections::BTreeMap;
+
 use crate::layout::{
     Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, key, mark_line,
     note_lines, plain, sort_entries,
@@ -16,9 +18,18 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let mut private: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
     let mut foreign: [Vec<&Item>; 2] = [Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
+    let mut use_groups: BTreeMap<(bool, usize), Vec<Entry>> = BTreeMap::new();
     for item in &module.items {
+        if let ItemKind::Reexport {
+            group: Some(id), ..
+        } = item.kind
+        {
+            let entries = use_groups.entry((item.public, id)).or_default();
+            entries.push(item_entry(krate, item));
+            continue;
+        }
         let group = match &item.kind {
-            ItemKind::Reexport(_) => 0,
+            ItemKind::Reexport { .. } => 0,
             ItemKind::Mark(_) => 1,
             ItemKind::Const { .. } => 2,
             ItemKind::Static { .. } => 3,
@@ -37,6 +48,22 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
             public[group].push(entry);
         } else {
             private[group].push(entry);
+        }
+    }
+    for ((is_public, _), mut entries) in use_groups {
+        sort_entries(&mut entries, &krate.refs);
+        let merged = Entry {
+            name: entries[0].name.clone(),
+            lines: entries.iter_mut().flat_map(|e| e.lines.drain(..)).collect(),
+            repeats: entries
+                .iter_mut()
+                .flat_map(|e| e.repeats.drain(..))
+                .collect(),
+        };
+        if is_public {
+            public[0].push(merged);
+        } else {
+            private[0].push(merged);
         }
     }
     for group in public.iter_mut().chain(private.iter_mut()) {
@@ -88,7 +115,7 @@ fn item_entry(krate: &Crate, item: &Item) -> Entry {
     let name = Span::Name(item.name.clone(), item.loc);
     let trailing = item.meta.trailing.clone();
     match &item.kind {
-        ItemKind::Reexport(text) => {
+        ItemKind::Reexport { text, .. } => {
             let mut spans = vec![key("using"), plain(" ")];
             spans.extend(code(text));
             spans.push(plain(";"));

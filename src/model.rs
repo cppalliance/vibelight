@@ -20,7 +20,7 @@ pub(crate) struct Loc {
     pub(crate) line: u32,
 }
 
-pub(crate) use crate::model_impl::{Impl, Special, SpecialKind};
+pub(crate) use crate::model_impl::{Impl, ImplNotes, Special, SpecialKind};
 pub(crate) use crate::text::{CrossRef, Seg, Text, TypeRef, Written};
 
 /// One comment printed above a node.
@@ -215,8 +215,8 @@ pub(crate) struct Decl {
     pub(crate) dangling: Vec<Note>,
     /// Base-list entries from trait impls.
     pub(crate) bases: Vec<Base>,
-    /// Comments above impl lines, in print order.
-    pub(crate) impl_notes: Vec<Note>,
+    /// Comments above impl lines, one group per impl, in print order.
+    pub(crate) impl_notes: Vec<ImplNotes>,
     /// Impl blocks that add members or base-list entries.
     pub(crate) impl_locs: Vec<Loc>,
 }
@@ -234,8 +234,14 @@ pub(crate) struct Item {
 
 #[derive(Clone, Debug)]
 pub(crate) enum ItemKind {
-    /// A re-export: the text after `using`.
-    Reexport(Text),
+    /// A re-export, the text after `using`: `path::Item`, `Alias =
+    /// path::Item`, or `path::*`. Names
+    /// from one commented `use` share a group, keyed by where the `use`
+    /// starts, and print together.
+    Reexport {
+        text: Text,
+        group: Option<usize>,
+    },
     /// A macro definition (`macro_rules! name`) or invocation (`name!`).
     Mark(String),
     Const {

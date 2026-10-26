@@ -4,30 +4,19 @@ use std::ops::Range;
 
 use syn::visit::Visit;
 use syn::{
-    Expr, ForeignItem, ItemConst, ItemForeignMod, ItemStatic, ItemUse, StaticMutability, UseTree,
-    Visibility,
+    Expr, ForeignItem, ItemConst, ItemForeignMod, ItemStatic, ItemUse, StaticMutability, Visibility,
 };
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
+use crate::collect_use_group::{Binding, expand};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Text, TypeRef, Use, name_order,
+    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Text, TypeRef, Use,
 };
 use crate::source::{Comment, scan};
-use crate::typerefs::{range_of, strip_raw};
-
-/// One name a `use` tree binds.
-struct Binding {
-    /// The bound name, or `None` for a glob.
-    name: Option<String>,
-    /// The source path, ending in the item's own name; a glob's module path.
-    path: Vec<String>,
-    /// The path as written, with `r#` kept.
-    written: Vec<String>,
-    rename: Option<String>,
-}
+use crate::typerefs::range_of;
 
 impl Collector<'_> {
     pub(crate) fn item_use(
@@ -41,8 +30,16 @@ impl Collector<'_> {
             return;
         }
         let global = u.leading_colon.is_some();
+        let files = self.files;
+        let file = &files[here.file];
         let mut bindings = Vec::new();
-        expand(&u.tree, &mut Vec::new(), &mut Vec::new(), &mut bindings);
+        expand(
+            &u.tree,
+            file,
+            &mut Vec::new(),
+            &mut Vec::new(),
+            &mut bindings,
+        );
         for binding in &bindings {
             self.modules[here.module].uses.push(Use {
                 name: binding.name.clone(),
@@ -50,59 +47,16 @@ impl Collector<'_> {
                 global,
             });
         }
-        let files = self.files;
-        let file = &files[here.file];
-        let range = range_of(u, file);
         if matches!(u.vis, Visibility::Inherited) {
-            self.discard(here, range);
+            self.discard(here, range_of(u, file));
             return;
         }
-        let loc = loc(here, u.use_token.span);
-        let mut items: Vec<(String, Text)> = bindings
-            .iter()
-            .map(|b| {
-                let sort = match (&b.name, &b.rename) {
-                    (None, _) => "*".to_owned(),
-                    (Some(_), Some(rename)) => rename.clone(),
-                    (Some(_), None) => b.written.last().cloned().unwrap_or_default(),
-                };
-                (sort, self.reexport_text(here, b, global))
-            })
-            .collect();
-        items.sort_by(|a, b| {
-            name_order(&a.0, &b.0)
-                .then_with(|| a.1.visible(&self.refs).cmp(&b.1.visible(&self.refs)))
-        });
-        let notes = self.node_notes(here, &u.attrs, lead, range);
-        let cfgs = attrs::cfgs(&u.attrs, file);
-        let trailing = self.trailing(here, trail);
-        for (index, (name, text)) in items.into_iter().enumerate() {
-            let meta = if index == 0 {
-                Meta {
-                    notes: notes.clone(),
-                    trailing: trailing.clone(),
-                    cfgs: cfgs.clone(),
-                    marks: Vec::new(),
-                }
-            } else {
-                Meta {
-                    cfgs: cfgs.clone(),
-                    ..Meta::default()
-                }
-            };
-            self.modules[here.module].items.push(Item {
-                name,
-                public: attrs::is_public(&u.vis),
-                kind: ItemKind::Reexport(text),
-                meta,
-                loc,
-            });
-        }
+        self.reexports(here, u, lead, trail, &bindings);
     }
 
     /// Returns a re-export's text: `path::Item`, `Alias = path::Item`, or
     /// `path::*`, with the path as one reference.
-    fn reexport_text(&mut self, here: &Here, binding: &Binding, global: bool) -> Text {
+    pub(crate) fn reexport_text(&mut self, here: &Here, binding: &Binding, global: bool) -> Text {
         let lead = if global { "::" } else { "" };
         let written = format!("{lead}{}", binding.written.join("::"));
         let mut text = Text::default();
@@ -380,76 +334,5 @@ impl Collector<'_> {
         }
         let dangling = self.notes(here, &[], dangling);
         self.modules[here.module].dangling.extend(dangling);
-    }
-}
-
-/// Expands a `use` tree into the names it binds.
-fn expand(
-    tree: &UseTree,
-    path: &mut Vec<String>,
-    written: &mut Vec<String>,
-    out: &mut Vec<Binding>,
-) {
-    match tree {
-        UseTree::Path(p) => {
-            path.push(strip_raw(&p.ident.to_string()));
-            written.push(p.ident.to_string());
-            expand(&p.tree, path, written, out);
-            path.pop();
-            written.pop();
-        }
-        UseTree::Name(n) => {
-            let name = n.ident.to_string();
-            if name == "self" {
-                let bound = written.last().cloned().unwrap_or_default();
-                out.push(Binding {
-                    name: Some(strip_raw(&bound)),
-                    path: path.clone(),
-                    written: written.clone(),
-                    rename: None,
-                });
-            } else {
-                let mut full = path.clone();
-                full.push(strip_raw(&name));
-                let mut shown = written.clone();
-                shown.push(name.clone());
-                out.push(Binding {
-                    name: Some(strip_raw(&name)),
-                    path: full,
-                    written: shown,
-                    rename: None,
-                });
-            }
-        }
-        UseTree::Rename(r) => {
-            let name = r.ident.to_string();
-            let (full, shown) = if name == "self" {
-                (path.clone(), written.clone())
-            } else {
-                let mut full = path.clone();
-                full.push(strip_raw(&name));
-                let mut shown = written.clone();
-                shown.push(name);
-                (full, shown)
-            };
-            let rename = r.rename.to_string();
-            out.push(Binding {
-                name: Some(strip_raw(&rename)),
-                path: full,
-                written: shown,
-                rename: Some(rename),
-            });
-        }
-        UseTree::Glob(_) => out.push(Binding {
-            name: None,
-            path: path.clone(),
-            written: written.clone(),
-            rename: None,
-        }),
-        UseTree::Group(g) => {
-            for item in &g.items {
-                expand(item, path, written, out);
-            }
-        }
     }
 }

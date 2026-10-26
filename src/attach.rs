@@ -1,17 +1,17 @@
 //! Attaches impl blocks to the types they belong to.
 
-use crate::model::{Crate, DeclKind, Holder, Note, Special, name_order};
+use crate::model::{Crate, DeclKind, Holder, ImplNotes, Note, Special, name_order};
 use crate::route;
 
 /// The comments above one attached impl line and how they sort: trait
 /// impls (group 0) by trait name, then inherent impls (group 1) by their
 /// first member's name.
 #[derive(Clone)]
-struct ImplNotes {
+struct Sorted {
     group: u8,
     key: String,
     tiebreak: String,
-    notes: Vec<Note>,
+    notes: ImplNotes,
 }
 
 /// Moves every impl whose self type resolves to a struct, enum, or union
@@ -19,7 +19,7 @@ struct ImplNotes {
 /// marks. Returns the ids of the impls left for the Other impls section.
 pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
     let mut others = Vec::new();
-    let mut notes: Vec<Vec<ImplNotes>> = vec![Vec::new(); krate.decls.len()];
+    let mut notes: Vec<Vec<Sorted>> = vec![Vec::new(); krate.decls.len()];
     for id in 0..krate.impls.len() {
         let target = krate.impls[id]
             .self_ref
@@ -83,11 +83,15 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
                 Some(base) => (0, base.name.clone()),
                 None => (1, first_member),
             };
-            notes[decl_id].push(ImplNotes {
+            let base = trait_.as_ref().map(|_| decl.bases.len());
+            notes[decl_id].push(Sorted {
                 group,
                 key,
                 tiebreak: notes_text(&impl_notes, &krate.refs),
-                notes: impl_notes,
+                notes: ImplNotes {
+                    base,
+                    notes: impl_notes,
+                },
             });
         }
         if let Some(base) = trait_.filter(|_| special.is_none()) {
@@ -101,7 +105,7 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
                 .then_with(|| name_order(&a.key, &b.key))
                 .then_with(|| a.tiebreak.cmp(&b.tiebreak))
         });
-        decl.impl_notes = list.into_iter().flat_map(|entry| entry.notes).collect();
+        decl.impl_notes = list.into_iter().map(|entry| entry.notes).collect();
     }
     for mark in &mut krate.macros {
         if let Holder::Impl(id) = mark.holder {
