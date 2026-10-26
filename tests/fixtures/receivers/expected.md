@@ -7,12 +7,19 @@
 //! Receivers.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Node](#type.receivers.Node)
 - [Modules](#modules)
   - [receivers](#mod.receivers)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [free()](#mod.receivers)
+- [Node](#type.receivers.Node)
 
 <a id="unconnected"></a>
 ## Unconnected types

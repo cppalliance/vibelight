@@ -7,6 +7,7 @@
 //! Struct versus class.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Bare](#type.struct_class.Bare)
   - [Cursor](#type.struct_class.Cursor)
@@ -17,6 +18,15 @@
   - [struct_class](#mod.struct_class)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Bare](#type.struct_class.Bare)
+- [Cursor](#type.struct_class.Cursor)
+- [Mixed](#type.struct_class.Mixed)
+- [Toggle](#type.struct_class.Toggle)
+- [Wrapper](#type.struct_class.Wrapper)
 
 <a id="unconnected"></a>
 ## Unconnected types

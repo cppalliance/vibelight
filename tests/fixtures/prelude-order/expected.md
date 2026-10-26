@@ -8,6 +8,7 @@
 //! it, imports it, or a glob brings it in.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [own::Owned](#type.prelude_order.own.Owned)
   - [starred::Starred](#type.prelude_order.starred.Starred)
@@ -31,6 +32,22 @@
 - [Spellings](#spellings)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [alpha](#mod.prelude_order.alpha)
+- [alpha::AlphaError](#type.prelude_order.alpha.AlphaError)
+- [beta](#mod.prelude_order.beta)
+- [beta::BetaError](#type.prelude_order.beta.BetaError)
+- [own](#mod.prelude_order.own)
+- [own::Owned](#type.prelude_order.own.Owned)
+- [own::OwnError](#type.prelude_order.own.OwnError)
+- [own::Result](#type.prelude_order.own.Result)
+- [plain](#mod.prelude_order.plain)
+- [plain::Report](#type.prelude_order.plain.Report)
+- [starred](#mod.prelude_order.starred)
+- [starred::Starred](#type.prelude_order.starred.Starred)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

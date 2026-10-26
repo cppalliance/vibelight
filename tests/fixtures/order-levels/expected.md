@@ -7,6 +7,7 @@
 //! Levels, reach, and seen order.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Run](#type.order_levels.Run)
   - [Able](#type.order_levels.Able)
@@ -25,6 +26,20 @@
   - [order_levels](#mod.order_levels)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Able](#type.order_levels.Able)
+- [Config](#type.order_levels.Config)
+- [Leaf](#type.order_levels.Leaf)
+- [Log](#type.order_levels.Log)
+- [Orphan](#type.order_levels.Orphan)
+- [Report](#type.order_levels.Report)
+- [Run](#type.order_levels.Run)
+- [Step](#type.order_levels.Step)
+- [Summary](#type.order_levels.Summary)
+- [Trace](#type.order_levels.Trace)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

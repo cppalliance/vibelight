@@ -47,8 +47,8 @@ pub(crate) struct Collector<'a> {
     pub(crate) impls: Vec<crate::model::Impl>,
     pub(crate) macros: Vec<MacroUse>,
     pub(crate) warnings: Vec<Warning>,
-    /// The notes and `cfg`s of each module's `mod` line.
-    mod_lines: BTreeMap<ModId, (Vec<Note>, Vec<String>)>,
+    /// The notes, `cfg`s, and visibility of each module's `mod` line.
+    mod_lines: BTreeMap<ModId, (Vec<Note>, Vec<String>, Vis)>,
     /// Each child module, keyed by its parent and the `mod` item's index.
     children: BTreeMap<(ModId, usize), ModId>,
     /// Module-level invocations and the identifiers their tokens hold.
@@ -89,6 +89,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
             items: Vec::new(),
             uses: Vec::new(),
             dangling: Vec::new(),
+            vis: Vis::Public,
         });
         if let Some(decl) = source.decl {
             collector.children.insert(decl, id);
@@ -127,8 +128,12 @@ impl Collector<'_> {
             file: source.file,
             generics: Vec::new(),
         };
-        let (mut docs, cfgs) = self.mod_lines.remove(&id).unwrap_or_default();
+        let (mut docs, cfgs, vis) =
+            self.mod_lines
+                .remove(&id)
+                .unwrap_or((Vec::new(), Vec::new(), Vis::Public));
         self.modules[id].cfgs = cfgs;
+        self.modules[id].vis = vis;
         if let Some(problem) = &source.problem {
             self.modules[id].docs = docs;
             let loc = Loc {
@@ -282,7 +287,8 @@ impl Collector<'_> {
             notes.push(Note::Plain(vec![text]));
         }
         let cfgs = attrs::cfgs(&m.attrs, file);
-        self.mod_lines.insert(child, (notes, cfgs));
+        self.mod_lines
+            .insert(child, (notes, cfgs, attrs::vis(&m.vis)));
     }
 
     /// Adds a `// UNSUPPORTED` entry to the module's trailing block.

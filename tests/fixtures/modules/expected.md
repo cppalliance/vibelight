@@ -7,6 +7,7 @@
 //! Module layouts.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [files::InFile](#type.modules.files.InFile)
   - [inline::deeper::Deepest](#type.modules.inline.deeper.Deepest)
@@ -26,6 +27,16 @@
   - [renamed](#mod.modules.renamed)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [files](#mod.modules.files)
+- [files::InFile](#type.modules.files.InFile)
+- [inline](#mod.modules.inline)
+- [inline::deeper](#mod.modules.inline.deeper)
+- [inline::deeper::Deepest](#type.modules.inline.deeper.Deepest)
+- [inline::Inside](#type.modules.inline.Inside)
 
 <a id="unconnected"></a>
 ## Unconnected types

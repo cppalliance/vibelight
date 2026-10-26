@@ -7,6 +7,7 @@
 //! Raw identifiers.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [r#impl::Inner](#type.raw_idents.impl.Inner)
   - [Keywords](#type.raw_idents.Keywords)
@@ -15,6 +16,14 @@
   - [r#impl](#mod.raw_idents.impl)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [r#fn()](#mod.raw_idents)
+- [r#impl](#mod.raw_idents.impl)
+- [r#impl::Inner](#type.raw_idents.impl.Inner)
+- [Keywords](#type.raw_idents.Keywords)
 
 <a id="unconnected"></a>
 ## Unconnected types

@@ -7,6 +7,7 @@
 //! Spellings: items from outside the crate written in more than one way.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Timer](#type.spellings.Timer)
 - [Level 2](#level.2)
@@ -25,6 +26,18 @@
 **MACROS:** 2 derive lists
 - **MACRO** `derive: serde::Serialize`, in [Timer](#type.spellings.Timer)
 - **MACRO** `derive: Serialize`, in [Clock](#type.spellings.Clock)
+
+<a id="surface"></a>
+## Public surface
+
+- [bare](#mod.spellings.bare)
+- [bare::Label](#type.spellings.bare.Label)
+- [Clock](#type.spellings.Clock)
+- [Duration](#type.spellings.Duration)
+- [other](#mod.spellings.other)
+- [other::Badge](#type.spellings.other.Badge)
+- [Timer](#type.spellings.Timer)
+- [Wrapper](#type.spellings.Wrapper)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

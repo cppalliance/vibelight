@@ -7,6 +7,7 @@
 //! Where comments attach.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Config](#type.comments_attach.Config)
   - [Holder](#type.comments_attach.Holder)
@@ -15,6 +16,13 @@
 
 **MACROS:** 1 definition
 - **MACRO** `macro_rules! noop`, in [comments_attach](#mod.comments_attach)
+
+<a id="surface"></a>
+## Public surface
+
+- [Config](#type.comments_attach.Config)
+- [Holder](#type.comments_attach.Holder)
+- [PATTERN](#mod.comments_attach)
 
 <a id="unconnected"></a>
 ## Unconnected types

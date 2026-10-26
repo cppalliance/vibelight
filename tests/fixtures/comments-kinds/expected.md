@@ -9,6 +9,7 @@
 //! Crate docs print as `//!` lines.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [BlockComment](#type.comments_kinds.BlockComment)
   - [DocFirst](#type.comments_kinds.DocFirst)
@@ -19,6 +20,16 @@
   - [comments_kinds](#mod.comments_kinds)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [after_block()](#mod.comments_kinds)
+- [BlockComment](#type.comments_kinds.BlockComment)
+- [DocFirst](#type.comments_kinds.DocFirst)
+- [Fenced](#type.comments_kinds.Fenced)
+- [Linked](#type.comments_kinds.Linked)
+- [PlainFirst](#type.comments_kinds.PlainFirst)
 
 <a id="unconnected"></a>
 ## Unconnected types

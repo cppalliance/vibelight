@@ -106,6 +106,7 @@ pub(crate) fn build(
     order: &Order,
     blocks: &[Block],
     spellings: &[Entry],
+    surface: &[crate::surface::Entry],
     links: Option<&LinkBase>,
 ) -> Document {
     let texts = crate::order::block_texts(krate, blocks);
@@ -123,6 +124,18 @@ pub(crate) fn build(
         heading: String::new(),
     };
     let mut contents = Vec::new();
+    if !surface.is_empty() {
+        contents.push(Item {
+            inlines: vec![anchor("Public surface", "surface")],
+            children: Vec::new(),
+        });
+        b.heading(2, "surface", "Public surface");
+        let items = b.surface_items(surface);
+        b.nodes.push(Node::List {
+            class: "surface",
+            items,
+        });
+    }
     for (index, level) in order.levels.iter().enumerate() {
         let id = format!("level.{}", index + 1);
         let text = if index == 0 {

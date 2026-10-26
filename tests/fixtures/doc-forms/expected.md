@@ -7,6 +7,7 @@
 //! Doc comment forms.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Attribute](#type.doc_forms.Attribute)
   - [Block](#type.doc_forms.Block)
@@ -16,6 +17,14 @@
   - [doc_forms](#mod.doc_forms)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Attribute](#type.doc_forms.Attribute)
+- [Block](#type.doc_forms.Block)
+- [Mixed](#type.doc_forms.Mixed)
+- [Starred](#type.doc_forms.Starred)
 
 <a id="unconnected"></a>
 ## Unconnected types

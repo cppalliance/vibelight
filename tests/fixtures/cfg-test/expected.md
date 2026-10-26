@@ -7,6 +7,7 @@
 //! Test-only items are skipped.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Kept](#type.cfg_test.Kept)
   - [Mode](#type.cfg_test.Mode)
@@ -15,6 +16,14 @@
   - [cfg_test](#mod.cfg_test)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Kept](#type.cfg_test.Kept)
+- [Mode](#type.cfg_test.Mode)
+- [Probe](#type.cfg_test.Probe)
+- [production_only()](#mod.cfg_test)
 
 <a id="unconnected"></a>
 ## Unconnected types

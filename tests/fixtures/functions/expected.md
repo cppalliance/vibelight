@@ -7,10 +7,24 @@
 //! Functions and signatures.
 ```
 
+- [Public surface](#surface)
 - [Modules](#modules)
   - [functions](#mod.functions)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [all_qualifiers()](#mod.functions)
+- [apply()](#mod.functions)
+- [callback()](#mod.functions)
+- [merge()](#mod.functions)
+- [parse()](#mod.functions)
+- [peek()](#mod.functions)
+- [render()](#mod.functions)
+- [square()](#mod.functions)
+- [wait()](#mod.functions)
 
 <a id="modules"></a>
 ## Modules

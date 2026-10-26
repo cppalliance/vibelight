@@ -7,6 +7,7 @@
 //! Beta: re-exports a type from one of its modules.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [parts::Gauge](#type.beta.parts.Gauge)
   - [parts::Valve](#type.beta.parts.Valve)
@@ -15,6 +16,14 @@
   - [parts](#mod.beta.parts)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Gauge](#type.beta.parts.Gauge)
+- [parts](#mod.beta.parts)
+- [parts::Gauge](#type.beta.parts.Gauge)
+- [parts::Valve](#type.beta.parts.Valve)
 
 <a id="unconnected"></a>
 ## Unconnected types

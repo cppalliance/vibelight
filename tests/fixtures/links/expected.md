@@ -7,6 +7,7 @@
 //! Source links.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Dial](#type.links.Dial)
   - [Engine](#type.links.Engine)
@@ -20,6 +21,12 @@
 
 **MACROS:** 1 definition
 - **MACRO** `macro_rules! noop`, in [links](#mod.links) (source: [src/lib.rs:15](../src/lib.rs#L15))
+
+<a id="surface"></a>
+## Public surface
+
+- [Dial](#type.links.Dial)
+- [Engine](#type.links.Engine)
 
 <a id="unconnected"></a>
 ## Unconnected types

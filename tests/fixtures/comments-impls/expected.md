@@ -7,6 +7,7 @@
 //! Comments on impls and modules.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Engine](#type.comments_impls.Engine)
   - [parts::Part](#type.comments_impls.parts.Part)
@@ -16,6 +17,13 @@
   - [parts](#mod.comments_impls.parts)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Engine](#type.comments_impls.Engine)
+- [parts](#mod.comments_impls.parts)
+- [parts::Part](#type.comments_impls.parts.Part)
 
 <a id="unconnected"></a>
 ## Unconnected types

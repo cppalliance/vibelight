@@ -7,6 +7,7 @@
 //! Type aliases.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Callback](#type.aliases.Callback)
 - [Level 2](#level.2)
@@ -17,6 +18,13 @@
   - [aliases](#mod.aliases)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Callback](#type.aliases.Callback)
+- [Error](#type.aliases.Error)
+- [Result](#type.aliases.Result)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

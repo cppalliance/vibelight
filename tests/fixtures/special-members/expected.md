@@ -8,6 +8,7 @@
 //! destructors.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Counter](#type.special_members.Counter)
   - [Derived](#type.special_members.Derived)
@@ -21,6 +22,17 @@
 
 **MACROS:** 1 derive list
 - **MACRO** `derive: serde::Serialize`, in [Derived](#type.special_members.Derived)
+
+<a id="surface"></a>
+## Public surface
+
+- [Counter](#type.special_members.Counter)
+- [Derived](#type.special_members.Derived)
+- [Handle](#type.special_members.Handle)
+- [Mode](#type.special_members.Mode)
+- [Name](#type.special_members.Name)
+- [Scheduler](#type.special_members.Scheduler)
+- [Written](#type.special_members.Written)
 
 <a id="unconnected"></a>
 ## Unconnected types

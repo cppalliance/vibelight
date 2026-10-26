@@ -7,6 +7,7 @@
 //! Enum shapes.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Event](#type.enums.Event)
   - [Level](#type.enums.Level)
@@ -15,6 +16,13 @@
   - [enums](#mod.enums)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Event](#type.enums.Event)
+- [Level](#type.enums.Level)
+- [Shape](#type.enums.Shape)
 
 <a id="unconnected"></a>
 ## Unconnected types

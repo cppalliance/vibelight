@@ -7,6 +7,7 @@
 //! The long-line rule.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Container](#type.long_lines.Container)
   - [Wide](#type.long_lines.Wide)
@@ -14,6 +15,12 @@
   - [long_lines](#mod.long_lines)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Container](#type.long_lines.Container)
+- [Wide](#type.long_lines.Wide)
 
 <a id="unconnected"></a>
 ## Unconnected types

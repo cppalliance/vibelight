@@ -7,6 +7,7 @@
 //! Re-exports.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [inner::Other](#type.reexports.inner.Other)
   - [inner::Thing](#type.reexports.inner.Thing)
@@ -15,6 +16,12 @@
   - [inner](#mod.reexports.inner)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Other](#type.reexports.inner.Other)
+- [Thing](#type.reexports.inner.Thing)
 
 <a id="unconnected"></a>
 ## Unconnected types

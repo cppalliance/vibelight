@@ -90,6 +90,7 @@ goldens! {
     spellings_none => "spellings-none",
     struct_class => "struct-class",
     structs => "structs",
+    surface => "surface",
     traits => "traits",
     unions => "unions",
     unparsable => "unparsable",

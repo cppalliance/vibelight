@@ -7,6 +7,7 @@
 //! cfg and cfg_attr.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Plain](#type.cfg_attr.Plain)
   - [Settings](#type.cfg_attr.Settings)
@@ -14,6 +15,12 @@
   - [cfg_attr](#mod.cfg_attr)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Plain](#type.cfg_attr.Plain)
+- [Settings](#type.cfg_attr.Settings)
 
 <a id="unconnected"></a>
 ## Unconnected types

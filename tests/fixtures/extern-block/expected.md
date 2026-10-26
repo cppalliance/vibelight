@@ -7,10 +7,19 @@
 //! Extern blocks.
 ```
 
+- [Public surface](#surface)
 - [Modules](#modules)
   - [extern_block](#mod.extern_block)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [abs()](#mod.extern_block)
+- [errno](#mod.extern_block)
+- [exit()](#mod.extern_block)
+- [GetTickCount()](#mod.extern_block)
 
 <a id="modules"></a>
 ## Modules

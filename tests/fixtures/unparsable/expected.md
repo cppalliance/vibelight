@@ -7,6 +7,7 @@
 //! Constructs the collector cannot read.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Fine](#type.unparsable.Fine)
 - [Modules](#modules)
@@ -14,6 +15,11 @@
   - [broken](#mod.unparsable.broken)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Fine](#type.unparsable.Fine)
 
 <a id="unconnected"></a>
 ## Unconnected types

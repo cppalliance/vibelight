@@ -13,7 +13,7 @@ use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
     Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, RefId, Shape, Text,
-    Variant, VariantFields,
+    Variant, VariantFields, Vis,
 };
 use crate::source::Comment;
 use crate::typerefs::range_of;
@@ -22,6 +22,7 @@ use crate::typerefs::range_of;
 struct Head {
     kind: DeclKind,
     name: String,
+    vis: Vis,
     loc: Loc,
     generics: Text,
     where_clause: Option<Text>,
@@ -61,6 +62,7 @@ impl Collector<'_> {
             &here,
             DeclKind::Struct,
             &s.ident,
+            &s.vis,
             &s.attrs,
             &s.generics,
             lead,
@@ -91,6 +93,7 @@ impl Collector<'_> {
             &here,
             DeclKind::Union,
             &u.ident,
+            &u.vis,
             &u.attrs,
             &u.generics,
             lead,
@@ -161,6 +164,7 @@ impl Collector<'_> {
             &here,
             DeclKind::Enum,
             &e.ident,
+            &e.vis,
             &e.attrs,
             &e.generics,
             lead,
@@ -205,6 +209,7 @@ impl Collector<'_> {
             &here,
             DeclKind::Trait,
             &t.ident,
+            &t.vis,
             &t.attrs,
             &t.generics,
             lead,
@@ -255,6 +260,7 @@ impl Collector<'_> {
             &here,
             DeclKind::TraitAlias,
             &t.ident,
+            &t.vis,
             &t.attrs,
             &t.generics,
             lead,
@@ -283,6 +289,7 @@ impl Collector<'_> {
             &here,
             DeclKind::Alias,
             &t.ident,
+            &t.vis,
             &t.attrs,
             &t.generics,
             lead,
@@ -302,6 +309,7 @@ impl Collector<'_> {
         here: &Here,
         kind: DeclKind,
         ident: &syn::Ident,
+        vis: &syn::Visibility,
         attrs: &[Attribute],
         generics: &syn::Generics,
         lead: Vec<Comment>,
@@ -342,6 +350,7 @@ impl Collector<'_> {
         Head {
             kind,
             name: ident.to_string(),
+            vis: attrs::vis(vis),
             loc,
             generics: generics_text,
             where_clause,
@@ -384,6 +393,7 @@ impl Collector<'_> {
             bases: Vec::new(),
             impl_notes: Vec::new(),
             impl_locs: Vec::new(),
+            vis: head.vis,
         });
     }
 }

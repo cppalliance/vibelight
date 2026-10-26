@@ -7,12 +7,18 @@
 //! The library.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Shared](#type.multi.Shared)
 - [Modules](#modules)
   - [multi](#mod.multi)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Shared](#type.multi.Shared)
 
 <a id="unconnected"></a>
 ## Unconnected types

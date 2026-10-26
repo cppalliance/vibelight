@@ -8,6 +8,7 @@
 //! outline has no Spellings section.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Line](#type.spellings_none.Line)
 - [Level 2](#level.2)
@@ -16,6 +17,12 @@
   - [spellings_none](#mod.spellings_none)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Line](#type.spellings_none.Line)
+- [Point](#type.spellings_none.Point)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

@@ -7,6 +7,7 @@
 //! Impl blocks of every kind.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Describe](#type.impls.Describe)
   - [Holder](#type.impls.Holder)
@@ -17,6 +18,14 @@
   - [impls](#mod.impls)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Describe](#type.impls.Describe)
+- [Holder](#type.impls.Holder)
+- [Render](#type.impls.Render)
+- [Widget](#type.impls.Widget)
 
 <a id="unconnected"></a>
 ## Unconnected types

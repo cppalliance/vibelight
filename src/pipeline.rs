@@ -19,7 +19,7 @@ use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
     attach, collect, document, layout_decl, modtree, order, render_html, render_md, resolve,
-    resolve_run, spellings,
+    resolve_run, spellings, surface,
 };
 
 /// What a run would write and what it reports.
@@ -72,7 +72,7 @@ pub(crate) fn outline(
     resolve_run::link(&mut krates, &crate_map(chosen, &targets));
     let shared = markdown.is_some() && markdown == html;
     let mut docs: Vec<(Option<Built>, Option<Built>)> = Vec::new();
-    for (krate, &(p, _)) in krates.iter_mut().zip(&targets) {
+    for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
         let others = attach::attach(krate);
         let blocks: Vec<Block> = (0..krate.decls.len())
             .map(|d| layout_decl::decl_block(krate, d))
@@ -80,12 +80,18 @@ pub(crate) fn outline(
         let order = order::order(krate, &blocks);
         let spellings = spellings::find(krate);
         outcome.spelled += spellings.len();
+        let surface = if target.lib {
+            surface::walk(krate)
+        } else {
+            Vec::new()
+        };
         let parts = Parts {
             krate,
             others: &others,
             order: &order,
             blocks: &blocks,
             spellings: &spellings,
+            surface: &surface,
             crate_dir: &chosen.packages[p].input.dir,
         };
         let md = parts.build(markdown)?;
@@ -148,6 +154,7 @@ struct Parts<'a> {
     order: &'a Order,
     blocks: &'a [Block],
     spellings: &'a [Entry],
+    surface: &'a [surface::Entry],
     crate_dir: &'a Path,
 }
 
@@ -172,6 +179,7 @@ impl Parts<'_> {
             self.order,
             self.blocks,
             self.spellings,
+            self.surface,
             base.as_ref(),
         );
         Ok(Some(Built { doc, base }))

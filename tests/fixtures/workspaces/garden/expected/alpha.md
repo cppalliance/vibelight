@@ -7,6 +7,7 @@
 //! Alpha: a crate that names types of its dependencies.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Meter](#type.alpha.Meter)
   - [Reads](#type.alpha.Reads)
@@ -14,6 +15,12 @@
   - [alpha](#mod.alpha)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Meter](#type.alpha.Meter)
+- [Reads](#type.alpha.Reads)
 
 <a id="unconnected"></a>
 ## Unconnected types

@@ -7,6 +7,7 @@
 //! Base lists: short names, long paths, wrapping, collisions, and supertraits.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [custom::Homemade](#type.base_lists.custom.Homemade)
   - [Error](#type.base_lists.Error)
@@ -44,6 +45,38 @@
 
 **MACROS:** 1 derive list
 - **MACRO** `derive: From`, in [Wrapped](#type.base_lists.Wrapped)
+
+<a id="surface"></a>
+## Public surface
+
+- [bare](#mod.base_lists.bare)
+- [bare::Imported](#type.base_lists.bare.Imported)
+- [Bits](#type.base_lists.Bits)
+- [Clone](#type.base_lists.Clone)
+- [custom](#mod.base_lists.custom)
+- [custom::Display](#type.base_lists.custom.Display)
+- [custom::Homemade](#type.base_lists.custom.Homemade)
+- [Error](#type.base_lists.Error)
+- [globbed](#mod.base_lists.globbed)
+- [globbed::Starred](#type.base_lists.globbed.Starred)
+- [Holder](#type.base_lists.Holder)
+- [Labeled](#type.base_lists.Labeled)
+- [Local](#type.base_lists.Local)
+- [Marker](#type.base_lists.Marker)
+- [Mixed](#type.base_lists.Mixed)
+- [Named](#type.base_lists.Named)
+- [Ordered](#type.base_lists.Ordered)
+- [other](#mod.base_lists.other)
+- [other::Foreign](#type.base_lists.other.Foreign)
+- [Plain](#type.base_lists.Plain)
+- [Renamed](#type.base_lists.Renamed)
+- [Run](#type.base_lists.Run)
+- [RunError](#type.base_lists.RunError)
+- [Secret](#type.base_lists.Secret)
+- [Sink](#type.base_lists.Sink)
+- [Spelled](#type.base_lists.Spelled)
+- [Wide](#type.base_lists.Wide)
+- [Wrapped](#type.base_lists.Wrapped)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

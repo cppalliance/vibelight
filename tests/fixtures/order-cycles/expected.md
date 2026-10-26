@@ -7,6 +7,7 @@
 //! Cycles at level 1 and below.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Root](#type.order_cycles.Root)
   - [Left](#type.order_cycles.Left)
@@ -19,6 +20,16 @@
   - [net](#mod.order_cycles.net)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Left](#type.order_cycles.Left)
+- [net](#mod.order_cycles.net)
+- [net::Ping](#type.order_cycles.net.Ping)
+- [net::Pong](#type.order_cycles.net.Pong)
+- [Right](#type.order_cycles.Right)
+- [Root](#type.order_cycles.Root)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

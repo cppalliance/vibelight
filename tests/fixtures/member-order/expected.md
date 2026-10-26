@@ -7,6 +7,7 @@
 //! Member order inside a block.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Based](#type.member_order.Based)
   - [Grouped](#type.member_order.Grouped)
@@ -17,6 +18,15 @@
   - [member_order](#mod.member_order)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Based](#type.member_order.Based)
+- [Grouped](#type.member_order.Grouped)
+- [Order](#type.member_order.Order)
+- [Scrambled](#type.member_order.Scrambled)
+- [Triple](#type.member_order.Triple)
 
 <a id="unconnected"></a>
 ## Unconnected types

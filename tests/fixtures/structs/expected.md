@@ -7,6 +7,7 @@
 //! Struct shapes: named, tuple, unit, and generic.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Buffer](#type.structs.Buffer)
   - [Empty](#type.structs.Empty)
@@ -21,6 +22,19 @@
   - [structs](#mod.structs)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Buffer](#type.structs.Buffer)
+- [Empty](#type.structs.Empty)
+- [Index](#type.structs.Index)
+- [Marker](#type.structs.Marker)
+- [Meters](#type.structs.Meters)
+- [Pair](#type.structs.Pair)
+- [Point](#type.structs.Point)
+- [Span](#type.structs.Span)
+- [Token](#type.structs.Token)
 
 <a id="unconnected"></a>
 ## Unconnected types

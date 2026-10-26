@@ -7,12 +7,19 @@
 //! Facade: re-exports the workspace's public types.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Panel](#type.facade.Panel)
 - [Modules](#modules)
   - [facade](#mod.facade)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Panel](#type.facade.Panel)
+- [show()](#mod.facade)
 
 <a id="unconnected"></a>
 ## Unconnected types

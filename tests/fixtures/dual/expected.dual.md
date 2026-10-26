@@ -7,12 +7,18 @@
 //! The dual library.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Lib](#type.dual.Lib)
 - [Modules](#modules)
   - [dual](#mod.dual)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Lib](#type.dual.Lib)
 
 <a id="unconnected"></a>
 ## Unconnected types

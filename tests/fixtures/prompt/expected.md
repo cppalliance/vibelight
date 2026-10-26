@@ -15,6 +15,7 @@
 //! The parser turns bytes into a `Prompt` tree without executing any of it.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [prompt::Prompt](#type.runvil_parser.prompt.Prompt)
 - [Level 2](#level.2)
@@ -33,6 +34,17 @@
   - [prompt](#mod.runvil_parser.prompt)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Block](#type.runvil_parser.prompt.Block)
+- [BodyText](#type.runvil_parser.BodyText)
+- [Error](#type.runvil_parser.Error)
+- [Frontmatter](#type.runvil_parser.Frontmatter)
+- [ParseError](#type.runvil_parser.ParseError)
+- [Prompt](#type.runvil_parser.prompt.Prompt)
+- [Section](#type.runvil_parser.prompt.Section)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

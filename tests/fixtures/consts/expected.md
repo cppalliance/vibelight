@@ -7,6 +7,7 @@
 //! Constants and statics.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Config](#type.consts.Config)
 - [Modules](#modules)
@@ -14,6 +15,16 @@
 
 **MACROS:** 1 invocation
 - **MACRO** `concat!`, in [consts](#mod.consts)
+
+<a id="surface"></a>
+## Public surface
+
+- [Config](#type.consts.Config)
+- [COUNTER](#mod.consts)
+- [GREETING](#mod.consts)
+- [LIMIT](#mod.consts)
+- [NAME](#mod.consts)
+- [STATE](#mod.consts)
 
 <a id="unconnected"></a>
 ## Unconnected types

@@ -7,6 +7,7 @@
 //! Comments on impl blocks and on use groups.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Handle](#type.comments_groups.Handle)
 - [Level 2](#level.2)
@@ -20,6 +21,20 @@
   - [traits](#mod.comments_groups.traits)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Handle](#type.comments_groups.Handle)
+- [Key](#type.comments_groups.store.Key)
+- [store](#mod.comments_groups.store)
+- [store::Key](#type.comments_groups.store.Key)
+- [store::read()](#mod.comments_groups.store)
+- [store::Value](#type.comments_groups.store.Value)
+- [store::write()](#mod.comments_groups.store)
+- [traits](#mod.comments_groups.traits)
+- [traits::Persist](#type.comments_groups.traits.Persist)
+- [Value](#type.comments_groups.store.Value)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

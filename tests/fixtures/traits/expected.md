@@ -7,6 +7,7 @@
 //! Traits.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Convert](#type.traits.Convert)
   - [Lender](#type.traits.Lender)
@@ -16,6 +17,14 @@
   - [traits](#mod.traits)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Convert](#type.traits.Convert)
+- [Lender](#type.traits.Lender)
+- [Observer](#type.traits.Observer)
+- [Zeroable](#type.traits.Zeroable)
 
 <a id="unconnected"></a>
 ## Unconnected types

@@ -7,6 +7,7 @@
 //! Macros of every kind.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Event](#type.macros.Event)
   - [Started](#type.macros.Started)
@@ -22,6 +23,14 @@
 - **MACRO** `attribute: serde_like::tag`, in [Event](#type.macros.Event)
 - **MACRO** `attribute: tokio::main`, in [macros](#mod.macros)
 - **MACRO** `attribute: tracing::instrument`, in [Event](#type.macros.Event)
+
+<a id="surface"></a>
+## Public surface
+
+- [Event](#type.macros.Event)
+- [main()](#mod.macros)
+- [NAME](#mod.macros)
+- [Started](#type.macros.Started)
 
 <a id="unconnected"></a>
 ## Unconnected types

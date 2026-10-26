@@ -7,6 +7,7 @@
 //! References, raw pointers, and receivers.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Marker](#type.references.Marker)
   - [Source](#type.references.Source)
@@ -17,6 +18,19 @@
   - [references](#mod.references)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [apply()](#mod.references)
+- [BYTES](#mod.references)
+- [first()](#mod.references)
+- [Marker](#type.references.Marker)
+- [NAME](#mod.references)
+- [pick()](#mod.references)
+- [Source](#type.references.Source)
+- [Table](#type.references.Table)
+- [Views](#type.references.Views)
 
 <a id="unconnected"></a>
 ## Unconnected types

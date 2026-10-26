@@ -7,6 +7,7 @@
 //! Visibility sections: public, internal, and private.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Hidden](#type.visibility.Hidden)
   - [Inner](#type.visibility.Inner)
@@ -16,6 +17,16 @@
   - [outer](#mod.visibility.outer)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Hidden](#type.visibility.Hidden)
+- [Inner](#type.visibility.Inner)
+- [Mixed](#type.visibility.Mixed)
+- [outer](#mod.visibility.outer)
+- [outer::ext_open()](#mod.visibility.outer)
+- [outer::open()](#mod.visibility.outer)
 
 <a id="unconnected"></a>
 ## Unconnected types

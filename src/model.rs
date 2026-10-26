@@ -231,6 +231,9 @@ pub(crate) struct Decl {
     pub(crate) impl_notes: Vec<ImplNotes>,
     /// Impl blocks that add members or base-list entries.
     pub(crate) impl_locs: Vec<Loc>,
+    /// The declaration's own visibility, which the public surface reads and
+    /// the block never prints.
+    pub(crate) vis: Vis,
 }
 
 /// One entry in a module's trailing block.
@@ -316,6 +319,8 @@ pub(crate) struct Module {
     pub(crate) uses: Vec<Use>,
     /// Comments with nothing after them in the module.
     pub(crate) dangling: Vec<Note>,
+    /// The visibility on the `mod` line; the root module is public.
+    pub(crate) vis: Vis,
 }
 
 /// The kind of a macro, in kill list order.

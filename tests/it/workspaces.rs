@@ -200,12 +200,18 @@ const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
 //! The root package.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Root](#type.rooted.Root)
 - [Modules](#modules)
   - [rooted](#mod.rooted)
 
 **MACROS:** none
+
+<a id=\"surface\"></a>
+## Public surface
+
+- [Root](#type.rooted.Root)
 
 <a id=\"unconnected\"></a>
 ## Unconnected types

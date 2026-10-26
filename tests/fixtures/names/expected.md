@@ -7,6 +7,7 @@
 //! Name resolution.
 ```
 
+- [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Catalog](#type.names.Catalog)
   - [Pairs](#type.names.Pairs)
@@ -27,6 +28,23 @@
   - [model](#mod.names.model)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [api](#mod.names.api)
+- [api::inner](#mod.names.api.inner)
+- [api::inner::Handle](#type.names.api.inner.Handle)
+- [api::inner::Shared](#type.names.api.inner.Shared)
+- [api::Token](#type.names.api.Token)
+- [Catalog](#type.names.Catalog)
+- [Entry](#type.names.model.Record)
+- [model](#mod.names.model)
+- [model::Record](#type.names.model.Record)
+- [model::Shared](#type.names.model.Shared)
+- [Pairs](#type.names.Pairs)
+- [Twin](#type.names.Twin)
+- [Wrapper](#type.names.Wrapper)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

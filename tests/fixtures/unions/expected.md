@@ -7,6 +7,7 @@
 //! Unions.
 ```
 
+- [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Bits](#type.unions.Bits)
   - [Hidden](#type.unions.Hidden)
@@ -14,6 +15,12 @@
   - [unions](#mod.unions)
 
 **MACROS:** none
+
+<a id="surface"></a>
+## Public surface
+
+- [Bits](#type.unions.Bits)
+- [Hidden](#type.unions.Hidden)
 
 <a id="unconnected"></a>
 ## Unconnected types
