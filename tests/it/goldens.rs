@@ -84,6 +84,7 @@ goldens! {
     order_modules => "order-modules",
     order_levels => "order-levels",
     prelude_order => "prelude-order",
+    profile => "profile",
     prompt => "prompt",
     raw_idents => "raw-idents",
     receivers => "receivers",

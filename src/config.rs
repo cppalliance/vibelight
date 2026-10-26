@@ -10,7 +10,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::ValueEnum;
 use toml::{Table, Value};
 
-use crate::settings::{KillList, OrderBy};
+use crate::settings::{KillList, OrderBy, Profile};
 use crate::{glob, manifest};
 
 /// The file looked up in the current directory and its parents.
@@ -51,6 +51,7 @@ pub(crate) struct Config {
     pub(crate) kill_list: Option<KillList>,
     pub(crate) facts: Option<bool>,
     pub(crate) order: Option<OrderBy>,
+    pub(crate) profile: Option<Profile>,
 }
 
 /// The top-level keys a config may hold.
@@ -61,6 +62,7 @@ const KEYS: &[&str] = &[
     "kill_list",
     "facts",
     "order",
+    "profile",
     "markdown",
     "html",
 ];
@@ -124,6 +126,7 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
             })
             .transpose()?,
         order: choice(&name, "order", table.get("order"))?,
+        profile: choice(&name, "profile", table.get("profile"))?,
     })
 }
 
@@ -315,5 +318,9 @@ mod tests {
         assert_eq!(config("").1.unwrap().facts, None);
         let modules = config("order = \"modules\"\n").1.unwrap();
         assert_eq!(modules.order, Some(OrderBy::Modules));
+        let analysis = config("profile = \"analysis\"\n").1.unwrap();
+        assert_eq!(analysis.profile, Some(Profile::Analysis));
+        let error = config("profile = \"review\"\n").1.unwrap_err().to_string();
+        assert!(error.contains("`profile` is one of `analysis`"), "{error}");
     }
 }

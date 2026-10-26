@@ -110,6 +110,32 @@ fn the_kill_list_key_turns_the_kill_list_off_and_its_switch_wins() {
 }
 
 #[test]
+fn explicit_config_keys_beat_the_analysis_profile() {
+    let config = "workspace = true\nprofile = \"analysis\"\norder = \"levels\"\n\n\
+        [markdown]\nout = \"vibelight\"\nsource_links = true\n";
+    let (_tmp, repo) = garden(config);
+    let result = vibelight_in(&repo, &[]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let alpha = fs::read_to_string(repo.join("vibelight").join("alpha.md")).unwrap();
+    assert!(
+        alpha.contains("\nSource: "),
+        "the key keeps the links on:\n{alpha}"
+    );
+    assert!(
+        alpha.contains("\n## Unconnected types\n"),
+        "the key keeps the level order"
+    );
+    assert!(
+        alpha.contains("\nCounts: "),
+        "the profile still turns the facts on"
+    );
+    let result = vibelight_in(&repo, &["--order", "modules"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let alpha = fs::read_to_string(repo.join("vibelight").join("alpha.md")).unwrap();
+    assert!(alpha.contains("\n## Levels\n"), "the switch beats the key");
+}
+
+#[test]
 fn a_config_without_folders_writes_beside_itself_from_any_subfolder() {
     let (_tmp, repo) = garden("workspace = true\n");
     let alpha = repo.join("crates").join("alpha");

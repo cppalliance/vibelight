@@ -27,6 +27,16 @@ pub(crate) struct Flags {
     /// True turns the facts on.
     pub(crate) facts: bool,
     pub(crate) order: Option<OrderBy>,
+    pub(crate) profile: Option<Profile>,
+}
+
+/// A set of defaults for one kind of reader; a switch or a config key
+/// still wins over it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub(crate) enum Profile {
+    /// For analyzing an API: source links off, only the kill list's counts,
+    /// the facts on, and the module order.
+    Analysis,
 }
 
 /// How a file orders its declarations.
@@ -124,35 +134,41 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
         };
         (selection, follow)
     };
+    let analysis = flags.profile.or(config.and_then(|c| c.profile)) == Some(Profile::Analysis);
     let unset = Format::default();
     let home = config.map(|c| c.dir.as_path());
     let markdown = output(
         config.map_or(&unset, |c| &c.markdown),
         home,
-        flags.md_out.as_ref(),
-        flags.md_source_links,
+        (flags.md_out.as_ref(), flags.md_source_links),
         flags,
+        !analysis,
     );
     let html = output(
         config.map_or(&unset, |c| &c.html),
         home,
-        flags.html_out.as_ref(),
-        flags.html_source_links,
+        (flags.html_out.as_ref(), flags.html_source_links),
         flags,
+        !analysis,
     );
     if markdown.is_none() && html.is_none() {
         bail!("the config turns both formats off, so there is nothing to write");
     }
+    let (kill_list, order) = if analysis {
+        (KillList::Counts, OrderBy::Modules)
+    } else {
+        (KillList::Full, OrderBy::Levels)
+    };
     let options = Options {
         kill_list: flags
             .kill_list
             .or(config.and_then(|c| c.kill_list))
-            .unwrap_or_default(),
-        facts: flags.facts || config.and_then(|c| c.facts).unwrap_or(false),
+            .unwrap_or(kill_list),
+        facts: flags.facts || config.and_then(|c| c.facts).unwrap_or(analysis),
         order: flags
             .order
             .or(config.and_then(|c| c.order))
-            .unwrap_or_default(),
+            .unwrap_or(order),
     };
     Ok(Plan {
         selection,
@@ -163,12 +179,15 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
     })
 }
 
+/// Settles one format from its own folder and link flags, the flags for
+/// both formats, the config, and `links_by_default`, which a profile can
+/// turn off.
 fn output(
     config: &Format,
     home: Option<&Path>,
-    out: Option<&PathBuf>,
-    links: Option<bool>,
+    (out, links): (Option<&PathBuf>, Option<bool>),
     flags: &Flags,
+    links_by_default: bool,
 ) -> Option<Output> {
     if config.enabled == Some(false) && out.is_none() {
         return None;
@@ -182,7 +201,7 @@ fn output(
     let links = links
         .or(flags.no_source_links.then_some(false))
         .or(config.source_links)
-        .unwrap_or(true);
+        .unwrap_or(links_by_default);
     Some(Output { dir, links })
 }
 
@@ -208,6 +227,7 @@ mod tests {
             kill_list: Some(KillList::Counts),
             facts: Some(true),
             order: Some(OrderBy::Modules),
+            profile: None,
         }
     }
 
@@ -281,6 +301,46 @@ mod tests {
             ..Flags::default()
         };
         assert_eq!(order(&flags, Some(&config)), OrderBy::Levels);
+    }
+
+    #[test]
+    fn the_analysis_profile_changes_only_the_defaults() {
+        let flags = Flags {
+            profile: Some(Profile::Analysis),
+            ..Flags::default()
+        };
+        let plan = plan(&flags, None).unwrap();
+        assert_eq!(plan.markdown, Some(output(".", false)));
+        assert_eq!(plan.html, Some(output(".", false)));
+        assert_eq!(
+            plan.options,
+            Options {
+                kill_list: KillList::Counts,
+                facts: true,
+                order: OrderBy::Modules,
+            }
+        );
+        let mut config = config();
+        config.profile = Some(Profile::Analysis);
+        config.kill_list = None;
+        config.order = None;
+        config.facts = Some(false);
+        let explicit = Flags {
+            html_source_links: Some(true),
+            order: Some(OrderBy::Levels),
+            ..Flags::default()
+        };
+        let plan = super::plan(&explicit, Some(&config)).unwrap();
+        assert_eq!(plan.markdown, Some(output("/repo/vibelight", false)));
+        assert_eq!(plan.html, Some(output("/repo/vibelight/html", true)));
+        assert_eq!(
+            plan.options,
+            Options {
+                kill_list: KillList::Counts,
+                facts: false,
+                order: OrderBy::Levels,
+            }
+        );
     }
 
     #[test]

@@ -5,8 +5,35 @@ use std::fs;
 use std::process::Command;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, input_of, outputs, read_outputs, run, rust_files,
+    copy_dir, fixture_names, fixtures, input_of, outputs, read_outputs, run, run_with, rust_files,
 };
+
+#[test]
+fn the_analysis_profile_turns_the_source_links_off_without_their_switch() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let input = fixtures().join("links");
+    let profile = ["--profile".to_owned(), "analysis".to_owned()];
+    assert!(
+        run_with(&input, tmp.path(), true, &profile)
+            .status
+            .success()
+    );
+    let md = fs::read_to_string(tmp.path().join("links.md")).expect("the outline was written");
+    let html = fs::read_to_string(tmp.path().join("links.html")).expect("the page was written");
+    assert!(!md.contains("Source: "), "{md}");
+    assert!(
+        md.contains("\n## Levels\n") && md.contains("\nCounts: "),
+        "{md}"
+    );
+    assert!(!html.contains("<p class=\"source\">") && !html.contains("<a class=\"src\""));
+    let plain = tmp.path().join("plain");
+    assert!(run(&input, &plain, true).status.success());
+    let md = fs::read_to_string(plain.join("links.md")).expect("the outline was written");
+    assert!(
+        md.contains("Source: "),
+        "a run without the profile keeps its links"
+    );
+}
 
 #[test]
 fn a_second_run_gives_identical_bytes() {
