@@ -33,7 +33,7 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/cppalliance/vibeli
 
 To try the latest changes, use the [nightly](https://github.com/cppalliance/vibelight/releases/tag/nightly) prerelease. It is rebuilt once a day when `master` has new commits, for the same platforms, and each build replaces the one before. `vibelight --version` names the build's commit and date.
 
-Once vibelight is published on crates.io, `cargo install vibelight` will build and install it. Until then, or to build your own copy, run `cargo install --path .` in a checkout of this repository.
+vibelight is also on crates.io, so `cargo install vibelight` builds and installs the latest published version. To build your own copy, run `cargo install --path .` in a checkout of this repository.
 
 ## Run
 
@@ -164,7 +164,7 @@ To keep the committed outline current, add a CI step that fails when it is out o
           vibelight --check
 ```
 
-The step pins one release, because a newer vibelight can lay out the same code a little differently. The pinned version and the committed outline change together: when you move to a newer release, change the version in the step and commit the markdown that release writes in the same commit, so the check passes on every commit.
+Version 0.1.0 predates the config file and `--check`, so pin v0.2.0 or later. The step pins one release, because a newer vibelight can lay out the same code a little differently. The pinned version and the committed outline change together: when you move to a newer release, change the version in the step and commit the markdown that release writes in the same commit, so the check passes on every commit.
 
 ## Colors
 
