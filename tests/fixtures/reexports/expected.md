@@ -8,7 +8,7 @@
 ```
 
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Level 1: top-level types](#level.1)
   - [inner::Other](#type.reexports.inner.Other)
   - [inner::Thing](#type.reexports.inner.Thing)
 - [Modules](#modules)
@@ -25,8 +25,8 @@
 - [Other](#type.reexports.inner.Other)
 - [Thing](#type.reexports.inner.Thing)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="level.1"></a>
+## Level 1: top-level types
 
 <a id="type.reexports.inner.Other"></a>
 ### inner::Other

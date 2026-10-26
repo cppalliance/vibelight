@@ -8,8 +8,9 @@
 ```
 
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Level 1: top-level types](#level.1)
   - [parts::Gauge](#type.beta.parts.Gauge)
+- [Unconnected types](#unconnected)
   - [parts::Valve](#type.beta.parts.Valve)
 - [Modules](#modules)
   - [beta](#mod.beta)
@@ -25,8 +26,8 @@
 - [parts::Gauge](#type.beta.parts.Gauge)
 - [parts::Valve](#type.beta.parts.Valve)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="level.1"></a>
+## Level 1: top-level types
 
 <a id="type.beta.parts.Gauge"></a>
 ### parts::Gauge
@@ -35,6 +36,9 @@
 /// A gauge.
 struct Gauge;
 ```
+
+<a id="unconnected"></a>
+## Unconnected types
 
 <a id="type.beta.parts.Valve"></a>
 ### parts::Valve

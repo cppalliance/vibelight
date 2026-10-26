@@ -8,7 +8,7 @@
 ```
 
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Level 1: top-level types](#level.1)
   - [Node](#type.receivers.Node)
 - [Modules](#modules)
   - [receivers](#mod.receivers)
@@ -21,8 +21,8 @@
 - [free()](#mod.receivers)
 - [Node](#type.receivers.Node)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="level.1"></a>
+## Level 1: top-level types
 
 <a id="type.receivers.Node"></a>
 ### Node

@@ -10,11 +10,10 @@
 - [Public surface](#surface)
 - [Level 1: top-level types](#level.1)
   - [Handle](#type.comments_groups.Handle)
-- [Level 2](#level.2)
-  - [traits::Persist](#type.comments_groups.traits.Persist)
-- [Unconnected types](#unconnected)
   - [store::Key](#type.comments_groups.store.Key)
   - [store::Value](#type.comments_groups.store.Value)
+- [Level 2](#level.2)
+  - [traits::Persist](#type.comments_groups.traits.Persist)
 - [Modules](#modules)
   - [comments_groups](#mod.comments_groups)
   - [store](#mod.comments_groups.store)
@@ -66,23 +65,6 @@ struct Handle
 }
 ```
 
-<a id="level.2"></a>
-## Level 2
-
-<a id="type.comments_groups.traits.Persist"></a>
-### traits::Persist
-
-```
-/// Something that persists.
-trait Persist
-{
-    save();
-}
-```
-
-<a id="unconnected"></a>
-## Unconnected types
-
 <a id="type.comments_groups.store.Key"></a>
 ### store::Key
 
@@ -97,6 +79,20 @@ struct Key;
 ```
 /// A value.
 struct Value;
+```
+
+<a id="level.2"></a>
+## Level 2
+
+<a id="type.comments_groups.traits.Persist"></a>
+### traits::Persist
+
+```
+/// Something that persists.
+trait Persist
+{
+    save();
+}
 ```
 
 <a id="modules"></a>

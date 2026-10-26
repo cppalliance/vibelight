@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::layout::{Block, Span};
-use crate::model::{Crate, DeclId, path_order};
+use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Sig, Text, path_order};
 /// The document order of the declarations.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Order {
@@ -54,6 +54,9 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
         for &t in targets {
             named[t] = true;
         }
+    }
+    for (d, modules) in module_mentions(krate).iter().enumerate() {
+        named[d] |= !modules.is_empty();
     }
     let mut unconnected: Vec<DeclId> = (0..n).filter(|&d| out[d].is_empty() && !named[d]).collect();
     unconnected.sort_by(|&a, &b| path_cmp(a, b));
@@ -157,6 +160,56 @@ fn block_mentions(krate: &Crate, blocks: &[Block]) -> Vec<Vec<DeclId>> {
                 .collect()
         })
         .collect()
+}
+
+/// Lists, for each declaration, the modules whose items name it: a free
+/// function, a constant, a static, an extern item, or a re-export. Such a
+/// type is in use, so it is never Unconnected, but a module is not a
+/// declaration, so it gives no level. Only the items' own text counts, not
+/// their comments.
+pub(crate) fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
+    let mut out: Vec<Vec<ModId>> = vec![Vec::new(); krate.decls.len()];
+    for (m, module) in krate.modules.iter().enumerate() {
+        for item in &module.items {
+            let texts: Vec<&Text> = match &item.kind {
+                ItemKind::Fn(sig)
+                | ItemKind::Foreign {
+                    item: Foreign::Fn(sig),
+                    ..
+                } => sig_texts(sig),
+                ItemKind::Const { ty, .. }
+                | ItemKind::Static { ty, .. }
+                | ItemKind::Foreign {
+                    item: Foreign::Static { ty, .. },
+                    ..
+                } => vec![ty],
+                ItemKind::Reexport { text, .. } => vec![text],
+                ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => {
+                    Vec::new()
+                }
+            };
+            for text in texts {
+                for seg in &text.0 {
+                    if let Seg::Ref(id) = seg {
+                        if let Some(t) = krate.refs[*id].target {
+                            if !out[t].contains(&m) {
+                                out[t].push(m);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+fn sig_texts(sig: &Sig) -> Vec<&Text> {
+    let mut texts = vec![&sig.generics];
+    texts.extend(sig.params.iter().map(|p| &p.text));
+    texts.extend(sig.ret.iter());
+    texts.extend(sig.where_clause.iter());
+    texts
 }
 
 /// Maps each declaration to the position of its first mention when the

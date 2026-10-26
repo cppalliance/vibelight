@@ -8,9 +8,10 @@
 ```
 
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Level 1: top-level types](#level.1)
   - [api::v1::Request](#type.surface.api.v1.Request)
   - [detail::Handle](#type.surface.detail.Handle)
+- [Unconnected types](#unconnected)
   - [detail::tools::Tool](#type.surface.detail.tools.Tool)
   - [Internal](#type.surface.Internal)
   - [prelude::Marker](#type.surface.prelude.Marker)
@@ -49,8 +50,8 @@
 - [MAX](#mod.surface.values)
 - [start()](#mod.surface)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="level.1"></a>
+## Level 1: top-level types
 
 <a id="type.surface.api.v1.Request"></a>
 ### api::v1::Request
@@ -67,6 +68,9 @@ struct Request;
 /// A handle made public through a re-export.
 struct Handle;
 ```
+
+<a id="unconnected"></a>
+## Unconnected types
 
 <a id="type.surface.detail.tools.Tool"></a>
 ### detail::tools::Tool

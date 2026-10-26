@@ -8,9 +8,10 @@
 ```
 
 - [Public surface](#surface)
+- [Level 1: top-level types](#level.1)
+  - [Record](#type.attributes.Record)
 - [Unconnected types](#unconnected)
   - [Level](#type.attributes.Level)
-  - [Record](#type.attributes.Record)
 - [Modules](#modules)
   - [attributes](#mod.attributes)
 
@@ -25,26 +26,8 @@
 - [Record](#type.attributes.Record)
 - [Row](#type.attributes.Record)
 
-<a id="unconnected"></a>
-## Unconnected types
-
-<a id="type.attributes.Level"></a>
-### Level
-
-```
-/// A level.
-[[non_exhaustive]]
-[[repr(u8)]]
-enum Level : Clone, Copy
-{
-    /// The top.
-    [[deprecated(since = "1.2", note = "use High")]]
-    Top = 2,
-
-    /// The bottom.
-    Low = 0,
-}
-```
+<a id="level.1"></a>
+## Level 1: top-level types
 
 <a id="type.attributes.Record"></a>
 ### Record
@@ -75,6 +58,27 @@ struct Record
 
 private:
     count: u8,
+}
+```
+
+<a id="unconnected"></a>
+## Unconnected types
+
+<a id="type.attributes.Level"></a>
+### Level
+
+```
+/// A level.
+[[non_exhaustive]]
+[[repr(u8)]]
+enum Level : Clone, Copy
+{
+    /// The top.
+    [[deprecated(since = "1.2", note = "use High")]]
+    Top = 2,
+
+    /// The bottom.
+    Low = 0,
 }
 ```
 
