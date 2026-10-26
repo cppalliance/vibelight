@@ -85,20 +85,20 @@ struct Views<'a, T>
 
     write: T mut*,
 
-    static into_name(self) -> str& 'static;
-
-    static poll(self: Pin<Self mut&>);
-
-    static rename(mut self, name: str& 'static) -> Self;
-
     clear() mut;
 
     get() -> T&;
+
+    into_name(self) -> str& 'static;
 
     lookup(
         keys: Vec<str& 'a>&,
         table: std::collections::BTreeMap<String, T mut& 'a>&) mut ->
         Option<T mut& 'a>;
+
+    poll(self: Pin<Self mut&>);
+
+    rename(mut self, name: str& 'static) -> Self;
 
     render(out: impl Write mut&, items: [Box<dyn Display>]&);
 

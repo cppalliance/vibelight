@@ -96,7 +96,7 @@ struct Prompt : Clone, Debug, Eq, PartialEq
     /// Returns the prompt's title, the text of its required H1 heading.
     title() -> str&;
 
-private:
+internal:
     /// The parsed YAML frontmatter.
     frontmatter: Frontmatter,
 
@@ -109,14 +109,6 @@ private:
     /// The required H1 title.
     title: String,
 
-    static parse_body(
-        frontmatter: Frontmatter,
-        shared: Arc<str>&,
-        frontmatter_lines: u32,
-        emitter: Emitter&) -> Result<Prompt>;
-
-    static parse_inner(input: str&, emitter: Emitter&) -> Result<Prompt>;
-
     /// The entry-point section: the first top-level section in file order;
     /// the Engine reaches it through `crate::detail::entry`.
     entry() -> Option<Section&>;
@@ -128,6 +120,15 @@ private:
     /// Returns the top-level H2 sections in file order; the Engine reaches
     /// them through `crate::detail::sections`.
     sections() -> [Section]&;
+
+private:
+    static parse_body(
+        frontmatter: Frontmatter,
+        shared: Arc<str>&,
+        frontmatter_lines: u32,
+        emitter: Emitter&) -> Result<Prompt>;
+
+    static parse_inner(input: str&, emitter: Emitter&) -> Result<Prompt>;
 }
 ```
 
@@ -186,7 +187,7 @@ struct Section : Clone, Debug, Eq, PartialEq
     /// Text of the last prose block, or `""` when the section has none.
     prose() -> str&;
 
-private:
+internal:
     /// Ordered lua/prose blocks for this section.
     blocks: Vec<Block>,
 

@@ -93,4 +93,5 @@ goldens! {
     traits => "traits",
     unions => "unions",
     unparsable => "unparsable",
+    visibility => "visibility",
 }

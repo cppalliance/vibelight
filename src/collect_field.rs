@@ -48,7 +48,7 @@ impl Collector<'_> {
             let mark = self.attribute_mark(&field.attrs, helpers, Holder::Decl(id), loc);
             members.push(Member {
                 name: ident.to_string(),
-                public: attrs::is_public(&field.vis),
+                vis: attrs::vis(&field.vis),
                 kind: MemberKind::Field(ty),
                 meta: Meta {
                     notes,

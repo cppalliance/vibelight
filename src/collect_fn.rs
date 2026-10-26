@@ -39,7 +39,7 @@ impl Collector<'_> {
         };
         self.modules[here.module].items.push(Item {
             name: f.sig.ident.to_string(),
-            public: attrs::is_public(&f.vis),
+            vis: attrs::vis(&f.vis),
             kind: ItemKind::Fn(sig),
             meta,
             loc,

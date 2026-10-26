@@ -13,7 +13,7 @@ use crate::collect_use_group::{Binding, expand};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Text, TypeRef, Use,
+    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Text, TypeRef, Use, Vis,
 };
 use crate::source::{Comment, scan};
 use crate::typerefs::range_of;
@@ -168,7 +168,7 @@ impl Collector<'_> {
         };
         self.modules[here.module].items.push(Item {
             name,
-            public: attrs::is_public(vis),
+            vis: attrs::vis(vis),
             kind,
             meta,
             loc,
@@ -286,7 +286,7 @@ impl Collector<'_> {
                     let sort = macros::path_text(&m.mac.path);
                     self.modules[here.module].items.push(Item {
                         name: sort,
-                        public: true,
+                        vis: Vis::Public,
                         kind: ItemKind::Mark(text),
                         meta: Meta::default(),
                         loc,
@@ -323,7 +323,7 @@ impl Collector<'_> {
             };
             self.modules[here.module].items.push(Item {
                 name,
-                public: attrs::is_public(vis),
+                vis: attrs::vis(vis),
                 kind: ItemKind::Foreign {
                     abi: abi.clone(),
                     item: foreign,

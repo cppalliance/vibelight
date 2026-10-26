@@ -46,12 +46,23 @@ pub(crate) struct Meta {
     pub(crate) marks: Vec<String>,
 }
 
+/// How far a node is visible, which picks the section it prints in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Vis {
+    /// `pub`.
+    Public,
+    /// `pub(crate)`, `pub(super)`, or `pub(in path)`.
+    Internal,
+    /// `pub(self)` or no keyword.
+    Private,
+}
+
 /// How a function takes its object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Receiver {
     /// No receiver.
     None,
-    /// `&self`, dropped and shown as a trailing `const`.
+    /// `&self`, dropped with nothing in its place.
     Shared,
     /// `&mut self`, dropped.
     Mutable,
@@ -89,7 +100,7 @@ pub(crate) struct Param {
 pub(crate) struct Member {
     /// The name members are sorted by.
     pub(crate) name: String,
-    pub(crate) public: bool,
+    pub(crate) vis: Vis,
     pub(crate) kind: MemberKind,
     pub(crate) meta: Meta,
     pub(crate) loc: Loc,
@@ -114,10 +125,11 @@ pub(crate) enum MemberKind {
 }
 
 impl MemberKind {
-    /// Tells whether a member is a static function: no receiver, or one
-    /// taken by value.
+    /// Tells whether a member is a static function: one with no receiver. A
+    /// function that takes `self` by value is a member function that keeps
+    /// `self` as its first parameter.
     pub(crate) fn is_static_fn(&self) -> bool {
-        matches!(self, MemberKind::Fn(sig) if matches!(sig.receiver, Receiver::None | Receiver::Value))
+        matches!(self, MemberKind::Fn(sig) if sig.receiver == Receiver::None)
     }
 }
 
@@ -226,7 +238,7 @@ pub(crate) struct Decl {
 pub(crate) struct Item {
     /// The name the entry sorts by.
     pub(crate) name: String,
-    pub(crate) public: bool,
+    pub(crate) vis: Vis,
     pub(crate) kind: ItemKind,
     pub(crate) meta: Meta,
     pub(crate) loc: Loc,

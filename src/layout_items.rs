@@ -3,28 +3,27 @@
 use std::collections::BTreeMap;
 
 use crate::layout::{
-    Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, key, mark_line,
-    note_lines, plain, sort_entries,
+    Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, join_sections, key,
+    mark_line, note_lines, plain, section, sections, sort_entries,
 };
 use crate::layout_decl::{BodyParts, body};
-use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, name_order};
+use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, Vis, name_order};
 
-/// Builds a module's trailing block: the public items, then `private:` and
-/// the private items, each section grouped as re-exports, macro marks,
+/// Builds a module's trailing block: the public items, then `internal:` and
+/// `private:` with theirs, each section grouped as re-exports, macro marks,
 /// constants, statics, free functions, and extern blocks.
 pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let module = &krate.modules[id];
-    let mut public: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
-    let mut private: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
-    let mut foreign: [Vec<&Item>; 2] = [Vec::new(), Vec::new()];
+    let mut sections = sections(6);
+    let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
-    let mut use_groups: BTreeMap<(bool, usize), Vec<Entry>> = BTreeMap::new();
+    let mut use_groups: BTreeMap<(Vis, usize), Vec<Entry>> = BTreeMap::new();
     for item in &module.items {
         if let ItemKind::Reexport {
             group: Some(id), ..
         } = item.kind
         {
-            let entries = use_groups.entry((item.public, id)).or_default();
+            let entries = use_groups.entry((item.vis, id)).or_default();
             entries.push(item_entry(krate, item));
             continue;
         }
@@ -35,7 +34,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
             ItemKind::Static { .. } => 3,
             ItemKind::Fn(_) => 4,
             ItemKind::Foreign { .. } => {
-                foreign[usize::from(!item.public)].push(item);
+                foreign[section(item.vis)].push(item);
                 continue;
             }
             ItemKind::Unsupported(kind) => {
@@ -43,14 +42,9 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 continue;
             }
         };
-        let entry = item_entry(krate, item);
-        if item.public {
-            public[group].push(entry);
-        } else {
-            private[group].push(entry);
-        }
+        sections[section(item.vis)][group].push(item_entry(krate, item));
     }
-    for ((is_public, _), mut entries) in use_groups {
+    for ((vis, _), mut entries) in use_groups {
         sort_entries(&mut entries, &krate.refs);
         let merged = Entry {
             name: entries[0].name.clone(),
@@ -60,35 +54,16 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 .flat_map(|e| e.repeats.drain(..))
                 .collect(),
         };
-        if is_public {
-            public[0].push(merged);
-        } else {
-            private[0].push(merged);
-        }
+        sections[section(vis)][0].push(merged);
     }
-    for group in public.iter_mut().chain(private.iter_mut()) {
+    for group in sections.iter_mut().flatten() {
         sort_entries(group, &krate.refs);
     }
-    let [public_foreign, private_foreign] = foreign;
-    public[5] = extern_blocks(krate, &public_foreign);
-    private[5] = extern_blocks(krate, &private_foreign);
-
-    let mut block = Block::default();
-    join_groups(public, &mut block);
-    if private.iter().any(|g| !g.is_empty()) {
-        if !block.lines.is_empty() {
-            block.lines.push(Line::default());
-        }
-        block.lines.push(Line {
-            indent: 0,
-            spans: vec![key("private:")],
-            trailing: None,
-        });
-        let mut section = Block::default();
-        join_groups(private, &mut section);
-        block.lines.extend(section.lines);
-        block.repeats.extend(section.repeats);
+    for (groups, items) in sections.iter_mut().zip(&foreign) {
+        groups[5] = extern_blocks(krate, items);
     }
+    let mut block = Block::default();
+    join_sections(sections, Vis::Public, &mut block);
     let dangling = note_lines(&module.dangling, 0, "///");
     if !dangling.is_empty() {
         if !block.lines.is_empty() {

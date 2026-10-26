@@ -1,15 +1,15 @@
 //! Lays out declaration blocks: headers and bodies.
 
 use crate::layout::{
-    Block, Entry, Line, Span, above, code, join_groups, key, mark_line, note_lines, plain,
-    sort_entries, where_spans,
+    Block, Line, Span, above, code, join_sections, key, mark_line, note_lines, plain, section,
+    sections, sort_entries, where_spans,
 };
 use crate::layout_head::header_lines;
 use crate::layout_members::{member_entry, variant_entry};
 use crate::layout_special::special_entry;
 use crate::model::{
     Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, Variant,
-    name_order,
+    Vis, name_order,
 };
 
 /// Builds the block of one declaration.
@@ -106,7 +106,7 @@ fn is_class(decl: &Decl) -> bool {
     decl.kind == DeclKind::Struct
         && matches!(decl.shape, Shape::Named)
         && real.peek().is_some()
-        && real.all(|m| !m.public)
+        && real.all(|m| m.vis != Vis::Public)
 }
 
 /// Returns a type alias or trait alias as one line.
@@ -175,12 +175,11 @@ pub(crate) struct BodyParts<'b> {
 }
 
 /// Builds the lines between a type's braces: the public groups, then
-/// `private:` and the private groups, then comments with nothing after
+/// `internal:` and `private:` with theirs, then comments with nothing after
 /// them, macro marks, and unsupported lines.
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
-    let mut public: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
-    let mut private: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
+    let mut sections = sections(6);
     let real = parts
         .members
         .iter()
@@ -193,46 +192,29 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
             MemberKind::Fn(_) if member.kind.is_static_fn() => 4,
             _ => 5,
         };
-        let entry = member_entry(krate, member);
-        if member.public || parts.all_public {
-            public[group].push(entry);
+        let vis = if parts.all_public {
+            Vis::Public
         } else {
-            private[group].push(entry);
-        }
+            member.vis
+        };
+        sections[section(vis)][group].push(member_entry(krate, member));
     }
-    for group in public.iter_mut().chain(private.iter_mut()) {
+    for group in sections.iter_mut().flatten() {
         sort_entries(group, refs);
     }
     if let Some(variants) = parts.variants {
-        public[2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
+        sections[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }
+    let default = if parts.class {
+        Vis::Private
+    } else {
+        Vis::Public
+    };
     if let Some(entry) = special_entry(parts.special, parts.name, refs) {
-        let section = if parts.class {
-            &mut private
-        } else {
-            &mut public
-        };
-        section[3].push(entry);
+        sections[section(default)][3].push(entry);
     }
     let mut block = Block::default();
-    join_groups(public, &mut block);
-    let has_private = private.iter().any(|g| !g.is_empty());
-    if has_private {
-        let mut section = Block::default();
-        join_groups(private, &mut section);
-        if !parts.class {
-            if !block.lines.is_empty() {
-                block.lines.push(Line::default());
-            }
-            block.lines.push(Line {
-                indent: 0,
-                spans: vec![key("private:")],
-                trailing: None,
-            });
-        }
-        block.lines.extend(section.lines);
-        block.repeats.extend(section.repeats);
-    }
+    join_sections(sections, default, &mut block);
     let dangling = note_lines(parts.dangling, 4, "///");
     if !dangling.is_empty() {
         if !block.lines.is_empty() {

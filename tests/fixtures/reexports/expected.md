@@ -50,7 +50,7 @@ using inner::Other;
 
 using inner::Thing;
 
-private:
+internal:
 using CrateThing = inner::Thing;
 ```
 

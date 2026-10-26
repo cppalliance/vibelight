@@ -11,7 +11,7 @@ use crate::collect_bases::single_arg;
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Base, DeclId, Holder, Impl, Loc, MacroKind, MacroUse, Member, MemberKind, Meta, Note, Text,
+    Base, DeclId, Holder, Impl, Loc, MacroKind, MacroUse, Member, MemberKind, Meta, Note, Text, Vis,
 };
 use crate::source::Comment;
 use crate::typerefs::range_of;
@@ -19,7 +19,7 @@ use crate::typerefs::range_of;
 struct Parts<'p> {
     attrs: &'p [Attribute],
     ident: &'p syn::Ident,
-    public: bool,
+    vis: Vis,
     kind: MemberKind,
     lead: Vec<Comment>,
     trail: &'p [Comment],
@@ -152,11 +152,11 @@ impl Collector<'_> {
                     let loc = loc(&here, c.ident.span());
                     let (value, marks) = self.value(&here, &c.expr, Holder::Impl(id), loc);
                     let kind = MemberKind::Const { ty, value };
-                    let public = attrs::is_public(&c.vis);
+                    let vis = attrs::vis(&c.vis);
                     let parts = Parts {
                         attrs: &c.attrs,
                         ident: &c.ident,
-                        public,
+                        vis,
                         kind,
                         lead,
                         trail: &trail,
@@ -176,11 +176,11 @@ impl Collector<'_> {
                         .into_iter()
                         .collect();
                     let kind = MemberKind::Fn(sig);
-                    let public = attrs::is_public(&f.vis);
+                    let vis = attrs::vis(&f.vis);
                     let parts = Parts {
                         attrs: &f.attrs,
                         ident: &f.sig.ident,
-                        public,
+                        vis,
                         kind,
                         lead,
                         trail: &trail,
@@ -198,11 +198,11 @@ impl Collector<'_> {
                     text.append(&self.slicer(&here).node(&t.ty, |f| f.visit_type(&t.ty)));
                     let loc = loc(&here, t.ident.span());
                     let kind = MemberKind::Type(text);
-                    let public = attrs::is_public(&t.vis);
+                    let vis = attrs::vis(&t.vis);
                     let parts = Parts {
                         attrs: &t.attrs,
                         ident: &t.ident,
-                        public,
+                        vis,
                         kind,
                         lead,
                         trail: &trail,
@@ -230,7 +230,7 @@ impl Collector<'_> {
                     self.warn(loc, "unsupported verbatim impl item".to_owned());
                     Some(Member {
                         name: String::new(),
-                        public: true,
+                        vis: Vis::Public,
                         kind: MemberKind::Unsupported("verbatim impl item".to_owned()),
                         meta: Meta::default(),
                         loc,
@@ -249,7 +249,7 @@ impl Collector<'_> {
                     self.warn(loc, "unsupported impl item".to_owned());
                     Some(Member {
                         name: String::new(),
-                        public: true,
+                        vis: Vis::Public,
                         kind: MemberKind::Unsupported("unknown impl item".to_owned()),
                         meta: Meta::default(),
                         loc,
@@ -306,7 +306,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &c.attrs,
                         ident: &c.ident,
-                        public: true,
+                        vis: Vis::Public,
                         kind,
                         lead,
                         trail: &trail,
@@ -331,7 +331,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &f.attrs,
                         ident: &f.sig.ident,
-                        public: true,
+                        vis: Vis::Public,
                         kind,
                         lead,
                         trail: &trail,
@@ -349,7 +349,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &t.attrs,
                         ident: &t.ident,
-                        public: true,
+                        vis: Vis::Public,
                         kind,
                         lead,
                         trail: &trail,
@@ -371,7 +371,7 @@ impl Collector<'_> {
                     });
                     Some(Member {
                         name: text.clone(),
-                        public: true,
+                        vis: Vis::Public,
                         kind: MemberKind::Mark(text),
                         meta: Meta::default(),
                         loc,
@@ -382,7 +382,7 @@ impl Collector<'_> {
                     self.warn(loc, "unsupported verbatim trait item".to_owned());
                     Some(Member {
                         name: String::new(),
-                        public: true,
+                        vis: Vis::Public,
                         kind: MemberKind::Unsupported("verbatim trait item".to_owned()),
                         meta: Meta::default(),
                         loc,
@@ -400,7 +400,7 @@ impl Collector<'_> {
                     self.warn(loc, "unsupported trait item".to_owned());
                     Some(Member {
                         name: String::new(),
-                        public: true,
+                        vis: Vis::Public,
                         kind: MemberKind::Unsupported("unknown trait item".to_owned()),
                         meta: Meta::default(),
                         loc,
@@ -447,7 +447,7 @@ impl Collector<'_> {
         let notes = self.node_notes(here, parts.attrs, parts.lead, parts.range);
         Member {
             name: parts.ident.to_string(),
-            public: parts.public,
+            vis: parts.vis,
             kind: parts.kind,
             meta: Meta {
                 notes,

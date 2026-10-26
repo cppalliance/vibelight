@@ -1,6 +1,6 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
-use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, name_order};
+use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, Vis, name_order};
 use crate::typerefs_edits::MUT;
 use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts};
 
@@ -215,6 +215,54 @@ pub(crate) fn join_groups(groups: Vec<Vec<Entry>>, block: &mut Block) {
         members.push(entry.lines);
     }
     block.lines.extend(spaced(members));
+}
+
+/// The groups of a body's or a module block's sections: public, internal,
+/// and private, in print order.
+pub(crate) type Sections = [Vec<Vec<Entry>>; 3];
+
+/// Returns empty sections of `groups` groups each.
+pub(crate) fn sections(groups: usize) -> Sections {
+    std::array::from_fn(|_| (0..groups).map(|_| Vec::new()).collect())
+}
+
+/// Returns the index of a visibility's section.
+pub(crate) fn section(vis: Vis) -> usize {
+    match vis {
+        Vis::Public => 0,
+        Vis::Internal => 1,
+        Vis::Private => 2,
+    }
+}
+
+/// Joins the sections that have entries in the order public, `internal:`,
+/// `private:`, a blank line and the label before each. The first section
+/// leaves its label out when its visibility is `default`, the section a
+/// reader assumes: public in a struct or a module, private in a class.
+pub(crate) fn join_sections(sections: Sections, default: Vis, block: &mut Block) {
+    let labels = [
+        (Vis::Public, "public:"),
+        (Vis::Internal, "internal:"),
+        (Vis::Private, "private:"),
+    ];
+    let mut first = true;
+    for ((vis, label), groups) in labels.into_iter().zip(sections) {
+        if groups.iter().all(Vec::is_empty) {
+            continue;
+        }
+        if !(first && vis == default) {
+            if !block.lines.is_empty() {
+                block.lines.push(Line::default());
+            }
+            block.lines.push(Line {
+                indent: 0,
+                spans: vec![key(label)],
+                trailing: None,
+            });
+        }
+        join_groups(groups, block);
+        first = false;
+    }
 }
 
 /// Joins the lines of each member of a list, one blank line between every

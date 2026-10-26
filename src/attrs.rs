@@ -5,7 +5,7 @@ use syn::{
     AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Token, Visibility,
 };
 
-use crate::model::name_order;
+use crate::model::{Vis, name_order};
 use crate::source::SourceFile;
 
 /// Tells whether a `cfg` on the item is test-only: `test`, or an `all(...)`
@@ -46,9 +46,16 @@ pub(crate) fn sort_marks(marks: &mut Vec<String>) {
     marks.dedup();
 }
 
-/// Tells whether a visibility is plain `pub`.
-pub(crate) fn is_public(vis: &Visibility) -> bool {
-    matches!(vis, Visibility::Public(_))
+/// Returns the section a visibility prints in: `pub` is public;
+/// `pub(crate)`, `pub(super)`, and `pub(in path)` are internal; and
+/// `pub(self)` or no keyword is private.
+pub(crate) fn vis(vis: &Visibility) -> Vis {
+    match vis {
+        Visibility::Public(_) => Vis::Public,
+        Visibility::Restricted(r) if r.path.is_ident("self") => Vis::Private,
+        Visibility::Restricted(_) => Vis::Internal,
+        Visibility::Inherited => Vis::Private,
+    }
 }
 
 /// Returns the normalized source text inside a meta list's delimiters.

@@ -76,7 +76,7 @@ impl Collector<'_> {
         let cfgs = attrs::cfgs(&u.attrs, file);
         let trailing = self.trailing(here, trail);
         let loc = loc(here, u.use_token.span);
-        let public = attrs::is_public(&u.vis);
+        let vis = attrs::vis(&u.vis);
         for (index, entry) in named.into_iter().enumerate() {
             let mut meta = Meta {
                 notes: entry.notes,
@@ -93,7 +93,7 @@ impl Collector<'_> {
             }
             self.modules[here.module].items.push(Item {
                 name: entry.sort,
-                public,
+                vis,
                 kind: ItemKind::Reexport {
                     text: entry.text,
                     group,

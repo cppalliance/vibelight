@@ -42,11 +42,11 @@ class Cursor
 
     text: String,
 
-    static into_text(self) -> String;
-
     static new(text: String) -> Cursor;
 
     bump() mut;
+
+    into_text(self) -> String;
 
     peek() -> Option<char>;
 }

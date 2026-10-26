@@ -12,7 +12,7 @@ use crate::comments::{Attached, NoteCx, Pool, attach};
 use crate::macros;
 use crate::model::{
     Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, ModId,
-    Module, Note, Text, TypeRef, Warning,
+    Module, Note, Text, TypeRef, Vis, Warning,
 };
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile};
@@ -248,7 +248,7 @@ impl Collector<'_> {
         };
         self.modules[here.module].items.push(ModItem {
             name: sort,
-            public: true,
+            vis: Vis::Public,
             kind: ItemKind::Mark(text),
             meta,
             loc,
@@ -292,7 +292,7 @@ impl Collector<'_> {
         }
         self.modules[here.module].items.push(ModItem {
             name: String::new(),
-            public: true,
+            vis: Vis::Public,
             kind: ItemKind::Unsupported(kind.to_owned()),
             meta: Meta::default(),
             loc,

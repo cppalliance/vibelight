@@ -24,17 +24,15 @@
 /// Every receiver form.
 struct Node
 {
-    static boxed(self: Box<Self>);
-
-    static consume(self);
-
-    static consume_mut(mut self);
-
-    static counted(self: Rc<Self>);
-
     static none();
 
-    static pinned(self: Pin<Self mut&>);
+    boxed(self: Box<Self>);
+
+    consume(self);
+
+    consume_mut(mut self);
+
+    counted(self: Rc<Self>);
 
     exclusive() mut;
 
@@ -43,6 +41,8 @@ struct Node
     explicit_mut() mut;
 
     lifetime<'a>() -> str& 'a;
+
+    pinned(self: Pin<Self mut&>);
 
     shared() -> u8;
 }

@@ -60,11 +60,11 @@ trait Observer : Send, Sync
     /// The most items kept.
     static constexpr LIMIT: usize = 64;
 
-    /// Ends the run.
-    static finish(self) -> u32 where Self: Sized;
-
     /// Makes a default observer.
     static make() -> Self where Self: Sized;
+
+    /// Ends the run.
+    finish(self) -> u32 where Self: Sized;
 
     /// Clears the buffer.
     flush() mut;
