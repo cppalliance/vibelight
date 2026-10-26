@@ -41,6 +41,13 @@ impl Wide {
     {
     }
 
+    pub fn route<R, L>(&self, read: R, load: L)
+    where
+        R: Fn(String) -> Option<String> + Send + Sync + 'static,
+        L: Fn(String, Option<u32>) -> Result<String, u8> + Send,
+    {
+    }
+
     pub fn huge(
         an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap<String, Vec<u64>>,
     ) {
@@ -56,5 +63,17 @@ where
     V: Clone + Send,
 {
     keys: Vec<K>,
+    values: Vec<V>,
+}
+
+/// A header whose where clause breaks one predicate per line.
+pub struct Registry<K, V, S>
+where
+    K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
+    V: Clone + Send + Sync + std::fmt::Debug,
+    S: std::hash::BuildHasher + Default,
+{
+    keys: Vec<K>,
+    state: S,
     values: Vec<V>,
 }

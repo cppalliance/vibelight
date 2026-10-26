@@ -21,7 +21,7 @@ pub(crate) struct Loc {
 }
 
 pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
-pub(crate) use crate::text::{CrossRef, Reach, Seg, Text, TypeRef, ValueRef, Written};
+pub(crate) use crate::text::{CrossRef, Reach, Seg, Text, TypeRef, ValueRef, Where, Written};
 
 /// One comment printed above a node.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -87,8 +87,7 @@ pub(crate) struct Sig {
     pub(crate) params: Vec<Param>,
     /// The return type, without the arrow.
     pub(crate) ret: Option<Text>,
-    /// The `where` clause, starting with `where`.
-    pub(crate) where_clause: Option<Text>,
+    pub(crate) where_clause: Option<Where>,
 }
 
 /// One parameter or tuple field and the comments above it.
@@ -209,7 +208,7 @@ pub(crate) struct Decl {
     /// The definition's line.
     pub(crate) loc: Loc,
     pub(crate) generics: Text,
-    pub(crate) where_clause: Option<Text>,
+    pub(crate) where_clause: Option<Where>,
     pub(crate) shape: Shape,
     /// Fields, trait items, and the members of attached inherent impls.
     pub(crate) members: Vec<Member>,

@@ -13,7 +13,7 @@ use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
     Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, RefId, Shape, Text,
-    Variant, VariantFields, Vis,
+    Variant, VariantFields, Vis, Where,
 };
 use crate::source::Comment;
 use crate::typerefs::range_of;
@@ -25,7 +25,7 @@ struct Head {
     vis: Vis,
     loc: Loc,
     generics: Text,
-    where_clause: Option<Text>,
+    where_clause: Option<Where>,
     meta: Meta,
     derives: Vec<String>,
     derive_refs: Vec<RefId>,

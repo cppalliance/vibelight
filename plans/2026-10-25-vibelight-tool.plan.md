@@ -129,7 +129,8 @@ Functions:
 16. Long lines. `MAX_WIDTH` is 80, counting the indent and visible text only. Your example line is 87 columns, so the limit has to be below that. A longer line is broken in this order, stopping as soon as every line fits:
     - after `->`, with the return type on the next line indented 4 more spaces than the declaration;
     - if the first line still does not fit, or there is no return type, one parameter per line indented 4 more, with the closing parenthesis, any `mut`, and the arrow and return type following the last parameter when they fit, or broken after `->` as in the first step;
-    - a `where` clause that still does not fit moves to its own line indented 4 more, and this step also applies to type headers.
+    - a `where` clause that still does not fit moves to its own line indented 4 more, and this step also applies to type headers;
+    - if that line still does not fit, `where` stays alone on it and each predicate goes on its own line, indented 4 more, every one but the last ending in a comma, with the closing `;` after the last.
 
     A line that still does not fit stays as it is. Fields, comment lines, and variants (apart from the struct-like expansion in the construct table) are never broken.
 

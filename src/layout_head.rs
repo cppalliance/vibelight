@@ -1,7 +1,7 @@
 //! Lays out a declaration's head: the keyword line with any tuple fields,
 //! the base list, and the `where` clause.
 
-use crate::layout::{Line, Span, code, plain, where_spans, width};
+use crate::layout::{Line, Span, code, plain, where_parts, width};
 use crate::layout_members::param_lines;
 use crate::model::{Base, Decl, Shape, TypeRef, name_order};
 use crate::wrap::{self, MAX_WIDTH};
@@ -31,7 +31,7 @@ pub(crate) fn header_lines(
         _ => decl.bases.as_slice(),
     };
     let (short, long) = lists(bases, refs);
-    let where_clause = decl.where_clause.as_ref().map(where_spans);
+    let where_clause = decl.where_clause.as_ref().map(where_parts);
     let last = lines.pop().unwrap_or_default();
     let mut one = last.spans.clone();
     if !short.is_empty() {
@@ -44,17 +44,17 @@ pub(crate) fn header_lines(
         }
     }
     if long.is_empty() && width(last.indent, &one, refs) <= MAX_WIDTH {
-        match where_clause {
+        match &where_clause {
             Some(clause) if has_body && last.indent == 0 => {
                 lines.extend(wrap::header(one, Some(clause), refs));
             }
             Some(clause) if has_body => {
                 lines.push(line(last.indent, one));
-                lines.push(line(4, clause));
+                lines.extend(wrap::where_lines(clause, &[], 4, refs));
             }
             Some(clause) => {
                 one.push(plain(" "));
-                one.extend(clause);
+                one.extend(clause.one.iter().cloned());
                 lines.push(line(last.indent, one));
             }
             None => lines.push(line(last.indent, one)),
@@ -62,8 +62,8 @@ pub(crate) fn header_lines(
     } else {
         lines.push(last);
         lines.extend(comma_lines(&short, &long, refs));
-        if let Some(clause) = where_clause {
-            lines.push(line(4, clause));
+        if let Some(clause) = &where_clause {
+            lines.extend(wrap::where_lines(clause, &[], 4, refs));
         }
     }
     if !has_body {

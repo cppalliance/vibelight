@@ -2,7 +2,7 @@
 
 use crate::layout::{
     Block, Line, Span, above, code, join_sections, key, mark_line, note_lines, plain, section,
-    sections, sort_entries, where_spans,
+    sections, sort_entries, where_parts,
 };
 use crate::layout_head::header_lines;
 use crate::layout_members::{member_entry, variant_entry};
@@ -123,7 +123,7 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
     spans.extend(code(target));
     if let Some(clause) = &decl.where_clause {
         spans.push(plain(" "));
-        spans.extend(where_spans(clause));
+        spans.extend(where_parts(clause).one);
     }
     spans.push(plain(";"));
     Line {

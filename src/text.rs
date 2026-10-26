@@ -71,6 +71,25 @@ impl Text {
     }
 }
 
+/// A `where` clause: each predicate as written, in order.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct Where(pub(crate) Vec<Text>);
+
+impl Where {
+    /// Returns the clause on one line: `where` and the predicates joined
+    /// by `, `.
+    pub(crate) fn joined(&self) -> Text {
+        let mut text = Text::plain("where ");
+        for (i, predicate) in self.0.iter().enumerate() {
+            if i > 0 {
+                text.push_str(", ");
+            }
+            text.append(predicate);
+        }
+        text
+    }
+}
+
 /// Where a name is written: its line, and its byte offset, which tells two
 /// slices of one written name apart from two names on one line.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

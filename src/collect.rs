@@ -12,7 +12,7 @@ use crate::comments::{Attached, NoteCx, Pool, attach};
 use crate::macros;
 use crate::model::{
     Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, ModId,
-    Module, Note, Text, TypeRef, Vis, Warning,
+    Module, Note, Text, TypeRef, Vis, Warning, Where,
 };
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile};
@@ -440,19 +440,19 @@ impl Collector<'_> {
     }
 
     /// Returns a `where` clause, each predicate sliced on its own.
-    pub(crate) fn where_text(&mut self, here: &Here, clause: Option<&WhereClause>) -> Option<Text> {
+    pub(crate) fn where_text(
+        &mut self,
+        here: &Here,
+        clause: Option<&WhereClause>,
+    ) -> Option<Where> {
         let clause = clause.filter(|c| !c.predicates.is_empty())?;
-        let mut text = Text::plain("where ");
-        for (i, predicate) in clause.predicates.iter().enumerate() {
-            if i > 0 {
-                text.push_str(", ");
-            }
-            let part = self.slicer(here).node(predicate, |f| {
+        let mut predicates = Vec::new();
+        for predicate in &clause.predicates {
+            predicates.push(self.slicer(here).node(predicate, |f| {
                 syn::visit::Visit::visit_where_predicate(f, predicate);
-            });
-            text.append(&part);
+            }));
         }
-        Some(text)
+        Some(Where(predicates))
     }
 }
 

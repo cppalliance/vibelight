@@ -436,7 +436,7 @@ impl Collector<'_> {
         }
         if let Some(clause) = self.where_text(here, t.generics.where_clause.as_ref()) {
             text.push_str(" ");
-            text.append(&clause);
+            text.append(&clause.joined());
         }
         text
     }

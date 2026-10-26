@@ -296,7 +296,7 @@ fn sig_texts(sig: &Sig) -> Vec<&Text> {
     let mut texts = vec![&sig.generics];
     texts.extend(sig.params.iter().map(|p| &p.text));
     texts.extend(sig.ret.iter());
-    texts.extend(sig.where_clause.iter());
+    texts.extend(sig.where_clause.iter().flat_map(|clause| clause.0.iter()));
     texts
 }
 

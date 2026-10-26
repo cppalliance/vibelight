@@ -15,9 +15,16 @@ pub(crate) struct FnParts {
     pub(crate) after: Vec<Span>,
     /// The return type, without the arrow.
     pub(crate) ret: Option<Vec<Span>>,
-    pub(crate) where_clause: Option<Vec<Span>>,
+    pub(crate) where_clause: Option<WhereParts>,
     /// The closing punctuation, `;`.
     pub(crate) end: Vec<Span>,
+}
+
+/// A `where` clause laid out both ways rule 16 prints it.
+pub(crate) struct WhereParts {
+    /// `where` and the predicates joined by `, `.
+    pub(crate) one: Vec<Span>,
+    pub(crate) predicates: Vec<Vec<Span>>,
 }
 
 /// One parameter: the comment lines above it, at indent 0, and its text.
@@ -87,10 +94,36 @@ pub(crate) fn function(
         } else {
             let keep = last.spans.len().saturating_sub(pieces.finish.len());
             current.push(line(last.indent, last.spans[..keep].to_vec()));
-            current.push(line(indent + 4, concat(&[clause, &parts.end])));
+            current.extend(where_lines(clause, &parts.end, indent + 4, refs));
         }
     }
     finished(current, trailing)
+}
+
+/// Lays out a `where` clause at `indent`, followed by `end`: on one line
+/// when it fits, else `where` alone and one predicate per line, indented 4
+/// more, every one but the last ending in a comma.
+pub(crate) fn where_lines(
+    clause: &WhereParts,
+    end: &[Span],
+    indent: usize,
+    refs: &[TypeRef],
+) -> Vec<Line> {
+    let whole = line(indent, concat(&[&clause.one, end]));
+    if width(indent, &whole.spans, refs) <= MAX_WIDTH {
+        return vec![whole];
+    }
+    let mut lines = vec![line(indent, vec![Span::Key("where".to_owned())])];
+    let count = clause.predicates.len();
+    for (i, predicate) in clause.predicates.iter().enumerate() {
+        let after = if i + 1 < count {
+            vec![s(",")]
+        } else {
+            end.to_vec()
+        };
+        lines.push(line(indent + 4, concat(&[predicate, &after])));
+    }
+    lines
 }
 
 /// The runs a function declaration is assembled from.
@@ -112,7 +145,7 @@ impl Pieces {
         let mut finish = Vec::new();
         if let Some(clause) = &parts.where_clause {
             finish.push(s(" "));
-            finish.extend(clause.iter().cloned());
+            finish.extend(clause.one.iter().cloned());
         }
         finish.extend(parts.end.iter().cloned());
         let mut one = parts.head.clone();
@@ -188,10 +221,10 @@ fn concat(parts: &[&[Span]]) -> Vec<Span> {
 }
 
 /// Lays out a type header: a `where` clause that makes it too long moves to
-/// its own line, indented 4 more.
+/// its own lines, indented 4 more.
 pub(crate) fn header(
     spans: Vec<Span>,
-    where_clause: Option<Vec<Span>>,
+    where_clause: Option<&WhereParts>,
     refs: &[TypeRef],
 ) -> Vec<Line> {
     let Some(clause) = where_clause else {
@@ -199,11 +232,13 @@ pub(crate) fn header(
     };
     let mut whole = spans.clone();
     whole.push(s(" "));
-    whole.extend(clause.iter().cloned());
+    whole.extend(clause.one.iter().cloned());
     if width(0, &whole, refs) <= MAX_WIDTH {
         return vec![line(0, whole)];
     }
-    vec![line(0, spans), line(4, clause)]
+    let mut lines = vec![line(0, spans)];
+    lines.extend(where_lines(clause, &[], 4, refs));
+    lines
 }
 
 fn finished(mut lines: Vec<Line>, trailing: Option<String>) -> Vec<Line> {
@@ -246,7 +281,14 @@ mod tests {
                 .collect(),
             after: Vec::new(),
             ret: ret.map(|r| vec![s(r)]),
-            where_clause: clause.map(|c| vec![s(c)]),
+            where_clause: clause.map(|c| WhereParts {
+                one: vec![s(c)],
+                predicates: c
+                    .trim_start_matches("where ")
+                    .split(", ")
+                    .map(|p| vec![s(p)])
+                    .collect(),
+            }),
             end: vec![s(";")],
         }
     }
@@ -305,6 +347,30 @@ mod tests {
                 "        name: &str,",
                 "        value: T)",
                 &format!("        {clause};")
+            ]
+        );
+    }
+
+    #[test]
+    fn a_where_clause_that_still_does_not_fit_goes_one_predicate_per_line() {
+        let first = format!("A: {}", "Clone + ".repeat(5).trim_end_matches(" + "));
+        let second = format!("B: {}", "Send + ".repeat(5).trim_end_matches(" + "));
+        let clause = format!("where {first}, {second}");
+        let lines = function(
+            &parts("f<A, B>", &["a: A", "b: B"], None, Some(&clause)),
+            4,
+            None,
+            &[],
+        );
+        assert_eq!(
+            text(&lines),
+            [
+                "    f<A, B>(",
+                "        a: A,",
+                "        b: B)",
+                "        where",
+                &format!("            {first},"),
+                &format!("            {second};")
             ]
         );
     }

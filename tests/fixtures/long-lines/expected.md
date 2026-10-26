@@ -28,6 +28,7 @@
 - [Public surface](#surface)
 - [Unconnected types](#unconnected)
   - [Container](#type.long_lines.Container)
+  - [Registry](#type.long_lines.Registry)
   - [Wide](#type.long_lines.Wide)
 - [Modules](#modules)
   - [long_lines](#mod.long_lines)
@@ -38,6 +39,7 @@
 ## Public surface
 
 - [Container](#type.long_lines.Container)
+- [Registry](#type.long_lines.Registry)
 - [Wide](#type.long_lines.Wide)
 
 <a id="unconnected"></a>
@@ -52,6 +54,25 @@ class Container<K, V>
     where K: Ord + Clone + std::fmt::Debug + Send + Sync, V: Clone + Send
 {
     keys: Vec<K>,
+
+    values: Vec<V>,
+}
+```
+
+<a id="type.long_lines.Registry"></a>
+### Registry
+
+```
+/// A header whose where clause breaks one predicate per line.
+class Registry<K, V, S>
+    where
+        K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
+        V: Clone + Send + Sync + std::fmt::Debug,
+        S: std::hash::BuildHasher + Default
+{
+    keys: Vec<K>,
+
+    state: S,
 
     values: Vec<V>,
 }
@@ -95,6 +116,13 @@ struct Wide
         name: str&,
         value: T) mut
         where T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash;
+
+    route<R, L>(
+        read: R,
+        load: L)
+        where
+            R: Fn(String) -> Option<String> + Send + Sync + 'static,
+            L: Fn(String, Option<u32>) -> Result<String, u8> + Send;
 }
 ```
 
@@ -105,4 +133,5 @@ struct Wide
 ### long_lines
 
 - [Container](#type.long_lines.Container)
+- [Registry](#type.long_lines.Registry)
 - [Wide](#type.long_lines.Wide)

@@ -1,8 +1,10 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
-use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, ValueRef, Vis, name_order};
+use crate::model::{
+    Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, ValueRef, Vis, Where, name_order,
+};
 use crate::typerefs_edits::MUT;
-use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts};
+use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts, WhereParts};
 
 /// One styled run of a line.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -94,16 +96,19 @@ pub(crate) fn code(text: &Text) -> Vec<Span> {
 }
 
 /// Turns a `where` clause into spans with `where` as a keyword.
-pub(crate) fn where_spans(text: &Text) -> Vec<Span> {
-    let mut spans = code(text);
-    if let Some(Span::Code(first)) = spans.first_mut() {
+pub(crate) fn where_parts(clause: &Where) -> WhereParts {
+    let mut one = code(&clause.joined());
+    if let Some(Span::Code(first)) = one.first_mut() {
         if let Some(rest) = first.strip_prefix("where") {
             let rest = rest.to_owned();
-            spans[0] = Span::Code(rest);
-            spans.insert(0, Span::Key("where".to_owned()));
+            one[0] = Span::Code(rest);
+            one.insert(0, Span::Key("where".to_owned()));
         }
     }
-    spans
+    WhereParts {
+        one,
+        predicates: clause.0.iter().map(code).collect(),
+    }
 }
 
 pub(crate) fn key(text: &str) -> Span {
@@ -329,7 +334,7 @@ pub(crate) fn fn_lines(
         params,
         after,
         ret: sig.ret.as_ref().map(code),
-        where_clause: sig.where_clause.as_ref().map(where_spans),
+        where_clause: sig.where_clause.as_ref().map(where_parts),
         end: vec![plain(";")],
     };
     wrap::function(&parts, indent, trailing, &krate.refs)
