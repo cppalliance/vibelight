@@ -31,7 +31,7 @@ struct Line
 
     start: crate::Point,
 
-    /// Returns the label; see std::option::Option.
+    /// Returns the label; see `std::option::Option`.
     label<T: Clone>(fallback: T) -> Option<T>;
 }
 ```

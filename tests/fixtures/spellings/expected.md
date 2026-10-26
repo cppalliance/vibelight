@@ -62,7 +62,7 @@ struct Timer : Display
 /// A clock with an optional alarm.
 struct Clock : Display
 {
-    /// When the alarm rings; see core::option::Option.
+    /// When the alarm rings; see `core::option::Option`.
     alarm: Option<u8>,
 
     label: String,

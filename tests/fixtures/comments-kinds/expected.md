@@ -6,7 +6,7 @@
 ```
 //! Comment kinds and their order.
 //!
-//! Crate docs print as //! lines.
+//! Crate docs print as `//!` lines.
 ```
 
 - [Unconnected types](#unconnected)
@@ -59,7 +59,7 @@ struct Fenced;
 ### Linked
 
 ```
-/// Links: DocFirst, the plain one, and inline code.
+/// Links: `DocFirst`, the plain one, and `inline code`.
 struct Linked;
 ```
 

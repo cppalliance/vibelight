@@ -8,11 +8,11 @@
 //!
 //! A prompt is one markdown file: YAML frontmatter, a required H1, optional H1
 //! blocks, then H2 sections.
-//! H1 and section content are alternating sequences of exact lua fences and
-//! prose (Block). Sections nest recursively (H3 under H2, H4 under H3, and
-//! so on through H6). Classic prologue/prose/epilog is exactly [Lua, Prose, Lua].
+//! H1 and section content are alternating sequences of exact `lua` fences and
+//! prose (`Block`). Sections nest recursively (H3 under H2, H4 under H3, and
+//! so on through H6). Classic prologue/prose/epilog is exactly `[Lua, Prose, Lua]`.
 //!
-//! The parser turns bytes into a Prompt tree without executing any of it.
+//! The parser turns bytes into a `Prompt` tree without executing any of it.
 ```
 
 - [Level 1: top-level types](#level.1)
@@ -44,48 +44,48 @@
 /// A fully parsed prompt file.
 struct Prompt : Clone, Debug, Eq, PartialEq
 {
-    /// Parses the full source text of a prompt file into a Prompt and
+    /// Parses the full source text of a prompt file into a `Prompt` and
     /// returns the events reported during parsing alongside the result.
     ///
-    /// The caller supplies execution, an identifier that every event
-    /// carries. Every event is reported under task 0 because parsing happens
+    /// The caller supplies `execution`, an identifier that every event
+    /// carries. Every event is reported under task `0` because parsing happens
     /// before any run starts.
     ///
-    /// The events come in this order: ParseStarted, then a
-    /// LuaCompilationStarted event and a LuaCompilationSucceeded or
-    /// LuaCompilationFailed event for each Lua block the parser compiles,
-    /// then ParseSucceeded or ParseFailed. They exist only for the caller
+    /// The events come in this order: `ParseStarted`, then a
+    /// `LuaCompilationStarted` event and a `LuaCompilationSucceeded` or
+    /// `LuaCompilationFailed` event for each Lua block the parser compiles,
+    /// then `ParseSucceeded` or `ParseFailed`. They exist only for the caller
     /// to log.
     ///
     /// # Errors
-    /// On failure, the first element of the pair is a ParseError whose
+    /// On failure, the first element of the pair is a `ParseError` whose
     /// kind is:
     ///
-    /// - Frontmatter when the --- delimiters are missing, the frontmatter
-    ///   fails to decode, a uses: entry is neither a Pack id nor
+    /// - `Frontmatter` when the `---` delimiters are missing, the frontmatter
+    ///   fails to decode, a `uses:` entry is neither a Pack id nor
     ///   vendor/name, or two entries share a Pack id.
-    /// - Structure when the H1 is missing, there is more than one H1, the H1
+    /// - `Structure` when the H1 is missing, there is more than one H1, the H1
     ///   title is empty, a section heading skips a level (such as an H4
     ///   directly under an H2), a section heading is empty, or two sibling
     ///   sections have the same name.
-    /// - Fence when a lua fence is left open, or anywhere in the body a
-    ///   fence or line breaks the strict Lua fence rule. A lua fence opens
-    ///   with a line that is exactly three backticks then lua and closes
+    /// - `Fence` when a `lua` fence is left open, or anywhere in the body a
+    ///   fence or line breaks the strict Lua fence rule. A `lua` fence opens
+    ///   with a line that is exactly three backticks then `lua` and closes
     ///   with a line that is exactly three backticks. Label: a fence's label
-    ///   starts with lua in any letter case without being exactly lua,
-    ///   such as Lua or lua extra. Opener: a fence labeled lua opens
+    ///   starts with `lua` in any letter case without being exactly `lua`,
+    ///   such as `Lua` or `lua extra`. Opener: a fence labeled `lua` opens
     ///   with any other line, such as one that is indented, uses tildes or
     ///   four backticks, or sits in a block quote or list item. Closer: a
     ///   fence with an exact opening line closes with any other line.
-    ///   Lookalike: a line outside every fence looks like a lua opening
+    ///   Lookalike: a line outside every fence looks like a `lua` opening
     ///   line, such as one in an indented code block. The first violation in
     ///   source order fails the parse at its line, before any Lua compiles.
     ///   Lines inside the body of another fenced code block are never
     ///   inspected, so a document can show a Lua fence as an example.
-    /// - List when a section made up only of list items has an empty item.
-    /// - Lua when a Lua block in the H1 or in a section fails to compile as
+    /// - `List` when a section made up only of list items has an empty item.
+    /// - `Lua` when a Lua block in the H1 or in a section fails to compile as
     ///   Lua.
-    /// - Internal when the parser fails through no fault of the prompt: one
+    /// - `Internal` when the parser fails through no fault of the prompt: one
     ///   of its own invariants breaks, or the Lua compiler cannot start.
     static parse(input: str&, execution: str&) ->
         (std::result::Result<Prompt, ParseError>, Vec<Event>);
@@ -118,15 +118,15 @@ private:
     static parse_inner(input: str&, emitter: Emitter&) -> Result<Prompt>;
 
     /// The entry-point section: the first top-level section in file order;
-    /// the Engine reaches it through crate::detail::entry.
+    /// the Engine reaches it through `crate::detail::entry`.
     entry() -> Option<Section&>;
 
     /// Returns the ordered live Lua and prose blocks from the H1; the Engine
-    /// reaches them through crate::detail::h1_blocks.
+    /// reaches them through `crate::detail::h1_blocks`.
     h1_blocks() -> [Block]&;
 
     /// Returns the top-level H2 sections in file order; the Engine reaches
-    /// them through crate::detail::sections.
+    /// them through `crate::detail::sections`.
     sections() -> [Section]&;
 }
 ```
@@ -183,7 +183,7 @@ struct Section : Clone, Debug, Eq, PartialEq
     /// Classic leading Lua fence when the first block is Lua.
     prologue() -> Option<LuaProgram&>;
 
-    /// Text of the last prose block, or "" when the section has none.
+    /// Text of the last prose block, or `""` when the section has none.
     prose() -> str&;
 
 private:
@@ -227,13 +227,13 @@ using Result<T> = std::result::Result<T, Error>;
 /// One executable block inside a section: a compiled Lua fence or prose.
 enum Block : Clone, Debug, Eq, PartialEq
 {
-    /// An exact lua fence compiled at parse time.
+    /// An exact `lua` fence compiled at parse time.
     Lua(LuaProgram),
 
     /// Author prose: the pending Markdown accumulated since the nearest
-    /// preceding heading, lua fence, or thematic break.
+    /// preceding heading, `lua` fence, or thematic break.
     ///
-    /// The executor installs it as the following Lua block's lazy prose
+    /// The executor installs it as the following Lua block's lazy `prose`
     /// template.
     Prose
     {
@@ -288,17 +288,17 @@ using prompt::Section;
 ### parse
 
 ```
-//! Parses a prompt's source into a Prompt: frontmatter, H1, and sections.
+//! Parses a prompt's source into a `Prompt`: frontmatter, H1, and sections.
 ```
 
 <a id="mod.runvil_parser.prompt"></a>
 ### prompt
 
 ```
-//! Holds the parsed prompt tree: Prompt, its Sections, and their Blocks.
+//! Holds the parsed prompt tree: `Prompt`, its `Section`s, and their `Block`s.
 //!
 //! Code outside the Engine reads a prompt's title and frontmatter; the tree
-//! below them is the Engine's, reached through crate::detail.
+//! below them is the Engine's, reached through `crate::detail`.
 //!
 //! Construction happens in the parsing modules; this module holds the value
 //! types and the invariant-preserving operations on them.

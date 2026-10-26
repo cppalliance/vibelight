@@ -72,59 +72,59 @@ span.src{cursor:default}
 <span class="c">//!</span>
 <span class="c">//! A prompt is one markdown file: YAML frontmatter, a required H1, optional H1</span>
 <span class="c">//! blocks, then H2 sections.</span>
-<span class="c">//! H1 and section content are alternating sequences of exact lua fences and</span>
-<span class="c">//! prose (<a href="#type.runvil_parser.prompt.Block">Block</a>). Sections nest recursively (H3 under H2, H4 under H3, and</span>
-<span class="c">//! so on through H6). Classic prologue/prose/epilog is exactly [Lua, Prose, Lua].</span>
+<span class="c">//! H1 and section content are alternating sequences of exact `lua` fences and</span>
+<span class="c">//! prose (`<a href="#type.runvil_parser.prompt.Block">Block</a>`). Sections nest recursively (H3 under H2, H4 under H3, and</span>
+<span class="c">//! so on through H6). Classic prologue/prose/epilog is exactly `[Lua, Prose, Lua]`.</span>
 <span class="c">//!</span>
-<span class="c">//! The parser turns bytes into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> tree without executing any of it.</span></code></pre>
+<span class="c">//! The parser turns bytes into a `<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>` tree without executing any of it.</span></code></pre>
 <p class="kill"><b class="m">MACROS:</b> none</p>
 <h2 id="level.1">Level 1: top-level types</h2>
 <h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
 <pre><code><span class="c">/// A fully parsed prompt file.</span>
 <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
 {
-    <span class="c">/// Parses the full source text of a prompt file into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a> and</span>
+    <span class="c">/// Parses the full source text of a prompt file into a `<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>` and</span>
     <span class="c">/// returns the events reported during parsing alongside the result.</span>
     <span class="c">///</span>
-    <span class="c">/// The caller supplies execution, an identifier that every event</span>
-    <span class="c">/// carries. Every event is reported under task 0 because parsing happens</span>
+    <span class="c">/// The caller supplies `execution`, an identifier that every event</span>
+    <span class="c">/// carries. Every event is reported under task `0` because parsing happens</span>
     <span class="c">/// before any run starts.</span>
     <span class="c">///</span>
-    <span class="c">/// The events come in this order: ParseStarted, then a</span>
-    <span class="c">/// LuaCompilationStarted event and a LuaCompilationSucceeded or</span>
-    <span class="c">/// LuaCompilationFailed event for each Lua block the parser compiles,</span>
-    <span class="c">/// then ParseSucceeded or ParseFailed. They exist only for the caller</span>
+    <span class="c">/// The events come in this order: `ParseStarted`, then a</span>
+    <span class="c">/// `LuaCompilationStarted` event and a `LuaCompilationSucceeded` or</span>
+    <span class="c">/// `LuaCompilationFailed` event for each Lua block the parser compiles,</span>
+    <span class="c">/// then `ParseSucceeded` or `ParseFailed`. They exist only for the caller</span>
     <span class="c">/// to log.</span>
     <span class="c">///</span>
     <span class="c">/// # Errors</span>
-    <span class="c">/// On failure, the first element of the pair is a <a href="#type.runvil_parser.ParseError">ParseError</a> whose</span>
+    <span class="c">/// On failure, the first element of the pair is a `<a href="#type.runvil_parser.ParseError">ParseError</a>` whose</span>
     <span class="c">/// kind is:</span>
     <span class="c">///</span>
-    <span class="c">/// - <a href="#type.runvil_parser.Frontmatter">Frontmatter</a> when the --- delimiters are missing, the frontmatter</span>
-    <span class="c">///   fails to decode, a uses: entry is neither a Pack id nor</span>
+    <span class="c">/// - `<a href="#type.runvil_parser.Frontmatter">Frontmatter</a>` when the `---` delimiters are missing, the frontmatter</span>
+    <span class="c">///   fails to decode, a `uses:` entry is neither a Pack id nor</span>
     <span class="c">///   vendor/name, or two entries share a Pack id.</span>
-    <span class="c">/// - Structure when the H1 is missing, there is more than one H1, the H1</span>
+    <span class="c">/// - `Structure` when the H1 is missing, there is more than one H1, the H1</span>
     <span class="c">///   title is empty, a section heading skips a level (such as an H4</span>
     <span class="c">///   directly under an H2), a section heading is empty, or two sibling</span>
     <span class="c">///   sections have the same name.</span>
-    <span class="c">/// - Fence when a lua fence is left open, or anywhere in the body a</span>
-    <span class="c">///   fence or line breaks the strict Lua fence rule. A lua fence opens</span>
-    <span class="c">///   with a line that is exactly three backticks then lua and closes</span>
+    <span class="c">/// - `Fence` when a `lua` fence is left open, or anywhere in the body a</span>
+    <span class="c">///   fence or line breaks the strict Lua fence rule. A `lua` fence opens</span>
+    <span class="c">///   with a line that is exactly three backticks then `lua` and closes</span>
     <span class="c">///   with a line that is exactly three backticks. Label: a fence's label</span>
-    <span class="c">///   starts with lua in any letter case without being exactly lua,</span>
-    <span class="c">///   such as Lua or lua extra. Opener: a fence labeled lua opens</span>
+    <span class="c">///   starts with `lua` in any letter case without being exactly `lua`,</span>
+    <span class="c">///   such as `Lua` or `lua extra`. Opener: a fence labeled `lua` opens</span>
     <span class="c">///   with any other line, such as one that is indented, uses tildes or</span>
     <span class="c">///   four backticks, or sits in a block quote or list item. Closer: a</span>
     <span class="c">///   fence with an exact opening line closes with any other line.</span>
-    <span class="c">///   Lookalike: a line outside every fence looks like a lua opening</span>
+    <span class="c">///   Lookalike: a line outside every fence looks like a `lua` opening</span>
     <span class="c">///   line, such as one in an indented code block. The first violation in</span>
     <span class="c">///   source order fails the parse at its line, before any Lua compiles.</span>
     <span class="c">///   Lines inside the body of another fenced code block are never</span>
     <span class="c">///   inspected, so a document can show a Lua fence as an example.</span>
-    <span class="c">/// - List when a section made up only of list items has an empty item.</span>
-    <span class="c">/// - Lua when a Lua block in the H1 or in a section fails to compile as</span>
+    <span class="c">/// - `List` when a section made up only of list items has an empty item.</span>
+    <span class="c">/// - `Lua` when a Lua block in the H1 or in a section fails to compile as</span>
     <span class="c">///   Lua.</span>
-    <span class="c">/// - Internal when the parser fails through no fault of the prompt: one</span>
+    <span class="c">/// - `Internal` when the parser fails through no fault of the prompt: one</span>
     <span class="c">///   of its own invariants breaks, or the Lua compiler cannot start.</span>
     <span class="k">static</span> <span class="src">parse</span>(input: str&amp;, execution: str&amp;) -&gt;
         (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;);
@@ -157,15 +157,15 @@ span.src{cursor:default}
     <span class="k">static</span> <span class="src">parse_inner</span>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;;
 
     <span class="c">/// The entry-point section: the first top-level section in file order;</span>
-    <span class="c">/// the Engine reaches it through crate::detail::entry.</span>
+    <span class="c">/// the Engine reaches it through `crate::detail::entry`.</span>
     <span class="src">entry</span>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt;;
 
     <span class="c">/// Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
-    <span class="c">/// reaches them through crate::detail::h1_blocks.</span>
+    <span class="c">/// reaches them through `crate::detail::h1_blocks`.</span>
     <span class="src">h1_blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp;;
 
     <span class="c">/// Returns the top-level H2 sections in file order; the Engine reaches</span>
-    <span class="c">/// them through crate::detail::sections.</span>
+    <span class="c">/// them through `crate::detail::sections`.</span>
     <span class="src">sections</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp;;
 }</code></pre>
 <h2 id="level.2">Level 2</h2>
@@ -205,7 +205,7 @@ span.src{cursor:default}
     <span class="c">/// Classic leading Lua fence when the first block is Lua.</span>
     <span class="src">prologue</span>() -&gt; Option&lt;LuaProgram&amp;&gt;;
 
-    <span class="c">/// Text of the last prose block, or "" when the section has none.</span>
+    <span class="c">/// Text of the last prose block, or `""` when the section has none.</span>
     <span class="src">prose</span>() -&gt; str&amp;;
 
 <span class="k">private:</span>
@@ -237,13 +237,13 @@ span.src{cursor:default}
 <pre><code><span class="c">/// One executable block inside a section: a compiled Lua fence or prose.</span>
 <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
-    <span class="c">/// An exact lua fence compiled at parse time.</span>
+    <span class="c">/// An exact `lua` fence compiled at parse time.</span>
     <span class="src">Lua</span>(LuaProgram),
 
     <span class="c">/// Author prose: the pending Markdown accumulated since the nearest</span>
-    <span class="c">/// preceding heading, lua fence, or thematic break.</span>
+    <span class="c">/// preceding heading, `lua` fence, or thematic break.</span>
     <span class="c">///</span>
-    <span class="c">/// The executor installs it as the following Lua block's lazy prose</span>
+    <span class="c">/// The executor installs it as the following Lua block's lazy `prose`</span>
     <span class="c">/// template.</span>
     <span class="src">Prose</span>
     {
@@ -275,12 +275,12 @@ span.src{cursor:default}
 
 <span class="k">using</span> <a href="#type.runvil_parser.prompt.Section">prompt::Section</a>;</code></pre>
 <h3 id="mod.runvil_parser.parse">parse</h3>
-<pre><code><span class="c">//! Parses a prompt's source into a <a href="#type.runvil_parser.prompt.Prompt">Prompt</a>: frontmatter, H1, and sections.</span></code></pre>
+<pre><code><span class="c">//! Parses a prompt's source into a `<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>`: frontmatter, H1, and sections.</span></code></pre>
 <h3 id="mod.runvil_parser.prompt">prompt</h3>
-<pre><code><span class="c">//! Holds the parsed prompt tree: <a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, its <a href="#type.runvil_parser.prompt.Section">Section</a>s, and their <a href="#type.runvil_parser.prompt.Block">Block</a>s.</span>
+<pre><code><span class="c">//! Holds the parsed prompt tree: `<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>`, its `<a href="#type.runvil_parser.prompt.Section">Section</a>`s, and their `<a href="#type.runvil_parser.prompt.Block">Block</a>`s.</span>
 <span class="c">//!</span>
 <span class="c">//! Code outside the Engine reads a prompt's title and frontmatter; the tree</span>
-<span class="c">//! below them is the Engine's, reached through crate::detail.</span>
+<span class="c">//! below them is the Engine's, reached through `crate::detail`.</span>
 <span class="c">//!</span>
 <span class="c">//! Construction happens in the parsing modules; this module holds the value</span>
 <span class="c">//! types and the invariant-preserving operations on them.</span></code></pre>

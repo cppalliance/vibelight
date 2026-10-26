@@ -1,4 +1,5 @@
-//! Flattens the markdown in doc comments: link syntax and backticks go.
+//! Flattens the markdown in doc comments: link syntax goes, and backticks
+//! stay, so a backticked name still reads as code.
 
 /// One piece of a flattened doc line.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,7 +123,8 @@ fn push_text(line: &mut Vec<Piece>, text: &str) {
     }
 }
 
-/// Flattens inline markup: code spans and links lose their syntax.
+/// Flattens inline markup: links lose their syntax, and code spans keep
+/// their backticks around the name they hold.
 fn inline(chars: &[char]) -> Vec<Piece> {
     let mut out: Vec<Piece> = Vec::new();
     let mut text = String::new();
@@ -136,9 +138,28 @@ fn inline(chars: &[char]) -> Vec<Piece> {
         } else if c == '`' {
             let n = run(chars, i, '`');
             if let Some(close) = find_run(chars, i + n, n) {
-                let content = code_content(&chars[i + n..close]);
-                flush(&mut out, &mut text);
-                out.push(name_or_text(content.clone(), &content));
+                let raw: String = chars[i + n..close].iter().collect();
+                let content = code_content(&raw);
+                let (lead, tail) = if content.len() < raw.len() {
+                    (&raw[..1], &raw[raw.len() - 1..])
+                } else {
+                    ("", "")
+                };
+                let ticks = "`".repeat(n);
+                text.push_str(&ticks);
+                text.push_str(lead);
+                match path_of(&content) {
+                    Some(path) => {
+                        flush(&mut out, &mut text);
+                        out.push(Piece::Name {
+                            text: content,
+                            path,
+                        });
+                    }
+                    None => text.push_str(&content),
+                }
+                text.push_str(tail);
+                text.push_str(&ticks);
                 i = close + n;
             } else {
                 text.extend(&chars[i..i + n]);
@@ -207,12 +228,34 @@ fn link(chars: &[char], start: usize) -> Option<(usize, Vec<Piece>)> {
     let target = target.unwrap_or_default();
     let target = target.trim().trim_matches('`');
     let result = match path_of(target) {
-        Some(path) if !shown.is_empty() && !shown.contains('\n') => {
-            vec![Piece::Name { text: shown, path }]
-        }
+        Some(path) if !shown.is_empty() && !shown.contains('\n') => named(&shown, path),
         _ => pieces,
     };
     Some((end - start, result))
+}
+
+/// Returns a link's name. Backticks around the label stay outside the name,
+/// so `` [`items`](Self::items) `` shows `` `items` `` and only `items` is
+/// the name.
+fn named(shown: &str, path: String) -> Vec<Piece> {
+    let inner = shown.trim_start_matches('`');
+    let ticks = shown.len() - inner.len();
+    let inner = inner.trim_end_matches('`');
+    if ticks == 0 || inner.is_empty() || shown.len() - inner.len() != 2 * ticks {
+        return vec![Piece::Name {
+            text: shown.to_owned(),
+            path,
+        }];
+    }
+    let ticks = "`".repeat(ticks);
+    vec![
+        Piece::Text(ticks.clone()),
+        Piece::Name {
+            text: inner.to_owned(),
+            path,
+        },
+        Piece::Text(ticks),
+    ]
 }
 
 /// Finds the bracket that closes the one at `open`, skipping code spans.
@@ -269,8 +312,7 @@ fn find_run(chars: &[char], from: usize, n: usize) -> Option<usize> {
 
 /// Returns a code span's content, with one padding space removed from each
 /// side when both are present, as markdown does.
-fn code_content(chars: &[char]) -> String {
-    let content: String = chars.iter().collect();
+fn code_content(content: &str) -> String {
     let padded = content.len() >= 2
         && content.starts_with([' ', '\n'])
         && content.ends_with([' ', '\n'])
@@ -278,14 +320,7 @@ fn code_content(chars: &[char]) -> String {
     if padded {
         content[1..content.len() - 1].to_owned()
     } else {
-        content
-    }
-}
-
-fn name_or_text(text: String, raw: &str) -> Piece {
-    match path_of(raw) {
-        Some(path) => Piece::Name { text, path },
-        None => Piece::Text(text),
+        content.to_owned()
     }
 }
 
@@ -334,19 +369,24 @@ mod tests {
     }
 
     #[test]
-    fn code_spans_and_intra_doc_links() {
+    fn code_spans_and_intra_doc_links_keep_their_backticks() {
         assert_eq!(
             flat(&[" Links: [`DocFirst`], [the plain one](PlainFirst), and `inline code`."]),
-            [" Links: <DocFirst|DocFirst>, <the plain one|PlainFirst>, and inline code."]
+            [" Links: `<DocFirst|DocFirst>`, <the plain one|PlainFirst>, and `inline code`."]
         );
         assert_eq!(
             flat(&[" Holds [`Prompt`], its [`Section`]s, and `[Lua, Prose, Lua]`."]),
-            [" Holds <Prompt|Prompt>, its <Section|Section>s, and [Lua, Prose, Lua]."]
+            [" Holds `<Prompt|Prompt>`, its `<Section|Section>`s, and `[Lua, Prose, Lua]`."]
         );
         assert_eq!(
             flat(&[" through [`crate::detail::entry`]."]),
-            [" through <crate::detail::entry|crate::detail::entry>."]
+            [" through `<crate::detail::entry|crate::detail::entry>`."]
         );
+        assert_eq!(
+            flat(&[" Builds `prompt` with ``args`` and [`items`](Self::items)."]),
+            [" Builds `<prompt|prompt>` with ``<args|args>`` and `<items|Self::items>`."]
+        );
+        assert_eq!(flat(&[" Pads ` x `."]), [" Pads ` <x|x> `."]);
     }
 
     #[test]
@@ -357,7 +397,7 @@ mod tests {
         );
         assert_eq!(flat(&[" Or ``"]), [" Or ``"]);
         assert_eq!(flat(&[" A ```` run."]), [" A ```` run."]);
-        assert_eq!(flat(&[" The `\"\"` case."]), [" The \"\" case."]);
+        assert_eq!(flat(&[" The `\"\"` case."]), [" The `\"\"` case."]);
     }
 
     #[test]
@@ -373,13 +413,16 @@ mod tests {
                 " [x]: crate::X",
                 ""
             ]),
-            [" Before <x|x>:", "", " ```", " let x = [1, 2];", " ```"]
+            [" Before `<x|x>`:", "", " ```", " let x = [1, 2];", " ```"]
         );
     }
 
     #[test]
     fn spans_cross_lines() {
-        assert_eq!(flat(&[" a `long", " span` b"]), [" a long", " span b"]);
-        assert_eq!(flat(&[" see [`Foo`](", " Foo) ok"]), [" see <Foo|Foo> ok"]);
+        assert_eq!(flat(&[" a `long", " span` b"]), [" a `long", " span` b"]);
+        assert_eq!(
+            flat(&[" see [`Foo`](", " Foo) ok"]),
+            [" see `<Foo|Foo>` ok"]
+        );
     }
 }
