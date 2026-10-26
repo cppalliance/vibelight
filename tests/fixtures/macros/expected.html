@@ -54,7 +54,9 @@ span.src{cursor:default}
 <h2 id="legend">Legend</h2>
 <ul class="legend">
 <li>Each type is one C++-style block: a <code>struct</code> has a public member, and a <code>class</code> has none.</li>
+<li>A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.</li>
 <li>Members sit under <code>public:</code>, <code>internal:</code> (for <code>pub(crate)</code>, <code>pub(super)</code>, and <code>pub(in path)</code>), and <code>private:</code>; the first label is left out when it is the default.</li>
+<li>A <code>// internal</code> or <code>// private</code> line above a type's header gives the type's own visibility; a public type has none.</li>
 <li>A member function drops <code>&amp;self</code>, shows <code>&amp;mut self</code> as a trailing <code>mut</code>, and keeps any other receiver, such as <code>self</code>, as its first parameter; <code>static</code> means no receiver.</li>
 <li>References and pointers put the sigil after the type: <code>T&amp;</code> is <code>&amp;T</code>, <code>T mut&amp;</code> is <code>&amp;mut T</code>, <code>T*</code> is <code>*const T</code>, and <code>T mut*</code> is <code>*mut T</code>.</li>
 <li><code>constexpr</code> marks a <code>const fn</code> or a constant, and <code>using</code> marks a type alias, an associated type, or a re-export.</li>

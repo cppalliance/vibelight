@@ -335,7 +335,9 @@ const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
 ## Legend
 
 - Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
+- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
 - Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
+- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
 - A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
 - References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
 - `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.

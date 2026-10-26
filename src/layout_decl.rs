@@ -28,6 +28,9 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
         ..Meta::default()
     };
     block.lines.extend(above(&cfgs, 0, decl.loc).0);
+    if let Some(line) = visibility_line(decl.vis) {
+        block.lines.push(line);
+    }
     if let Shape::Alias(target) = &decl.shape {
         block.lines.push(alias_line(decl, target));
         return block;
@@ -66,6 +69,21 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block.repeats.extend(body.repeats);
     block.lines.push(brace("}"));
     block
+}
+
+/// Returns the line above the header of a type that is not public, which
+/// gives its own visibility: `// internal` or `// private`.
+fn visibility_line(vis: Vis) -> Option<Line> {
+    let text = match vis {
+        Vis::Public => return None,
+        Vis::Internal => "// internal",
+        Vis::Private => "// private",
+    };
+    Some(Line {
+        indent: 0,
+        spans: vec![Span::Comment(text.to_owned())],
+        trailing: None,
+    })
 }
 
 fn brace(text: &str) -> Line {

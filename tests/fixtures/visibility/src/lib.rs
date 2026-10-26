@@ -81,3 +81,13 @@ pub struct Inner {
 pub struct Hidden {
     value: u8,
 }
+
+/// An enum seen only in the crate.
+#[non_exhaustive]
+pub(crate) enum Mode {
+    Fast,
+    Slow,
+}
+
+/// A type alias seen only here.
+type Count = u32;

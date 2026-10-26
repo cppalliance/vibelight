@@ -234,7 +234,7 @@ pub(crate) struct Decl {
     /// Impl blocks that add members or base-list entries.
     pub(crate) impl_locs: Vec<ImplLoc>,
     /// The declaration's own visibility, which the public surface reads and
-    /// the block never prints.
+    /// a line above the header shows when it is not public.
     pub(crate) vis: Vis,
     /// Whether it is test support (`test_support::mark`), which keeps it
     /// out of the levels.

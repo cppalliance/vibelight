@@ -240,7 +240,7 @@ class Cursor
 }
 ```
 
-Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`. Its members sit in three sections: public ones first without a label, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. A module's trailing block uses the same three sections.
+Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`. A type that is not public itself gets a `// internal` or `// private` line right above its header, so its own visibility shows too. Its members sit in three sections: public ones first without a label, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. A module's trailing block uses the same three sections.
 
 The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. Members are grouped (associated types, constants, fields, static functions, then member functions) and sorted by name inside each group, except fields, which keep their declared order, as enum variants do.
 
