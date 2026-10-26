@@ -47,7 +47,7 @@ struct Dial
 <a id="type.links.Engine"></a>
 ### Engine
 
-Source: [src/lib.rs:6](../src/lib.rs#L6), impl [src/lib.rs:10](../src/lib.rs#L10), [src/parts.rs:3](../src/parts.rs#L3)
+Source: [src/lib.rs:6](../src/lib.rs#L6), impl [src/lib.rs:10](../src/lib.rs#L10) (start), [src/parts.rs:3](../src/parts.rs#L3) (stop)
 
 ```
 /// A type with an impl in another file.

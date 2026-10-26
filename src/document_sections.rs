@@ -1,6 +1,6 @@
 //! Builds the document's sections: declarations, modules, and other impls.
 
-use crate::document::{Builder, Inline, Item, Link, Node, anchor};
+use crate::document::{Builder, Inline, Item, Link, Node, SourceLink, anchor};
 use crate::layout::Block;
 use crate::layout_items::{self, docs_block, module_block};
 use crate::model::{DeclId, Loc, ModId};
@@ -97,14 +97,19 @@ impl Builder<'_> {
         if self.links.is_some() {
             let mut impls = decl.impl_locs.clone();
             impls.sort_by(|a, b| {
-                self.krate.files[a.file]
+                self.krate.files[a.loc.file]
                     .rel
-                    .cmp(&self.krate.files[b.file].rel)
-                    .then(a.line.cmp(&b.line))
+                    .cmp(&self.krate.files[b.loc.file].rel)
+                    .then(a.loc.line.cmp(&b.loc.line))
             });
-            impls.dedup();
-            let mut links: Vec<Link> = self.link(decl.loc, true).into_iter().collect();
-            links.extend(impls.into_iter().filter_map(|loc| self.link(loc, true)));
+            impls.dedup_by(|a, b| a.loc == b.loc);
+            let mut links = plain_links(self.link(decl.loc, true));
+            links.extend(impls.into_iter().filter_map(|i| {
+                self.link(i.loc, true).map(|link| SourceLink {
+                    link,
+                    members: i.members,
+                })
+            }));
             self.nodes.push(Node::Source(links));
         }
         if !decl.derives.is_empty() {
@@ -139,7 +144,7 @@ impl Builder<'_> {
                     false,
                 ),
             };
-            self.nodes.push(Node::Source(link.into_iter().collect()));
+            self.nodes.push(Node::Source(plain_links(link)));
         }
         let docs = if m == 0 {
             docs_block(&[], &module.cfgs)
@@ -202,9 +207,19 @@ impl Builder<'_> {
         for (block, loc) in blocks {
             if self.links.is_some() {
                 let link = self.link(loc, true);
-                self.nodes.push(Node::Source(link.into_iter().collect()));
+                self.nodes.push(Node::Source(plain_links(link)));
             }
             self.code(block);
         }
     }
+}
+
+/// Returns a `Source:` line's links that list no members.
+fn plain_links(link: Option<Link>) -> Vec<SourceLink> {
+    link.into_iter()
+        .map(|link| SourceLink {
+            link,
+            members: Vec::new(),
+        })
+        .collect()
 }

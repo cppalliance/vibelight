@@ -16,6 +16,15 @@ pub(crate) struct Link {
     pub(crate) target: String,
 }
 
+/// One link of a `Source:` line: the definition or an impl block, with the
+/// names of the members an inherent impl adds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct SourceLink {
+    pub(crate) link: Link,
+    /// Sorted; empty for the definition, a trait impl, and a module.
+    pub(crate) members: Vec<String>,
+}
+
 /// One piece of inline content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Inline {
@@ -57,7 +66,7 @@ pub(crate) enum Node {
     },
     Code(Block),
     /// A `Source:` line: the definition, then any impl blocks.
-    Source(Vec<Link>),
+    Source(Vec<SourceLink>),
     /// A bold label line outside a block, such as `MACRO derive: Clone`.
     Mark {
         label: &'static str,

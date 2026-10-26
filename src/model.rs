@@ -20,7 +20,7 @@ pub(crate) struct Loc {
     pub(crate) line: u32,
 }
 
-pub(crate) use crate::model_impl::{Impl, ImplNotes, Special, SpecialKind};
+pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
 pub(crate) use crate::text::{CrossRef, Seg, Text, TypeRef, Written};
 
 /// One comment printed above a node.
@@ -233,7 +233,7 @@ pub(crate) struct Decl {
     /// Comments above impl lines, one group per impl, in print order.
     pub(crate) impl_notes: Vec<ImplNotes>,
     /// Impl blocks that add members or base-list entries.
-    pub(crate) impl_locs: Vec<Loc>,
+    pub(crate) impl_locs: Vec<ImplLoc>,
     /// The declaration's own visibility, which the public surface reads and
     /// the block never prints.
     pub(crate) vis: Vis,

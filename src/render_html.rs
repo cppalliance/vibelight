@@ -94,13 +94,16 @@ pub(crate) fn render(
             Node::Code(block) => page.pre(&mut out, block),
             Node::Source(links) => {
                 out.push_str("<p class=\"source\">Source: ");
-                for (i, link) in links.iter().enumerate() {
+                for (i, source) in links.iter().enumerate() {
                     if i == 1 {
                         out.push_str(", impl ");
                     } else if i > 1 {
                         out.push_str(", ");
                     }
-                    out.push_str(&source_link(link));
+                    out.push_str(&source_link(&source.link));
+                    if !source.members.is_empty() {
+                        let _ = write!(out, " ({})", escape(&source.members.join(", ")));
+                    }
                 }
                 out.push_str("</p>\n");
             }

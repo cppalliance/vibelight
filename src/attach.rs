@@ -1,6 +1,8 @@
 //! Attaches impl blocks to the types they belong to.
 
-use crate::model::{Crate, DeclKind, Holder, ImplNotes, Note, Special, name_order};
+use crate::model::{
+    Crate, DeclKind, Holder, ImplLoc, ImplNotes, Member, MemberKind, Note, Special, name_order,
+};
 use crate::route;
 
 /// The comments above one attached impl line and how they sort: trait
@@ -54,7 +56,10 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let decl = &mut krate.decls[decl_id];
         let adds = !members.is_empty() || trait_.is_some();
         if adds {
-            decl.impl_locs.push(loc);
+            decl.impl_locs.push(ImplLoc {
+                loc,
+                members: member_names(&members),
+            });
         }
         decl.members.extend(members);
         for mark in marks {
@@ -98,14 +103,8 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
             decl.bases.push(base);
         }
     }
-    for (decl, mut list) in krate.decls.iter_mut().zip(notes) {
-        list.sort_by(|a, b| {
-            a.group
-                .cmp(&b.group)
-                .then_with(|| name_order(&a.key, &b.key))
-                .then_with(|| a.tiebreak.cmp(&b.tiebreak))
-        });
-        decl.impl_notes = list.into_iter().map(|entry| entry.notes).collect();
+    for (decl, list) in krate.decls.iter_mut().zip(notes) {
+        decl.impl_notes = sorted_notes(list);
     }
     for mark in &mut krate.macros {
         if let Holder::Impl(id) = mark.holder {
@@ -116,6 +115,31 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
     }
     route::finish(krate);
     others
+}
+
+/// Puts a type's impl comment groups in print order: trait impls by trait
+/// name, then inherent impls by first member name.
+fn sorted_notes(mut list: Vec<Sorted>) -> Vec<ImplNotes> {
+    list.sort_by(|a, b| {
+        a.group
+            .cmp(&b.group)
+            .then_with(|| name_order(&a.key, &b.key))
+            .then_with(|| a.tiebreak.cmp(&b.tiebreak))
+    });
+    list.into_iter().map(|entry| entry.notes).collect()
+}
+
+/// Returns the names of an impl's members, sorted, without its macro marks
+/// and unsupported entries.
+fn member_names(members: &[Member]) -> Vec<String> {
+    let mut names: Vec<String> = members
+        .iter()
+        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
+        .map(|m| m.name.clone())
+        .collect();
+    names.sort_by(|a, b| name_order(a, b));
+    names.dedup();
+    names
 }
 
 /// Returns the visible text of notes, for ordering them.

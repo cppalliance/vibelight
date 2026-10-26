@@ -30,13 +30,16 @@ pub(crate) fn render(doc: &Document, stamp: &str) -> String {
             Node::Code(block) => fence(&mut out, block, &doc.refs),
             Node::Source(links) => {
                 out.push_str("Source: ");
-                for (i, link) in links.iter().enumerate() {
+                for (i, source) in links.iter().enumerate() {
                     if i == 1 {
                         out.push_str(", impl ");
                     } else if i > 1 {
                         out.push_str(", ");
                     }
-                    out.push_str(&link_text(link));
+                    out.push_str(&link_text(&source.link));
+                    if !source.members.is_empty() {
+                        let _ = write!(out, " ({})", source.members.join(", "));
+                    }
                 }
                 out.push('\n');
             }

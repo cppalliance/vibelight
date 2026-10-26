@@ -28,6 +28,17 @@ pub(crate) struct Special {
     pub(crate) loc: Loc,
 }
 
+/// An attached impl block that adds members or base-list entries, for the
+/// `Source:` line.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ImplLoc {
+    /// The `impl` line.
+    pub(crate) loc: Loc,
+    /// The names of the members an inherent impl adds, sorted; a trait
+    /// impl adds none.
+    pub(crate) members: Vec<String>,
+}
+
 /// The comments above one attached impl line, kept together so the outline
 /// can print an `// impl` header above them.
 #[derive(Clone, Debug)]
