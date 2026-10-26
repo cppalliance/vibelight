@@ -1,12 +1,13 @@
-//! Functions grouped by the fields they reach.
+//! Which functions reach each field.
 
-/// A scheduler with two groups of state.
+/// A scheduler whose fields its functions reach in groups.
 pub struct Scheduler {
     chains: Vec<u32>,
     tasks: Vec<u32>,
     queue: Vec<u32>,
     pending: Vec<u32>,
     issued: Vec<u32>,
+    spare: u8,
 }
 
 impl Scheduler {
@@ -18,6 +19,7 @@ impl Scheduler {
             queue: Vec::new(),
             pending: Vec::new(),
             issued: Vec::new(),
+            spare: 0,
         }
     }
 
@@ -50,13 +52,18 @@ impl Scheduler {
         let _ = self.chains.first();
     }
 
+    /// Forgets the issued effects.
+    pub fn withdraw(&mut self) {
+        self.issued.clear();
+    }
+
     /// Counts the chains.
     pub fn len(&self) -> usize {
         self.chains.len()
     }
 }
 
-/// A type whose functions form one group, so it has no clusters line.
+/// A type with too few functions for a fields list.
 pub struct Small {
     a: u8,
     b: u8,

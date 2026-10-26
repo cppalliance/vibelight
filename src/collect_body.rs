@@ -1,6 +1,6 @@
 //! Reads function bodies: the type names they write, which keep a type out
 //! of Unconnected (rule 26) and name nothing else, and the fields a method
-//! reaches through `self`, which its type's `Clusters:` line groups by.
+//! reaches through `self`, which its type's `Fields:` list shows.
 
 use std::collections::BTreeSet;
 

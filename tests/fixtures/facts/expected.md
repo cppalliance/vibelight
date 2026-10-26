@@ -25,7 +25,7 @@
 - Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
 - With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; a `Clusters:` line groups a type's functions by the fields they reach through `self` when they form two or more groups, names each group after its most-reached field, and lists as hubs the fields more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)

@@ -1,14 +1,15 @@
 //! The facts lines under each declaration's heading, when the facts are on:
 //! what the declaration holds, and what names it.
 
-use std::collections::{BTreeMap, BTreeSet};
-
-use crate::document::{Builder, Inline, Node, anchor};
-use crate::model::{Decl, DeclId, MemberKind, Shape, Text, TypeRef, VariantFields, name_order};
+use crate::document::{Builder, Inline, Item, Node, anchor};
+use crate::layout::Span;
+use crate::model::{
+    Decl, DeclId, Member, MemberKind, Shape, Text, TypeRef, VariantFields, name_order,
+};
 
 impl Builder<'_> {
-    /// Adds declaration `d`'s `Counts:`, `Used by:`, and, when its
-    /// functions form groups, `Clusters:` lines, when the facts are on.
+    /// Adds declaration `d`'s `Counts:` and `Used by:` lines, and its
+    /// `Fields:` list when it has one, when the facts are on.
     pub(crate) fn facts(&mut self, d: DeclId) {
         let Some(order) = self.facts else {
             return;
@@ -44,106 +45,73 @@ impl Builder<'_> {
             class: "facts",
             inlines,
         });
-        if let Some(text) = clusters(&self.krate.decls[d]) {
+        if let Some(items) = field_index(&self.krate.decls[d]) {
             self.nodes.push(Node::Para {
                 class: "facts",
-                inlines: vec![Inline::Text(format!("Clusters: {text}"))],
+                inlines: vec![Inline::Text("Fields:".to_owned())],
+            });
+            self.nodes.push(Node::List {
+                class: "facts",
+                items,
             });
         }
     }
 }
 
-/// Returns the text of a type's `Clusters:` line, or `None` when its
-/// functions form fewer than two groups. A field that more than half the
-/// functions reach through `self` is a hub. Two functions are in one group
-/// when a chain of shared fields other than hubs joins them; a function
-/// that reaches only hubs, or no field, is in no group. Each group is named
-/// after the field most of its functions reach, ties going to the first by
-/// name, and the groups sort by that name.
-fn clusters(decl: &Decl) -> Option<String> {
-    let fields: BTreeSet<&str> = decl
+/// The fewest functions a type needs for a `Fields:` list.
+const FIELDS_FROM: usize = 8;
+
+/// Returns the items of a type's `Fields:` list, one per field in declared
+/// order: the functions that reach it through `self`, sorted by name, or
+/// `none`. A hub, a field more than half of the functions reach, gives only
+/// its count. `None` when the type has no field or fewer than
+/// `FIELDS_FROM` functions.
+fn field_index(decl: &Decl) -> Option<Vec<Item>> {
+    let functions: Vec<&Member> = decl
+        .members
+        .iter()
+        .filter(|m| matches!(m.kind, MemberKind::Fn(_)))
+        .collect();
+    let fields: Vec<&str> = decl
         .members
         .iter()
         .filter(|m| matches!(m.kind, MemberKind::Field(_)))
         .map(|m| m.name.as_str())
         .collect();
-    let functions: Vec<(&str, Vec<&str>)> = decl
-        .members
-        .iter()
-        .filter(|m| matches!(m.kind, MemberKind::Fn(_)))
-        .map(|m| {
-            let reached = m.self_fields.iter().map(String::as_str);
-            (
-                m.name.as_str(),
-                reached.filter(|f| fields.contains(f)).collect(),
-            )
-        })
-        .collect();
-    let mut reach: BTreeMap<&str, usize> = BTreeMap::new();
-    for (_, reached) in &functions {
-        for field in reached {
-            *reach.entry(field).or_default() += 1;
-        }
-    }
-    let hubs: Vec<&str> = reach
-        .iter()
-        .filter(|&(_, &n)| n * 2 > functions.len())
-        .map(|(&field, _)| field)
-        .collect();
-    let mut root: Vec<usize> = (0..functions.len()).collect();
-    let mut first: BTreeMap<&str, usize> = BTreeMap::new();
-    for (i, (_, reached)) in functions.iter().enumerate() {
-        for &field in reached.iter().filter(|f| !hubs.contains(f)) {
-            let j = *first.entry(field).or_insert(i);
-            let (a, b) = (top(&root, i), top(&root, j));
-            root[a.max(b)] = a.min(b);
-        }
-    }
-    let mut groups: BTreeMap<usize, (Vec<&str>, BTreeMap<&str, usize>)> = BTreeMap::new();
-    for (i, (name, reached)) in functions.iter().enumerate() {
-        let kept: Vec<&str> = reached
-            .iter()
-            .copied()
-            .filter(|f| !hubs.contains(f))
-            .collect();
-        if kept.is_empty() {
-            continue;
-        }
-        let (names, counts) = groups.entry(top(&root, i)).or_default();
-        names.push(name);
-        for field in kept {
-            *counts.entry(field).or_default() += 1;
-        }
-    }
-    if groups.len() < 2 {
+    if functions.len() < FIELDS_FROM || fields.is_empty() {
         return None;
     }
-    let mut parts: Vec<(&str, String)> = groups
-        .into_values()
-        .map(|(mut names, counts)| {
-            let lead = counts
+    let items = fields
+        .into_iter()
+        .map(|field| {
+            let mut names: Vec<&str> = functions
                 .iter()
-                .max_by(|a, b| a.1.cmp(b.1).then_with(|| name_order(b.0, a.0)))
-                .map_or("", |(&field, _)| field);
+                .filter(|f| f.self_fields.iter().any(|s| s == field))
+                .map(|f| f.name.as_str())
+                .collect();
             names.sort_by(|a, b| name_order(a, b));
             names.dedup();
-            (lead, format!("{lead} ({})", names.join(", ")))
+            let reached = if names.is_empty() {
+                "none".to_owned()
+            } else if names.len() * 2 > functions.len() {
+                format!(
+                    "a hub, reached by {} of {} functions",
+                    names.len(),
+                    functions.len()
+                )
+            } else {
+                names.join(", ")
+            };
+            Item {
+                inlines: vec![
+                    Inline::Code(vec![Span::Code(field.to_owned())]),
+                    Inline::Text(format!(": {reached}")),
+                ],
+                children: Vec::new(),
+            }
         })
         .collect();
-    parts.sort_by(|a, b| name_order(a.0, b.0));
-    let mut text: Vec<String> = parts.into_iter().map(|(_, part)| part).collect();
-    if !hubs.is_empty() {
-        text.push(format!("hubs: {}", hubs.join(", ")));
-    }
-    Some(text.join("; "))
-}
-
-/// Follows `root` links from `i` to its group's first function.
-fn top(root: &[usize], mut i: usize) -> usize {
-    while root[i] != i {
-        i = root[i];
-    }
-    i
+    Some(items)
 }
 
 /// Returns what a declaration holds, such as `2 variants, 3 functions`:

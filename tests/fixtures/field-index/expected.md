@@ -1,10 +1,10 @@
 *Updated 2026-01-01T00:00:00Z*
 
-<a id="crate.clusters"></a>
-# clusters
+<a id="crate.field_index"></a>
+# field_index
 
 ```
-//! Functions grouped by the fields they reach.
+//! Which functions reach each field.
 ```
 
 <a id="legend"></a>
@@ -24,39 +24,46 @@
 - Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
 - With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; a `Clusters:` line groups a type's functions by the fields they reach through `self` when they form two or more groups, names each group after its most-reached field, and lists as hubs the fields more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
 - [Unconnected types](#unconnected)
-  - [Scheduler](#type.clusters.Scheduler)
-  - [Small](#type.clusters.Small)
+  - [Scheduler](#type.field_index.Scheduler)
+  - [Small](#type.field_index.Small)
 - [Modules](#modules)
-  - [clusters](#mod.clusters)
+  - [field_index](#mod.field_index)
 
 **MACROS:** none
 
 <a id="surface"></a>
 ## Public surface
 
-- [Scheduler](#type.clusters.Scheduler)
-- [Small](#type.clusters.Small)
+- [Scheduler](#type.field_index.Scheduler)
+- [Small](#type.field_index.Small)
 
 <a id="unconnected"></a>
 ## Unconnected types
 
-<a id="type.clusters.Scheduler"></a>
+<a id="type.field_index.Scheduler"></a>
 ### Scheduler
 
-Counts: 5 fields, 7 functions
+Counts: 6 fields, 8 functions
 
 Used by: nothing
 
-Clusters: pending (apply, issue); queue (admit, count_tasks, spawn); hubs: chains
+Fields:
+
+- `chains`: a hub, reached by 5 of 8 functions
+- `tasks`: count_tasks, spawn
+- `queue`: admit, spawn
+- `pending`: apply, issue
+- `issued`: issue, withdraw
+- `spare`: none
 
 ```
-/// A scheduler with two groups of state.
+/// A scheduler whose fields its functions reach in groups.
 struct Scheduler
 {
     /// Makes one.
@@ -80,6 +87,9 @@ struct Scheduler
     /// Starts a task.
     spawn() mut;
 
+    /// Forgets the issued effects.
+    withdraw() mut;
+
 private:
     chains: Vec<u32>,
 
@@ -90,10 +100,12 @@ private:
     pending: Vec<u32>,
 
     issued: Vec<u32>,
+
+    spare: u8,
 }
 ```
 
-<a id="type.clusters.Small"></a>
+<a id="type.field_index.Small"></a>
 ### Small
 
 Counts: 2 fields, 2 functions
@@ -101,7 +113,7 @@ Counts: 2 fields, 2 functions
 Used by: nothing
 
 ```
-/// A type whose functions form one group, so it has no clusters line.
+/// A type with too few functions for a fields list.
 struct Small
 {
     /// Returns both.
@@ -120,8 +132,8 @@ private:
 <a id="modules"></a>
 ## Modules
 
-<a id="mod.clusters"></a>
-### clusters
+<a id="mod.field_index"></a>
+### field_index
 
-- [Scheduler](#type.clusters.Scheduler)
-- [Small](#type.clusters.Small)
+- [Scheduler](#type.field_index.Scheduler)
+- [Small](#type.field_index.Small)
