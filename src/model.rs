@@ -106,6 +106,9 @@ pub(crate) struct Member {
     pub(crate) kind: MemberKind,
     pub(crate) meta: Meta,
     pub(crate) loc: Loc,
+    /// For a method of an inherent impl, the fields its body reaches
+    /// through `self`, sorted, each once.
+    pub(crate) self_fields: Vec<String>,
 }
 
 #[derive(Clone, Debug)]

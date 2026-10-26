@@ -1,10 +1,11 @@
-//! Collects the type names function bodies write. They keep a type out of
-//! Unconnected (rule 26) and name nothing else.
+//! Reads function bodies: the type names they write, which keep a type out
+//! of Unconnected (rule 26) and name nothing else, and the fields a method
+//! reaches through `self`, which its type's `Clusters:` line groups by.
 
 use std::collections::BTreeSet;
 
 use syn::visit::{self, Visit};
-use syn::{Block, Macro, Path};
+use syn::{Block, Expr, ExprField, Macro, Path};
 
 use crate::collect::{Collector, Here};
 use crate::model::{BodyName, BodyOwner, TypeRef};
@@ -61,6 +62,31 @@ impl<'ast> Visit<'ast> for Paths {
             self.found.insert((global, segments));
         }
         visit::visit_path(self, path);
+    }
+
+    fn visit_macro(&mut self, _: &'ast Macro) {}
+}
+
+/// Returns the fields a method body reaches through `self`, such as `tasks`
+/// in `self.tasks.len()`, sorted, each once. Macro arguments are not read.
+pub(crate) fn self_fields(block: &Block) -> Vec<String> {
+    let mut fields = SelfFields::default();
+    fields.visit_block(block);
+    fields.found.into_iter().collect()
+}
+
+#[derive(Default)]
+struct SelfFields {
+    found: BTreeSet<String>,
+}
+
+impl<'ast> Visit<'ast> for SelfFields {
+    fn visit_expr_field(&mut self, node: &'ast ExprField) {
+        let on_self = matches!(&*node.base, Expr::Path(base) if base.path.is_ident("self"));
+        if let (true, syn::Member::Named(ident)) = (on_self, &node.member) {
+            self.found.insert(strip_raw(&ident.to_string()));
+        }
+        visit::visit_expr_field(self, node);
     }
 
     fn visit_macro(&mut self, _: &'ast Macro) {}

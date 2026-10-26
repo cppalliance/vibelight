@@ -62,6 +62,7 @@ goldens! {
     body_uses => "body-uses",
     cfg_attr => "cfg-attr",
     cfg_test => "cfg-test",
+    clusters => "clusters",
     comments_attach => "comments-attach",
     comments_groups => "comments-groups",
     comments_impls => "comments-impls",

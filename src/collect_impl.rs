@@ -8,6 +8,7 @@ use syn::{Attribute, ImplItem, ItemImpl, TraitItem, Type};
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_bases::single_arg;
+use crate::collect_body::self_fields;
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
@@ -195,7 +196,9 @@ impl Collector<'_> {
                         marks,
                         range,
                     };
-                    Some(self.member(&here, parts))
+                    let mut member = self.member(&here, parts);
+                    member.self_fields = self_fields(&f.block);
+                    Some(member)
                 }
                 ImplItem::Type(t) if !attrs::is_test_only(&t.attrs) && !trait_impl => {
                     let here = here.with(&t.generics);
@@ -241,6 +244,7 @@ impl Collector<'_> {
                         kind: MemberKind::Unsupported("verbatim impl item".to_owned()),
                         meta: Meta::default(),
                         loc,
+                        self_fields: Vec::new(),
                     })
                 }
                 ImplItem::Const(_)
@@ -260,6 +264,7 @@ impl Collector<'_> {
                         kind: MemberKind::Unsupported("unknown impl item".to_owned()),
                         meta: Meta::default(),
                         loc,
+                        self_fields: Vec::new(),
                     })
                 }
             };
@@ -383,6 +388,7 @@ impl Collector<'_> {
                         kind: MemberKind::Mark(text),
                         meta: Meta::default(),
                         loc,
+                        self_fields: Vec::new(),
                     })
                 }
                 TraitItem::Verbatim(tokens) => {
@@ -394,6 +400,7 @@ impl Collector<'_> {
                         kind: MemberKind::Unsupported("verbatim trait item".to_owned()),
                         meta: Meta::default(),
                         loc,
+                        self_fields: Vec::new(),
                     })
                 }
                 TraitItem::Const(_)
@@ -412,6 +419,7 @@ impl Collector<'_> {
                         kind: MemberKind::Unsupported("unknown trait item".to_owned()),
                         meta: Meta::default(),
                         loc,
+                        self_fields: Vec::new(),
                     })
                 }
             };
@@ -465,6 +473,7 @@ impl Collector<'_> {
                 marks: parts.marks,
             },
             loc: parts.loc,
+            self_fields: Vec::new(),
         }
     }
 }

@@ -58,6 +58,7 @@ impl Collector<'_> {
                     marks: mark.into_iter().collect(),
                 },
                 loc,
+                self_fields: Vec::new(),
             });
         }
         let dangling = self.notes(here, &[], dangling);
