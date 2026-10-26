@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use crate::document::{Builder, Inline, Item, Node, anchor};
 use crate::layout::Span;
-use crate::model::{Crate, DeclId, ModId, Note, RefId, path_order};
+use crate::model::{Crate, CrossRef, DeclId, ModId, Note, Reach, RefId, path_order};
 use crate::order::{item_texts, path_cmp};
 use crate::prelude::is_standard;
 
@@ -69,12 +69,12 @@ impl Builder<'_> {
                 Err(m) if !uses.modules.contains(&m) => uses.modules.push(m),
                 _ => {}
             }
-            if let Some(f) = r.foreign {
-                uses.doc = docs
-                    .get(f.krate)
-                    .and_then(|d| d.get(f.decl))
-                    .cloned()
-                    .flatten();
+            if let Some(CrossRef {
+                krate,
+                reach: Reach::Decl(decl),
+            }) = r.foreign
+            {
+                uses.doc = docs.get(krate).and_then(|d| d.get(decl)).cloned().flatten();
             }
         };
         let mut seen = std::collections::BTreeSet::new();

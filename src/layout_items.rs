@@ -4,10 +4,12 @@ use std::collections::BTreeMap;
 
 use crate::layout::{
     Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, join_sections, key,
-    mark_line, note_lines, plain, section, sections, sort_entries,
+    line_text, mark_line, note_lines, plain, section, sections, sort_entries,
 };
 use crate::layout_decl::{BodyParts, body};
-use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, Vis, name_order};
+use crate::model::{
+    Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
+};
 
 /// Builds a module's trailing block: the public items, then `internal:` and
 /// `private:` with theirs, each section grouped as re-exports, macro marks,
@@ -18,13 +20,17 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
     let mut use_groups: BTreeMap<(Vis, usize), Vec<Entry>> = BTreeMap::new();
-    for item in &module.items {
+    for (index, item) in module.items.iter().enumerate() {
+        let at = ValueRef {
+            module: id,
+            item: index,
+        };
         if let ItemKind::Reexport {
-            group: Some(id), ..
+            group: Some(set), ..
         } = item.kind
         {
-            let entries = use_groups.entry((item.vis, id)).or_default();
-            entries.push(item_entry(krate, item));
+            let entries = use_groups.entry((item.vis, set)).or_default();
+            entries.push(item_entry(krate, item, at));
             continue;
         }
         let group = match &item.kind {
@@ -42,7 +48,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 continue;
             }
         };
-        sections[section(item.vis)][group].push(item_entry(krate, item));
+        sections[section(item.vis)][group].push(item_entry(krate, item, at));
     }
     for ((vis, _), mut entries) in use_groups {
         sort_entries(&mut entries, &krate.refs);
@@ -84,10 +90,23 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     (!block.lines.is_empty()).then_some(block)
 }
 
-fn item_entry(krate: &Crate, item: &Item) -> Entry {
+/// Returns the text a module-level function, constant, or static prints
+/// as, which orders the items whose ids would repeat.
+pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
+    let item = &krate.modules[at.module].items[at.item];
+    let entry = item_entry(krate, item, at);
+    let lines: Vec<String> = entry
+        .lines
+        .iter()
+        .map(|line| line_text(line, &krate.refs))
+        .collect();
+    lines.join("\n")
+}
+
+fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     let refs = &krate.refs;
     let (mut lines, mut repeats) = above(&item.meta, 0, item.loc);
-    let name = Span::Name(item.name.clone(), item.loc);
+    let name = Span::Value(item.name.clone(), item.loc, at);
     let trailing = item.meta.trailing.clone();
     match &item.kind {
         ItemKind::Reexport { text, .. } => {
@@ -120,7 +139,7 @@ fn item_entry(krate: &Crate, item: &Item) -> Entry {
             spans.extend(code(ty));
             lines.push(const_line(spans, value.as_deref(), 0, trailing, refs));
         }
-        ItemKind::Fn(sig) => lines.extend(fn_lines(krate, sig, item.loc, trailing, 0, false)),
+        ItemKind::Fn(sig) => lines.extend(fn_lines(krate, sig, name, trailing, 0, false)),
         ItemKind::Foreign { .. } | ItemKind::Unsupported(_) => {}
     }
     Entry {
@@ -184,7 +203,8 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
                     1
                 }
                 Foreign::Fn(sig) => {
-                    lines.extend(fn_lines(krate, sig, item.loc, trailing, 4, false));
+                    let fn_name = Span::Name(sig.name.clone(), item.loc);
+                    lines.extend(fn_lines(krate, sig, fn_name, trailing, 4, false));
                     2
                 }
             };

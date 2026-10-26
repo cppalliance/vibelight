@@ -1,43 +1,22 @@
 //! Prints the document as one self-contained HTML file with every type
 //! linked.
 
+use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::document::{Document, Inline, Item, Link, Node};
 use crate::layout::{Block, Line, Span};
-use crate::model::TypeRef;
+use crate::model::{Loc, Reach, TypeRef, ValueRef};
+use crate::render_style::STYLE;
 
-/// The page's whole style sheet: light and dark colors follow the system.
-const STYLE: &str = "\
-:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
-body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
-nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
-nav ul{list-style:none;margin:0;padding-left:1rem}
-nav>ul{padding-left:0}
-main{flex:1;min-width:0;padding:1rem 2rem}
-a{color:var(--link);text-decoration:none}
-a:hover{text-decoration:underline}
-pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
-pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.k{color:var(--key)}
-.c{color:var(--com)}
-.c a{color:inherit;text-decoration:underline}
-a.cross{color:var(--cross)}
-b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
-a.src{color:inherit}
-span.src{cursor:default}
-.stamp{margin:0;color:var(--muted);font-size:13px}
-:target{background:var(--target)}
-";
-
-/// A page of the run that other pages link into: its file name and the
-/// anchor id of each of its declarations.
+/// A page of the run that other pages link into: its file name, the anchor
+/// id of each of its declarations, and the id of each of its functions,
+/// constants, and statics.
 #[derive(Debug, Clone)]
 pub(crate) struct Anchors {
     pub(crate) file: String,
     pub(crate) ids: Vec<String>,
+    pub(crate) values: BTreeMap<ValueRef, String>,
 }
 
 /// Renders the HTML file, with `stamp` in a comment on its first line and
@@ -46,7 +25,7 @@ pub(crate) struct Anchors {
 /// run links into that crate's page in `run`.
 pub(crate) fn render(
     doc: &Document,
-    member_links: Option<&dyn Fn(crate::model::Loc) -> String>,
+    member_links: Option<&dyn Fn(Loc) -> String>,
     run: &[Anchors],
     stamp: &str,
 ) -> String {
@@ -147,7 +126,7 @@ pub(crate) fn render(
 
 struct Page<'a> {
     doc: &'a Document,
-    member_links: Option<&'a dyn Fn(crate::model::Loc) -> String>,
+    member_links: Option<&'a dyn Fn(Loc) -> String>,
     run: &'a [Anchors],
 }
 
@@ -196,19 +175,11 @@ impl Page<'_> {
                 Span::Label(label) => {
                     let _ = write!(out, "<b class=\"m\">{}</b>", escape(label));
                 }
-                Span::Name(text, loc) => match self.member_links {
-                    Some(link) => {
-                        let _ = write!(
-                            out,
-                            "<a class=\"src\" href=\"{}\">{}</a>",
-                            attr(&link(*loc)),
-                            escape(text)
-                        );
-                    }
-                    None => {
-                        let _ = write!(out, "<span class=\"src\">{}</span>", escape(text));
-                    }
-                },
+                Span::Name(text, loc) => self.name(out, text, *loc, None),
+                Span::Value(text, loc, value) => {
+                    let id = self.doc.value_ids.get(value).map(String::as_str);
+                    self.name(out, text, *loc, id);
+                }
             }
         }
         if in_comment {
@@ -216,15 +187,42 @@ impl Page<'_> {
         }
     }
 
+    /// Writes a member or item name: a link to its source line when links
+    /// are on, otherwise a span, with its id when it has one.
+    fn name(&self, out: &mut String, text: &str, loc: Loc, id: Option<&str>) {
+        let id = id.map_or_else(String::new, |id| format!(" id=\"{}\"", attr(id)));
+        match self.member_links {
+            Some(link) => {
+                let _ = write!(
+                    out,
+                    "<a class=\"src\" href=\"{}\"{id}>{}</a>",
+                    attr(&link(loc)),
+                    escape(text)
+                );
+            }
+            None => {
+                let _ = write!(out, "<span class=\"src\"{id}>{}</span>", escape(text));
+            }
+        }
+    }
+
     fn reference(&self, out: &mut String, id: usize) {
         let reference = &self.refs()[id];
+        let local = match (reference.target, reference.value) {
+            (Some(target), _) => Some(&self.doc.decl_ids[target]),
+            (None, Some(value)) => self.doc.value_ids.get(&value),
+            (None, None) => None,
+        };
         let other = reference.foreign.and_then(|f| {
             let page = self.run.get(f.krate)?;
-            Some((&page.file, page.ids.get(f.decl)?))
+            let anchor = match f.reach {
+                Reach::Decl(decl) => page.ids.get(decl)?,
+                Reach::Value(value) => page.values.get(&value)?,
+            };
+            Some((&page.file, anchor))
         });
-        match (reference.target, other) {
-            (Some(target), _) => {
-                let href = &self.doc.decl_ids[target];
+        match (local, other) {
+            (Some(href), _) => {
                 let _ = write!(
                     out,
                     "<a href=\"#{}\">{}</a>",
@@ -340,30 +338,8 @@ mod tests {
     }
 
     #[test]
-    fn the_style_sheet_colors_cross_crate_links_in_both_themes() {
-        let dark = STYLE.find("@media (prefers-color-scheme:dark)").unwrap();
-        let (light, dark) = STYLE.split_at(dark);
-        assert!(
-            light.contains("--cross:#8a5c00"),
-            "a darker gold when light"
-        );
-        let dark_line = dark.lines().next().unwrap();
-        assert!(
-            dark_line.contains("--cross:#e3b341"),
-            "a lighter yellow when dark"
-        );
-        assert!(STYLE.contains("\na.cross{color:var(--cross)}\n"));
-        assert!(STYLE.contains("\nspan.src{cursor:default}\n"));
-        assert!(
-            STYLE.find("a.cross").unwrap() > STYLE.find(".c a").unwrap(),
-            "a cross-crate link stays yellow inside a comment"
-        );
-        assert!(!STYLE.contains("url(") && !STYLE.contains("@import"));
-    }
-
-    #[test]
     fn a_foreign_name_links_into_its_page_and_member_names_are_spans_without_links() {
-        use crate::model::{CrossRef, Loc};
+        use crate::model::CrossRef;
 
         let refs = vec![TypeRef {
             text: "Gauge".into(),
@@ -372,10 +348,15 @@ mod tests {
             module: 0,
             generics: Vec::new(),
             comment: false,
+            may_be_value: false,
             target: None,
+            value: None,
             canonical: Some(vec!["b".into(), "Gauge".into()]),
             written: None,
-            foreign: Some(CrossRef { krate: 1, decl: 0 }),
+            foreign: Some(CrossRef {
+                krate: 1,
+                reach: Reach::Decl(0),
+            }),
         }];
         let line = Line {
             indent: 4,
@@ -400,15 +381,18 @@ mod tests {
             })],
             refs,
             decl_ids: Vec::new(),
+            value_ids: BTreeMap::new(),
         };
         let run = [
             Anchors {
                 file: "a.html".into(),
                 ids: Vec::new(),
+                values: BTreeMap::new(),
             },
             Anchors {
                 file: "b.html".into(),
                 ids: vec!["type.b.parts.Gauge".into()],
+                values: BTreeMap::new(),
             },
         ];
         let html = render(&doc, None, &run, crate::stamp::PLACEHOLDER);

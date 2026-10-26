@@ -21,7 +21,7 @@ pub(crate) struct Loc {
 }
 
 pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
-pub(crate) use crate::text::{CrossRef, Seg, Text, TypeRef, Written};
+pub(crate) use crate::text::{CrossRef, Reach, Seg, Text, TypeRef, ValueRef, Written};
 
 /// One comment printed above a node.
 #[derive(Clone, Debug, PartialEq, Eq)]

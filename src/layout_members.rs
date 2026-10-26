@@ -64,7 +64,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
             lines.extend(fn_lines(
                 krate,
                 sig,
-                member.loc,
+                Span::Name(sig.name.clone(), member.loc),
                 trailing,
                 4,
                 member.kind.is_static_fn(),

@@ -124,6 +124,48 @@ fn ids_are_unique_and_every_link_lands() {
     }
 }
 
+const VALUE_KINDS: [&str; 3] = ["fn.", "const.", "static."];
+
+fn is_value_id(id: &str) -> bool {
+    VALUE_KINDS.iter().any(|kind| id.starts_with(kind))
+}
+
+#[test]
+fn every_link_to_a_function_constant_or_static_lands_on_an_id() {
+    let mut linked = 0;
+    for (target, _, html) in pairs() {
+        let defined: BTreeSet<&str> = ids(&html).into_iter().collect();
+        for id in link_targets(&html).into_iter().filter(|id| is_value_id(id)) {
+            assert!(
+                defined.contains(id),
+                "{target}: HTML link to missing value #{id}"
+            );
+            linked += 1;
+        }
+    }
+    assert!(linked >= 10, "the fixtures hold only {linked} value links");
+}
+
+#[test]
+fn only_the_html_file_holds_ids_for_functions_constants_and_statics() {
+    let mut defined = 0;
+    for (target, md, html) in pairs() {
+        assert!(
+            !md.contains("id=\"fn.") && !md.contains("id=\"const.") && !md.contains("id=\"static."),
+            "{target}: the markdown holds a value anchor"
+        );
+        assert!(
+            !md.contains("](#fn.") && !md.contains("](#const.") && !md.contains("](#static."),
+            "{target}: the markdown links to a value"
+        );
+        defined += ids(&html).into_iter().filter(|id| is_value_id(id)).count();
+    }
+    assert!(
+        defined >= 10,
+        "the fixtures define only {defined} value ids"
+    );
+}
+
 #[test]
 fn markdown_never_puts_a_link_inside_a_fence() {
     for (target, md, _) in pairs() {

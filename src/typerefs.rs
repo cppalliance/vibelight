@@ -251,7 +251,9 @@ impl Slicer<'_> {
                     module: self.module,
                     generics: self.generics.to_vec(),
                     comment: false,
+                    may_be_value: false,
                     target: None,
+                    value: None,
                     canonical: None,
                     written: Some(Written {
                         loc: Loc {

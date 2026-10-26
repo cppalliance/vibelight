@@ -101,5 +101,6 @@ goldens! {
     traits => "traits",
     unions => "unions",
     unparsable => "unparsable",
+    value_links => "value-links",
     visibility => "visibility",
 }

@@ -102,13 +102,17 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     let run: Vec<Anchors> = targets
         .iter()
         .zip(&docs)
-        .map(|(&(_, target), (md, page))| Anchors {
-            file: format!("{}.html", target.stem),
-            ids: page
-                .as_ref()
-                .or(md.as_ref())
-                .map(|built| built.doc.decl_ids.clone())
-                .unwrap_or_default(),
+        .map(|(&(_, target), (md, page))| {
+            let built = page.as_ref().or(md.as_ref());
+            Anchors {
+                file: format!("{}.html", target.stem),
+                ids: built
+                    .map(|built| built.doc.decl_ids.clone())
+                    .unwrap_or_default(),
+                values: built
+                    .map(|built| built.doc.value_ids.clone())
+                    .unwrap_or_default(),
+            }
         })
         .collect();
     for ((&(p, target), (md, page)), krate) in targets.iter().zip(&docs).zip(&krates) {

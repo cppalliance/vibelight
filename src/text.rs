@@ -79,12 +79,27 @@ pub(crate) struct Written {
     pub(crate) offset: usize,
 }
 
-/// A declaration in another crate of the run: the crate's index in the run
-/// and the declaration's id in that crate.
+/// A module-level function, constant, or static: the module that holds it
+/// and its index in that module's items.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct ValueRef {
+    pub(crate) module: ModId,
+    pub(crate) item: usize,
+}
+
+/// What a name reaches in another crate of the run.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Reach {
+    Decl(DeclId),
+    Value(ValueRef),
+}
+
+/// An item in another crate of the run: the crate's index in the run and
+/// what the name reaches there.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct CrossRef {
     pub(crate) krate: usize,
-    pub(crate) decl: DeclId,
+    pub(crate) reach: Reach,
 }
 
 /// A type name found in a declaration, a comment, or a re-export.
@@ -103,16 +118,22 @@ pub(crate) struct TypeRef {
     /// True for a name from a comment, a re-export, or a derive, which never
     /// counts for naming or toward the unresolved tally.
     pub(crate) comment: bool,
+    /// True for a name that may also be a function, constant, or static:
+    /// one in a comment or a re-export, never a derive.
+    pub(crate) may_be_value: bool,
     /// The declaration the name resolves to, filled in by resolve.
     pub(crate) target: Option<DeclId>,
+    /// The function, constant, or static of this crate the name resolves
+    /// to, filled in by resolve when no declaration of that name is found.
+    pub(crate) value: Option<ValueRef>,
     /// The full path of a name outside the crate, filled in by resolve:
     /// through `use` items, or the bare name of a prelude item.
     pub(crate) canonical: Option<Vec<String>>,
     /// Where the name is written, for a name sliced from the source or a
     /// derive name.
     pub(crate) written: Option<Written>,
-    /// The declaration in another crate of the run that the name reaches,
-    /// filled in after every crate of the run is resolved.
+    /// The item in another crate of the run that the name reaches, filled
+    /// in after every crate of the run is resolved.
     pub(crate) foreign: Option<CrossRef>,
 }
 
@@ -134,7 +155,9 @@ mod tests {
             module: 0,
             generics: Vec::new(),
             comment: false,
+            may_be_value: false,
             target: None,
+            value: None,
             canonical: None,
             written: None,
             foreign: None,

@@ -7,7 +7,7 @@ vibelight reads a Rust crate and writes an outline of it in the style of a C++ h
 ## What it does
 
 - **One outline per target.** The library, each binary, or a single `.rs` file gets two files: `<target>.md` and `<target>.html`. Both come from the same model, so their text always agrees.
-- **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, the contents list sits in a sticky sidebar, and the colors follow your system's light or dark setting.
+- **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, and so does a re-exported function, constant, or static. The contents list sits in a sticky sidebar, and the colors follow your system's light or dark setting.
 - **Top-down order.** Declarations are ordered by how they name each other. The types nothing else names come first, and every type comes after the types that use it. A by-module index comes last.
 - **Comments kept.** Doc comments and ordinary comments stay with the item they belong to.
 - **Every macro marked.** Macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and a kill list at the top gathers them all in one place, with a link to where each one sits.
@@ -82,7 +82,7 @@ A run can cover several crates, and every crate in it gets its files. There are 
 
 A crate in the run with nothing to outline, such as one with only tests, is skipped with a `note:` line on stderr. A single named crate with nothing to outline is still an error. Two crates that would write the same file name stop the run with an error that names both.
 
-In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they do not depend on which crates are in the run, except with `--facts`: then External items shows the first doc line of an item from another crate of the run. No file depends on the order the crates are named in.
+In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. A re-exported function, constant, or static links the same way, however many crates re-export it on the way, as `runvil_engine.html#fn.runvil_engine.execute.perform_vfs_op`. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they do not depend on which crates are in the run, except with `--facts`: then External items shows the first doc line of an item from another crate of the run. No file depends on the order the crates are named in.
 
 ## vibelight.toml
 
@@ -187,7 +187,7 @@ The release after 0.2.0 changes every outline: each file gains the stamp and the
 
 ## Colors
 
-The HTML file colors code the way an editor does. A link inside the page uses the link color, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With the HTML source links off, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
+The HTML file colors code the way an editor does. A link inside the page uses the link color, whether it goes to a type or to a function, constant, or static, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. With the HTML source links off, a member name that would link to its source line keeps its look as plain colored text, without an underline or a pointer, and no file or line appears anywhere.
 
 ## What the output looks like
 
@@ -207,6 +207,12 @@ Each file opens with the stamp (see [Checking the files](#checking-the-files)), 
 With `--facts`, each type's heading also gets a `Counts:` line (variants, fields with how many are an `Option`, associated items, special members, and functions) and a `Used by:` line that links what names it, and two more sections follow: **External items**, each item of another crate that the signatures name, grouped by crate, with its uses and, for a crate of the run, its first doc line; and **Same shapes**, groups of types with the same variants or fields, which are candidates for merging. With `--order modules`, a Levels section indexes the types by level, and then each module gets its own section that holds its items and its types, in place of the level sections and the Modules section.
 
 A level, Test support, Unconnected types, Other impls, Spellings, External items, or Same shapes shows up only when it has something in it. The markdown and HTML files hold the same headings, marks, and blocks. Markdown cannot put a link inside a code block, so only the HTML file links type names.
+
+### Links to functions, constants, and statics
+
+In the HTML file, each module-level function, constant, and static has an id on its name, `fn.<crate>.<module path>.<name>`, `const.<crate>.<module path>.<NAME>`, or `static.<crate>.<module path>.<NAME>`, written like the ids of types: parts joined with dots, case kept, and `r#` removed. A repeated id, such as a function declared twice under different `cfg`s, gets `-2`, `-3`, and so on. Methods and the items of `extern` blocks have no ids, and the markdown file has none of these ids.
+
+A re-export line (`using ...;`) links to a function, constant, or static of this crate, or of another crate of the run, through renames and chains of `pub use` items. A backticked name or an intra-doc link in a comment links the same way, when the name is in scope through a `use`, a glob, a path, or an item of the same module. When a type and a function have the same name, the link goes to the type. A function name is never found just because it is the only one of that name in the crate, which is how types are found, so a comment that names a function of another module needs a path or a `use`.
 
 Every type prints as one C++-style block, with the members of all its inherent impls merged in, wherever they are written. Here is a type whose fields and methods are all private:
 

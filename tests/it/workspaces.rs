@@ -132,11 +132,21 @@ fn ids(page: &str) -> BTreeSet<String> {
     out
 }
 
-#[test]
-fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
+/// How many links of each kind a run's pages hold.
+struct Links {
+    same: usize,
+    cross: usize,
+    source: usize,
+    /// Links, same-page or cross-page, to a function, constant, or static.
+    values: usize,
+}
+
+/// Runs a copy of a workspace fixture with source links on and checks that
+/// every link of every page reaches a file and an id that exist.
+fn every_link_lands(name: &str) -> Links {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let copy = tmp.path().join("garden");
-    copy_dir(&workspaces().join("garden"), &copy);
+    let copy = tmp.path().join(name);
+    copy_dir(&workspaces().join(name), &copy);
     let out = copy.join("out");
     assert!(
         vibelight(&["--workspace", text(&copy)], &out, true)
@@ -144,28 +154,116 @@ fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
             .success()
     );
     let pages = read_outputs(&out);
-    let (mut same, mut cross, mut source) = (0, 0, 0);
+    let mut counts = Links {
+        same: 0,
+        cross: 0,
+        source: 0,
+        values: 0,
+    };
     for (file, page) in &pages {
         for href in hrefs(file, page) {
             let (target, fragment) = href.split_once('#').unwrap_or((href.as_str(), ""));
+            if ["fn.", "const.", "static."]
+                .iter()
+                .any(|kind| fragment.starts_with(kind))
+            {
+                counts.values += 1;
+            }
             if target.is_empty() {
                 assert!(
                     ids(page).contains(fragment),
                     "{file}: #{fragment} is missing"
                 );
-                same += 1;
+                counts.same += 1;
             } else if let Some((_, other)) = pages.iter().find(|(name, _)| name == target) {
                 assert!(ids(other).contains(fragment), "{file}: {href} is missing");
-                cross += 1;
+                counts.cross += 1;
             } else {
                 assert!(out.join(target).is_file(), "{file}: {href} names no file");
-                source += 1;
+                counts.source += 1;
             }
         }
     }
+    counts
+}
+
+#[test]
+fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
+    let found = every_link_lands("garden");
     assert!(
-        same > 20 && cross >= 8 && source > 10,
-        "{same} {cross} {source}"
+        found.same > 20 && found.cross >= 8 && found.source > 10,
+        "{} {} {}",
+        found.same,
+        found.cross,
+        found.source
+    );
+    assert_eq!(found.values, 0, "the garden links no function");
+}
+
+#[test]
+fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let values = workspaces().join("values");
+    let result = vibelight(&["--workspace", text(&values)], tmp.path(), false);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&result.stderr).is_empty(),
+        "no name is unresolved or ambiguous"
+    );
+    let written = read_outputs(tmp.path());
+    let expected = read_outputs(&values.join("expected"));
+    assert_eq!(written.len(), 6);
+    for ((file, got), (_, want)) in written.iter().zip(&expected) {
+        assert!(
+            got == want,
+            "{file} differs from its golden\n--- expected\n{want}\n--- actual\n{got}"
+        );
+    }
+    let front = &written
+        .iter()
+        .find(|(name, _)| name == "front.html")
+        .expect("front.html is written")
+        .1;
+    assert!(
+        front.contains(
+            "<a class=\"cross\" href=\"origin.html#fn.origin.gauge.measure\">relay::measure</a>"
+        ),
+        "the link goes past relay to the crate that defines the function"
+    );
+}
+
+#[test]
+fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
+    let found = every_link_lands("values");
+    assert_eq!(found.values, 8, "four in relay and four in front");
+    assert_eq!(found.cross, 8, "every value link here crosses to origin");
+}
+
+#[test]
+fn naming_the_value_crates_in_reverse_gives_the_same_files() {
+    let crates = workspaces().join("values").join("crates");
+    let forward: Vec<String> = ["origin", "relay", "front"]
+        .iter()
+        .map(|name| text(&crates.join(name)).to_owned())
+        .collect();
+    let reversed: Vec<&str> = forward.iter().rev().map(String::as_str).collect();
+    let forward: Vec<&str> = forward.iter().map(String::as_str).collect();
+    let first = tempfile::tempdir().expect("a temporary folder can be made");
+    let second = tempfile::tempdir().expect("a temporary folder can be made");
+    assert!(vibelight(&forward, first.path(), false).status.success());
+    assert!(vibelight(&reversed, second.path(), false).status.success());
+    let files = read_outputs(first.path());
+    assert!(
+        files == read_outputs(second.path()),
+        "the order changed a file"
+    );
+    assert!(
+        files == read_outputs(&workspaces().join("values").join("expected")),
+        "named crates differ from the workspace run"
     );
 }
 

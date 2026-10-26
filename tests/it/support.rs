@@ -277,8 +277,9 @@ pub(crate) fn strip_markdown_links(md: &str) -> String {
 
 /// Removes the source links from an HTML outline: each `Source:` line and
 /// each ` (source: ...)` span go, and each link around a member name turns
-/// into the span the no-links output has.
+/// into the span the no-links output has, with the same id if it has one.
 pub(crate) fn strip_html_links(html: &str) -> String {
+    const OPEN: &str = "<a class=\"src\" href=\"";
     let mut out = String::new();
     for line in html.split_inclusive('\n') {
         if line.starts_with("<p class=\"source\">") {
@@ -290,11 +291,18 @@ pub(crate) fn strip_html_links(html: &str) -> String {
                 line[at..].find(")</span>").expect("a source span closes") + at + ")</span>".len();
             line.replace_range(at..end, "");
         }
-        while let Some(at) = line.find("<a class=\"src\" href=\"") {
+        while let Some(at) = line.find(OPEN) {
             let open_end = line[at..].find('>').expect("a link tag closes") + at + 1;
             let close = line[open_end..].find("</a>").expect("a link closes") + open_end;
+            let href_end = line[at + OPEN.len()..open_end]
+                .find('"')
+                .expect("an href closes")
+                + at
+                + OPEN.len()
+                + 1;
+            let rest = line[href_end..open_end - 1].to_owned();
             line.replace_range(close..close + "</a>".len(), "</span>");
-            line.replace_range(at..open_end, "<span class=\"src\">");
+            line.replace_range(at..open_end, &format!("<span class=\"src\"{rest}>"));
         }
         out.push_str(&line);
     }

@@ -2,14 +2,18 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::model::{Crate, DeclId, ModId, TypeRef};
+use crate::model::{Crate, DeclId, ModId, TypeRef, ValueRef};
 use crate::prelude::prelude_path;
+use crate::resolve_values::value_index;
 use crate::typerefs::strip_raw;
 
 /// What a path names.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Res {
     Decl(DeclId),
+    /// A function, constant, or static, reachable only by a name that may
+    /// be a value.
+    Value(ValueRef),
     Module(ModId),
     /// A path into another crate, spelled out through the `use` items it
     /// passed.
@@ -23,11 +27,42 @@ pub(crate) struct Tally {
     pub(crate) ambiguous: usize,
 }
 
+/// What one name's lookup found.
+#[derive(Default)]
+struct Found {
+    target: Option<DeclId>,
+    value: Option<ValueRef>,
+    canonical: Option<Vec<String>>,
+}
+
+impl Found {
+    fn decl(id: DeclId) -> Found {
+        Found {
+            target: Some(id),
+            ..Found::default()
+        }
+    }
+
+    fn value(at: ValueRef) -> Found {
+        Found {
+            value: Some(at),
+            ..Found::default()
+        }
+    }
+
+    fn outside(path: Vec<String>) -> Found {
+        Found {
+            canonical: Some(path),
+            ..Found::default()
+        }
+    }
+}
+
 /// The state of one name's lookup.
 #[derive(Default)]
 struct Seen {
-    /// The (module, name) lookups already made.
-    done: BTreeSet<(ModId, String)>,
+    /// The (module, name, may be a value) lookups already made.
+    done: BTreeSet<(ModId, String, bool)>,
     /// True once the lookup passed a glob from another crate, which may be
     /// where an unfound name comes from.
     external_glob: bool,
@@ -38,25 +73,29 @@ pub(crate) struct Scope<'a> {
     pub(crate) krate: &'a Crate,
     /// Each module's declarations by name.
     pub(crate) decls: Vec<BTreeMap<String, Vec<DeclId>>>,
+    /// Each module's functions, constants, and statics by name, as indices
+    /// into the module's items.
+    pub(crate) values: Vec<BTreeMap<String, Vec<usize>>>,
     /// Each module's child modules by name.
     pub(crate) children: Vec<BTreeMap<String, Vec<ModId>>>,
     pub(crate) parents: Vec<Option<ModId>>,
     unique: BTreeMap<String, Vec<DeclId>>,
 }
 
-/// Fills in the target or the canonical path of every type reference and
-/// returns how many names stayed plain.
+/// Fills in the target, the value, or the canonical path of every type
+/// reference and returns how many names stayed plain.
 pub(crate) fn resolve(krate: &mut Crate) -> Tally {
     let scope = Scope::new(krate);
     let mut tally = Tally::default();
-    let found: Vec<(Option<DeclId>, Option<Vec<String>>)> = krate
+    let found: Vec<Found> = krate
         .refs
         .iter()
         .map(|r| scope.lookup(r, &mut tally))
         .collect();
-    for (r, (target, canonical)) in krate.refs.iter_mut().zip(found) {
-        r.target = target;
-        r.canonical = canonical;
+    for (r, found) in krate.refs.iter_mut().zip(found) {
+        r.target = found.target;
+        r.value = found.value;
+        r.canonical = found.canonical;
     }
     tally
 }
@@ -96,6 +135,7 @@ impl<'a> Scope<'a> {
         Scope {
             krate,
             decls,
+            values: value_index(krate),
             children,
             parents,
             unique,
@@ -107,27 +147,30 @@ impl<'a> Scope<'a> {
     /// declaration of the module provides is the prelude's when the prelude
     /// has it, as in Rust, before any declaration in another module. A name
     /// unique across the target counts only after that, and only when no
-    /// glob from another crate could have brought the name in.
-    fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> (Option<DeclId>, Option<Vec<String>>) {
+    /// glob from another crate could have brought the name in. A name that
+    /// may be a value finds a function, constant, or static only where no
+    /// type of that name is found, and never by the unique-name fallback.
+    fn lookup(&self, r: &TypeRef, tally: &mut Tally) -> Found {
         let Some(first) = r.path.first() else {
-            return (None, None);
+            return Found::default();
         };
         if !r.global && (r.generics.contains(first) || first == "Self") {
-            return (None, None);
+            return Found::default();
         }
         if r.global {
-            return (None, Some(r.path.clone()));
+            return Found::outside(r.path.clone());
         }
         let mut seen = Seen::default();
-        match self.walk(r.module, &r.path, &mut seen) {
-            Some(Res::Decl(id)) => return (Some(id), None),
-            Some(Res::External(path)) => return (None, Some(path)),
-            Some(Res::Module(_)) => return (None, None),
+        match self.walk(r.module, &r.path, &mut seen, r.may_be_value) {
+            Some(Res::Decl(id)) => return Found::decl(id),
+            Some(Res::Value(at)) => return Found::value(at),
+            Some(Res::External(path)) => return Found::outside(path),
+            Some(Res::Module(_)) => return Found::default(),
             None => {}
         }
         if r.path.len() == 1 {
             if prelude_path(first).is_some() {
-                return (None, Some(r.path.clone()));
+                return Found::outside(r.path.clone());
             }
             let unique = if seen.external_glob {
                 None
@@ -135,28 +178,30 @@ impl<'a> Scope<'a> {
                 self.unique.get(first).map(Vec::as_slice)
             };
             match unique {
-                Some([only]) => return (Some(*only), None),
+                Some([only]) => return Found::decl(*only),
                 Some([_, _, ..]) => {
                     if !r.comment {
                         tally.ambiguous += 1;
                     }
-                    return (None, None);
+                    return Found::default();
                 }
                 _ => {}
             }
             if !r.comment && !seen.external_glob {
                 tally.unresolved += 1;
             }
-            return (None, None);
+            return Found::default();
         }
         if !r.comment {
             tally.unresolved += 1;
         }
-        (None, None)
+        Found::default()
     }
 
     /// Walks a path from `module`; `None` means a local name was not found.
-    fn walk(&self, module: ModId, path: &[String], seen: &mut Seen) -> Option<Res> {
+    /// With `values` set, the last name may be a function, constant, or
+    /// static.
+    fn walk(&self, module: ModId, path: &[String], seen: &mut Seen, values: bool) -> Option<Res> {
         if path.is_empty() {
             return None;
         }
@@ -178,7 +223,8 @@ impl<'a> Scope<'a> {
             return Some(Res::Module(current));
         }
         for (i, segment) in rest.iter().enumerate() {
-            let found = self.lookup_in(current, segment, seen);
+            let last = i + 1 == rest.len();
+            let found = self.lookup_in(current, segment, seen, values && last);
             let Some(found) = found else {
                 return if i == 0 && !prefixed && rest.len() > 1 {
                     Some(Res::External(rest.to_vec()))
@@ -186,12 +232,12 @@ impl<'a> Scope<'a> {
                     None
                 };
             };
-            if i + 1 == rest.len() {
+            if last {
                 return Some(found);
             }
             match found {
                 Res::Module(next) => current = next,
-                Res::Decl(_) => return None,
+                Res::Decl(_) | Res::Value(_) => return None,
                 Res::External(mut outside) => {
                     outside.extend(rest[i + 1..].iter().cloned());
                     return Some(Res::External(outside));
@@ -202,11 +248,12 @@ impl<'a> Scope<'a> {
     }
 
     /// Looks up one name in a module: its `use` items, then its globs, then
-    /// its declarations, then its child modules. A name already looked up in
-    /// this module during the same query is not found again, which stops
-    /// `use` and glob cycles.
-    fn lookup_in(&self, module: ModId, name: &str, seen: &mut Seen) -> Option<Res> {
-        if !seen.done.insert((module, name.to_owned())) {
+    /// its declarations, then, with `values` set, its functions, constants,
+    /// and statics, then its child modules. A name already looked up in this
+    /// module during the same query is not found again, which stops `use`
+    /// and glob cycles.
+    fn lookup_in(&self, module: ModId, name: &str, seen: &mut Seen, values: bool) -> Option<Res> {
+        if !seen.done.insert((module, name.to_owned(), values)) {
             return None;
         }
         let uses = &self.krate.modules[module].uses;
@@ -215,14 +262,14 @@ impl<'a> Scope<'a> {
                 return Some(Res::External(u.path.clone()));
             }
             return Some(
-                self.walk(module, &u.path, seen)
+                self.walk(module, &u.path, seen, values)
                     .unwrap_or_else(|| Res::External(u.path.clone())),
             );
         }
         for u in uses.iter().filter(|u| u.name.is_none()) {
-            match self.walk(module, &u.path, seen) {
+            match self.walk(module, &u.path, seen, false) {
                 Some(Res::Module(source)) if source != module => {
-                    if let Some(found) = self.lookup_in(source, name, seen) {
+                    if let Some(found) = self.lookup_in(source, name, seen, values) {
                         return Some(found);
                     }
                 }
@@ -232,6 +279,14 @@ impl<'a> Scope<'a> {
         }
         if let Some(ids) = self.decls[module].get(name) {
             return ids.first().map(|&id| Res::Decl(id));
+        }
+        if values {
+            let first = self.values[module]
+                .get(name)
+                .and_then(|items| items.first());
+            if let Some(&item) = first {
+                return Some(Res::Value(ValueRef { module, item }));
+            }
         }
         self.children[module]
             .get(name)

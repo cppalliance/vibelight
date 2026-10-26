@@ -1,6 +1,6 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
-use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, Vis, name_order};
+use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, ValueRef, Vis, name_order};
 use crate::typerefs_edits::MUT;
 use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts};
 
@@ -21,6 +21,9 @@ pub(crate) enum Span {
     Label(&'static str),
     /// A member or item name, which HTML links to its source line.
     Name(String, Loc),
+    /// The name of a module-level function, constant, or static, which HTML
+    /// links to its source line and gives an id.
+    Value(String, Loc, ValueRef),
 }
 
 /// One line of a block.
@@ -57,7 +60,9 @@ pub(crate) struct Entry {
 /// Returns the printed text of a span.
 pub(crate) fn span_text<'a>(span: &'a Span, refs: &'a [TypeRef]) -> &'a str {
     match span {
-        Span::Key(s) | Span::Code(s) | Span::Comment(s) | Span::Name(s, _) => s,
+        Span::Key(s) | Span::Code(s) | Span::Comment(s) | Span::Name(s, _) | Span::Value(s, ..) => {
+            s
+        }
         Span::Ref(id) | Span::DocRef(id) => &refs[*id].text,
         Span::Label(label) => label,
     }
@@ -285,11 +290,12 @@ pub(crate) fn spaced(members: impl IntoIterator<Item = Vec<Line>>) -> Vec<Line> 
     out
 }
 
-/// Builds a function's lines, with `static` first when `is_static`.
+/// Builds a function's lines, with `static` first when `is_static`. `name`
+/// is the span that prints the function's name.
 pub(crate) fn fn_lines(
     krate: &Crate,
     sig: &crate::model::Sig,
-    loc: Loc,
+    name: Span,
     trailing: Option<String>,
     indent: usize,
     is_static: bool,
@@ -303,7 +309,7 @@ pub(crate) fn fn_lines(
         head.push(key(qual));
         head.push(plain(" "));
     }
-    head.push(Span::Name(sig.name.clone(), loc));
+    head.push(name);
     head.extend(code(&sig.generics));
     let params = sig
         .params

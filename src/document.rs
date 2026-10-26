@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
-use crate::model::{Crate, DeclId, ModId};
+use crate::model::{Crate, DeclId, ModId, ValueRef};
 use crate::order::Order;
 use crate::settings::{KillList, Options, OrderBy};
 use crate::source_links::LinkBase;
@@ -102,6 +102,9 @@ pub(crate) struct Document {
     pub(crate) refs: Vec<crate::model::TypeRef>,
     /// The id each declaration's heading has.
     pub(crate) decl_ids: Vec<String>,
+    /// The id of each module-level function, constant, and static, which
+    /// only HTML prints.
+    pub(crate) value_ids: BTreeMap<ValueRef, String>,
 }
 
 pub(crate) struct Builder<'a> {
@@ -210,6 +213,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         sections: b.nodes,
         refs: krate.refs.clone(),
         decl_ids: b.decl_ids,
+        value_ids: crate::document_values::value_ids(krate),
     }
 }
 
@@ -251,7 +255,12 @@ fn mod_ids(krate: &Crate) -> Vec<String> {
     suffixed(&base, |a, b| a.cmp(&b))
 }
 
-fn suffixed(base: &[String], order: impl Fn(usize, usize) -> std::cmp::Ordering) -> Vec<String> {
+/// Numbers the ids that repeat: the first of a group in `order` keeps its
+/// id, and the rest get `-2`, `-3`, and so on.
+pub(crate) fn suffixed(
+    base: &[String],
+    order: impl Fn(usize, usize) -> std::cmp::Ordering,
+) -> Vec<String> {
     let mut groups: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     for (i, id) in base.iter().enumerate() {
         groups.entry(id).or_default().push(i);
