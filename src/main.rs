@@ -43,6 +43,7 @@ mod settings;
 mod source;
 mod source_links;
 mod spellings;
+mod stamp;
 mod text;
 mod typerefs;
 mod typerefs_edits;
@@ -162,20 +163,26 @@ fn run(args: &Args) -> Result<ExitCode> {
             .exit();
     };
     let chosen = inputs::choose(selection, &plan.follow)?;
+    let checking = args.check || args.check_html;
+    let stamp = if checking {
+        stamp::PLACEHOLDER.to_owned()
+    } else {
+        stamp::now()?
+    };
     let pipeline::Outcome {
         files,
         mut warnings,
         unresolved,
         ambiguous,
         spelled,
-    } = pipeline::outline(&chosen, plan.markdown.as_ref(), plan.html.as_ref())?;
+    } = pipeline::outline(&chosen, plan.markdown.as_ref(), plan.html.as_ref(), &stamp)?;
     let written: BTreeSet<PathBuf> = files.iter().map(|(path, _)| path.clone()).collect();
     let stale = plan
         .markdown
         .as_ref()
         .map(|output| check::stale(&output.dir, &written))
         .unwrap_or_default();
-    let code = if args.check || args.check_html {
+    let code = if checking {
         check_files(&files, &stale, args.check_html, &cwd)
     } else {
         write_files(&files, &plan)?;
@@ -184,7 +191,7 @@ fn run(args: &Args) -> Result<ExitCode> {
     for note in &chosen.notes {
         eprintln!("note: {note}");
     }
-    if !(args.check || args.check_html) {
+    if !checking {
         for path in &stale {
             eprintln!(
                 "warning: {} is stale: no crate of this run writes it",
@@ -211,11 +218,7 @@ fn run(args: &Args) -> Result<ExitCode> {
             plural(spelled)
         );
     }
-    let stale_warnings = if args.check || args.check_html {
-        0
-    } else {
-        stale.len()
-    };
+    let stale_warnings = if checking { 0 } else { stale.len() };
     let count = warnings.len()
         + stale_warnings
         + usize::from(unresolved > 0 || ambiguous > 0)
@@ -230,15 +233,19 @@ fn plural(count: usize) -> &'static str {
     if count == 1 { "" } else { "s" }
 }
 
-/// Writes every file, creating the folders of the formats it writes, and
-/// prints each path, sorted.
+/// Writes every file whose content changed, creating the folders of the
+/// formats it writes, and prints the path of every file of the run, sorted.
+/// A file whose text differs only in its stamp is left as it is, so its
+/// stamp keeps the time its content last changed.
 fn write_files(files: &[(PathBuf, String)], plan: &settings::Plan) -> Result<()> {
     for output in [&plan.markdown, &plan.html].into_iter().flatten() {
         fs::create_dir_all(&output.dir)
             .with_context(|| format!("cannot create output directory {}", output.dir.display()))?;
     }
     for (path, text) in files {
-        fs::write(path, text).with_context(|| format!("cannot write {}", path.display()))?;
+        if check::compare(path, text).is_some() {
+            fs::write(path, text).with_context(|| format!("cannot write {}", path.display()))?;
+        }
     }
     let mut written: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
     written.sort();

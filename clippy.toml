@@ -1,8 +1,9 @@
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 
-# A hash seed or the clock must never reach the output: every map and set is
-# B-tree based, and nothing reads the time.
+# A hash seed must never reach the output: every map and set is B-tree based.
+# The clock reaches only the stamp on the first line, through one item-level
+# expect in src/stamp.rs.
 disallowed-types = [
     { path = "std::collections::HashMap", reason = "iteration order depends on a random seed; use BTreeMap" },
     { path = "std::collections::HashSet", reason = "iteration order depends on a random seed; use BTreeSet" },

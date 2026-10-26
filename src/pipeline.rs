@@ -45,7 +45,8 @@ struct Built {
 /// files for `markdown` and the HTML files for `html`, each in its own
 /// folder with its own source-link switch. No output depends on the order
 /// the crates are processed in: targets are handled in output stem order,
-/// and each crate resolves against the same map.
+/// and each crate resolves against the same map. Every file carries
+/// `stamp` on its first line.
 ///
 /// # Errors
 /// Returns an error when two targets would write the same file or a crate
@@ -54,6 +55,7 @@ pub(crate) fn outline(
     chosen: &Chosen,
     markdown: Option<&Output>,
     html: Option<&Output>,
+    stamp: &str,
 ) -> Result<Outcome> {
     let targets = targets(chosen)?;
     let mut outcome = Outcome::default();
@@ -105,7 +107,9 @@ pub(crate) fn outline(
     for ((&(p, target), (md, page)), krate) in targets.iter().zip(&docs).zip(&krates) {
         if let (Some(output), Some(built)) = (markdown, md) {
             let path = output.dir.join(format!("{}.md", target.stem));
-            outcome.files.push((path, render_md::render(&built.doc)));
+            outcome
+                .files
+                .push((path, render_md::render(&built.doc, stamp)));
         }
         let page = if shared { md.as_ref() } else { page.as_ref() };
         if let (Some(output), Some(built)) = (html, page) {
@@ -116,6 +120,7 @@ pub(crate) fn outline(
                 &built.doc,
                 member_link.as_ref().map(|f| f as &dyn Fn(Loc) -> String),
                 &run,
+                stamp,
             );
             let path = output.dir.join(format!("{}.html", target.stem));
             outcome.files.push((path, text));

@@ -5,9 +5,9 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
-use crate::support::{copy_dir, fixtures, has_ext, read_outputs};
+use crate::support::{self, copy_dir, fixtures, has_ext, read_outputs};
 
 fn workspaces() -> PathBuf {
     fixtures().join("workspaces")
@@ -19,7 +19,7 @@ fn text(path: &Path) -> &str {
 
 /// Runs the binary with `args`, writing into `out`.
 fn vibelight(args: &[&str], out: &Path, links: bool) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_vibelight"));
+    let mut command = support::vibelight();
     command.args(args).arg("-o").arg(out);
     if !links {
         command.arg("--no-source-links");
@@ -191,7 +191,9 @@ fn one_named_crate_with_nothing_to_outline_still_fails() {
     assert!(String::from_utf8_lossy(&result.stderr).contains("not a crate"));
 }
 
-const ROOTED: &str = "<a id=\"crate.rooted\"></a>
+const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
+
+<a id=\"crate.rooted\"></a>
 # rooted
 
 ```

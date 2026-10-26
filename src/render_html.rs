@@ -28,6 +28,7 @@ b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px
 .source{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
+.stamp{margin:0;color:var(--muted);font-size:13px}
 :target{background:var(--target)}
 ";
 
@@ -39,13 +40,15 @@ pub(crate) struct Anchors {
     pub(crate) ids: Vec<String>,
 }
 
-/// Renders the HTML file. Member names link to their source lines when
+/// Renders the HTML file, with `stamp` in a comment on its first line and
+/// at the top of `<main>`. Member names link to their source lines when
 /// `member_links` is given, and a name that reaches another crate of the
 /// run links into that crate's page in `run`.
 pub(crate) fn render(
     doc: &Document,
     member_links: Option<&dyn Fn(crate::model::Loc) -> String>,
     run: &[Anchors],
+    stamp: &str,
 ) -> String {
     let page = Page {
         doc,
@@ -53,12 +56,14 @@ pub(crate) fn render(
         run,
     };
     let mut out = String::new();
+    let _ = writeln!(out, "{}", crate::stamp::html_comment(stamp));
     out.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
     out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
     let _ = writeln!(out, "<title>{}</title>", escape(&doc.title));
     let _ = write!(out, "<style>\n{STYLE}</style>\n</head>\n<body>\n<nav>\n");
     page.list(&mut out, &doc.contents, "");
     out.push_str("</nav>\n<main>\n");
+    let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
     let _ = writeln!(
         out,
         "<h1 id=\"{}\">{}</h1>",
@@ -389,7 +394,7 @@ mod tests {
                 ids: vec!["type.b.parts.Gauge".into()],
             },
         ];
-        let html = render(&doc, None, &run);
+        let html = render(&doc, None, &run, crate::stamp::PLACEHOLDER);
         assert!(
             html.contains(
                 "<span class=\"src\">gauge</span>: \

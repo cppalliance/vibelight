@@ -6,9 +6,10 @@ use crate::document::{Document, Inline, Item, Link, Node};
 use crate::layout::{Block, Line, span_text};
 use crate::model::TypeRef;
 
-/// Renders the markdown file.
-pub(crate) fn render(doc: &Document) -> String {
+/// Renders the markdown file, with `stamp` on its first line.
+pub(crate) fn render(doc: &Document, stamp: &str) -> String {
     let mut out = String::new();
+    let _ = write!(out, "{}\n\n", crate::stamp::markdown(stamp));
     let _ = write!(out, "<a id=\"{}\"></a>\n# {}\n", doc.id, doc.title);
     if let Some(docs) = &doc.crate_docs {
         out.push('\n');

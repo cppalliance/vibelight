@@ -7,6 +7,7 @@ mod config;
 mod goldens;
 mod links;
 mod parity;
+mod stamp;
 mod structure;
 mod support;
 mod workspaces;

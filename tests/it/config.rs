@@ -4,9 +4,9 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
-use crate::support::{copy_dir, fixtures, has_ext, read_outputs, strip_html_links};
+use crate::support::{copy_dir, fixtures, has_ext, read_outputs, strip_html_links, vibelight};
 
 /// A copy of the garden workspace, with `config` as its `vibelight.toml`
 /// when it is not empty.
@@ -28,7 +28,7 @@ pub(crate) const REPOSITORY: &str = "workspace = true\n\n\
 
 /// Runs the binary in `cwd` with `args`.
 pub(crate) fn vibelight_in(cwd: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_vibelight"))
+    vibelight()
         .args(args)
         .current_dir(cwd)
         .output()

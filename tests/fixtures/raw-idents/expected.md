@@ -1,3 +1,5 @@
+*Updated 2026-01-01T00:00:00Z*
+
 <a id="crate.raw_idents"></a>
 # raw_idents
 

@@ -50,9 +50,20 @@ pub(crate) fn has_ext(name: &str, ext: &str) -> bool {
         .is_some_and(|e| e.eq_ignore_ascii_case(ext))
 }
 
+/// The `SOURCE_DATE_EPOCH` every run of the tests sets: 2026-01-01T00:00:00Z,
+/// the stamp every golden starts with.
+pub(crate) const EPOCH: &str = "1767225600";
+
+/// The binary, with the stamp pinned to `EPOCH`.
+pub(crate) fn vibelight() -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_vibelight"));
+    command.env("SOURCE_DATE_EPOCH", EPOCH);
+    command
+}
+
 /// Runs the binary on `input`, writing into `out`.
 pub(crate) fn run(input: &Path, out: &Path, links: bool) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_vibelight"));
+    let mut command = vibelight();
     command.arg(input).arg("-o").arg(out);
     if !links {
         command.arg("--no-source-links");
