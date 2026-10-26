@@ -73,6 +73,7 @@ goldens! {
     dual => "dual",
     enums => "enums",
     extern_block => "extern-block",
+    facts => "facts",
     functions => "functions",
     impls => "impls",
     kill_list => "kill-list",

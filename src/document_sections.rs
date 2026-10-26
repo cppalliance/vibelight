@@ -112,6 +112,7 @@ impl Builder<'_> {
             }));
             self.nodes.push(Node::Source(links));
         }
+        self.facts(d);
         if !decl.derives.is_empty() {
             self.mark(
                 "MACRO",

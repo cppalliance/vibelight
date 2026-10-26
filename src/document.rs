@@ -79,6 +79,11 @@ pub(crate) enum Node {
         class: &'static str,
         items: Vec<Item>,
     },
+    /// A line of text outside any block, such as a facts line.
+    Para {
+        class: &'static str,
+        inlines: Vec<Inline>,
+    },
 }
 
 /// The whole outline of one target.
@@ -110,6 +115,8 @@ pub(crate) struct Builder<'a> {
     /// Each mark line: the heading it sits under, its text, and its id.
     pub(crate) marks: Vec<(String, String, String)>,
     pub(crate) heading: String,
+    /// The order, whose namers the facts lines read, when the facts are on.
+    pub(crate) facts: Option<&'a Order>,
 }
 
 /// What a target's documents are built from.
@@ -149,6 +156,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         nodes: Vec::new(),
         marks: Vec::new(),
         heading: String::new(),
+        facts: options.facts.then_some(order),
     };
     let mut contents = vec![Item {
         inlines: vec![anchor("Legend", "legend")],
@@ -195,6 +203,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
             items,
         });
     }
+    contents.extend(b.shapes());
     let (summary, entries) = b.kill_list();
     let (kill_summary, kill) = match options.kill_list {
         KillList::Full => (Some(summary), entries),

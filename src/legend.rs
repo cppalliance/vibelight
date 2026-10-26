@@ -27,8 +27,13 @@ const SECTIONS: &[&str] = &[
     "Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.",
     "Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.",
     "With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.",
-    "The first line is the UTC time the file's content last changed.",
 ];
+
+/// The line about the facts, when they are on.
+const FACTS: &str = "A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, special members, and functions; a `Used by:` line links what names it; and Same shapes groups types with the same variants or fields.";
+
+/// The last line, about the stamp.
+const STAMP: &str = "The first line is the UTC time the file's content last changed.";
 
 /// Returns the legend as list items for a run's options.
 pub(crate) fn items(options: Options) -> Vec<Item> {
@@ -40,6 +45,10 @@ pub(crate) fn items(options: Options) -> Vec<Item> {
     let mut lines: Vec<&str> = BLOCKS.to_vec();
     lines.push(&macros);
     lines.extend(SECTIONS);
+    if options.facts {
+        lines.push(FACTS);
+    }
+    lines.push(STAMP);
     lines
         .into_iter()
         .map(|line| Item {

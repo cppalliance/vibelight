@@ -14,8 +14,10 @@ mod collect_use_group;
 mod comments;
 mod config;
 mod document;
+mod document_facts;
 mod document_kill;
 mod document_sections;
+mod document_shapes;
 mod document_spellings;
 mod document_surface;
 mod flatten;
@@ -108,6 +110,10 @@ struct Args {
     /// counts, or nothing.
     #[arg(long, value_name = "full|counts|off")]
     kill_list: Option<KillList>,
+    /// Add the facts: a counts line and a used-by line under each
+    /// declaration, and a section of declarations with the same shape.
+    #[arg(long)]
+    facts: bool,
     /// Outline every member of the workspace that holds the given
     /// directory, or the current one.
     #[arg(long)]
@@ -157,6 +163,7 @@ fn flags(args: &Args) -> Flags {
         md_source_links: switch(args.md_source_links),
         html_source_links: switch(args.html_source_links),
         kill_list: args.kill_list,
+        facts: args.facts,
     }
 }
 

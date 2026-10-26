@@ -60,6 +60,12 @@ pub(crate) fn render(doc: &Document, stamp: &str) -> String {
                 out.push('\n');
             }
             Node::List { items, .. } => list(&mut out, items, 0, &doc.refs),
+            Node::Para {
+                inlines: content, ..
+            } => {
+                inlines(&mut out, content, "", &doc.refs);
+                out.push('\n');
+            }
         }
     }
     out
@@ -109,33 +115,38 @@ fn list(out: &mut String, items: &[Item], depth: usize, refs: &[TypeRef]) {
     let indent = "  ".repeat(depth);
     for item in items {
         let _ = write!(out, "{indent}- ");
-        for inline in &item.inlines {
-            match inline {
-                Inline::Text(text) => out.push_str(text),
-                Inline::Bold(text) => {
-                    let _ = write!(out, "**{text}**");
-                }
-                Inline::Code(spans) => {
-                    let text: String = spans.iter().map(|s| span_text(s, refs)).collect();
-                    out.push_str(&code_span(&text));
-                }
-                Inline::Anchor { text, id }
-                | Inline::Kill {
-                    text, heading: id, ..
-                } => {
-                    let _ = write!(out, "[{text}](#{id})");
-                }
-                Inline::Source(links) => {
-                    let links: Vec<String> = links.iter().map(link_text).collect();
-                    let _ = write!(out, " (source: {})", links.join(", "));
-                }
-                Inline::Break => {
-                    let _ = write!(out, "\\\n{indent}  ");
-                }
-            }
-        }
+        inlines(out, &item.inlines, &format!("{indent}  "), refs);
         out.push('\n');
         list(out, &item.children, depth + 1, refs);
+    }
+}
+
+/// Prints inline content; a hard break continues at `indent`.
+fn inlines(out: &mut String, inlines: &[Inline], indent: &str, refs: &[TypeRef]) {
+    for inline in inlines {
+        match inline {
+            Inline::Text(text) => out.push_str(text),
+            Inline::Bold(text) => {
+                let _ = write!(out, "**{text}**");
+            }
+            Inline::Code(spans) => {
+                let text: String = spans.iter().map(|s| span_text(s, refs)).collect();
+                out.push_str(&code_span(&text));
+            }
+            Inline::Anchor { text, id }
+            | Inline::Kill {
+                text, heading: id, ..
+            } => {
+                let _ = write!(out, "[{text}](#{id})");
+            }
+            Inline::Source(links) => {
+                let links: Vec<String> = links.iter().map(link_text).collect();
+                let _ = write!(out, " (source: {})", links.join(", "));
+            }
+            Inline::Break => {
+                let _ = write!(out, "\\\n{indent}");
+            }
+        }
     }
 }
 

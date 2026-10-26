@@ -14,6 +14,16 @@ pub(crate) struct Order {
     pub(crate) unconnected: Vec<DeclId>,
     /// Test-support declarations, which leave the levels, in path order.
     pub(crate) test_support: Vec<DeclId>,
+    /// What names each declaration.
+    pub(crate) namers: Vec<Namers>,
+}
+
+/// What names one declaration: the declarations whose blocks name it and
+/// the modules whose items name it, each in path order.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct Namers {
+    pub(crate) decls: Vec<DeclId>,
+    pub(crate) modules: Vec<ModId>,
 }
 
 /// Compares declarations in path order (rule 30); declarations that share
@@ -47,14 +57,16 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
     let path_cmp = |a: DeclId, b: DeclId| path_cmp(krate, texts, a, b);
     let n = krate.decls.len();
     let mentions = block_mentions(krate, blocks);
+    let by_modules = module_mentions(krate);
     let Split {
         out,
         connected,
         mut unconnected,
         mut test_support,
-    } = split(krate, &mentions);
+    } = split(krate, &mentions, &by_modules);
     test_support.sort_by(|&a, &b| path_cmp(a, b));
     unconnected.sort_by(|&a, &b| path_cmp(a, b));
+    let used_by = namers(krate, &mentions, by_modules, &path_cmp);
 
     let groups = strongly_connected(n, &out, &connected);
     let mut group_of = vec![usize::MAX; n];
@@ -132,7 +144,40 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
         levels: result,
         unconnected,
         test_support,
+        namers: used_by,
     }
+}
+
+/// Lists what names each declaration, each list in path order.
+fn namers(
+    krate: &Crate,
+    mentions: &[Vec<DeclId>],
+    by_modules: Vec<Vec<ModId>>,
+    path_cmp: &impl Fn(DeclId, DeclId) -> Ordering,
+) -> Vec<Namers> {
+    let mut out: Vec<Namers> = by_modules
+        .into_iter()
+        .map(|mut modules| {
+            modules.sort_by(|&a, &b| {
+                path_order(&krate.modules[a].path, &krate.modules[b].path).then(a.cmp(&b))
+            });
+            Namers {
+                decls: Vec::new(),
+                modules,
+            }
+        })
+        .collect();
+    for (d, targets) in mentions.iter().enumerate() {
+        for &t in targets {
+            if !out[t].decls.contains(&d) {
+                out[t].decls.push(d);
+            }
+        }
+    }
+    for namers in &mut out {
+        namers.decls.sort_by(|&a, &b| path_cmp(a, b));
+    }
+    out
 }
 
 /// The declarations sorted into the three places they print, before
@@ -149,7 +194,7 @@ struct Split {
     test_support: Vec<DeclId>,
 }
 
-fn split(krate: &Crate, mentions: &[Vec<DeclId>]) -> Split {
+fn split(krate: &Crate, mentions: &[Vec<DeclId>], by_modules: &[Vec<ModId>]) -> Split {
     let n = krate.decls.len();
     let support = |d: DeclId| krate.decls[d].test_support;
     let mut named = vec![false; n];
@@ -158,7 +203,7 @@ fn split(krate: &Crate, mentions: &[Vec<DeclId>]) -> Split {
             named[t] = true;
         }
     }
-    for (d, modules) in module_mentions(krate).iter().enumerate() {
+    for (d, modules) in by_modules.iter().enumerate() {
         named[d] |= !modules.is_empty();
     }
     let out = mentions

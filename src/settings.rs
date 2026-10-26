@@ -24,6 +24,8 @@ pub(crate) struct Flags {
     pub(crate) md_source_links: Option<bool>,
     pub(crate) html_source_links: Option<bool>,
     pub(crate) kill_list: Option<KillList>,
+    /// True turns the facts on.
+    pub(crate) facts: bool,
 }
 
 /// How much of the macro kill list a file shows.
@@ -43,6 +45,8 @@ pub(crate) enum KillList {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct Options {
     pub(crate) kill_list: KillList,
+    /// The `Counts:` and `Used by:` lines and the Same shapes section.
+    pub(crate) facts: bool,
 }
 
 /// Where one format is written, and whether it carries source links.
@@ -132,6 +136,7 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
             .kill_list
             .or(config.and_then(|c| c.kill_list))
             .unwrap_or_default(),
+        facts: flags.facts || config.and_then(|c| c.facts).unwrap_or(false),
     };
     Ok(Plan {
         selection,
@@ -185,6 +190,7 @@ mod tests {
                 enabled: None,
             },
             kill_list: Some(KillList::Counts),
+            facts: Some(true),
         }
     }
 
@@ -229,6 +235,22 @@ mod tests {
         };
         let from_switch = plan(&flags, Some(&config())).unwrap();
         assert_eq!(from_switch.options.kill_list, KillList::Off);
+    }
+
+    #[test]
+    fn the_facts_come_from_their_switch_or_the_config_and_are_off_by_default() {
+        assert!(!plan(&Flags::default(), None).unwrap().options.facts);
+        assert!(
+            plan(&Flags::default(), Some(&config()))
+                .unwrap()
+                .options
+                .facts
+        );
+        let flags = Flags {
+            facts: true,
+            ..Flags::default()
+        };
+        assert!(plan(&flags, None).unwrap().options.facts);
     }
 
     #[test]

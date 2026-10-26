@@ -49,6 +49,7 @@ pub(crate) struct Config {
     pub(crate) markdown: Format,
     pub(crate) html: Format,
     pub(crate) kill_list: Option<KillList>,
+    pub(crate) facts: Option<bool>,
 }
 
 /// The top-level keys a config may hold.
@@ -57,6 +58,7 @@ const KEYS: &[&str] = &[
     "crates",
     "follow",
     "kill_list",
+    "facts",
     "markdown",
     "html",
 ];
@@ -111,6 +113,14 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         markdown: format(&name, dir, "markdown", table.get("markdown"))?,
         html: format(&name, dir, "html", table.get("html"))?,
         kill_list: choice(&name, "kill_list", table.get("kill_list"))?,
+        facts: table
+            .get("facts")
+            .map(|value| {
+                value
+                    .as_bool()
+                    .with_context(|| format!("{name}: `facts` is true or false"))
+            })
+            .transpose()?,
     })
 }
 
@@ -283,6 +293,7 @@ mod tests {
                 .contains("`kill_list` is one of `full`, `counts`, `off`")
         );
         assert!(error("kill_list = 1\n").contains("`kill_list` is one of"));
+        assert!(error("facts = \"yes\"\n").contains("`facts` is true or false"));
     }
 
     #[test]
@@ -296,5 +307,7 @@ mod tests {
             assert_eq!(parsed.kill_list, Some(mode));
         }
         assert_eq!(config("").1.unwrap().kill_list, None);
+        assert_eq!(config("facts = true\n").1.unwrap().facts, Some(true));
+        assert_eq!(config("").1.unwrap().facts, None);
     }
 }

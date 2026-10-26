@@ -134,6 +134,11 @@ pub(crate) fn render(
                 out.push_str("</p>\n");
             }
             Node::List { class, items } => page.list(&mut out, items, class),
+            Node::Para { class, inlines } => {
+                let _ = write!(out, "<p class=\"{class}\">");
+                page.inlines(&mut out, inlines);
+                out.push_str("</p>\n");
+            }
         }
     }
     out.push_str("</main>\n</body>\n</html>\n");
@@ -248,39 +253,7 @@ impl Page<'_> {
         }
         for item in items {
             out.push_str("<li>");
-            for inline in &item.inlines {
-                match inline {
-                    Inline::Text(text) => out.push_str(&escape(text)),
-                    Inline::Bold(text) => {
-                        let _ = write!(out, "<b class=\"m\">{}</b>", escape(text));
-                    }
-                    Inline::Code(spans) => {
-                        out.push_str("<code>");
-                        self.spans(out, spans);
-                        out.push_str("</code>");
-                    }
-                    Inline::Anchor { text, id } => {
-                        let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(id), escape(text));
-                    }
-                    Inline::Kill {
-                        text,
-                        heading,
-                        mark,
-                    } => {
-                        let target = mark.as_ref().unwrap_or(heading);
-                        let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(target), escape(text));
-                    }
-                    Inline::Source(links) => {
-                        let links: Vec<String> = links.iter().map(source_link).collect();
-                        let _ = write!(
-                            out,
-                            " <span class=\"src\">(source: {})</span>",
-                            links.join(", ")
-                        );
-                    }
-                    Inline::Break => out.push_str("<br>"),
-                }
-            }
+            self.inlines(out, &item.inlines);
             if item.children.is_empty() {
                 out.push_str("</li>\n");
             } else {
@@ -290,6 +263,42 @@ impl Page<'_> {
             }
         }
         out.push_str("</ul>\n");
+    }
+
+    fn inlines(&self, out: &mut String, inlines: &[Inline]) {
+        for inline in inlines {
+            match inline {
+                Inline::Text(text) => out.push_str(&escape(text)),
+                Inline::Bold(text) => {
+                    let _ = write!(out, "<b class=\"m\">{}</b>", escape(text));
+                }
+                Inline::Code(spans) => {
+                    out.push_str("<code>");
+                    self.spans(out, spans);
+                    out.push_str("</code>");
+                }
+                Inline::Anchor { text, id } => {
+                    let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(id), escape(text));
+                }
+                Inline::Kill {
+                    text,
+                    heading,
+                    mark,
+                } => {
+                    let target = mark.as_ref().unwrap_or(heading);
+                    let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(target), escape(text));
+                }
+                Inline::Source(links) => {
+                    let links: Vec<String> = links.iter().map(source_link).collect();
+                    let _ = write!(
+                        out,
+                        " <span class=\"src\">(source: {})</span>",
+                        links.join(", ")
+                    );
+                }
+                Inline::Break => out.push_str("<br>"),
+            }
+        }
     }
 }
 
