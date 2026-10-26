@@ -4,6 +4,8 @@ mod arrange;
 mod check;
 mod cli;
 mod config;
+mod exclude;
+mod exclude_cli;
 mod goldens;
 mod links;
 mod parity;

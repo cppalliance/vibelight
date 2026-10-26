@@ -46,6 +46,7 @@ pub(crate) struct Config {
     pub(crate) dir: PathBuf,
     pub(crate) crates: Crates,
     pub(crate) follow: Vec<String>,
+    pub(crate) exclude: Vec<String>,
     pub(crate) markdown: Format,
     pub(crate) html: Format,
     pub(crate) kill_list: Option<KillList>,
@@ -59,6 +60,7 @@ const KEYS: &[&str] = &[
     "workspace",
     "crates",
     "follow",
+    "exclude",
     "kill_list",
     "facts",
     "order",
@@ -110,10 +112,15 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         Some(value) => strings(&name, "follow", value)?,
         None => Vec::new(),
     };
+    let exclude = match table.get("exclude") {
+        Some(value) => strings(&name, "exclude", value)?,
+        None => Vec::new(),
+    };
     Ok(Config {
         dir: dir.to_path_buf(),
         crates,
         follow,
+        exclude,
         markdown: format(&name, dir, "markdown", table.get("markdown"))?,
         html: format(&name, dir, "html", table.get("html"))?,
         kill_list: choice(&name, "kill_list", table.get("kill_list"))?,
@@ -215,12 +222,17 @@ mod tests {
     fn every_key_is_read_and_paths_are_measured_from_the_file() {
         let (dir, parsed) = config(
             "workspace = true\nfollow = [\"vendor/*\"]\n\
+             exclude = [\"crates/build-*\", \"crates/harness-internal/test-plugin\"]\n\
              [markdown]\nout = \"vibelight\"\nsource_links = false\nenabled = true\n\
              [html]\nout = \"vibelight/html\"\nsource_links = true\nenabled = false\n",
         );
         let config = parsed.unwrap();
         assert_eq!(config.crates, Crates::Workspace(dir.clone()));
         assert_eq!(config.follow, ["vendor/*"]);
+        assert_eq!(
+            config.exclude,
+            ["crates/build-*", "crates/harness-internal/test-plugin"]
+        );
         assert_eq!(
             config.markdown,
             Format {
@@ -246,6 +258,7 @@ mod tests {
         assert_eq!(config.dir, dir);
         assert_eq!(config.crates, Crates::Unset);
         assert_eq!(config.follow, Vec::<String>::new());
+        assert_eq!(config.exclude, Vec::<String>::new());
         assert_eq!(config.markdown, Format::default());
         assert_eq!(config.html, Format::default());
     }
@@ -293,6 +306,9 @@ mod tests {
         assert!(error("[markdown]\nsource_links = \"no\"\n").contains("`markdown.source_links`"));
         assert!(error("workspace = 3\n").contains("`workspace` is true or a directory"));
         assert!(error("crates = \"a\"\n").contains("`crates` is a list of strings"));
+        assert!(error("exclude = \"crates/*\"\n").contains("`exclude` is a list of strings"));
+        assert!(error("exclude = [\"a\", 2]\n").contains("`exclude` is a list of strings"));
+        assert!(error("exclud = []\n").contains("unknown key `exclud`"));
         assert!(error("workspace = true\ncrates = []\n").contains("not both"));
         assert!(
             error("kill_list = \"some\"\n")

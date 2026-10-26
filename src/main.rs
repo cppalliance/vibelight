@@ -23,6 +23,7 @@ mod document_shapes;
 mod document_spellings;
 mod document_surface;
 mod document_values;
+mod exclude;
 mod flatten;
 mod glob;
 mod inputs;
@@ -138,6 +139,11 @@ struct Args {
     /// for more globs.
     #[arg(long, value_name = "GLOB")]
     follow: Vec<String>,
+    /// Leave out each crate whose directory, relative to the workspace root
+    /// or else the first crate, matches this glob, whichever way the run
+    /// chose it; repeat it for more globs.
+    #[arg(long, value_name = "GLOB")]
+    exclude: Vec<String>,
     /// Write nothing. Compare the markdown files with what a run would
     /// write, and exit with 1 when one differs, is missing, or is stale.
     #[arg(long)]
@@ -171,6 +177,7 @@ fn flags(args: &Args) -> Flags {
         paths: args.crate_paths.clone(),
         workspace: args.workspace,
         follow: args.follow.clone(),
+        exclude: args.exclude.clone(),
         out: args.out.clone(),
         md_out: args.md_out.clone(),
         html_out: args.html_out.clone(),
@@ -196,7 +203,7 @@ fn run(args: &Args) -> Result<ExitCode> {
             )
             .exit();
     };
-    let chosen = inputs::choose(selection, &plan.follow)?;
+    let chosen = inputs::choose(selection, &plan.follow, &plan.exclude)?;
     let checking = args.check || args.check_html;
     let stamp = if checking {
         stamp::PLACEHOLDER.to_owned()

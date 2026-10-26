@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, bail};
 
 use crate::config::{Config, Crates, Format};
+use crate::exclude::Exclude;
 use crate::inputs::Selection;
 
 /// The command-line values that settle a run.
@@ -15,6 +16,7 @@ pub(crate) struct Flags {
     pub(crate) paths: Vec<PathBuf>,
     pub(crate) workspace: bool,
     pub(crate) follow: Vec<String>,
+    pub(crate) exclude: Vec<String>,
     /// The folder for both formats.
     pub(crate) out: Option<PathBuf>,
     pub(crate) md_out: Option<PathBuf>,
@@ -84,6 +86,7 @@ pub(crate) struct Plan {
     /// `None` when neither the command line nor the config names a crate.
     pub(crate) selection: Option<Selection>,
     pub(crate) follow: Vec<String>,
+    pub(crate) exclude: Exclude,
     /// `None` for a format the config turns off.
     pub(crate) markdown: Option<Output>,
     pub(crate) html: Option<Output>,
@@ -91,9 +94,10 @@ pub(crate) struct Plan {
 }
 
 /// Settles a run. Crate paths or the workspace switch choose the crates,
-/// and the config's `workspace`, `crates`, and `follow` are then ignored.
-/// Otherwise the config chooses the crates, and follow globs on the command
-/// line replace the config's. Each format's folder and source links come
+/// and the config's `workspace`, `crates`, `follow`, and `exclude` are then
+/// ignored. Otherwise the config chooses the crates, and follow globs or
+/// exclude globs on the command line replace the config's. Each format's
+/// folder and source links come
 /// from that format's own flag, then the flag for both formats, then the
 /// config, then the defaults: the config's folder, or the current
 /// directory without a config, with source links on. A format the config
@@ -104,7 +108,7 @@ pub(crate) struct Plan {
 /// Returns an error when the workspace switch has more than one path, or
 /// when the config turns both formats off.
 pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
-    let (selection, follow) = if !flags.paths.is_empty() || flags.workspace {
+    let (selection, follow, exclude) = if !flags.paths.is_empty() || flags.workspace {
         let selection = if flags.workspace {
             if flags.paths.len() > 1 {
                 bail!("the workspace switch takes at most one path, the directory to start from");
@@ -117,7 +121,11 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
                 globbed: Vec::new(),
             }
         };
-        (Some(selection), flags.follow.clone())
+        let exclude = Exclude {
+            globs: flags.exclude.clone(),
+            from: None,
+        };
+        (Some(selection), flags.follow.clone(), exclude)
     } else {
         let selection = config.and_then(|config| match &config.crates {
             Crates::Unset => None,
@@ -132,7 +140,17 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
         } else {
             flags.follow.clone()
         };
-        (selection, follow)
+        let exclude = match config {
+            Some(config) if flags.exclude.is_empty() => Exclude {
+                globs: config.exclude.clone(),
+                from: Some(config.dir.clone()),
+            },
+            _ => Exclude {
+                globs: flags.exclude.clone(),
+                from: None,
+            },
+        };
+        (selection, follow, exclude)
     };
     let analysis = flags.profile.or(config.and_then(|c| c.profile)) == Some(Profile::Analysis);
     let unset = Format::default();
@@ -173,6 +191,7 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
     Ok(Plan {
         selection,
         follow,
+        exclude,
         markdown,
         html,
         options,
@@ -214,6 +233,7 @@ mod tests {
             dir: PathBuf::from("/repo"),
             crates: Crates::Workspace(PathBuf::from("/repo")),
             follow: vec!["vendor/*".to_owned()],
+            exclude: vec!["crates/build-*".to_owned()],
             markdown: Format {
                 out: Some(PathBuf::from("/repo/vibelight")),
                 source_links: Some(false),
@@ -369,6 +389,52 @@ mod tests {
         );
         assert!(plan.follow.is_empty(), "the config's follow globs go too");
         assert_eq!(plan.markdown, Some(output("/repo/vibelight", false)));
+    }
+
+    fn exclude(globs: &[&str], from: Option<&str>) -> Exclude {
+        Exclude {
+            globs: globs.iter().map(|g| (*g).to_owned()).collect(),
+            from: from.map(PathBuf::from),
+        }
+    }
+
+    #[test]
+    fn the_exclude_globs_come_from_their_flag_then_the_config() {
+        let from_config = plan(&Flags::default(), Some(&config())).unwrap();
+        assert_eq!(
+            from_config.exclude,
+            exclude(&["crates/build-*"], Some("/repo"))
+        );
+        let flags = Flags {
+            exclude: vec!["tools/*".to_owned()],
+            ..Flags::default()
+        };
+        let from_flag = plan(&flags, Some(&config())).unwrap();
+        assert_eq!(from_flag.exclude, exclude(&["tools/*"], None));
+        assert_eq!(from_flag.selection, from_config.selection);
+        let without_config = plan(&flags, None).unwrap();
+        assert_eq!(without_config.exclude, exclude(&["tools/*"], None));
+    }
+
+    #[test]
+    fn crate_arguments_drop_the_config_exclude_globs_unless_the_flag_is_given() {
+        let paths = Flags {
+            paths: vec![PathBuf::from("crates/a")],
+            ..Flags::default()
+        };
+        assert_eq!(
+            plan(&paths, Some(&config())).unwrap().exclude,
+            Exclude::default()
+        );
+        let workspace = Flags {
+            workspace: true,
+            exclude: vec!["x".to_owned()],
+            ..Flags::default()
+        };
+        assert_eq!(
+            plan(&workspace, Some(&config())).unwrap().exclude,
+            exclude(&["x"], None)
+        );
     }
 
     #[test]

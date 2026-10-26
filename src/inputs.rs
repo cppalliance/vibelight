@@ -1,5 +1,6 @@
 //! Chooses the crates of a run: crate paths, the members of a workspace,
-//! and the path dependencies that follow globs allow.
+//! and the path dependencies that follow globs allow, less the crates that
+//! exclude globs leave out.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -7,6 +8,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, bail};
 use toml::Value;
 
+use crate::exclude::{Exclude, Filter};
 use crate::glob;
 use crate::manifest::{self, Dep, Workspace};
 use crate::root::{self, Input};
@@ -50,13 +52,21 @@ pub(crate) struct Chosen {
     pub(crate) notes: Vec<String>,
 }
 
-/// Chooses the crates of a run from the selection and the follow globs.
+/// Chooses the crates of a run from the selection and the follow globs,
+/// and then leaves out each crate that an exclude glob matches. An
+/// excluded crate is never read, and it is not followed into. A crate path
+/// that is excluded gets a note, and so does an exclude glob that matches
+/// no crate the run considered.
 ///
 /// # Errors
-/// Returns an error for a single `.rs` file given with other crates, a
-/// workspace selection with no workspace, or a crate path that cannot be
-/// read or has nothing to outline.
-pub(crate) fn choose(selection: &Selection, follow: &[String]) -> Result<Chosen> {
+/// Returns an error for a single `.rs` file given with other crates or with
+/// follow or exclude globs, a workspace selection with no workspace, a crate
+/// path that cannot be read or has nothing to outline, or no crate left.
+pub(crate) fn choose(
+    selection: &Selection,
+    follow: &[String],
+    exclude: &Exclude,
+) -> Result<Chosen> {
     let (paths, globbed, workspace): (&[PathBuf], &[PathBuf], Option<&PathBuf>) = match selection {
         Selection::Paths { paths, globbed } => (paths, globbed, None),
         Selection::Workspace(start) => (&[], &[], Some(start)),
@@ -65,6 +75,12 @@ pub(crate) fn choose(selection: &Selection, follow: &[String]) -> Result<Chosen>
         if paths.len() > 1 || !globbed.is_empty() || !follow.is_empty() {
             bail!(
                 "{} is a single file, which cannot be outlined together with other crates",
+                file.display()
+            );
+        }
+        if !exclude.globs.is_empty() {
+            bail!(
+                "{} is a single file, which has no crate folder for an exclude glob to match",
                 file.display()
             );
         }
@@ -90,6 +106,7 @@ pub(crate) fn choose(selection: &Selection, follow: &[String]) -> Result<Chosen>
         Some(w) => w.root.clone(),
         None => manifest::normalize(&first)?,
     };
+    let mut filter = Filter::new(exclude, &base);
     let mut chosen: BTreeMap<PathBuf, Package> = BTreeMap::new();
     let mut notes = Vec::new();
     if workspace.is_some() {
@@ -97,43 +114,39 @@ pub(crate) fn choose(selection: &Selection, follow: &[String]) -> Result<Chosen>
             bail!("no workspace manifest at {} or above it", first.display());
         };
         for dir in manifest::members(w) {
+            if filter.excludes(&dir) {
+                continue;
+            }
             if let Some(package) = optional(&dir, &mut notes)? {
                 chosen.insert(package.dir.clone(), package);
             }
         }
     } else {
         for path in paths {
+            let dir = manifest::normalize(&crate_dir(path))?;
+            if filter.excludes(&dir) {
+                notes.push(format!(
+                    "{} is named as a crate and also excluded, so it is left out",
+                    shown(&base, &dir)
+                ));
+                continue;
+            }
             let package = package(root::find(&crate_dir(path))?)?;
             chosen.insert(package.dir.clone(), package);
         }
         for dir in globbed {
+            if filter.excludes(dir) {
+                continue;
+            }
             if let Some(package) = optional(dir, &mut notes)? {
                 chosen.insert(package.dir.clone(), package);
             }
         }
     }
     if !follow.is_empty() {
-        let mut seen: BTreeSet<PathBuf> = chosen.keys().cloned().collect();
-        let mut queue: Vec<PathBuf> = chosen
-            .values()
-            .flat_map(|p| p.deps.iter().map(|d| d.dir.clone()))
-            .collect();
-        while let Some(dir) = queue.pop() {
-            if !seen.insert(dir.clone()) {
-                continue;
-            }
-            let Some(rel) = relative(&base, &dir) else {
-                continue;
-            };
-            if !follow.iter().any(|g| glob::matches(g, &rel)) {
-                continue;
-            }
-            if let Some(package) = optional(&dir, &mut notes)? {
-                queue.extend(package.deps.iter().map(|d| d.dir.clone()));
-                chosen.insert(package.dir.clone(), package);
-            }
-        }
+        pull_in(&mut chosen, &base, follow, &mut filter, &mut notes)?;
     }
+    notes.extend(filter.unmatched());
     notes.sort();
     notes.dedup();
     if chosen.is_empty() {
@@ -144,6 +157,45 @@ pub(crate) fn choose(selection: &Selection, follow: &[String]) -> Result<Chosen>
         packages: chosen.into_values().collect(),
         notes,
     })
+}
+
+/// Adds the path dependencies of the chosen crates that a follow glob
+/// allows, and then theirs, except those the filter excludes.
+fn pull_in(
+    chosen: &mut BTreeMap<PathBuf, Package>,
+    base: &Path,
+    follow: &[String],
+    filter: &mut Filter<'_>,
+    notes: &mut Vec<String>,
+) -> Result<()> {
+    let mut seen: BTreeSet<PathBuf> = chosen.keys().cloned().collect();
+    let mut queue: Vec<PathBuf> = chosen
+        .values()
+        .flat_map(|p| p.deps.iter().map(|d| d.dir.clone()))
+        .collect();
+    while let Some(dir) = queue.pop() {
+        if !seen.insert(dir.clone()) {
+            continue;
+        }
+        let Some(rel) = relative(base, &dir) else {
+            continue;
+        };
+        if !follow.iter().any(|g| glob::matches(g, &rel)) || filter.excludes(&dir) {
+            continue;
+        }
+        if let Some(package) = optional(&dir, notes)? {
+            queue.extend(package.deps.iter().map(|d| d.dir.clone()));
+            chosen.insert(package.dir.clone(), package);
+        }
+    }
+    Ok(())
+}
+
+/// Shows a crate folder below `base` with forward slashes, or else in full.
+fn shown(base: &Path, dir: &Path) -> String {
+    relative(base, dir)
+        .filter(|rel| !rel.is_empty())
+        .unwrap_or_else(|| dir.display().to_string())
 }
 
 fn is_manifest(path: &Path) -> bool {

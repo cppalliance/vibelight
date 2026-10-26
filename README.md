@@ -45,7 +45,7 @@ vibelight [<crate-dir-or-file.rs>...] [-o <dir>] [--md-out <dir>] [--html-out <d
           [--no-source-links] [--md-source-links on|off] [--html-source-links on|off]
           [--kill-list full|counts|off] [--facts] [--order levels|modules]
           [--profile analysis]
-          [--workspace] [--follow <glob>] [--check] [--check-html]
+          [--workspace] [--follow <glob>] [--exclude <glob>] [--check] [--check-html]
 ```
 
 - `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file. Several crates can be named at once (see [Several crates in one run](#several-crates-in-one-run)); a single `.rs` file cannot be mixed with them. With no crate named and no `--workspace`, a [`vibelight.toml`](#vibelighttoml) chooses the crates.
@@ -80,6 +80,10 @@ A run can cover several crates, and every crate in it gets its files. There are 
 - **`--workspace`:** `vibelight --workspace` reads the `[workspace] members` of the root `Cargo.toml`, found at the given directory or the first one above it with a `[workspace]` table. Globs such as `crates/*` expand to the folders that hold a `Cargo.toml`, and `exclude` takes folders out of the globs, while a member written out in full always counts.
 - **`--follow <glob>`:** from the crates named, follow their path dependencies, again and again, but only into folders that match a glob, measured from the workspace root (or else the first crate). It can be given more than once. For example, `vibelight crates/harness --follow "crates/harness-internal/*"` adds the harness's private crates and nothing else.
 
+`--exclude <glob>` then leaves crates out of whatever the run selected, whether by paths, by `--workspace`, by a `crates` glob in the config, or by `--follow`. A glob matches a crate's folder, written with forward slashes on every platform, and is measured the way `--follow` globs are, from the workspace root (or else the first crate). It can be given more than once. For example, `vibelight --workspace --exclude "crates/build-*"` outlines every member but the build tools. An excluded crate is not in the run: it is not read, it writes no files, its path dependencies are not followed on its account, and a type name that points at it stays plain text, as for any crate outside the run. If exclusion leaves no crate, the run stops with the error of an empty run.
+
+Two cases get a `note:` line on stderr, which is not a warning, and the exit code stays 0. A crate that is named by path and also excluded is left out, with a line that says so, because that is probably a mistake. A glob that matches no crate gets `note: exclude pattern <glob> matches no crate`, so a typo cannot quietly keep the build tools in. A glob is tried against every crate the run considers: each workspace member, each crate named, and each path dependency that a follow glob allows, including a member that is skipped for having nothing to outline. One crate that two globs match counts for both.
+
 A crate in the run with nothing to outline, such as one with only tests, is skipped with a `note:` line on stderr. A single named crate with nothing to outline is still an error. Two crates that would write the same file name stop the run with an error that names both.
 
 In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run belong in one folder. A re-exported function, constant, or static links the same way, however many crates re-export it on the way, as `runvil_engine.html#fn.runvil_engine.execute.perform_vfs_op`. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. The markdown files have no type links, so they do not depend on which crates are in the run, except with `--facts`: then External items shows the first doc line of an item from another crate of the run. No file depends on the order the crates are named in.
@@ -101,11 +105,12 @@ out = "vibelight/html"
 source_links = true
 ```
 
-The file has three keys that choose the crates, four keys that shape every file, and two tables that place the files:
+The file has three keys that choose the crates, one that leaves crates out, four keys that shape every file, and two tables that place the files:
 
 - `workspace = true` outlines every member of the workspace that holds the config's folder, the same as `--workspace`. `workspace = "<dir>"` starts the search from that directory instead.
 - `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
 - `follow = ["<glob>", ...]` works like `--follow`.
+- `exclude = ["<glob>", ...]` works like `--exclude`, except that its globs are measured from the config's folder, like every other path in the file. It leaves crates out of the workspace, the `crates` list, and the followed dependencies alike.
 - `kill_list = "full"`, `"counts"`, or `"off"` works like `--kill-list`.
 - `facts = true` or `false` works like `--facts`.
 - `order = "levels"` or `"modules"` works like `--order`.
@@ -124,7 +129,7 @@ A flag wins over the config, the config wins over a profile, and a profile wins 
 
 The kill list, the facts, and the order come from their flag, then their config key, then the profile, then the defaults: the full kill list, no facts, and the level order. So `profile = "analysis"` with `order = "levels"` gives the analysis settings in the level order.
 
-Crate paths or `--workspace` on the command line replace the config's `workspace`, `crates`, and `follow`, but the config still places the files. With neither, the config chooses the crates, and `--follow` on the command line replaces the config's `follow`. With no crates named anywhere, vibelight stops with a usage error.
+Crate paths or `--workspace` on the command line replace the config's `workspace`, `crates`, `follow`, and `exclude`, but the config still places the files. An `--exclude` on that command line is used, and it is measured from the workspace root (or else the first crate), as `--follow` is. With neither paths nor `--workspace`, the config chooses the crates, and `--follow` or `--exclude` on the command line replaces the config's `follow` or `exclude`. With no crates named anywhere, vibelight stops with a usage error.
 
 ## Checking the files
 
@@ -138,7 +143,7 @@ A last line says `check passed: N files match` or `check failed: N problems`, an
 
 Every file starts with a stamp, the UTC time its content last changed, such as `*Updated 2026-01-01T00:00:00Z*` in markdown and an `<!-- Updated ... -->` comment and a line at the top of the page in HTML. A run rewrites a file only when its content changed, so the stamp moves only with the content, and the check ignores the stamp. The time comes from `SOURCE_DATE_EPOCH` when it is set, for reproducible builds, and otherwise from the clock; a value that is not a whole number of seconds stops a run that writes, and never a check.
 
-The check covers exactly the crates and settings of its run, so a file that only another set of crates writes shows up as stale. With a `vibelight.toml`, a plain `vibelight --check` from anywhere in the repository checks the same run that a plain `vibelight` writes. Crate arguments and flags work with `--check` the same way as without it.
+The check covers exactly the crates and settings of its run, so a file that only another set of crates writes shows up as stale, and so does the file of a crate that an `exclude` now leaves out. With a `vibelight.toml`, a plain `vibelight --check` from anywhere in the repository checks the same run that a plain `vibelight` writes. Crate arguments and flags work with `--check` the same way as without it.
 
 A normal run never deletes a file. For each stale outline it prints `warning: <file> is stale: no crate of this run writes it` on stderr instead, so you can remove the file yourself.
 
@@ -150,10 +155,11 @@ A layout that works well keeps one outline in git for reviewers to read in diffs
 - `vibelight/html/` holds the HTML files, with source links on, for reading locally. It is gitignored, because its links change whenever code moves.
 - Each crate's library gets one file in each folder, named after the library with hyphens turned into underscores, such as `vibelight/runvil_engine.md` and `vibelight/html/runvil_engine.html`. A binary gets its own pair, named after the binary.
 
-For a workspace like Runvil, put this `vibelight.toml` at the root:
+For a workspace like Runvil, put this `vibelight.toml` at the root. The `build-*` crates are tools, so `exclude` keeps them, and the harness's test plugin, out of the outline:
 
 ```toml
 workspace = true
+exclude = ["crates/build-*", "crates/harness-internal/test-plugin"]
 
 [markdown]
 out = "vibelight"
@@ -259,7 +265,7 @@ Names of the crate's own items are left out, because `crate::model::X`, `X`, and
 
 ## Warnings and exit codes
 
-When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way. In a run of several crates, a warning's path starts from the workspace root (or else the first crate), such as `crates/alpha/src/lib.rs:9`, and a skipped crate gets a `note:` line, which is not a warning.
+When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the Spellings section has entries, one more line says how many items are written more than one way. In a run of several crates, a warning's path starts from the workspace root (or else the first crate), such as `crates/alpha/src/lib.rs:9`, and a skipped crate, a named crate that is also excluded, and an `exclude` glob that matches no crate each get a `note:` line, which is not a warning.
 
 A stale outline in the markdown folder also gets a warning line (see [Checking the files](#checking-the-files)).
 
