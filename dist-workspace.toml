@@ -18,7 +18,8 @@ hosting = "github"
 # Whether to install an updater program
 install-updater = false
 # Publish to crates.io once the GitHub Release exists, through the reusable
-# workflow .github/workflows/publish-crates.yml.
+# workflow .github/workflows/publish-crates.yml, which skips itself unless the
+# repository variable PUBLISH_CRATES is true.
 publish-jobs = ["./publish-crates"]
 # A called workflow gets at most its caller's permissions: the publish job
 # checks out the code and trades an OIDC token for a crates.io token.

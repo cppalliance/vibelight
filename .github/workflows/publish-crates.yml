@@ -1,7 +1,12 @@
 # Publishes the crate to crates.io with trusted publishing. The release
 # workflow that dist generates calls this after it creates the GitHub
-# Release. crates.io matches the calling workflow, so the trusted publisher
-# on crates.io names release.yml, not this file.
+# Release. Tags do not publish to crates.io by default: the job below is
+# skipped unless the repository variable PUBLISH_CRATES is true, and the
+# release workflow treats a skipped publish job as done. To turn publishing
+# on, set PUBLISH_CRATES to true (Settings, Secrets and variables, Actions,
+# Variables) and register the trusted publisher on crates.io. crates.io
+# matches the calling workflow, so the trusted publisher names release.yml,
+# not this file.
 name: Publish to crates.io
 
 on:
@@ -14,6 +19,8 @@ on:
 
 jobs:
   publish:
+    # Off unless a maintainer sets the repository variable to true.
+    if: vars.PUBLISH_CRATES == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

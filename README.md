@@ -33,7 +33,7 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/cppalliance/vibeli
 
 To try the latest changes, use the [nightly](https://github.com/cppalliance/vibelight/releases/tag/nightly) prerelease. It is rebuilt once a day when `master` has new commits, for the same platforms, and each build replaces the one before. `vibelight --version` names the build's commit and date.
 
-vibelight is also on crates.io, so `cargo install vibelight` builds and installs the latest published version. To build your own copy, run `cargo install --path .` in a checkout of this repository.
+vibelight is also on crates.io, so `cargo install vibelight` builds and installs the latest version published there. Tags do not publish to crates.io by default, so that version can be older than the latest GitHub Release (see [Releasing](#releasing)). To build your own copy, run `cargo install --path .` in a checkout of this repository.
 
 ## Run
 
@@ -234,6 +234,17 @@ A stale outline in the markdown folder also gets a warning line (see [Checking t
 - `0`: the files were written, warnings included. With `--check`, every file matches.
 - `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, a root file cannot be read, or `vibelight.toml` has an unknown key. The reason is printed on stderr. With `--check`, a file differs, is missing, or is stale.
 - `2`: a usage error, such as an unknown flag, or no crate named on the command line or in a `vibelight.toml`, reported by clap.
+
+## Releasing
+
+Pushing a version tag such as `v0.2.0` runs the release workflow. It builds the archives and installers for every platform and creates the GitHub Release.
+
+Tags do not publish to crates.io by default. The publish job is skipped unless the repository variable `PUBLISH_CRATES` is `true`, and a skipped publish job does not stop the release. To turn publishing on:
+
+- Set the repository variable `PUBLISH_CRATES` to `true` (Settings, Secrets and variables, Actions, Variables).
+- Register the trusted publisher in the crate's settings on crates.io: owner `cppalliance`, repository `vibelight`, workflow `release.yml`, and no environment.
+
+After that, each new tag also publishes its version to crates.io, unless that version is already there. Delete the variable or set it to anything else to turn publishing off again.
 
 ## Requirements and license
 
