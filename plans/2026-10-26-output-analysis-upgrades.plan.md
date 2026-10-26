@@ -1,37 +1,37 @@
 ---
 name: vibelight output improvements
-overview: Numbered list of every improvement I proposed for vibelight's output, checked against what vibelight already does. Five already exist behind `--facts` and `--order modules`. Eight are new and keep the rule that moving impls between files never changes the output; field clustering is now a `Clusters:` facts line rather than a regrouping. One opt-in switch for the one-time analysis breaks the rule on purpose. The work runs in sequence because the items share golden files. This plan runs before the one-time tool plan, which is written against its final flags.
+overview: Numbered list of every improvement I proposed for vibelight's output, checked against what vibelight already does. Five already exist behind `--facts` and `--order modules`. Eight are new and keep the rule that moving impls between files never changes the output; field use is a `Fields:` facts list rather than a regrouping. One opt-in switch for the one-time analysis breaks the rule on purpose. The work runs in sequence because the items share golden files. This plan runs before the one-time tool plan, which is written against its final flags.
 todos:
   - id: copy-plan
     content: Copy this plan to vibelight/plans/YYYY-MM-DD-output-analysis-upgrades.plan.md per vibelight AGENTS.md
-    status: pending
+    status: completed
   - id: where-wrap
     content: "Item 11: one predicate per line for a where clause past MAX_WIDTH in wrap.rs, extend the long-lines fixture"
-    status: pending
+    status: completed
   - id: fields-order
     content: "Item 6: skip sort_entries for the fields group (group 2) in layout_decl.rs body(), update struct goldens and the README sort rule"
-    status: pending
+    status: completed
   - id: reexport-spacing
     content: "Item 12: merge a visibility section's re-export entries into one entry like use groups (layout_items.rs 53-63), keeping a blank line before a commented entry; update affected goldens"
-    status: pending
+    status: completed
   - id: legend-visibility
     content: "Items 9 and 10 in one commit: the Legend line about where methods appear, the // internal line above non-pub type headers with its Legend line, one golden sweep for both"
-    status: pending
+    status: completed
   - id: unconnected-bodies
     content: "Item 8 (every mode): let function-body mentions keep a type out of Unconnected in order.rs split, keep Used by signature-only, add a fixture"
-    status: pending
+    status: completed
   - id: method-clusters
-    content: "Item 7: Clusters: facts line from self field and self-call sets per method, hub fields excluded, under --facts; Legend facts line; fixture"
-    status: pending
+    content: "Item 7: done as a Fields: list under --facts (each field with the functions that reach it through self, hubs as a count), after a Clusters: line proved to chain Scheduler into one group"
+    status: completed
   - id: members-impl
     content: "Item 15: --members name|impl switch and members config key; impl groups member functions by inherent impl block in source order under // impl in <file> lines; Legend line when on; member-order-impl fixture"
-    status: pending
+    status: completed
   - id: optional-items
-    content: "Items 13-14: decide whether to add foreign shapes to External items and free-function Used by; defer method Used by"
-    status: pending
+    content: "Items 13-14: deferred, with revisit conditions in the Outcome section"
+    status: completed
   - id: confirm-runvil
     content: Run the spelled-out vibelight command (with --follow "**" and --members impl) on runvil's engine crate into scratch and confirm items 6-12 and 15 on the real crate
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -111,7 +111,7 @@ Action: the one-time vibelight tool (see the one-time tool plan) runs with all o
 
 15. **`--members name|impl` switch, for the one-time analysis only.** The default `name` keeps today's output. `impl` groups a type's member functions by inherent impl block, in source order inside each block.
     - Each group opens with a `// impl in <file>` line, printed even when source links are off. That's because the switch already opts into output that depends on file layout.
-    - Fields, associated items, and special members stay where they are. Only member functions regroup. The `Clusters:` line from item 7 is unaffected.
+    - Fields, associated items, and special members stay where they are. Only member functions regroup. The `Fields:` list from item 7 is unaffected.
     - Don't tie it to `--profile analysis`, which turns source links off by default, or to source links being on, which would change the default HTML. It's a switch, with a matching `members` config key.
     - Add a Legend line that shows only when the switch is on. Add a `member-order-impl` fixture.
     - It touches [vibelight/src/settings.rs](vibelight/src/settings.rs) (the option), [vibelight/src/config.rs](vibelight/src/config.rs) (the key), [vibelight/src/layout_decl.rs](vibelight/src/layout_decl.rs) (grouping in place of `sort_entries` for member functions), and [vibelight/src/legend.rs](vibelight/src/legend.rs).
@@ -142,3 +142,14 @@ vibelight crates/runvil-internal/engine --follow "**" --profile analysis --facts
 - Items 6, 8, 9, 10, 11, and 12 change the default output. Their goldens change in the same commits. No repository commits outlines today, so nothing else needs regenerating. A repository that commits outlines later regenerates them once with the new release, as the README says.
 - Items 7 and 13 show only with `--facts`.
 - Item 15 is off by default. Only the one-time tool turns it on.
+
+## Outcome
+
+Every item ran in the order above, one commit each, with its goldens written by hand first and every other golden diff read before it was accepted. Where the work departed from the text above:
+
+- **Item 7 became a `Fields:` list.** The `Clusters:` line, joined through shared fields, chained 46 of runvil's `Scheduler`'s 103 functions into one group. Joining through calls was left out from the start for the same reason. The list shows each field, in declared order, with the functions that reach it through `self`, and a hub as a count. On `Scheduler` it shows the effect table (`pending`, `issued`, `orphaned`, `withdrawn`, `next_effect`) and the task arena (`tasks`, `spawned`, `resuming`) directly.
+- **Item 10 covers private types too.** A type gets `// internal` or `// private`, because with only `// internal` a private type would look public.
+- **Item 8 widens the owner rule.** A body inside an impl does not count for any type the impl's header names, so `impl Clone for Box<Engine>` does not keep `Engine` out of Unconnected.
+- **Items 13 and 14 are deferred.** 13 ties each crate's analysis copy to the others' fields; revisit it when an analysis needs foreign shapes that the context crates' own outlines do not already give. 14 cannot resolve method calls without type information; revisit it if vibelight gains a resolver that sees types.
+
+The confirmation run on runvil's engine crate shows every change: the `where` clause of `setup_section_vm` per predicate, packed re-exports, 44 `// internal` and 16 `// private` lines, `Listed` out of Unconnected, 83 `// impl in` groups, and 5 `Fields:` lists.
