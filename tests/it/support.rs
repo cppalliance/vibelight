@@ -63,8 +63,13 @@ pub(crate) fn vibelight() -> Command {
 
 /// Runs the binary on `input`, writing into `out`.
 pub(crate) fn run(input: &Path, out: &Path, links: bool) -> Output {
+    run_with(input, out, links, &[])
+}
+
+/// Runs the binary on `input`, writing into `out`, with more switches.
+pub(crate) fn run_with(input: &Path, out: &Path, links: bool, extra: &[String]) -> Output {
     let mut command = vibelight();
-    command.arg(input).arg("-o").arg(out);
+    command.arg(input).arg("-o").arg(out).args(extra);
     if !links {
         command.arg("--no-source-links");
     }
@@ -74,8 +79,13 @@ pub(crate) fn run(input: &Path, out: &Path, links: bool) -> Output {
 /// Runs the binary into a fresh folder and returns each written file's
 /// name and text, sorted by name.
 pub(crate) fn outputs(input: &Path, links: bool) -> Vec<(String, String)> {
+    outputs_with(input, links, &[])
+}
+
+/// Like `outputs`, with more switches.
+pub(crate) fn outputs_with(input: &Path, links: bool, extra: &[String]) -> Vec<(String, String)> {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = run(input, tmp.path(), links);
+    let result = run_with(input, tmp.path(), links, extra);
     assert!(
         result.status.success(),
         "vibelight failed: {}",

@@ -2,13 +2,17 @@
 
 use std::fs;
 
-use crate::support::{fixtures, has_ext, input_of, outputs};
+use crate::support::{fixtures, has_ext, input_of, outputs_with};
 
-/// Runs one fixture and compares each markdown file, and each HTML file
-/// that has a golden, byte for byte.
+/// Runs one fixture, with the switches in its `args.txt` when it has one,
+/// and compares each markdown file, and each HTML file that has a golden,
+/// byte for byte.
 fn check(name: &str) {
     let dir = fixtures().join(name);
-    let written = outputs(&input_of(&dir), false);
+    let extra: Vec<String> = fs::read_to_string(dir.join("args.txt"))
+        .map(|text| text.split_whitespace().map(str::to_owned).collect())
+        .unwrap_or_default();
+    let written = outputs_with(&input_of(&dir), false, &extra);
     let markdown: Vec<&(String, String)> =
         written.iter().filter(|(n, _)| has_ext(n, "md")).collect();
     assert!(!markdown.is_empty(), "{name} wrote no markdown file");
@@ -71,6 +75,7 @@ goldens! {
     extern_block => "extern-block",
     functions => "functions",
     impls => "impls",
+    kill_list => "kill-list",
     long_lines => "long-lines",
     macros => "macros",
     member_order => "member-order",

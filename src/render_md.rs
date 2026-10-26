@@ -19,9 +19,11 @@ pub(crate) fn render(doc: &Document, stamp: &str) -> String {
     list(&mut out, &doc.legend, 0, &doc.refs);
     out.push('\n');
     list(&mut out, &doc.contents, 0, &doc.refs);
-    out.push('\n');
-    let _ = writeln!(out, "**MACROS:** {}", doc.kill_summary);
-    list(&mut out, &doc.kill, 0, &doc.refs);
+    if let Some(summary) = &doc.kill_summary {
+        out.push('\n');
+        let _ = writeln!(out, "**MACROS:** {summary}");
+        list(&mut out, &doc.kill, 0, &doc.refs);
+    }
     for node in &doc.sections {
         out.push('\n');
         match node {

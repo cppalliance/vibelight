@@ -10,13 +10,11 @@ use anyhow::{Context, Result, bail};
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
 use crate::layout::Block;
-use crate::model::{Crate, Loc, Warning};
-use crate::order::Order;
+use crate::model::{Loc, Warning};
 use crate::render_html::Anchors;
 use crate::root::Target;
-use crate::settings::Output;
+use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
-use crate::spellings::Entry;
 use crate::{
     attach, collect, document, layout_decl, modtree, order, render_html, render_md, resolve,
     resolve_run, spellings, surface, test_support,
@@ -46,17 +44,14 @@ struct Built {
 /// folder with its own source-link switch. No output depends on the order
 /// the crates are processed in: targets are handled in output stem order,
 /// and each crate resolves against the same map. Every file carries
-/// `stamp` on its first line.
+/// `stamp` on its first line, and `plan`'s options shape every document.
 ///
 /// # Errors
 /// Returns an error when two targets would write the same file or a crate
 /// cannot be read.
-pub(crate) fn outline(
-    chosen: &Chosen,
-    markdown: Option<&Output>,
-    html: Option<&Output>,
-    stamp: &str,
-) -> Result<Outcome> {
+pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outcome> {
+    let markdown = plan.markdown.as_ref();
+    let html = plan.html.as_ref();
     let targets = targets(chosen)?;
     let mut outcome = Outcome::default();
     let mut krates = Vec::new();
@@ -87,12 +82,15 @@ pub(crate) fn outline(
             Vec::new()
         };
         let parts = Parts {
-            krate,
-            others: &others,
-            order: &order,
-            blocks: &blocks,
-            spellings: &spellings,
-            surface: &surface,
+            inputs: document::Inputs {
+                krate,
+                others: &others,
+                order: &order,
+                blocks: &blocks,
+                spellings: &spellings,
+                surface: &surface,
+                options: plan.options,
+            },
             crate_dir: &chosen.packages[p].input.dir,
         };
         let md = parts.build(markdown)?;
@@ -150,12 +148,7 @@ pub(crate) fn outline(
 
 /// What one target's documents are built from.
 struct Parts<'a> {
-    krate: &'a Crate,
-    others: &'a [usize],
-    order: &'a Order,
-    blocks: &'a [Block],
-    spellings: &'a [Entry],
-    surface: &'a [surface::Entry],
+    inputs: document::Inputs<'a>,
     crate_dir: &'a Path,
 }
 
@@ -174,15 +167,7 @@ impl Parts<'_> {
         } else {
             None
         };
-        let doc = document::build(
-            self.krate,
-            self.others,
-            self.order,
-            self.blocks,
-            self.spellings,
-            self.surface,
-            base.as_ref(),
-        );
+        let doc = document::build(&self.inputs, base.as_ref());
         Ok(Some(Built { doc, base }))
     }
 }

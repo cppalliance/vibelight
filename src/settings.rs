@@ -1,6 +1,6 @@
-//! Settles what a run covers and where each format goes, from the command
-//! line and `vibelight.toml`: a flag wins over the config, and the config
-//! wins over the defaults.
+//! Settles what a run covers, where each format goes, and the options that
+//! shape every file, from the command line and `vibelight.toml`: a flag
+//! wins over the config, and the config wins over the defaults.
 
 use std::path::{Path, PathBuf};
 
@@ -23,6 +23,26 @@ pub(crate) struct Flags {
     pub(crate) no_source_links: bool,
     pub(crate) md_source_links: Option<bool>,
     pub(crate) html_source_links: Option<bool>,
+    pub(crate) kill_list: Option<KillList>,
+}
+
+/// How much of the macro kill list a file shows.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub(crate) enum KillList {
+    /// Every entry, after the counts.
+    #[default]
+    Full,
+    /// Only the counts.
+    Counts,
+    /// Neither the counts nor the entries.
+    Off,
+}
+
+/// The settings that shape every file of a run, beside each format's
+/// folder and source links.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct Options {
+    pub(crate) kill_list: KillList,
 }
 
 /// Where one format is written, and whether it carries source links.
@@ -41,6 +61,7 @@ pub(crate) struct Plan {
     /// `None` for a format the config turns off.
     pub(crate) markdown: Option<Output>,
     pub(crate) html: Option<Output>,
+    pub(crate) options: Options,
 }
 
 /// Settles a run. Crate paths or the workspace switch choose the crates,
@@ -106,11 +127,18 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
     if markdown.is_none() && html.is_none() {
         bail!("the config turns both formats off, so there is nothing to write");
     }
+    let options = Options {
+        kill_list: flags
+            .kill_list
+            .or(config.and_then(|c| c.kill_list))
+            .unwrap_or_default(),
+    };
     Ok(Plan {
         selection,
         follow,
         markdown,
         html,
+        options,
     })
 }
 
@@ -156,6 +184,7 @@ mod tests {
                 source_links: None,
                 enabled: None,
             },
+            kill_list: Some(KillList::Counts),
         }
     }
 
@@ -184,6 +213,22 @@ mod tests {
         assert_eq!(plan.follow, ["vendor/*"]);
         assert_eq!(plan.markdown, Some(output("/repo/vibelight", false)));
         assert_eq!(plan.html, Some(output("/repo/vibelight/html", true)));
+    }
+
+    #[test]
+    fn the_kill_list_comes_from_its_switch_then_the_config_then_full() {
+        assert_eq!(
+            plan(&Flags::default(), None).unwrap().options.kill_list,
+            KillList::Full
+        );
+        let from_config = plan(&Flags::default(), Some(&config())).unwrap();
+        assert_eq!(from_config.options.kill_list, KillList::Counts);
+        let flags = Flags {
+            kill_list: Some(KillList::Off),
+            ..Flags::default()
+        };
+        let from_switch = plan(&flags, Some(&config())).unwrap();
+        assert_eq!(from_switch.options.kill_list, KillList::Off);
     }
 
     #[test]

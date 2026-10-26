@@ -93,6 +93,23 @@ fn with_no_arguments_the_config_runs_from_a_subfolder_into_its_own_folders() {
 }
 
 #[test]
+fn the_kill_list_key_turns_the_kill_list_off_and_its_switch_wins() {
+    let config = format!("kill_list = \"off\"\n{REPOSITORY}");
+    let (_tmp, repo) = garden(&config);
+    let result = vibelight_in(&repo, &[]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let alpha = fs::read_to_string(repo.join("vibelight").join("alpha.md")).unwrap();
+    assert!(!alpha.contains("**MACROS:**"), "{alpha}");
+    assert!(alpha.contains("and attribute macro.\n"));
+    let page = fs::read_to_string(repo.join("vibelight").join("html").join("alpha.html")).unwrap();
+    assert!(!page.contains("<p class=\"kill\">"));
+    let result = vibelight_in(&repo, &["--kill-list", "full"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let alpha = fs::read_to_string(repo.join("vibelight").join("alpha.md")).unwrap();
+    assert!(alpha.contains("**MACROS:** none\n"), "{alpha}");
+}
+
+#[test]
 fn a_config_without_folders_writes_beside_itself_from_any_subfolder() {
     let (_tmp, repo) = garden("workspace = true\n");
     let alpha = repo.join("crates").join("alpha");

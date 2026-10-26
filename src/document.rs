@@ -6,6 +6,7 @@ use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
 use crate::model::{Crate, DeclId, ModId, path_order};
 use crate::order::Order;
+use crate::settings::{KillList, Options};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 
@@ -89,7 +90,8 @@ pub(crate) struct Document {
     /// The Legend section, which both files print after the crate docs.
     pub(crate) legend: Vec<Item>,
     pub(crate) contents: Vec<Item>,
-    pub(crate) kill_summary: String,
+    /// The macro counts; `None` when the kill list is off.
+    pub(crate) kill_summary: Option<String>,
     pub(crate) kill: Vec<Item>,
     pub(crate) sections: Vec<Node>,
     pub(crate) refs: Vec<crate::model::TypeRef>,
@@ -110,16 +112,30 @@ pub(crate) struct Builder<'a> {
     pub(crate) heading: String,
 }
 
+/// What a target's documents are built from.
+#[derive(Clone, Copy)]
+pub(crate) struct Inputs<'a> {
+    pub(crate) krate: &'a Crate,
+    /// The impls left for the Other impls section.
+    pub(crate) others: &'a [usize],
+    pub(crate) order: &'a Order,
+    pub(crate) blocks: &'a [Block],
+    pub(crate) spellings: &'a [Entry],
+    pub(crate) surface: &'a [crate::surface::Entry],
+    pub(crate) options: Options,
+}
+
 /// Builds the document from the ordered declarations and their blocks.
-pub(crate) fn build(
-    krate: &Crate,
-    others: &[usize],
-    order: &Order,
-    blocks: &[Block],
-    spellings: &[Entry],
-    surface: &[crate::surface::Entry],
-    links: Option<&LinkBase>,
-) -> Document {
+pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
+    let Inputs {
+        krate,
+        others,
+        order,
+        blocks,
+        spellings,
+        surface,
+        options,
+    } = *inputs;
     let texts = crate::order::block_texts(krate, blocks);
     let decl_ids = decl_ids(krate, &texts);
     let mod_ids = mod_ids(krate);
@@ -179,12 +195,17 @@ pub(crate) fn build(
             items,
         });
     }
-    let (kill_summary, kill) = b.kill_list();
+    let (summary, entries) = b.kill_list();
+    let (kill_summary, kill) = match options.kill_list {
+        KillList::Full => (Some(summary), entries),
+        KillList::Counts => (Some(summary), Vec::new()),
+        KillList::Off => (None, Vec::new()),
+    };
     Document {
         title: krate.title.clone(),
         id: format!("crate.{}", krate.name),
         crate_docs: docs_block(&krate.modules[0].docs, &[]),
-        legend: crate::legend::items(),
+        legend: crate::legend::items(options),
         contents,
         kill_summary,
         kill,

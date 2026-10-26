@@ -64,7 +64,7 @@ use anyhow::{Context, Result};
 use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser, ValueEnum};
 
-use crate::settings::Flags;
+use crate::settings::{Flags, KillList};
 
 /// The `--version` text; the nightly workflow sets `VIBELIGHT_NIGHTLY` at
 /// build time to name its build.
@@ -104,6 +104,10 @@ struct Args {
     /// Turn the source links of the HTML files on or off.
     #[arg(long, value_name = "on|off")]
     html_source_links: Option<Switch>,
+    /// How much of the macro kill list to show: every entry, only the
+    /// counts, or nothing.
+    #[arg(long, value_name = "full|counts|off")]
+    kill_list: Option<KillList>,
     /// Outline every member of the workspace that holds the given
     /// directory, or the current one.
     #[arg(long)]
@@ -152,6 +156,7 @@ fn flags(args: &Args) -> Flags {
         no_source_links: args.no_source_links,
         md_source_links: switch(args.md_source_links),
         html_source_links: switch(args.html_source_links),
+        kill_list: args.kill_list,
     }
 }
 
@@ -180,7 +185,7 @@ fn run(args: &Args) -> Result<ExitCode> {
         unresolved,
         ambiguous,
         spelled,
-    } = pipeline::outline(&chosen, plan.markdown.as_ref(), plan.html.as_ref(), &stamp)?;
+    } = pipeline::outline(&chosen, &plan, &stamp)?;
     let written: BTreeSet<PathBuf> = files.iter().map(|(path, _)| path.clone()).collect();
     let stale = plan
         .markdown

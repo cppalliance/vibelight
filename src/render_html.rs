@@ -75,11 +75,13 @@ pub(crate) fn render(
     }
     out.push_str("<h2 id=\"legend\">Legend</h2>\n");
     page.list(&mut out, &doc.legend, "legend");
-    let _ = writeln!(
-        out,
-        "<p class=\"kill\"><b class=\"m\">MACROS:</b> {}</p>",
-        escape(&doc.kill_summary)
-    );
+    if let Some(summary) = &doc.kill_summary {
+        let _ = writeln!(
+            out,
+            "<p class=\"kill\"><b class=\"m\">MACROS:</b> {}</p>",
+            escape(summary)
+        );
+    }
     if !doc.kill.is_empty() {
         page.list(&mut out, &doc.kill, "kill");
     }
@@ -381,7 +383,7 @@ mod tests {
             crate_docs: None,
             legend: Vec::new(),
             contents: Vec::new(),
-            kill_summary: "none".into(),
+            kill_summary: Some("none".into()),
             kill: Vec::new(),
             sections: vec![Node::Code(Block {
                 lines: vec![line],

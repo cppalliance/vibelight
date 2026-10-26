@@ -6,9 +6,11 @@ use std::fmt::Display;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
+use clap::ValueEnum;
 use toml::{Table, Value};
 
+use crate::settings::KillList;
 use crate::{glob, manifest};
 
 /// The file looked up in the current directory and its parents.
@@ -46,7 +48,18 @@ pub(crate) struct Config {
     pub(crate) follow: Vec<String>,
     pub(crate) markdown: Format,
     pub(crate) html: Format,
+    pub(crate) kill_list: Option<KillList>,
 }
+
+/// The top-level keys a config may hold.
+const KEYS: &[&str] = &[
+    "workspace",
+    "crates",
+    "follow",
+    "kill_list",
+    "markdown",
+    "html",
+];
 
 /// Finds and reads the first `vibelight.toml` in `start` or above it.
 ///
@@ -76,10 +89,7 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
     let table: Table = text
         .parse()
         .with_context(|| format!("cannot parse {name}"))?;
-    if let Some(key) = table
-        .keys()
-        .find(|key| !["workspace", "crates", "follow", "markdown", "html"].contains(&key.as_str()))
-    {
+    if let Some(key) = table.keys().find(|key| !KEYS.contains(&key.as_str())) {
         bail!("{name}: unknown key `{key}`");
     }
     let crates = match (table.get("workspace"), table.get("crates")) {
@@ -100,7 +110,28 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         follow,
         markdown: format(&name, dir, "markdown", table.get("markdown"))?,
         html: format(&name, dir, "html", table.get("html"))?,
+        kill_list: choice(&name, "kill_list", table.get("kill_list"))?,
     })
+}
+
+/// Reads a key whose value is one of a fixed set of words; an unknown
+/// value is an error that names the key and every allowed value.
+fn choice<T: ValueEnum>(
+    name: &impl Display,
+    key: &str,
+    value: Option<&Value>,
+) -> Result<Option<T>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let allowed: Vec<String> = T::value_variants()
+        .iter()
+        .filter_map(ValueEnum::to_possible_value)
+        .map(|v| format!("`{}`", v.get_name()))
+        .collect();
+    let wrong = || anyhow!("{name}: `{key}` is one of {}", allowed.join(", "));
+    let text = value.as_str().ok_or_else(wrong)?;
+    T::from_str(text, false).map(Some).map_err(|_| wrong())
 }
 
 fn strings(name: &impl Display, key: &str, value: &Value) -> Result<Vec<String>> {
@@ -247,5 +278,23 @@ mod tests {
         assert!(error("workspace = 3\n").contains("`workspace` is true or a directory"));
         assert!(error("crates = \"a\"\n").contains("`crates` is a list of strings"));
         assert!(error("workspace = true\ncrates = []\n").contains("not both"));
+        assert!(
+            error("kill_list = \"some\"\n")
+                .contains("`kill_list` is one of `full`, `counts`, `off`")
+        );
+        assert!(error("kill_list = 1\n").contains("`kill_list` is one of"));
+    }
+
+    #[test]
+    fn the_kill_list_key_takes_its_three_words() {
+        for (text, mode) in [
+            ("full", KillList::Full),
+            ("counts", KillList::Counts),
+            ("off", KillList::Off),
+        ] {
+            let parsed = config(&format!("kill_list = \"{text}\"\n")).1.unwrap();
+            assert_eq!(parsed.kill_list, Some(mode));
+        }
+        assert_eq!(config("").1.unwrap().kill_list, None);
     }
 }
