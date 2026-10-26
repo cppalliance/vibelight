@@ -8,7 +8,7 @@ use syn::{Attribute, FnArg, ItemFn, ReceiverKind, ReturnType, Safety, Signature,
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::comments::{Attached, attach};
-use crate::model::{Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
+use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
 use crate::source::Comment;
 use crate::typerefs::range_of;
 
@@ -27,6 +27,7 @@ impl Collector<'_> {
         let file = &files[here.file];
         self.discard(here, range_of(&*f.block, file));
         let here = here.with(&f.sig.generics);
+        self.body_names(&here, &f.block, BodyOwner::Module);
         let sig = self.sig(&here, &f.sig);
         let loc = loc(&here, f.sig.ident.span());
         let notes = self.node_notes(&here, &f.attrs, lead, range_of(f, file));

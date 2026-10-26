@@ -205,7 +205,7 @@ Each file opens with the stamp (see [Checking the files](#checking-the-files)), 
 - **Public surface:** for a library, every path a user of the crate can name, walking public modules and `pub use` re-exports, globs and `#[macro_export]` macros included. Each path links to what it names, a re-export of another crate's item shows the path it comes from, and test-support code is marked `(test support)`.
 - **Level 1, Level 2, and so on:** one heading per type. Level 1 holds the types no other type names, and every other type sits one level below the deepest type that names it. Types that name each other in a cycle are placed together.
 - **Test support:** types behind a `cfg` that lists `test` inside `any(...)`, such as `cfg(any(test, feature = "test-support"))`, kept apart from the production types.
-- **Unconnected types:** types that name nothing and that nothing names. A type that a free function, a constant, a static, or a re-export names is in use, so it sits at level 1 instead.
+- **Unconnected types:** types that name nothing and that nothing names. A type that a free function, a constant, a static, or a re-export names is in use, so it sits at level 1 instead, and so does a type that a function body names outside the type's own impls.
 - **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `implements: Trait for Type;` lines.
 - **Modules:** one heading per module, with its docs, links to its declarations, and its re-exports, macros, constants, statics, free functions, and extern blocks.
 - **Spellings:** each item from outside the crate that the source writes in more than one way, with every spelling (see [Spellings](#spellings)).

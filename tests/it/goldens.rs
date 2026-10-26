@@ -59,6 +59,7 @@ goldens! {
     aliases => "aliases",
     attributes => "attributes",
     base_lists => "base-lists",
+    body_uses => "body-uses",
     cfg_attr => "cfg-attr",
     cfg_test => "cfg-test",
     comments_attach => "comments-attach",

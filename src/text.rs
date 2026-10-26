@@ -134,8 +134,9 @@ pub(crate) struct TypeRef {
     pub(crate) module: ModId,
     /// Generic parameter names in scope where the name is written.
     pub(crate) generics: Vec<String>,
-    /// True for a name from a comment, a re-export, or a derive, which never
-    /// counts for naming, toward the unresolved tally, or for spellings.
+    /// True for a name from a comment, a re-export, a derive, or a function
+    /// body, which never counts for naming, toward the unresolved tally, or
+    /// for spellings.
     pub(crate) comment: bool,
     /// True for a name that may also be a function, constant, or static:
     /// one in a comment or a re-export, never a derive.

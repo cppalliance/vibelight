@@ -4,7 +4,9 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::layout::{Block, Span};
-use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Sig, Text, path_order};
+use crate::model::{
+    BodyOwner, Crate, DeclId, Foreign, ItemKind, ModId, Seg, Sig, Text, path_order,
+};
 /// The document order of the declarations.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Order {
@@ -205,6 +207,24 @@ fn split(krate: &Crate, mentions: &[Vec<DeclId>], by_modules: &[Vec<ModId>]) -> 
     }
     for (d, modules) in by_modules.iter().enumerate() {
         named[d] |= !modules.is_empty();
+    }
+    for body in &krate.body_names {
+        let Some(t) = krate.refs[body.name].target else {
+            continue;
+        };
+        let owned = match body.owner {
+            BodyOwner::Module => false,
+            BodyOwner::Impl(i) => {
+                let header = &krate.impls[i];
+                header
+                    .self_text
+                    .refs()
+                    .chain(header.trait_.iter().flat_map(|base| base.text.refs()))
+                    .any(|r| krate.refs[r].target == Some(t))
+            }
+            BodyOwner::Trait(d) => d == t,
+        };
+        named[t] |= !owned;
     }
     let out = mentions
         .iter()

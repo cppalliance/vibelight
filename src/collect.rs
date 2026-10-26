@@ -11,8 +11,8 @@ use crate::attrs;
 use crate::comments::{Attached, NoteCx, Pool, attach};
 use crate::macros;
 use crate::model::{
-    Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, ModId,
-    Module, Note, Text, TypeRef, Vis, Warning, Where,
+    BodyName, Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse,
+    Meta, ModId, Module, Note, Text, TypeRef, Vis, Warning, Where,
 };
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile};
@@ -42,6 +42,7 @@ pub(crate) struct Collector<'a> {
     pub(crate) crate_dir: &'a Path,
     pub(crate) pools: Vec<Pool>,
     pub(crate) refs: Vec<TypeRef>,
+    pub(crate) body_names: Vec<BodyName>,
     pub(crate) modules: Vec<Module>,
     pub(crate) decls: Vec<Decl>,
     pub(crate) impls: Vec<crate::model::Impl>,
@@ -68,6 +69,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         crate_dir,
         pools: files.iter().map(Pool::new).collect(),
         refs: Vec::new(),
+        body_names: Vec::new(),
         modules: Vec::new(),
         decls: Vec::new(),
         impls: Vec::new(),
@@ -104,6 +106,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
     collector.finish_invocations();
     let Collector {
         refs,
+        body_names,
         modules,
         decls,
         impls,
@@ -120,6 +123,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         decls,
         impls,
         refs,
+        body_names,
         macros,
         exported_macros,
         warnings,

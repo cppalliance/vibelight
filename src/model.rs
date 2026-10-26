@@ -367,6 +367,27 @@ pub(crate) struct Warning {
     pub(crate) message: String,
 }
 
+/// A type name a function body writes. It keeps the type out of
+/// Unconnected (rule 26) and names nothing else.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct BodyName {
+    pub(crate) name: RefId,
+    pub(crate) owner: BodyOwner,
+}
+
+/// What a function body belongs to. A type that owns a body does not count
+/// as named by it.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum BodyOwner {
+    /// A free function.
+    Module,
+    /// A method of this impl, which every type its header names owns, such
+    /// as `Engine` in `impl Clone for Box<Engine>`.
+    Impl(usize),
+    /// A default method of this trait.
+    Trait(DeclId),
+}
+
 /// Everything collected from one target.
 #[derive(Debug)]
 pub(crate) struct Crate {
@@ -379,6 +400,7 @@ pub(crate) struct Crate {
     pub(crate) decls: Vec<Decl>,
     pub(crate) impls: Vec<Impl>,
     pub(crate) refs: Vec<TypeRef>,
+    pub(crate) body_names: Vec<BodyName>,
     pub(crate) macros: Vec<MacroUse>,
     /// Each `#[macro_export]` macro's name and the module that defines it;
     /// such a macro is named at the crate root.

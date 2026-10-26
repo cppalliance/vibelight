@@ -11,7 +11,8 @@ use crate::collect_bases::single_arg;
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Base, DeclId, Holder, Impl, Loc, MacroKind, MacroUse, Member, MemberKind, Meta, Note, Text, Vis,
+    Base, BodyOwner, DeclId, Holder, Impl, Loc, MacroKind, MacroUse, Member, MemberKind, Meta,
+    Note, Text, Vis,
 };
 use crate::source::Comment;
 use crate::typerefs::range_of;
@@ -145,6 +146,12 @@ impl Collector<'_> {
         let mut marks = Vec::new();
         for ((item, lead), trail) in items.iter().zip(leading).zip(trailing) {
             let range = range_of(item, file);
+            if let ImplItem::Fn(f) = item {
+                if !attrs::is_test_only(&f.attrs) {
+                    let here = here.with(&f.sig.generics);
+                    self.body_names(&here, &f.block, BodyOwner::Impl(id));
+                }
+            }
             let member = match item {
                 ImplItem::Const(c) if !attrs::is_test_only(&c.attrs) && !trait_impl => {
                     let here = here.with(&c.generics);
@@ -317,10 +324,11 @@ impl Collector<'_> {
                     Some(self.member(&here, parts))
                 }
                 TraitItem::Fn(f) if !attrs::is_test_only(&f.attrs) => {
-                    if let Some(block) = &f.default {
-                        self.discard(here, range_of(block, file));
-                    }
                     let here = here.with(&f.sig.generics);
+                    if let Some(block) = &f.default {
+                        self.discard(&here, range_of(block, file));
+                        self.body_names(&here, block, BodyOwner::Trait(id));
+                    }
                     let sig = self.sig(&here, &f.sig);
                     let loc = loc(&here, f.sig.ident.span());
                     let marks = self

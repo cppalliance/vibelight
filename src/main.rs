@@ -5,6 +5,7 @@ mod attrs;
 mod check;
 mod collect;
 mod collect_bases;
+mod collect_body;
 mod collect_field;
 mod collect_fn;
 mod collect_impl;
