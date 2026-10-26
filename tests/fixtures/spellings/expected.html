@@ -47,8 +47,12 @@ span.src{cursor:default}
 <li><a href="#unconnected">Unconnected types</a>
 <ul>
 <li><a href="#type.spellings.bare.Label">bare::Label</a></li>
+<li><a href="#type.spellings.debug.Dial">debug::Dial</a></li>
+<li><a href="#type.spellings.debug.Gauge">debug::Gauge</a></li>
+<li><a href="#type.spellings.debug.Knob">debug::Knob</a></li>
 <li><a href="#type.spellings.Duration">Duration</a></li>
 <li><a href="#type.spellings.other.Badge">other::Badge</a></li>
+<li><a href="#type.spellings.other.Pin">other::Pin</a></li>
 <li><a href="#type.spellings.Wrapper">Wrapper</a></li>
 </ul>
 </li>
@@ -56,6 +60,7 @@ span.src{cursor:default}
 <ul>
 <li><a href="#mod.spellings">spellings</a></li>
 <li><a href="#mod.spellings.bare">bare</a></li>
+<li><a href="#mod.spellings.debug">debug</a></li>
 <li><a href="#mod.spellings.other">other</a></li>
 </ul>
 </li>
@@ -92,9 +97,14 @@ span.src{cursor:default}
 <li><a href="#mod.spellings.bare">bare</a></li>
 <li><a href="#type.spellings.bare.Label">bare::Label</a></li>
 <li><a href="#type.spellings.Clock">Clock</a></li>
+<li><a href="#mod.spellings.debug">debug</a></li>
+<li><a href="#type.spellings.debug.Dial">debug::Dial</a></li>
+<li><a href="#type.spellings.debug.Gauge">debug::Gauge</a></li>
+<li><a href="#type.spellings.debug.Knob">debug::Knob</a></li>
 <li><a href="#type.spellings.Duration">Duration</a></li>
 <li><a href="#mod.spellings.other">other</a></li>
 <li><a href="#type.spellings.other.Badge">other::Badge</a></li>
+<li><a href="#type.spellings.other.Pin">other::Pin</a></li>
 <li><a href="#type.spellings.Timer">Timer</a></li>
 <li><a href="#type.spellings.Wrapper">Wrapper</a></li>
 </ul>
@@ -133,6 +143,15 @@ span.src{cursor:default}
 <h3 id="type.spellings.bare.Label">bare::Label</h3>
 <pre><code><span class="c">/// A label that shows itself through the standard Display.</span>
 <span class="k">struct</span> Label : Display;</code></pre>
+<h3 id="type.spellings.debug.Dial">debug::Dial</h3>
+<pre><code><span class="c">/// A dial that writes Debug through the fmt module.</span>
+<span class="k">struct</span> Dial : Debug;</code></pre>
+<h3 id="type.spellings.debug.Gauge">debug::Gauge</h3>
+<pre><code><span class="c">/// A gauge that derives Debug, which adds no spelling.</span>
+<span class="k">struct</span> Gauge : Debug;</code></pre>
+<h3 id="type.spellings.debug.Knob">debug::Knob</h3>
+<pre><code><span class="c">/// A knob that writes Debug with its full path.</span>
+<span class="k">struct</span> Knob : Debug;</code></pre>
 <h3 id="type.spellings.Duration">Duration</h3>
 <pre><code><span class="c">/// The crate's own Duration, so the standard one has no bare spelling to</span>
 <span class="c">/// prefer.</span>
@@ -140,6 +159,10 @@ span.src{cursor:default}
 <h3 id="type.spellings.other.Badge">other::Badge</h3>
 <pre><code><span class="c">/// A badge that shows itself through the other crate's Display.</span>
 <span class="k">struct</span> Badge
+    : other_crate::Display;</code></pre>
+<h3 id="type.spellings.other.Pin">other::Pin</h3>
+<pre><code><span class="c">/// A pin that names the other crate's Display by its full path.</span>
+<span class="k">struct</span> Pin
     : other_crate::Display;</code></pre>
 <h3 id="type.spellings.Wrapper">Wrapper</h3>
 <pre><code><span class="c">/// A wrapper whose impl names std::string::String only in its self type,</span>
@@ -165,23 +188,37 @@ span.src{cursor:default}
 <ul>
 <li><a href="#type.spellings.bare.Label">bare::Label</a></li>
 </ul>
+<h3 id="mod.spellings.debug">debug</h3>
+<pre><code><span class="c">//! Debug by derive and by hand. A derive name is never counted.</span></code></pre>
+<ul>
+<li><a href="#type.spellings.debug.Dial">debug::Dial</a></li>
+<li><a href="#type.spellings.debug.Gauge">debug::Gauge</a></li>
+<li><a href="#type.spellings.debug.Knob">debug::Knob</a></li>
+</ul>
 <h3 id="mod.spellings.other">other</h3>
 <pre><code><span class="c">//! Another crate's Display, which never merges with the standard one.</span></code></pre>
 <ul>
 <li><a href="#type.spellings.other.Badge">other::Badge</a></li>
+<li><a href="#type.spellings.other.Pin">other::Pin</a></li>
 </ul>
 <h2 id="spellings">Spellings</h2>
 <ul class="spellings">
-<li><code>serde::Serialize</code> is written 2 ways; pick one and search for the rest:
+<li><code>other_crate::Display</code> is written 2 ways; pick one and search for the rest:
 <ul>
-<li><code>serde::Serialize</code>, once</li>
-<li><code>Serialize</code>, once</li>
+<li><code>Display</code>, once</li>
+<li><code>other_crate::Display</code>, once</li>
 </ul>
 </li>
 <li><code>std::collections::BTreeMap</code> is written 2 ways; prefer <code>BTreeMap</code>, which is not used yet:
 <ul>
 <li><code>Map</code>, once</li>
 <li><code>std::collections::BTreeMap</code>, once</li>
+</ul>
+</li>
+<li><code>std::fmt::Debug</code> is written 2 ways; prefer <code>Debug</code>, which is not used yet:
+<ul>
+<li><code>fmt::Debug</code>, once</li>
+<li><code>std::fmt::Debug</code>, once</li>
 </ul>
 </li>
 <li><code>std::fmt::Display</code> is written 3 ways; prefer <code>Display</code>:

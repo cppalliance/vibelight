@@ -85,4 +85,28 @@ pub mod other {
     pub struct Badge;
 
     impl Display for Badge {}
+
+    /// A pin that names the other crate's Display by its full path.
+    pub struct Pin;
+
+    impl other_crate::Display for Pin {}
+}
+
+/// Debug by derive and by hand. A derive name is never counted.
+pub mod debug {
+    use std::fmt;
+
+    /// A gauge that derives Debug, which adds no spelling.
+    #[derive(Debug)]
+    pub struct Gauge;
+
+    /// A dial that writes Debug through the fmt module.
+    pub struct Dial;
+
+    impl fmt::Debug for Dial {}
+
+    /// A knob that writes Debug with its full path.
+    pub struct Knob;
+
+    impl std::fmt::Debug for Knob {}
 }

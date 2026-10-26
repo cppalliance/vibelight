@@ -5,7 +5,6 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, Loc, RefId, Seg, TypeRef, name_order, path_order};
 use crate::prelude::item_path;
-use crate::route::derive_path;
 use crate::typerefs::strip_raw;
 
 /// One way an item is written: the path as written, how many times, and
@@ -36,13 +35,11 @@ pub(crate) struct Entry {
 /// sorted by path. Names from comments and re-exports never count, and
 /// neither does the self type of an impl attached to its type, which the
 /// outline does not show and which each split of the impl writes again.
-/// Each entry names the spelling to prefer, when it has one.
+/// A derive name never counts either. A derive is written bare in practice,
+/// so it never matches a path in an impl header or a bound, and the entry
+/// it made could not be fixed. Each entry names the spelling to prefer,
+/// when it has one.
 pub(crate) fn find(krate: &Crate) -> Vec<Entry> {
-    let derives: BTreeSet<RefId> = krate
-        .decls
-        .iter()
-        .flat_map(|d| d.derive_refs.iter().copied())
-        .collect();
     let hidden: BTreeSet<RefId> = krate
         .impls
         .iter()
@@ -56,11 +53,10 @@ pub(crate) fn find(krate: &Crate) -> Vec<Entry> {
     let mut seen = BTreeSet::new();
     let mut groups: BTreeMap<String, BTreeMap<String, (usize, Vec<Loc>)>> = BTreeMap::new();
     for (id, r) in krate.refs.iter().enumerate() {
-        let derive = derives.contains(&id);
-        if (r.comment && !derive) || hidden.contains(&id) {
+        if r.comment || hidden.contains(&id) {
             continue;
         }
-        let (Some(written), Some(item)) = (r.written, item(r, derive)) else {
+        let (Some(written), Some(item)) = (r.written, item(r)) else {
             continue;
         };
         if !seen.insert((written.loc.file, written.offset)) {
@@ -134,16 +130,12 @@ fn preferred(
 
 /// Returns the full path of the item a name outside the crate stands for,
 /// or `None` for a name in the crate or one that does not resolve. A bare
-/// prelude or derive name stands for its `std` path.
-fn item(r: &TypeRef, derive: bool) -> Option<String> {
+/// prelude name stands for its `std` path.
+fn item(r: &TypeRef) -> Option<String> {
     if r.target.is_some() {
         return None;
     }
-    match (r.canonical.as_deref(), r.path.as_slice()) {
-        (Some(path), _) => item_path(path),
-        (None, [name]) if derive => derive_path(name).map(str::to_owned),
-        _ => None,
-    }
+    r.canonical.as_deref().and_then(item_path)
 }
 
 /// Returns a name as written, without generic arguments or `r#` prefixes.
@@ -158,7 +150,99 @@ fn spelling(r: &TypeRef) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
+
+    /// Runs the crate source through the same steps as a real run, and
+    /// returns each entry's item with its spellings and their counts.
+    fn entries(lib: &str) -> Vec<(String, Vec<(String, usize)>)> {
+        let tmp = tempfile::tempdir().unwrap();
+        let src = tmp.path().join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("lib.rs"), lib).unwrap();
+        let tree = crate::modtree::walk(tmp.path(), "src/lib.rs").unwrap();
+        let mut krate = crate::collect::collect(tree, tmp.path(), "t", "t");
+        crate::resolve::resolve(&mut krate);
+        crate::attach::attach(&mut krate);
+        find(&krate)
+            .into_iter()
+            .map(|entry| {
+                let spellings = entry.spellings.into_iter();
+                (entry.item, spellings.map(|s| (s.text, s.count)).collect())
+            })
+            .collect()
+    }
+
+    fn spelled(texts: &[(&str, usize)]) -> Vec<(String, usize)> {
+        texts.iter().map(|&(t, n)| (t.to_owned(), n)).collect()
+    }
+
+    #[test]
+    fn a_derive_beside_one_impl_spelling_is_no_entry() {
+        let lib = "use std::fmt;\n\
+                   #[derive(Debug)]\n\
+                   pub struct Gauge;\n\
+                   pub struct Dial;\n\
+                   impl fmt::Debug for Dial {}\n";
+        assert_eq!(entries(lib), Vec::new());
+    }
+
+    #[test]
+    fn a_derive_adds_no_count_to_an_entry() {
+        let lib = "use std::fmt;\n\
+                   #[derive(Debug)]\n\
+                   pub struct Gauge;\n\
+                   pub struct Dial;\n\
+                   pub struct Knob;\n\
+                   impl fmt::Debug for Dial {}\n\
+                   impl std::fmt::Debug for Knob {}\n";
+        assert_eq!(
+            entries(lib),
+            [(
+                "std::fmt::Debug".to_owned(),
+                spelled(&[("fmt::Debug", 1), ("std::fmt::Debug", 1)])
+            )]
+        );
+    }
+
+    #[test]
+    fn a_derive_is_left_out_however_it_is_written_or_attached() {
+        let lib = "use serde::Serialize;\n\
+                   #[derive(Serialize)]\n\
+                   pub struct A;\n\
+                   #[derive(serde::Serialize)]\n\
+                   pub struct B;\n\
+                   #[cfg_attr(feature = \"x\", derive(Clone))]\n\
+                   pub struct C;\n\
+                   #[derive(core::clone::Clone)]\n\
+                   pub struct D;\n\
+                   impl std::clone::Clone for E {}\n\
+                   pub struct E;\n";
+        assert_eq!(entries(lib), Vec::new());
+    }
+
+    #[test]
+    fn names_that_are_not_derives_still_count() {
+        let lib = "use serde::Serialize;\n\
+                   pub struct A { pub one: Option<u8>, pub two: std::option::Option<u8> }\n\
+                   impl Serialize for A {}\n\
+                   impl serde::Serialize for B {}\n\
+                   pub struct B;\n";
+        assert_eq!(
+            entries(lib),
+            [
+                (
+                    "serde::Serialize".to_owned(),
+                    spelled(&[("serde::Serialize", 1), ("Serialize", 1)])
+                ),
+                (
+                    "std::option::Option".to_owned(),
+                    spelled(&[("Option", 1), ("std::option::Option", 1)])
+                ),
+            ]
+        );
+    }
 
     #[test]
     fn a_standard_item_prefers_its_bare_name_unless_the_name_is_taken() {

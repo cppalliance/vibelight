@@ -2,12 +2,11 @@
 //! base list: the trait's path reference, its type argument, supertrait
 //! entries, and a reference for each derive name.
 
-use proc_macro2::Span;
 use syn::visit::Visit;
 use syn::{GenericArgument, Path, PathArguments, Type, TypeParamBound};
 
 use crate::collect::{Collector, Here};
-use crate::model::{Base, Loc, RefId, Text, TypeRef, Written};
+use crate::model::{Base, RefId, Text, TypeRef};
 use crate::typerefs::{range_of, strip_raw};
 
 /// Returns the one type argument of a path's last segment, such as the `T`
@@ -67,20 +66,8 @@ impl Collector<'_> {
     }
 
     /// Records a derive name as a reference for resolve to fill in, so
-    /// routing can tell a standard derive from another crate's, with where
-    /// it is written.
-    pub(crate) fn derive_ref(&mut self, here: &Here, name: &str, span: Option<Span>) -> RefId {
-        let file = &self.files[here.file];
-        let written = span.map(|span| {
-            let offset = file.start(span);
-            Written {
-                loc: Loc {
-                    file: here.file,
-                    line: file.line_of(offset),
-                },
-                offset,
-            }
-        });
+    /// routing can tell a standard derive from another crate's.
+    pub(crate) fn derive_ref(&mut self, here: &Here, name: &str) -> RefId {
         self.refs.push(TypeRef {
             text: name.to_owned(),
             path: name
@@ -96,7 +83,7 @@ impl Collector<'_> {
             target: None,
             value: None,
             canonical: None,
-            written,
+            written: None,
             foreign: None,
         });
         self.refs.len() - 1

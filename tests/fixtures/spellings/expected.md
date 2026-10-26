@@ -32,12 +32,17 @@
   - [Clock](#type.spellings.Clock)
 - [Unconnected types](#unconnected)
   - [bare::Label](#type.spellings.bare.Label)
+  - [debug::Dial](#type.spellings.debug.Dial)
+  - [debug::Gauge](#type.spellings.debug.Gauge)
+  - [debug::Knob](#type.spellings.debug.Knob)
   - [Duration](#type.spellings.Duration)
   - [other::Badge](#type.spellings.other.Badge)
+  - [other::Pin](#type.spellings.other.Pin)
   - [Wrapper](#type.spellings.Wrapper)
 - [Modules](#modules)
   - [spellings](#mod.spellings)
   - [bare](#mod.spellings.bare)
+  - [debug](#mod.spellings.debug)
   - [other](#mod.spellings.other)
 - [Spellings](#spellings)
 
@@ -51,9 +56,14 @@
 - [bare](#mod.spellings.bare)
 - [bare::Label](#type.spellings.bare.Label)
 - [Clock](#type.spellings.Clock)
+- [debug](#mod.spellings.debug)
+- [debug::Dial](#type.spellings.debug.Dial)
+- [debug::Gauge](#type.spellings.debug.Gauge)
+- [debug::Knob](#type.spellings.debug.Knob)
 - [Duration](#type.spellings.Duration)
 - [other](#mod.spellings.other)
 - [other::Badge](#type.spellings.other.Badge)
+- [other::Pin](#type.spellings.other.Pin)
 - [Timer](#type.spellings.Timer)
 - [Wrapper](#type.spellings.Wrapper)
 
@@ -115,6 +125,30 @@ struct Clock : Display
 struct Label : Display;
 ```
 
+<a id="type.spellings.debug.Dial"></a>
+### debug::Dial
+
+```
+/// A dial that writes Debug through the fmt module.
+struct Dial : Debug;
+```
+
+<a id="type.spellings.debug.Gauge"></a>
+### debug::Gauge
+
+```
+/// A gauge that derives Debug, which adds no spelling.
+struct Gauge : Debug;
+```
+
+<a id="type.spellings.debug.Knob"></a>
+### debug::Knob
+
+```
+/// A knob that writes Debug with its full path.
+struct Knob : Debug;
+```
+
 <a id="type.spellings.Duration"></a>
 ### Duration
 
@@ -130,6 +164,15 @@ struct Duration;
 ```
 /// A badge that shows itself through the other crate's Display.
 struct Badge
+    : other_crate::Display;
+```
+
+<a id="type.spellings.other.Pin"></a>
+### other::Pin
+
+```
+/// A pin that names the other crate's Display by its full path.
+struct Pin
     : other_crate::Display;
 ```
 
@@ -169,6 +212,17 @@ struct Wrapper<T>
 
 - [bare::Label](#type.spellings.bare.Label)
 
+<a id="mod.spellings.debug"></a>
+### debug
+
+```
+//! Debug by derive and by hand. A derive name is never counted.
+```
+
+- [debug::Dial](#type.spellings.debug.Dial)
+- [debug::Gauge](#type.spellings.debug.Gauge)
+- [debug::Knob](#type.spellings.debug.Knob)
+
 <a id="mod.spellings.other"></a>
 ### other
 
@@ -177,16 +231,20 @@ struct Wrapper<T>
 ```
 
 - [other::Badge](#type.spellings.other.Badge)
+- [other::Pin](#type.spellings.other.Pin)
 
 <a id="spellings"></a>
 ## Spellings
 
-- `serde::Serialize` is written 2 ways; pick one and search for the rest:
-  - `serde::Serialize`, once
-  - `Serialize`, once
+- `other_crate::Display` is written 2 ways; pick one and search for the rest:
+  - `Display`, once
+  - `other_crate::Display`, once
 - `std::collections::BTreeMap` is written 2 ways; prefer `BTreeMap`, which is not used yet:
   - `Map`, once
   - `std::collections::BTreeMap`, once
+- `std::fmt::Debug` is written 2 ways; prefer `Debug`, which is not used yet:
+  - `fmt::Debug`, once
+  - `std::fmt::Debug`, once
 - `std::fmt::Display` is written 3 ways; prefer `Display`:
   - `Display`, once
   - `fmt::Display`, once

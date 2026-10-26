@@ -5,7 +5,8 @@
 
 ```
 //! Spellings: each item from outside the crate is written one way, so the
-//! outline has no Spellings section.
+//! outline has no Spellings section. A derive name is never counted, so a
+//! derived Debug beside `fmt::Debug` in an impl is still one way.
 ```
 
 <a id="legend"></a>
@@ -50,7 +51,7 @@
 
 ```
 /// A local type written two ways, which the section leaves out.
-struct Line
+struct Line : Debug
 {
     end: Point,
 
@@ -69,7 +70,7 @@ struct Line
 
 ```
 /// A point whose standard names each have one spelling.
-struct Point : Clone, Display, PartialEq
+struct Point : Clone, Debug, Display, PartialEq
 {
     label: Option<String>,
 

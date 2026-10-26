@@ -116,7 +116,7 @@ pub(crate) struct TypeRef {
     /// Generic parameter names in scope where the name is written.
     pub(crate) generics: Vec<String>,
     /// True for a name from a comment, a re-export, or a derive, which never
-    /// counts for naming or toward the unresolved tally.
+    /// counts for naming, toward the unresolved tally, or for spellings.
     pub(crate) comment: bool,
     /// True for a name that may also be a function, constant, or static:
     /// one in a comment or a re-export, never a derive.
@@ -129,8 +129,7 @@ pub(crate) struct TypeRef {
     /// The full path of a name outside the crate, filled in by resolve:
     /// through `use` items, or the bare name of a prelude item.
     pub(crate) canonical: Option<Vec<String>>,
-    /// Where the name is written, for a name sliced from the source or a
-    /// derive name.
+    /// Where the name is written, for a name sliced from the source.
     pub(crate) written: Option<Written>,
     /// The item in another crate of the run that the name reaches, filled
     /// in after every crate of the run is resolved.

@@ -186,7 +186,7 @@ fn spellings_add_one_warning_line_only_when_an_item_has_two_spellings() {
     assert_eq!(
         stderr.lines().collect::<Vec<_>>(),
         [
-            "warning: 5 items written more than one way; see Spellings",
+            "warning: 6 items written more than one way; see Spellings",
             "1 warning"
         ]
     );
