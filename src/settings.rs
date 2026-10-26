@@ -29,7 +29,18 @@ pub(crate) struct Flags {
     /// True turns the facts on.
     pub(crate) facts: bool,
     pub(crate) order: Option<OrderBy>,
+    pub(crate) members: Option<MembersBy>,
     pub(crate) profile: Option<Profile>,
+}
+
+/// How a type's block orders its functions.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub(crate) enum MembersBy {
+    /// By name, whatever impl holds them.
+    #[default]
+    Name,
+    /// By inherent impl, in source order, so the output follows the files.
+    Impl,
 }
 
 /// A set of defaults for one kind of reader; a switch or a config key
@@ -71,6 +82,7 @@ pub(crate) struct Options {
     /// The `Counts:` and `Used by:` lines and the Same shapes section.
     pub(crate) facts: bool,
     pub(crate) order: OrderBy,
+    pub(crate) members: MembersBy,
 }
 
 /// Where one format is written, and whether it carries source links.
@@ -187,6 +199,10 @@ pub(crate) fn plan(flags: &Flags, config: Option<&Config>) -> Result<Plan> {
             .order
             .or(config.and_then(|c| c.order))
             .unwrap_or(order),
+        members: flags
+            .members
+            .or(config.and_then(|c| c.members))
+            .unwrap_or_default(),
     };
     Ok(Plan {
         selection,
@@ -247,6 +263,7 @@ mod tests {
             kill_list: Some(KillList::Counts),
             facts: Some(true),
             order: Some(OrderBy::Modules),
+            members: None,
             profile: None,
         }
     }
@@ -338,6 +355,7 @@ mod tests {
                 kill_list: KillList::Counts,
                 facts: true,
                 order: OrderBy::Modules,
+                members: MembersBy::Name,
             }
         );
         let mut config = config();
@@ -359,6 +377,7 @@ mod tests {
                 kill_list: KillList::Counts,
                 facts: false,
                 order: OrderBy::Levels,
+                members: MembersBy::Name,
             }
         );
     }

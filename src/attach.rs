@@ -56,9 +56,11 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let decl = &mut krate.decls[decl_id];
         let adds = !members.is_empty() || trait_.is_some();
         if adds {
+            let start = decl.members.len();
             decl.impl_locs.push(ImplLoc {
                 loc,
                 members: member_names(&members),
+                range: start..start + members.len(),
             });
         }
         decl.members.extend(members);

@@ -79,6 +79,7 @@ goldens! {
     long_lines => "long-lines",
     macros => "macros",
     member_order => "member-order",
+    member_order_impl => "member-order-impl",
     modules => "modules",
     multi => "multi",
     names => "names",

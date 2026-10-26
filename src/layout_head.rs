@@ -165,7 +165,7 @@ mod tests {
         crate::resolve::resolve(&mut krate);
         crate::attach::attach(&mut krate);
         let id = krate.decls.iter().position(|d| d.name == name).unwrap();
-        crate::layout_decl::decl_block(&krate, id)
+        crate::layout_decl::decl_block(&krate, id, crate::settings::MembersBy::Name)
             .lines
             .iter()
             .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))

@@ -37,6 +37,9 @@ pub(crate) struct ImplLoc {
     /// The names of the members an inherent impl adds, sorted; a trait
     /// impl adds none.
     pub(crate) members: Vec<String>,
+    /// The indexes in the type's members of the members the impl adds, in
+    /// source order.
+    pub(crate) range: std::ops::Range<usize>,
 }
 
 /// The comments above one attached impl line, kept together so the outline

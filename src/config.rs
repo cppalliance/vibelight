@@ -10,7 +10,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::ValueEnum;
 use toml::{Table, Value};
 
-use crate::settings::{KillList, OrderBy, Profile};
+use crate::settings::{KillList, MembersBy, OrderBy, Profile};
 use crate::{glob, manifest};
 
 /// The file looked up in the current directory and its parents.
@@ -52,6 +52,7 @@ pub(crate) struct Config {
     pub(crate) kill_list: Option<KillList>,
     pub(crate) facts: Option<bool>,
     pub(crate) order: Option<OrderBy>,
+    pub(crate) members: Option<MembersBy>,
     pub(crate) profile: Option<Profile>,
 }
 
@@ -64,6 +65,7 @@ const KEYS: &[&str] = &[
     "kill_list",
     "facts",
     "order",
+    "members",
     "profile",
     "markdown",
     "html",
@@ -133,6 +135,7 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
             })
             .transpose()?,
         order: choice(&name, "order", table.get("order"))?,
+        members: choice(&name, "members", table.get("members"))?,
         profile: choice(&name, "profile", table.get("profile"))?,
     })
 }
@@ -317,6 +320,7 @@ mod tests {
         assert!(error("kill_list = 1\n").contains("`kill_list` is one of"));
         assert!(error("facts = \"yes\"\n").contains("`facts` is true or false"));
         assert!(error("order = \"files\"\n").contains("`order` is one of `levels`, `modules`"));
+        assert!(error("members = \"file\"\n").contains("`members` is one of `name`, `impl`"));
     }
 
     #[test]
@@ -334,6 +338,9 @@ mod tests {
         assert_eq!(config("").1.unwrap().facts, None);
         let modules = config("order = \"modules\"\n").1.unwrap();
         assert_eq!(modules.order, Some(OrderBy::Modules));
+        let by_impl = config("members = \"impl\"\n").1.unwrap();
+        assert_eq!(by_impl.members, Some(MembersBy::Impl));
+        assert_eq!(config("").1.unwrap().members, None);
         let analysis = config("profile = \"analysis\"\n").1.unwrap();
         assert_eq!(analysis.profile, Some(Profile::Analysis));
         let error = config("profile = \"review\"\n").1.unwrap_err().to_string();

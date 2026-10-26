@@ -4,7 +4,7 @@
 
 use crate::document::{Inline, Item};
 use crate::layout::Span;
-use crate::settings::{KillList, Options, OrderBy};
+use crate::settings::{KillList, MembersBy, Options, OrderBy};
 
 /// The lines about how a block prints; backticks mark code.
 const BLOCKS: &[&str] = &[
@@ -18,6 +18,9 @@ const BLOCKS: &[&str] = &[
     "`Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.",
     "A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.",
 ];
+
+/// The line about the impl order of functions, shown only when it is on.
+const MEMBERS: &str = "A `// impl in` line starts the functions one inherent impl adds, in source order, and names the file that holds the impl.";
 
 /// The start of the line about macros; the rest says what the kill list
 /// shows.
@@ -52,6 +55,9 @@ pub(crate) fn items(options: Options) -> Vec<Item> {
         KillList::Off => format!("{MACROS}."),
     };
     let mut lines: Vec<&str> = BLOCKS.to_vec();
+    if options.members == MembersBy::Impl {
+        lines.insert(2, MEMBERS);
+    }
     lines.push(&macros);
     lines.push(SURFACE);
     lines.push(match options.order {

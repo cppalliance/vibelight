@@ -386,6 +386,7 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
                     end_marks: &item.marks,
                     special: &[],
                     name: "",
+                    impls: &[],
                 },
             );
             block.lines.extend(inner.lines);

@@ -44,7 +44,7 @@ vibelight is also on crates.io, so `cargo install vibelight` builds and installs
 vibelight [<crate-dir-or-file.rs>...] [-o <dir>] [--md-out <dir>] [--html-out <dir>]
           [--no-source-links] [--md-source-links on|off] [--html-source-links on|off]
           [--kill-list full|counts|off] [--facts] [--order levels|modules]
-          [--profile analysis]
+          [--members name|impl] [--profile analysis]
           [--workspace] [--follow <glob>] [--exclude <glob>] [--check] [--check-html]
 ```
 
@@ -56,6 +56,7 @@ vibelight [<crate-dir-or-file.rs>...] [-o <dir>] [--md-out <dir>] [--html-out <d
 - `--kill-list full|counts|off` chooses how much of the macro kill list to show: every entry (the default), only the counts line, or neither. The **MACRO** marks themselves always print.
 - `--facts` adds the facts: a `Counts:` and a `Used by:` line under each type, a `Clusters:` line under a type whose methods split into groups, and the External items and Same shapes sections (see [What the output looks like](#what-the-output-looks-like)).
 - `--order levels|modules` orders the types by level, then a Modules section (the default), or in one section per module, with a Levels section that indexes them.
+- `--members name|impl` orders each type's functions by name (the default), or by the inherent impl that adds them, in source order, each impl's functions under a `// impl in <file>` line. `impl` shows how a large type's methods are split across files, so moving an impl to another file changes the output; use it for a one-time analysis, not for outlines you commit.
 - `--profile analysis` changes the defaults for analyzing an API: source links off, `--kill-list counts`, `--facts`, and `--order modules`. Any switch or config key you give still wins.
 - `--check` and `--check-html` write nothing and compare the files on disk with what the run would write (see [Checking the files](#checking-the-files)).
 
@@ -105,7 +106,7 @@ out = "vibelight/html"
 source_links = true
 ```
 
-The file has three keys that choose the crates, one that leaves crates out, four keys that shape every file, and two tables that place the files:
+The file has three keys that choose the crates, one that leaves crates out, five keys that shape every file, and two tables that place the files:
 
 - `workspace = true` outlines every member of the workspace that holds the config's folder, the same as `--workspace`. `workspace = "<dir>"` starts the search from that directory instead.
 - `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
@@ -114,6 +115,7 @@ The file has three keys that choose the crates, one that leaves crates out, four
 - `kill_list = "full"`, `"counts"`, or `"off"` works like `--kill-list`.
 - `facts = true` or `false` works like `--facts`.
 - `order = "levels"` or `"modules"` works like `--order`.
+- `members = "name"` or `"impl"` works like `--members`.
 - `profile = "analysis"` works like `--profile`.
 - `[markdown]` and `[html]` take the same three keys, each for its own format. `out = "<dir>"` is the folder for the files, and defaults to the config's folder. `source_links = true` or `false` turns the links back to source files and lines on or off, and defaults to on, or to off with the analysis profile. `enabled = false` turns the format off, and defaults to true.
 
@@ -127,7 +129,7 @@ A flag wins over the config, the config wins over a profile, and a profile wins 
 - The source links come from that format's own flag (`--md-source-links` or `--html-source-links`), then `--no-source-links`, then the config's `source_links`, then on, or off with `--profile analysis`.
 - A format with `enabled = false` is not written, unless its own folder flag names a folder for it.
 
-The kill list, the facts, and the order come from their flag, then their config key, then the profile, then the defaults: the full kill list, no facts, and the level order. So `profile = "analysis"` with `order = "levels"` gives the analysis settings in the level order.
+The kill list, the facts, and the order come from their flag, then their config key, then the profile, then the defaults: the full kill list, no facts, and the level order. So `profile = "analysis"` with `order = "levels"` gives the analysis settings in the level order. The member order comes from its flag, then its config key, then the default, `name`; no profile changes it.
 
 Crate paths or `--workspace` on the command line replace the config's `workspace`, `crates`, `follow`, and `exclude`, but the config still places the files. An `--exclude` on that command line is used, and it is measured from the workspace root (or else the first crate), as `--follow` is. With neither paths nor `--workspace`, the config chooses the crates, and `--follow` or `--exclude` on the command line replaces the config's `follow` or `exclude`. With no crates named anywhere, vibelight stops with a usage error.
 

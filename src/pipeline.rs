@@ -72,7 +72,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
         let others = attach::attach(krate);
         let blocks: Vec<Block> = (0..krate.decls.len())
-            .map(|d| layout_decl::decl_block(krate, d))
+            .map(|d| layout_decl::decl_block(krate, d, plan.options.members))
             .collect();
         let order = order::order(krate, &blocks);
         let spellings = spellings::find(krate);

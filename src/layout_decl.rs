@@ -1,19 +1,22 @@
 //! Lays out declaration blocks: headers and bodies.
 
+use std::ops::Range;
+
 use crate::layout::{
-    Block, Line, Span, above, code, join_sections, key, mark_line, note_lines, plain, section,
-    sections, sort_entries, where_parts,
+    Block, Entry, Line, Sections, Span, above, code, join_sections, key, mark_line, note_lines,
+    plain, section, sections, sort_entries, where_parts,
 };
 use crate::layout_head::header_lines;
 use crate::layout_members::{member_entry, variant_entry};
 use crate::layout_special::special_entry;
 use crate::model::{
-    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, Variant,
-    Vis, name_order,
+    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, TypeRef,
+    Variant, Vis, name_order,
 };
+use crate::settings::MembersBy;
 
-/// Builds the block of one declaration.
-pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
+/// Builds the block of one declaration, its functions ordered by `members`.
+pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block {
     let decl = &krate.decls[id];
     let refs = &krate.refs;
     let mut block = Block::default();
@@ -51,6 +54,10 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
         Shape::Enum(variants) => Some(variants.as_slice()),
         _ => None,
     };
+    let impls = match members {
+        MembersBy::Impl => impl_groups(krate, decl),
+        MembersBy::Name => Vec::new(),
+    };
     let body = body(
         krate,
         &BodyParts {
@@ -62,6 +69,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
             end_marks: &decl.end_marks,
             special: &decl.special,
             name: &decl.name,
+            impls: &impls,
         },
     );
     block.lines.push(brace("{"));
@@ -84,6 +92,42 @@ fn visibility_line(vis: Vis) -> Option<Line> {
         spans: vec![Span::Comment(text.to_owned())],
         trailing: None,
     })
+}
+
+/// Sorts every group of a body but its fields, which keep their declared
+/// order as variants do, then adds each impl's functions, in source order,
+/// after the other functions of their section.
+fn order_groups(
+    sections: &mut Sections,
+    impls: &[(String, Range<usize>)],
+    by_impl: Vec<[Vec<Entry>; 3]>,
+    refs: &[TypeRef],
+) {
+    for groups in sections.iter_mut() {
+        for (index, group) in groups.iter_mut().enumerate() {
+            if index != 2 {
+                sort_entries(group, refs);
+            }
+        }
+    }
+    for ((file, _), held) in impls.iter().zip(by_impl) {
+        for (groups, mut entries) in sections.iter_mut().zip(held) {
+            if let Some(first) = entries.first_mut() {
+                first.lines.insert(0, impl_line(file));
+            }
+            groups[5].extend(entries);
+        }
+    }
+}
+
+/// Returns the line that starts the functions of one inherent impl when
+/// functions are ordered by impl.
+fn impl_line(file: &str) -> Line {
+    Line {
+        indent: 4,
+        spans: vec![Span::Comment(format!("// impl in {file}"))],
+        trailing: None,
+    }
 }
 
 fn brace(text: &str) -> Line {
@@ -191,6 +235,30 @@ pub(crate) struct BodyParts<'b> {
     pub(crate) special: &'b [Special],
     /// The type's name, which the special members spell.
     pub(crate) name: &'b str,
+    /// When functions are ordered by impl: each inherent impl's file and the
+    /// indexes of the members it adds, in print order.
+    pub(crate) impls: &'b [(String, Range<usize>)],
+}
+
+/// The inherent impls that add members to `decl`, sorted by file and line.
+fn impl_groups(krate: &Crate, decl: &Decl) -> Vec<(String, Range<usize>)> {
+    let mut groups: Vec<(&str, u32, Range<usize>)> = decl
+        .impl_locs
+        .iter()
+        .filter(|l| !l.range.is_empty())
+        .map(|l| {
+            (
+                krate.files[l.loc.file].rel.as_str(),
+                l.loc.line,
+                l.range.clone(),
+            )
+        })
+        .collect();
+    groups.sort_by(|a, b| a.0.cmp(b.0).then(a.1.cmp(&b.1)));
+    groups
+        .into_iter()
+        .map(|(file, _, range)| (file.to_owned(), range))
+        .collect()
 }
 
 /// Builds the lines between a type's braces: the public groups, then
@@ -199,11 +267,14 @@ pub(crate) struct BodyParts<'b> {
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
     let mut sections = sections(6);
+    let mut by_impl: Vec<[Vec<Entry>; 3]> =
+        parts.impls.iter().map(|_| Default::default()).collect();
     let real = parts
         .members
         .iter()
-        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)));
-    for member in real {
+        .enumerate()
+        .filter(|(_, m)| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)));
+    for (index, member) in real {
         let group = match &member.kind {
             MemberKind::Type(_) => 0,
             MemberKind::Const { .. } => 1,
@@ -216,16 +287,17 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         } else {
             member.vis
         };
-        sections[section(vis)][group].push(member_entry(krate, member));
-    }
-    for groups in &mut sections {
-        for (index, group) in groups.iter_mut().enumerate() {
-            // Fields keep their declared order, as variants do.
-            if index != 2 {
-                sort_entries(group, refs);
-            }
+        let held = parts
+            .impls
+            .iter()
+            .position(|(_, range)| range.contains(&index));
+        let entry = member_entry(krate, member);
+        match held.filter(|_| matches!(member.kind, MemberKind::Fn(_))) {
+            Some(k) => by_impl[k][section(vis)].push(entry),
+            None => sections[section(vis)][group].push(entry),
         }
     }
+    order_groups(&mut sections, parts.impls, by_impl, refs);
     if let Some(variants) = parts.variants {
         sections[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }

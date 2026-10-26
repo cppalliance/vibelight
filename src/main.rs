@@ -74,7 +74,7 @@ use anyhow::{Context, Result};
 use clap::error::ErrorKind;
 use clap::{CommandFactory, Parser, ValueEnum};
 
-use crate::settings::{Flags, KillList, OrderBy, Profile};
+use crate::settings::{Flags, KillList, MembersBy, OrderBy, Profile};
 
 /// The `--version` text; the nightly workflow sets `VIBELIGHT_NIGHTLY` at
 /// build time to name its build.
@@ -126,6 +126,11 @@ struct Args {
     /// section per module, with an index by level.
     #[arg(long, value_name = "levels|modules")]
     order: Option<OrderBy>,
+    /// Order each type's functions by name, or by the inherent impl that
+    /// holds them, in source order, under a line naming its file. `impl`
+    /// makes the output follow how the code is split across files.
+    #[arg(long, value_name = "name|impl")]
+    members: Option<MembersBy>,
     /// Change the defaults for one kind of reader. `analysis` turns the
     /// source links off, shows only the kill list's counts, turns the facts
     /// on, and orders by module; switches and config keys still win.
@@ -188,6 +193,7 @@ fn flags(args: &Args) -> Flags {
         kill_list: args.kill_list,
         facts: args.facts,
         order: args.order,
+        members: args.members,
         profile: args.profile,
     }
 }
