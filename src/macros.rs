@@ -119,6 +119,14 @@ fn test_only(meta: &Meta) -> bool {
     }
 }
 
+/// Tells whether a `macro_rules!` definition is exported at the crate
+/// root, through `#[macro_export]` or a `cfg_attr` that holds it.
+pub(crate) fn is_exported(attrs: &[Attribute]) -> bool {
+    effective(attrs)
+        .iter()
+        .any(|meta| meta.path().is_ident("macro_export"))
+}
+
 /// Returns the traits from every derive attribute, merged and sorted.
 pub(crate) fn derives(attrs: &[Attribute]) -> Vec<String> {
     sorted(

@@ -33,9 +33,11 @@
 ## Public surface
 
 - [api](#mod.names.api)
+- [api::Handle](#type.names.api.inner.Handle)
 - [api::inner](#mod.names.api.inner)
 - [api::inner::Handle](#type.names.api.inner.Handle)
 - [api::inner::Shared](#type.names.api.inner.Shared)
+- [api::Shared](#type.names.api.inner.Shared)
 - [api::Token](#type.names.api.Token)
 - [Catalog](#type.names.Catalog)
 - [Entry](#type.names.model.Record)

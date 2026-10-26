@@ -13,7 +13,7 @@ pub(crate) struct Entry {
 }
 
 /// What a surface path names, and so where its entry links.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Kind {
     Module(ModId),
     Decl(DeclId),
@@ -21,6 +21,20 @@ pub(crate) enum Kind {
     Function(ModId),
     /// A constant, a static, or an extern type, which links to the module
     /// that declares it.
+    Value(ModId),
+    /// A `#[macro_export]` macro, which links to the module that defines
+    /// it.
+    Macro(ModId),
+    /// A re-export of another crate's item, or one the walk cannot place:
+    /// the path as written, with no link.
+    Unlinked(String),
+}
+
+/// What a `use` path names inside the crate.
+enum Found {
+    Decl(DeclId),
+    Module(ModId),
+    Function(ModId),
     Value(ModId),
 }
 
@@ -33,6 +47,9 @@ pub(crate) fn walk(krate: &Crate) -> Vec<Entry> {
         stack: Vec::new(),
     };
     walk.module(0, &[]);
+    for (name, m) in &krate.exported_macros {
+        walk.push(&[], name, Kind::Macro(*m));
+    }
     let mut out = walk.out;
     out.sort_by(|a, b| path_order(&a.path, &b.path).then(a.kind.cmp(&b.kind)));
     out.dedup();
@@ -84,7 +101,7 @@ impl Walk<'_> {
                     Kind::Value(m)
                 }
                 ItemKind::Reexport { text, .. } => {
-                    self.reexport(prefix, &item.name, text);
+                    self.reexport(m, prefix, &item.name, text);
                     continue;
                 }
                 ItemKind::Mark(_) | ItemKind::Unsupported(_) => continue,
@@ -94,24 +111,54 @@ impl Walk<'_> {
         self.stack.pop();
     }
 
-    /// Adds a re-exported type, alias, or module under its new name, and
-    /// walks a re-exported module under that name.
-    fn reexport(&mut self, prefix: &[String], name: &str, text: &Text) {
+    /// Adds what a re-export in module `m` names under its new name, and
+    /// walks a re-exported module under that name. A glob adds the target
+    /// module's public items under `prefix` itself.
+    fn reexport(&mut self, m: ModId, prefix: &[String], name: &str, text: &Text) {
         let krate = self.krate;
         let Some(id) = text.0.iter().find_map(|seg| match seg {
             Seg::Ref(id) => Some(*id),
             Seg::Plain(_) => None,
         }) else {
+            self.glob(m, prefix, &text.visible(&krate.refs));
             return;
         };
         let reference = &krate.refs[id];
-        if let Some(d) = reference.target {
-            self.push(prefix, name, Kind::Decl(d));
-        } else if let Some(m) =
-            module_at(krate, reference.module, &reference.path, reference.global)
-        {
-            self.push(prefix, name, Kind::Module(m));
-            self.module(m, &joined(prefix, name));
+        let found = match reference.target {
+            Some(d) => Some(Found::Decl(d)),
+            None => lookup(
+                krate,
+                reference.module,
+                &reference.path,
+                reference.global,
+                &mut Vec::new(),
+            ),
+        };
+        match found {
+            Some(Found::Decl(d)) => self.push(prefix, name, Kind::Decl(d)),
+            Some(Found::Module(target)) => {
+                self.push(prefix, name, Kind::Module(target));
+                self.module(target, &joined(prefix, name));
+            }
+            Some(Found::Function(at)) => self.push(prefix, name, Kind::Function(at)),
+            Some(Found::Value(at)) => self.push(prefix, name, Kind::Value(at)),
+            None => self.push(prefix, name, Kind::Unlinked(reference.text.clone())),
+        }
+    }
+
+    /// Adds the public items of the module a glob such as `inner::*` names,
+    /// or the glob itself, unlinked, when it names no module of the crate.
+    fn glob(&mut self, m: ModId, prefix: &[String], written: &str) {
+        let path = written.strip_suffix("::*").unwrap_or(written);
+        let global = path.starts_with("::");
+        let segments: Vec<String> = path
+            .trim_start_matches("::")
+            .split("::")
+            .map(strip_raw)
+            .collect();
+        match module_at(self.krate, m, &segments, global) {
+            Some(target) => self.module(target, prefix),
+            None => self.push(prefix, "*", Kind::Unlinked(written.to_owned())),
         }
     }
 
@@ -163,6 +210,66 @@ pub(crate) fn module_at(
         };
     }
     Some(at)
+}
+
+/// Finds what a `use` path written in module `from` names: a declaration,
+/// a module, a function, a constant, or a static of the crate. A name the
+/// target module itself re-exports is followed, with `seen` guarding
+/// against cycles.
+fn lookup(
+    krate: &Crate,
+    from: ModId,
+    path: &[String],
+    global: bool,
+    seen: &mut Vec<(ModId, String)>,
+) -> Option<Found> {
+    if let Some(m) = module_at(krate, from, path, global) {
+        return Some(Found::Module(m));
+    }
+    let (name, parent) = path.split_last()?;
+    let m = module_at(krate, from, parent, global)?;
+    let name = strip_raw(name);
+    if seen.contains(&(m, name.clone())) {
+        return None;
+    }
+    seen.push((m, name.clone()));
+    if let Some(d) = (0..krate.decls.len())
+        .find(|&d| krate.decls[d].module == m && strip_raw(&krate.decls[d].name) == name)
+    {
+        return Some(Found::Decl(d));
+    }
+    for item in krate.modules[m]
+        .items
+        .iter()
+        .filter(|i| strip_raw(&i.name) == name)
+    {
+        match &item.kind {
+            ItemKind::Fn(_)
+            | ItemKind::Foreign {
+                item: Foreign::Fn(_),
+                ..
+            } => return Some(Found::Function(m)),
+            ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => {
+                return Some(Found::Value(m));
+            }
+            ItemKind::Reexport { text, .. } => {
+                let next = text.0.iter().find_map(|seg| match seg {
+                    Seg::Ref(id) => Some(&krate.refs[*id]),
+                    Seg::Plain(_) => None,
+                });
+                if let Some(next) = next {
+                    if let Some(d) = next.target {
+                        return Some(Found::Decl(d));
+                    }
+                    if let Some(found) = lookup(krate, next.module, &next.path, next.global, seen) {
+                        return Some(found);
+                    }
+                }
+            }
+            ItemKind::Mark(_) | ItemKind::Unsupported(_) => {}
+        }
+    }
+    None
 }
 
 fn parent(krate: &Crate, m: ModId) -> Option<ModId> {

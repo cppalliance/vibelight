@@ -42,6 +42,7 @@
 - [BodyText](#type.runvil_parser.BodyText)
 - [Error](#type.runvil_parser.Error)
 - [Frontmatter](#type.runvil_parser.Frontmatter)
+- LuaProgram (runvil_lua::LuaProgram)
 - [ParseError](#type.runvil_parser.ParseError)
 - [Prompt](#type.runvil_parser.prompt.Prompt)
 - [Section](#type.runvil_parser.prompt.Section)

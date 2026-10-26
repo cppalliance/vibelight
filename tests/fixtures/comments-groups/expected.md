@@ -27,6 +27,7 @@
 
 - [Handle](#type.comments_groups.Handle)
 - [Key](#type.comments_groups.store.Key)
+- [read()](#mod.comments_groups.store)
 - [store](#mod.comments_groups.store)
 - [store::Key](#type.comments_groups.store.Key)
 - [store::read()](#mod.comments_groups.store)
@@ -35,6 +36,7 @@
 - [traits](#mod.comments_groups.traits)
 - [traits::Persist](#type.comments_groups.traits.Persist)
 - [Value](#type.comments_groups.store.Value)
+- [write()](#mod.comments_groups.store)
 
 <a id="level.1"></a>
 ## Level 1: top-level types

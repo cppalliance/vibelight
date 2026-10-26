@@ -37,8 +37,50 @@ mod detail {
     }
 }
 
+mod values {
+    //! Values made public through re-exports.
+
+    /// Builds a value.
+    pub fn build() -> u8 {
+        0
+    }
+
+    /// The largest value.
+    pub const MAX: u8 = 9;
+
+    /// The current value.
+    pub static CURRENT: u8 = 0;
+
+    pub use self::inner::deep;
+
+    mod inner {
+        /// A function two re-exports away.
+        pub fn deep() {}
+    }
+}
+
+mod prelude {
+    //! Names a glob brings in.
+
+    /// A marker a glob re-exports.
+    pub struct Marker;
+
+    /// A function a glob re-exports.
+    pub fn mark() {}
+}
+
 pub use detail::Handle;
 pub use detail::tools as kit;
+pub use prelude::*;
+pub use std::collections::BTreeMap;
+pub use values::deep;
+pub use values::{CURRENT, MAX, build};
+
+/// Says hello.
+#[macro_export]
+macro_rules! hello {
+    () => {};
+}
 
 /// The number of calls so far.
 pub static CALLS: u8 = 0;

@@ -18,7 +18,10 @@
 <a id="surface"></a>
 ## Public surface
 
+- Gauge (beta::Gauge)
+- Meter (alpha::Meter)
 - [Panel](#type.facade.Panel)
+- Reads (alpha::Reads)
 - [show()](#mod.facade)
 
 <a id="unconnected"></a>

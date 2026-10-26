@@ -46,6 +46,7 @@ pub(crate) struct Collector<'a> {
     pub(crate) decls: Vec<Decl>,
     pub(crate) impls: Vec<crate::model::Impl>,
     pub(crate) macros: Vec<MacroUse>,
+    exported_macros: Vec<(String, ModId)>,
     pub(crate) warnings: Vec<Warning>,
     /// The notes, `cfg`s, and visibility of each module's `mod` line.
     mod_lines: BTreeMap<ModId, (Vec<Note>, Vec<String>, Vis)>,
@@ -71,6 +72,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         decls: Vec::new(),
         impls: Vec::new(),
         macros: Vec::new(),
+        exported_macros: Vec::new(),
         warnings,
         mod_lines: BTreeMap::new(),
         children: BTreeMap::new(),
@@ -105,6 +107,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         decls,
         impls,
         macros,
+        exported_macros,
         warnings,
         ..
     } = collector;
@@ -117,6 +120,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         impls,
         refs,
         macros,
+        exported_macros,
         warnings,
     }
 }
@@ -226,6 +230,9 @@ impl Collector<'_> {
         let (text, sort, kind) = match &m.ident {
             Some(ident) if m.mac.path.is_ident("macro_rules") => {
                 let ident = ident.to_string();
+                if macros::is_exported(&m.attrs) {
+                    self.exported_macros.push((ident.clone(), here.module));
+                }
                 (
                     format!("macro_rules! {ident}"),
                     ident,

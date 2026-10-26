@@ -20,6 +20,8 @@
 <a id="surface"></a>
 ## Public surface
 
+- [assist()](#mod.reexports.inner)
+- [helper()](#mod.reexports.inner)
 - [Other](#type.reexports.inner.Other)
 - [Thing](#type.reexports.inner.Thing)
 

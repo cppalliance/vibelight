@@ -373,6 +373,9 @@ pub(crate) struct Crate {
     pub(crate) impls: Vec<Impl>,
     pub(crate) refs: Vec<TypeRef>,
     pub(crate) macros: Vec<MacroUse>,
+    /// Each `#[macro_export]` macro's name and the module that defines it;
+    /// such a macro is named at the crate root.
+    pub(crate) exported_macros: Vec<(String, ModId)>,
     pub(crate) warnings: Vec<Warning>,
 }
 

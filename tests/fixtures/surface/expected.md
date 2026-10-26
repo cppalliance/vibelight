@@ -13,14 +13,19 @@
   - [detail::Handle](#type.surface.detail.Handle)
   - [detail::tools::Tool](#type.surface.detail.tools.Tool)
   - [Internal](#type.surface.Internal)
+  - [prelude::Marker](#type.surface.prelude.Marker)
 - [Modules](#modules)
   - [surface](#mod.surface)
   - [api](#mod.surface.api)
   - [api::v1](#mod.surface.api.v1)
   - [detail](#mod.surface.detail)
   - [detail::tools](#mod.surface.detail.tools)
+  - [prelude](#mod.surface.prelude)
+  - [values](#mod.surface.values)
+  - [values::inner](#mod.surface.values.inner)
 
-**MACROS:** none
+**MACROS:** 1 definition
+- **MACRO** `macro_rules! hello`, in [surface](#mod.surface)
 
 <a id="surface"></a>
 ## Public surface
@@ -30,10 +35,18 @@
 - [api::v1::Request](#type.surface.api.v1.Request)
 - [api::v1::send()](#mod.surface.api.v1)
 - [api::VERSION](#mod.surface.api)
+- BTreeMap (std::collections::BTreeMap)
+- [build()](#mod.surface.values)
 - [CALLS](#mod.surface)
+- [CURRENT](#mod.surface.values)
+- [deep()](#mod.surface.values.inner)
 - [Handle](#type.surface.detail.Handle)
+- [hello!](#mod.surface)
 - [kit](#mod.surface.detail.tools)
 - [kit::Tool](#type.surface.detail.tools.Tool)
+- [mark()](#mod.surface.prelude)
+- [Marker](#type.surface.prelude.Marker)
+- [MAX](#mod.surface.values)
 - [start()](#mod.surface)
 
 <a id="unconnected"></a>
@@ -71,6 +84,14 @@ struct Tool;
 struct Internal;
 ```
 
+<a id="type.surface.prelude.Marker"></a>
+### prelude::Marker
+
+```
+/// A marker a glob re-exports.
+struct Marker;
+```
+
 <a id="modules"></a>
 ## Modules
 
@@ -80,9 +101,24 @@ struct Internal;
 - [Internal](#type.surface.Internal)
 
 ```
+using prelude::*;
+
+using std::collections::BTreeMap;
+
+using values::build;
+
+using values::CURRENT;
+
+using values::deep;
+
 using detail::Handle;
 
 using kit = detail::tools;
+
+using values::MAX;
+
+/// Says hello.
+// MACRO macro_rules! hello
 
 /// The number of calls so far.
 static CALLS: u8 = 0;
@@ -90,6 +126,8 @@ static CALLS: u8 = 0;
 /// Starts the library.
 start();
 ```
+
+**MACRO** macro_rules! hello
 
 <a id="mod.surface.api"></a>
 ### api
@@ -139,3 +177,45 @@ helper();
 ```
 
 - [detail::tools::Tool](#type.surface.detail.tools.Tool)
+
+<a id="mod.surface.prelude"></a>
+### prelude
+
+```
+//! Names a glob brings in.
+```
+
+- [prelude::Marker](#type.surface.prelude.Marker)
+
+```
+/// A function a glob re-exports.
+mark();
+```
+
+<a id="mod.surface.values"></a>
+### values
+
+```
+//! Values made public through re-exports.
+```
+
+```
+using self::inner::deep;
+
+/// The largest value.
+constexpr MAX: u8 = 9;
+
+/// The current value.
+static CURRENT: u8 = 0;
+
+/// Builds a value.
+build() -> u8;
+```
+
+<a id="mod.surface.values.inner"></a>
+### values::inner
+
+```
+/// A function two re-exports away.
+deep();
+```
