@@ -140,19 +140,12 @@ struct Marker;
 
 ```
 using prelude::*;
-
 using std::collections::BTreeMap;
-
 using values::build;
-
 using values::CURRENT;
-
 using values::deep;
-
 using detail::Handle;
-
 using kit = detail::tools;
-
 using values::MAX;
 
 /// Says hello.

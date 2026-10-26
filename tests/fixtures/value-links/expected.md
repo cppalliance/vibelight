@@ -73,13 +73,9 @@ struct Shape
 
 ```
 using tools::backend;
-
 using GRAND_TOTAL = tools::TOTAL;
-
 using tools::LIMIT;
-
 using relay::measure;
-
 using tools::Shape;
 ```
 
@@ -92,7 +88,6 @@ using tools::Shape;
 
 ```
 using crate::tools::measure;
-
 using crate::tools::TOTAL;
 ```
 

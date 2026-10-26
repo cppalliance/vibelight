@@ -16,5 +16,9 @@ mod inner {
 pub use inner::{Other, Thing};
 pub use inner::helper as assist;
 pub use inner::*;
+/// The thing under its old name.
+pub use inner::Thing as OldThing;
+#[cfg(feature = "extra")]
+pub use inner::Other as Extra;
 pub(crate) use inner::Thing as CrateThing;
 use std::fmt;

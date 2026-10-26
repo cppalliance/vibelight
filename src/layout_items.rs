@@ -66,6 +66,10 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         sort_entries(group, &krate.refs);
     }
     for (groups, items) in sections.iter_mut().zip(&foreign) {
+        let reexports = std::mem::take(&mut groups[0]);
+        if !reexports.is_empty() {
+            groups[0] = vec![packed(reexports)];
+        }
         groups[5] = extern_blocks(krate, items);
     }
     let mut block = Block::default();
@@ -144,6 +148,38 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     }
     Entry {
         name: item.name.clone(),
+        lines,
+        repeats,
+    }
+}
+
+/// Packs sorted re-export entries into one entry, so their `using` lines
+/// sit together. An entry with a line above its first `using` line, such
+/// as a comment or a `// cfg:` line, keeps a blank line on each side, so
+/// that line never seems to cover its neighbors.
+fn packed(entries: Vec<Entry>) -> Entry {
+    let plain = |entry: &Entry| {
+        entry
+            .lines
+            .first()
+            .and_then(|line| line.spans.first())
+            .is_some_and(|span| *span == key("using"))
+    };
+    let name = entries[0].name.clone();
+    let mut lines = Vec::new();
+    let mut repeats = Vec::new();
+    let mut last_plain = true;
+    for entry in entries {
+        let this_plain = plain(&entry);
+        if !lines.is_empty() && (!last_plain || !this_plain) {
+            lines.push(Line::default());
+        }
+        last_plain = this_plain;
+        lines.extend(entry.lines);
+        repeats.extend(entry.repeats);
+    }
+    Entry {
+        name,
         lines,
         repeats,
     }

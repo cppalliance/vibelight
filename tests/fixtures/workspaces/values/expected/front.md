@@ -47,9 +47,7 @@
 
 ```
 using MAX = relay::LIMIT;
-
 using relay::measure;
-
 using relay::TOTAL;
 
 /// Takes a reading with `measure`, which relay re-exports from origin.

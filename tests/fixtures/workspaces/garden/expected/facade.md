@@ -68,9 +68,7 @@ struct Panel
 
 ```
 using beta::Gauge;
-
 using alpha::Meter;
-
 using alpha::Reads;
 
 /// Shows any reader.

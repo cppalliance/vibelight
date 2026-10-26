@@ -47,9 +47,7 @@
 
 ```
 using origin::gauge::LIMIT;
-
 using origin::gauge::measure;
-
 using origin::gauge::TOTAL;
 
 /// Takes a reading through `origin::gauge::measure`.

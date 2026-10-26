@@ -39,7 +39,9 @@
 ## Public surface
 
 - [assist()](#mod.reexports.inner)
+- [Extra](#type.reexports.inner.Other)
 - [helper()](#mod.reexports.inner)
+- [OldThing](#type.reexports.inner.Thing)
 - [Other](#type.reexports.inner.Other)
 - [Thing](#type.reexports.inner.Thing)
 
@@ -70,11 +72,15 @@ struct Thing;
 
 ```
 using inner::*;
-
 using assist = inner::helper;
 
-using inner::Other;
+// cfg: feature = "extra"
+using Extra = inner::Other;
 
+/// The thing under its old name.
+using OldThing = inner::Thing;
+
+using inner::Other;
 using inner::Thing;
 
 internal:

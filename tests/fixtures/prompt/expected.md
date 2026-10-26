@@ -326,11 +326,8 @@ struct BodyText;
 
 ```
 using prompt::Block;
-
 using runvil_lua::LuaProgram;
-
 using prompt::Prompt;
-
 using prompt::Section;
 ```
 
