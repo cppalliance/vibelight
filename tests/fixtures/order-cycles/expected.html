@@ -13,6 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
@@ -33,17 +34,17 @@ span.src{cursor:default}
 <nav>
 <ul>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#level.1">Level 1: top-level types</a>
+<li><a href="#group.1">net</a>
 <ul>
 <li><a href="#type.order_cycles.Root">Root</a></li>
-<li><a href="#type.order_cycles.Left">Left</a></li>
-<li><a href="#type.order_cycles.Right">Right</a></li>
-</ul>
-</li>
-<li><a href="#level.2">Level 2</a>
-<ul>
 <li><a href="#type.order_cycles.net.Ping">net::Ping</a></li>
 <li><a href="#type.order_cycles.net.Pong">net::Pong</a></li>
+</ul>
+</li>
+<li><a href="#group.2">order_cycles</a>
+<ul>
+<li><a href="#type.order_cycles.Left">Left</a></li>
+<li><a href="#type.order_cycles.Right">Right</a></li>
 </ul>
 </li>
 <li><a href="#modules">Modules</a>
@@ -68,26 +69,14 @@ span.src{cursor:default}
 <li><a href="#type.order_cycles.Right">Right</a></li>
 <li><a href="#type.order_cycles.Root">Root</a></li>
 </ul>
-<h2 id="level.1">Level 1: top-level types</h2>
+<hr>
+<h2 id="group.1">net</h2>
 <h3 id="type.order_cycles.Root">Root</h3>
 <pre><code><span class="c">/// Names the cycle below it.</span>
 <span class="k">struct</span> Root
 {
     <span class="src">ping</span>: <a href="#type.order_cycles.net.Ping">net::Ping</a>,
 }</code></pre>
-<h3 id="type.order_cycles.Left">Left</h3>
-<pre><code><span class="c">/// Half of a cycle that nothing else names.</span>
-<span class="k">struct</span> Left
-{
-    <span class="src">right</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Right">Right</a>&gt;&gt;,
-}</code></pre>
-<h3 id="type.order_cycles.Right">Right</h3>
-<pre><code><span class="c">/// The other half.</span>
-<span class="k">struct</span> Right
-{
-    <span class="src">left</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Left">Left</a>&gt;&gt;,
-}</code></pre>
-<h2 id="level.2">Level 2</h2>
 <h3 id="type.order_cycles.net.Ping">net::Ping</h3>
 <pre><code><span class="c">/// Names Pong.</span>
 <span class="k">struct</span> Ping
@@ -99,6 +88,20 @@ span.src{cursor:default}
 <span class="k">struct</span> Pong
 {
     <span class="src">ping</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Ping">Ping</a>&gt;&gt;,
+}</code></pre>
+<hr>
+<h2 id="group.2">order_cycles</h2>
+<h3 id="type.order_cycles.Left">Left</h3>
+<pre><code><span class="c">/// Half of a cycle that nothing else names.</span>
+<span class="k">struct</span> Left
+{
+    <span class="src">right</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Right">Right</a>&gt;&gt;,
+}</code></pre>
+<h3 id="type.order_cycles.Right">Right</h3>
+<pre><code><span class="c">/// The other half.</span>
+<span class="k">struct</span> Right
+{
+    <span class="src">left</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Left">Left</a>&gt;&gt;,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.order_cycles">order_cycles</h3>

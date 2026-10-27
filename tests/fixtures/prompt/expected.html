@@ -13,6 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
@@ -33,28 +34,20 @@ span.src{cursor:default}
 <nav>
 <ul>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#level.1">Level 1: top-level types</a>
+<li><a href="#group.1">prompt</a>
 <ul>
 <li><a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a></li>
-</ul>
-</li>
-<li><a href="#level.2">Level 2</a>
-<ul>
-<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
 <li><a href="#type.runvil_parser.Frontmatter">Frontmatter</a></li>
 <li><a href="#type.runvil_parser.prompt.Section">prompt::Section</a></li>
-<li><a href="#type.runvil_parser.Result">Result</a></li>
-</ul>
-</li>
-<li><a href="#level.3">Level 3</a>
-<ul>
 <li><a href="#type.runvil_parser.prompt.Block">prompt::Block</a></li>
-<li><a href="#type.runvil_parser.Error">Error</a></li>
 </ul>
 </li>
-<li><a href="#level.4">Level 4</a>
+<li><a href="#group.2">runvil_parser</a>
 <ul>
 <li><a href="#type.runvil_parser.BodyText">BodyText</a></li>
+<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
+<li><a href="#type.runvil_parser.Result">Result</a></li>
+<li><a href="#type.runvil_parser.Error">Error</a></li>
 </ul>
 </li>
 <li><a href="#modules">Modules</a>
@@ -90,7 +83,8 @@ span.src{cursor:default}
 <li><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></li>
 <li><a href="#type.runvil_parser.prompt.Section">Section</a></li>
 </ul>
-<h2 id="level.1">Level 1: top-level types</h2>
+<hr>
+<h2 id="group.1">prompt</h2>
 <h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
 <pre><code><span class="c">/// A fully parsed prompt file.</span>
 [[non_exhaustive]]
@@ -187,10 +181,6 @@ span.src{cursor:default}
 
     <span class="k">static</span> <span class="src">parse_inner</span>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;;
 }</code></pre>
-<h2 id="level.2">Level 2</h2>
-<h3 id="type.runvil_parser.ParseError">ParseError</h3>
-<pre><code><span class="c">/// A parse failure reported to callers.</span>
-<span class="k">struct</span> ParseError;</code></pre>
 <h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
 <pre><code><span class="c">/// The parsed YAML frontmatter.</span>
 <span class="k">struct</span> Frontmatter;</code></pre>
@@ -258,11 +248,6 @@ span.src{cursor:default}
     <span class="c">/// The section's own raw Markdown, without its heading line or children.</span>
     <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
 }</code></pre>
-<h3 id="type.runvil_parser.Result">Result</h3>
-<pre><code><span class="c">/// The crate's result type.</span>
-<span class="c">// internal</span>
-<span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;;</code></pre>
-<h2 id="level.3">Level 3</h2>
 <h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
 <pre><code><span class="c">/// One executable block inside a section: a compiled Lua fence or prose.</span>
 [[non_exhaustive]]
@@ -283,13 +268,21 @@ span.src{cursor:default}
         text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
     },
 }</code></pre>
-<h3 id="type.runvil_parser.Error">Error</h3>
-<pre><code><span class="c">/// The crate's internal error.</span>
-<span class="k">struct</span> Error;</code></pre>
-<h2 id="level.4">Level 4</h2>
+<hr>
+<h2 id="group.2">runvil_parser</h2>
 <h3 id="type.runvil_parser.BodyText">BodyText</h3>
 <pre><code><span class="c">/// Shared Markdown text.</span>
 <span class="k">struct</span> BodyText;</code></pre>
+<h3 id="type.runvil_parser.ParseError">ParseError</h3>
+<pre><code><span class="c">/// A parse failure reported to callers.</span>
+<span class="k">struct</span> ParseError;</code></pre>
+<h3 id="type.runvil_parser.Result">Result</h3>
+<pre><code><span class="c">/// The crate's result type.</span>
+<span class="c">// internal</span>
+<span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;;</code></pre>
+<h3 id="type.runvil_parser.Error">Error</h3>
+<pre><code><span class="c">/// The crate's internal error.</span>
+<span class="k">struct</span> Error;</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.runvil_parser">runvil_parser</h3>
 <ul>

@@ -13,6 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
@@ -33,16 +34,12 @@ span.src{cursor:default}
 <nav>
 <ul>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#level.1">Level 1: top-level types</a>
+<li><a href="#group.1">names</a>
 <ul>
 <li><a href="#type.names.Catalog">Catalog</a></li>
-<li><a href="#type.names.Pairs">Pairs</a></li>
-</ul>
-</li>
-<li><a href="#level.2">Level 2</a>
-<ul>
 <li><a href="#type.names.model.Record">model::Record</a></li>
 <li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
+<li><a href="#type.names.Pairs">Pairs</a></li>
 <li><a href="#type.names.api.Token">api::Token</a></li>
 </ul>
 </li>
@@ -88,7 +85,8 @@ span.src{cursor:default}
 <li><a href="#type.names.Twin">Twin</a></li>
 <li><a href="#type.names.Wrapper">Wrapper</a></li>
 </ul>
-<h2 id="level.1">Level 1: top-level types</h2>
+<hr>
+<h2 id="group.1">names</h2>
 <h3 id="type.names.Catalog">Catalog</h3>
 <pre><code><span class="c">/// Uses names resolved every way rule 39 allows.</span>
 <span class="k">struct</span> Catalog
@@ -108,10 +106,6 @@ span.src{cursor:default}
     <span class="c">/// An ambiguous name stays plain.</span>
     <span class="src">fifth</span>: Shared,
 }</code></pre>
-<h3 id="type.names.Pairs">Pairs</h3>
-<pre><code><span class="c">/// Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span>
-<span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a;</code></pre>
-<h2 id="level.2">Level 2</h2>
 <h3 id="type.names.model.Record">model::Record</h3>
 <pre><code><span class="c">/// A record.</span>
 <span class="k">struct</span> Record
@@ -121,9 +115,13 @@ span.src{cursor:default}
 <h3 id="type.names.api.inner.Handle">api::inner::Handle</h3>
 <pre><code><span class="c">/// A handle.</span>
 <span class="k">struct</span> Handle;</code></pre>
+<h3 id="type.names.Pairs">Pairs</h3>
+<pre><code><span class="c">/// Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span>
+<span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a;</code></pre>
 <h3 id="type.names.api.Token">api::Token</h3>
 <pre><code><span class="c">/// A unique token type.</span>
 <span class="k">struct</span> Token;</code></pre>
+<hr>
 <h2 id="unconnected">Unconnected types</h2>
 <h3 id="type.names.api.inner.Shared">api::inner::Shared</h3>
 <pre><code><span class="c">/// The other type named Shared.</span>

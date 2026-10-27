@@ -13,6 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
@@ -33,7 +34,7 @@ span.src{cursor:default}
 <nav>
 <ul>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#level.1">Level 1: top-level types</a>
+<li><a href="#group.1">parts</a>
 <ul>
 <li><a href="#type.beta.parts.Gauge">parts::Gauge</a></li>
 </ul>
@@ -63,10 +64,12 @@ span.src{cursor:default}
 <li><a href="#type.beta.parts.Gauge">parts::Gauge</a></li>
 <li><a href="#type.beta.parts.Valve">parts::Valve</a></li>
 </ul>
-<h2 id="level.1">Level 1: top-level types</h2>
+<hr>
+<h2 id="group.1">parts</h2>
 <h3 id="type.beta.parts.Gauge">parts::Gauge</h3>
 <pre><code><span class="c">/// A gauge.</span>
 <span class="k">struct</span> Gauge;</code></pre>
+<hr>
 <h2 id="unconnected">Unconnected types</h2>
 <h3 id="type.beta.parts.Valve">parts::Valve</h3>
 <pre><code><span class="c">/// A valve.</span>

@@ -21,9 +21,9 @@ pub(crate) enum MembersBy {
 /// How a file orders its declarations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum OrderBy {
-    /// By level, then a Modules section.
-    Levels,
-    /// In one section per module, with an index by level.
+    /// In groups of types, each named for a module, then a Modules section.
+    Groups,
+    /// In one section per module, the types of each in dependency order.
     Modules,
 }
 
@@ -74,7 +74,7 @@ pub(crate) const HTML: Options = Options {
     notation: Notation::Cpp,
     kill_list: KillList::Full,
     facts: false,
-    order: OrderBy::Levels,
+    order: OrderBy::Groups,
     members: MembersBy::Name,
     legend: false,
 };

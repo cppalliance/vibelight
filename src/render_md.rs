@@ -59,6 +59,7 @@ pub(crate) fn render(doc: &Document, stamp: &str) -> String {
                 }
                 out.push('\n');
             }
+            Node::Rule => out.push_str("---\n"),
             Node::List { items, .. } => list(&mut out, items, 0, &doc.refs),
             Node::Para {
                 inlines: content, ..

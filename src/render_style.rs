@@ -9,6 +9,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
@@ -44,6 +45,10 @@ mod tests {
         );
         assert!(STYLE.contains("\na.cross{color:var(--cross)}\n"));
         assert!(STYLE.contains("\nspan.src{cursor:default}\n"));
+        assert!(
+            STYLE.contains("\nhr{border:0;border-top:1px solid var(--rule);margin:2rem 0}\n"),
+            "a rule uses the page's line color"
+        );
         assert!(
             STYLE.find("a.cross").unwrap() > STYLE.find(".c a").unwrap(),
             "a cross-crate link stays yellow inside a comment"

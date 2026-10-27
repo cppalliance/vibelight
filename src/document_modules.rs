@@ -1,7 +1,7 @@
-//! The module order: one section per module, holding its declarations, and
-//! a Levels section that indexes every declaration by level.
+//! The module order: one section per module, holding its declarations in
+//! dependency order.
 
-use crate::document::{Builder, Inline, Item, Node, anchor};
+use crate::document::{Builder, Item, anchor};
 use crate::layout_items::module_block;
 use crate::model::{DeclId, ModId, path_order};
 use crate::order::Order;
@@ -18,52 +18,14 @@ impl Builder<'_> {
         out
     }
 
-    /// Adds the Levels section, which lists the declarations of each level
-    /// and then the test-support and unconnected ones, and returns its
-    /// contents entry.
-    pub(crate) fn levels_index(&mut self, order: &Order) -> Item {
-        let mut groups: Vec<(String, &[DeclId])> = order
-            .levels
-            .iter()
-            .enumerate()
-            .map(|(index, level)| {
-                let text = if index == 0 {
-                    "Level 1: top-level types".to_owned()
-                } else {
-                    format!("Level {}", index + 1)
-                };
-                (text, level.as_slice())
-            })
-            .collect();
-        groups.push(("Test support".to_owned(), &order.test_support));
-        groups.push(("Unconnected types".to_owned(), &order.unconnected));
-        let items = groups
-            .into_iter()
-            .filter(|(_, decls)| !decls.is_empty())
-            .map(|(text, decls)| Item {
-                inlines: vec![Inline::Text(text)],
-                children: self.decl_items(decls),
-            })
-            .collect();
-        self.heading(2, "levels", "Levels");
-        self.nodes.push(Node::List {
-            class: "levels",
-            items,
-        });
-        Item {
-            inlines: vec![anchor("Levels", "levels")],
-            children: Vec::new(),
-        }
-    }
-
     /// Adds one H2 per module, in path order, with the module's docs and
-    /// trailing block and then an H3 for each of its declarations, by level
-    /// and then in the levels' order, and returns their contents entries.
+    /// trailing block and then an H3 for each of its declarations, in the
+    /// dependency order and then the test-support and unconnected ones, and
+    /// returns their contents entries.
     pub(crate) fn module_sections(&mut self, order: &Order, modules: &[ModId]) -> Vec<Item> {
         let sequence: Vec<DeclId> = order
-            .levels
+            .sequence
             .iter()
-            .flatten()
             .chain(&order.test_support)
             .chain(&order.unconnected)
             .copied()

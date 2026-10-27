@@ -1,20 +1,25 @@
-//! Orders declarations by how they name each other (rules 23 to 30).
+//! Orders declarations by how they name each other: a type follows its only
+//! user directly, and a type with several users follows the last of them.
 
 use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use crate::layout::{Block, Span};
 use crate::model::{
-    BodyOwner, Crate, DeclId, Foreign, ItemKind, ModId, Seg, Sig, Text, path_order,
+    BodyOwner, Crate, DeclId, Foreign, ItemKind, MemberKind, ModId, Seg, Shape, Sig, Text,
+    VariantFields, path_order,
 };
+use crate::order_graph::{Graph, first_by_path, place, reach, strongly_connected};
+
 /// The document order of the declarations.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Order {
-    /// Level 1 first, each level in its final order.
-    pub(crate) levels: Vec<Vec<DeclId>>,
+    /// Every connected production declaration in dependency order: the
+    /// roots by reach, each followed by the types it owns.
+    pub(crate) sequence: Vec<DeclId>,
     /// Declarations that name nothing and that nothing names, in path order.
     pub(crate) unconnected: Vec<DeclId>,
-    /// Test-support declarations, which leave the levels, in path order.
+    /// Test-support declarations, which leave the sequence, in path order.
     pub(crate) test_support: Vec<DeclId>,
     /// What names each declaration.
     pub(crate) namers: Vec<Namers>,
@@ -77,77 +82,77 @@ pub(crate) fn order(krate: &Crate, blocks: &[Block]) -> Order {
             group_of[d] = g;
         }
     }
-    let mut namers: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); groups.len()];
-    for &d in &connected {
-        for &t in &out[d] {
-            if group_of[t] != group_of[d] {
-                namers[group_of[t]].insert(group_of[d]);
-            }
-        }
-    }
-    let level = levels(&namers);
-    let max_level = level.iter().copied().max().unwrap_or(0);
-
-    let mut placed: Vec<DeclId> = Vec::new();
-    let mut result = Vec::new();
-    for current in 1..=max_level {
-        let mut at_level: Vec<usize> = (0..groups.len()).filter(|&g| level[g] == current).collect();
-        if current == 1 {
-            let reach: BTreeMap<usize, usize> = at_level
-                .iter()
-                .map(|&g| (g, reach(&groups[g], &out)))
-                .collect();
-            at_level.sort_by(|&a, &b| {
-                reach[&b].cmp(&reach[&a]).then_with(|| {
-                    path_cmp(
-                        first_by_path(&groups[a], &path_cmp),
-                        first_by_path(&groups[b], &path_cmp),
-                    )
-                })
-            });
-        } else {
-            let seen = first_seen(&placed, &mentions);
-            let position = |g: usize| {
-                groups[g]
-                    .iter()
-                    .filter_map(|d| seen.get(d))
-                    .min()
-                    .copied()
-                    .unwrap_or(usize::MAX)
-            };
-            at_level.sort_by(|&a, &b| {
-                position(a).cmp(&position(b)).then_with(|| {
-                    path_cmp(
-                        first_by_path(&groups[a], &path_cmp),
-                        first_by_path(&groups[b], &path_cmp),
-                    )
-                })
-            });
-        }
-        let mut row = Vec::new();
-        for g in at_level {
-            let mut remaining: Vec<DeclId> = groups[g].clone();
-            while !remaining.is_empty() {
-                let seen = first_seen(&placed, &mentions);
-                remaining.sort_by(|&a, &b| match (seen.get(&a), seen.get(&b)) {
-                    (Some(x), Some(y)) => x.cmp(y),
-                    (Some(_), None) => Ordering::Less,
-                    (None, Some(_)) => Ordering::Greater,
-                    (None, None) => path_cmp(a, b),
-                });
-                let next = remaining.remove(0);
-                placed.push(next);
-                row.push(next);
-            }
-        }
-        result.push(row);
-    }
+    let named: Vec<Vec<DeclId>> = mentions
+        .iter()
+        .enumerate()
+        .map(|(d, targets)| {
+            declared_mentions(krate, d)
+                .into_iter()
+                .chain(targets.iter().copied())
+                .filter(|t| out[d].contains(t))
+                .collect()
+        })
+        .collect();
+    let reaches: Vec<usize> = groups.iter().map(|members| reach(members, &out)).collect();
+    let graph = Graph {
+        groups: &groups,
+        group_of: &group_of,
+        mentions: &named,
+    };
+    let root_cmp = |a: usize, b: usize| {
+        reaches[b].cmp(&reaches[a]).then_with(|| {
+            path_cmp(
+                first_by_path(&groups[a], &path_cmp),
+                first_by_path(&groups[b], &path_cmp),
+            )
+        })
+    };
     Order {
-        levels: result,
+        sequence: place(&graph, &root_cmp, &path_cmp),
         unconnected,
         test_support,
         namers: used_by,
     }
+}
+/// Lists the declarations that the fields, the variants, the alias target,
+/// or the supertraits of `d` name, in declared order. The parts of a type
+/// follow it in this order, ahead of the types its signatures name, which
+/// the printed block would mention first when its methods print before its
+/// private fields.
+fn declared_mentions(krate: &Crate, d: DeclId) -> Vec<DeclId> {
+    let decl = &krate.decls[d];
+    let mut texts: Vec<&Text> = decl
+        .members
+        .iter()
+        .filter_map(|m| match &m.kind {
+            MemberKind::Field(ty) => Some(ty),
+            _ => None,
+        })
+        .collect();
+    match &decl.shape {
+        Shape::Tuple(params) => texts.extend(params.iter().map(|p| &p.text)),
+        Shape::Enum(variants) => {
+            for variant in variants {
+                match &variant.fields {
+                    VariantFields::Unit => {}
+                    VariantFields::Tuple(params) | VariantFields::Named(params) => {
+                        texts.extend(params.iter().map(|p| &p.text));
+                    }
+                }
+            }
+        }
+        Shape::Alias(text) => texts.push(text),
+        Shape::Trait { supertraits, .. } => texts.extend(supertraits.iter().map(|b| &b.text)),
+        Shape::Named | Shape::Unit => {}
+    }
+    texts
+        .into_iter()
+        .flat_map(Text::refs)
+        .filter_map(|r| {
+            let reference = &krate.refs[r];
+            reference.target.filter(|&t| t != d && !reference.comment)
+        })
+        .collect()
 }
 
 /// Lists what names each declaration, each list in path order.
@@ -186,12 +191,12 @@ fn namers(
 /// ordering.
 struct Split {
     /// The naming edges among the declarations that take part in the
-    /// levels.
+    /// sequence.
     out: Vec<BTreeSet<DeclId>>,
     /// The declarations that name something or that something names.
     connected: Vec<DeclId>,
     unconnected: Vec<DeclId>,
-    /// Test-support declarations, which leave the levels. The names they
+    /// Test-support declarations, which leave the sequence. The names they
     /// use still keep a type out of Unconnected.
     test_support: Vec<DeclId>,
 }
@@ -270,8 +275,8 @@ fn block_mentions(krate: &Crate, blocks: &[Block]) -> Vec<Vec<DeclId>> {
 /// Lists, for each declaration, the modules whose items name it: a free
 /// function, a constant, a static, an extern item, or a re-export. Such a
 /// type is in use, so it is never Unconnected, but a module is not a
-/// declaration, so it gives no level. Only the items' own text counts, not
-/// their comments.
+/// declaration, so it never owns the type or delays its place. Only the
+/// items' own text counts, not their comments.
 pub(crate) fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
     let mut out: Vec<Vec<ModId>> = vec![Vec::new(); krate.decls.len()];
     for (m, module) in krate.modules.iter().enumerate() {
@@ -318,162 +323,4 @@ fn sig_texts(sig: &Sig) -> Vec<&Text> {
     texts.extend(sig.ret.iter());
     texts.extend(sig.where_clause.iter().flat_map(|clause| clause.0.iter()));
     texts
-}
-
-/// Maps each declaration to the position of its first mention when the
-/// placed blocks are read top to bottom.
-fn first_seen(placed: &[DeclId], mentions: &[Vec<DeclId>]) -> BTreeMap<DeclId, usize> {
-    let mut seen = BTreeMap::new();
-    let mut position = 0;
-    for &d in placed {
-        for &t in &mentions[d] {
-            seen.entry(t).or_insert(position);
-            position += 1;
-        }
-    }
-    seen
-}
-
-fn first_by_path(members: &[DeclId], cmp: &impl Fn(DeclId, DeclId) -> Ordering) -> DeclId {
-    members
-        .iter()
-        .copied()
-        .min_by(|&a, &b| cmp(a, b))
-        .unwrap_or(0)
-}
-
-/// Counts the declarations a group reaches through naming, its own members
-/// left out.
-fn reach(members: &[DeclId], out: &[BTreeSet<DeclId>]) -> usize {
-    let own: BTreeSet<DeclId> = members.iter().copied().collect();
-    let mut seen: BTreeSet<DeclId> = own.clone();
-    let mut stack: Vec<DeclId> = members.to_vec();
-    while let Some(d) = stack.pop() {
-        for &t in &out[d] {
-            if seen.insert(t) {
-                stack.push(t);
-            }
-        }
-    }
-    seen.difference(&own).count()
-}
-
-/// Gives each group a level: 1 when nothing names it, otherwise one more
-/// than the highest level of any group that names it.
-fn levels(namers: &[BTreeSet<usize>]) -> Vec<usize> {
-    fn visit(g: usize, namers: &[BTreeSet<usize>], level: &mut [usize]) -> usize {
-        if level[g] > 0 {
-            return level[g];
-        }
-        let value = 1 + namers[g]
-            .iter()
-            .map(|&h| visit(h, namers, level))
-            .max()
-            .unwrap_or(0);
-        level[g] = value;
-        value
-    }
-    let mut level = vec![0usize; namers.len()];
-    for g in 0..namers.len() {
-        visit(g, namers, &mut level);
-    }
-    level
-}
-
-/// Finds the strongly connected components among `nodes` (Tarjan).
-fn strongly_connected(n: usize, out: &[BTreeSet<DeclId>], nodes: &[DeclId]) -> Vec<Vec<DeclId>> {
-    struct State {
-        index: Vec<Option<usize>>,
-        low: Vec<usize>,
-        on_stack: Vec<bool>,
-        stack: Vec<usize>,
-        next: usize,
-        groups: Vec<Vec<usize>>,
-    }
-    fn connect(v: usize, out: &[BTreeSet<DeclId>], s: &mut State) {
-        s.index[v] = Some(s.next);
-        s.low[v] = s.next;
-        s.next += 1;
-        s.stack.push(v);
-        s.on_stack[v] = true;
-        for &w in &out[v] {
-            match s.index[w] {
-                None => {
-                    connect(w, out, s);
-                    s.low[v] = s.low[v].min(s.low[w]);
-                }
-                Some(index) if s.on_stack[w] => s.low[v] = s.low[v].min(index),
-                Some(_) => {}
-            }
-        }
-        if Some(s.low[v]) == s.index[v] {
-            let mut group = Vec::new();
-            while let Some(w) = s.stack.pop() {
-                s.on_stack[w] = false;
-                group.push(w);
-                if w == v {
-                    break;
-                }
-            }
-            group.sort_unstable();
-            s.groups.push(group);
-        }
-    }
-    let mut state = State {
-        index: vec![None; n],
-        low: vec![0; n],
-        on_stack: vec![false; n],
-        stack: Vec::new(),
-        next: 0,
-        groups: Vec::new(),
-    };
-    for &v in nodes {
-        if state.index[v].is_none() {
-            connect(v, out, &mut state);
-        }
-    }
-    state.groups
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn graph(edges: &[(usize, usize)], n: usize) -> Vec<BTreeSet<usize>> {
-        let mut out = vec![BTreeSet::new(); n];
-        for &(a, b) in edges {
-            out[a].insert(b);
-        }
-        out
-    }
-
-    #[test]
-    fn diamond_puts_the_shared_type_below_both_namers() {
-        let out = graph(&[(0, 1), (0, 2), (1, 2)], 3);
-        let groups = strongly_connected(3, &out, &[0, 1, 2]);
-        assert_eq!(groups.len(), 3);
-        let mut group_of = [0; 3];
-        for (g, m) in groups.iter().enumerate() {
-            group_of[m[0]] = g;
-        }
-        let mut namers = vec![BTreeSet::new(); 3];
-        for (a, targets) in out.iter().enumerate() {
-            for &b in targets {
-                namers[group_of[b]].insert(group_of[a]);
-            }
-        }
-        let level = levels(&namers);
-        assert_eq!(
-            [level[group_of[0]], level[group_of[1]], level[group_of[2]]],
-            [1, 2, 3]
-        );
-    }
-
-    #[test]
-    fn cycles_form_one_group_and_reach_skips_members() {
-        let out = graph(&[(0, 1), (1, 0), (1, 2)], 3);
-        let groups = strongly_connected(3, &out, &[0, 1, 2]);
-        assert!(groups.contains(&vec![0, 1]));
-        assert_eq!(reach(&[0, 1], &out), 1);
-    }
 }

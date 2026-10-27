@@ -84,6 +84,8 @@ pub(crate) enum Node {
         class: &'static str,
         inlines: Vec<Inline>,
     },
+    /// A horizontal rule that opens a group of declarations.
+    Rule,
 }
 
 /// The whole outline of one target.
@@ -185,13 +187,12 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
     contents.extend(b.surface(surface));
     let modules = b.sorted_modules();
     match options.order {
-        OrderBy::Levels => {
-            contents.extend(b.ordered(order));
+        OrderBy::Groups => {
+            contents.extend(b.grouped(order));
             contents.extend(b.other_impls_section(others));
             contents.push(b.modules_section(&modules));
         }
         OrderBy::Modules => {
-            contents.push(b.levels_index(order));
             contents.extend(b.module_sections(order, &modules));
             contents.extend(b.other_impls_section(others));
         }

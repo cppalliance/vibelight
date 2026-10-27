@@ -1,26 +1,28 @@
 //! Builds the document's sections: declarations, modules, and other impls.
 
 use crate::document::{Builder, Inline, Item, Link, Node, SourceLink, anchor};
+use crate::groups::groups;
 use crate::layout::Block;
 use crate::layout_items::{self, docs_block, module_block};
 use crate::model::{DeclId, Loc, ModId};
 use crate::order::{Order, path_cmp};
 
 impl Builder<'_> {
-    /// Adds the level sections, then Test support and Unconnected types,
-    /// and returns their contents entries.
-    pub(crate) fn ordered(&mut self, order: &Order) -> Vec<Item> {
+    /// Adds the groups of the dependency order, each opened by a rule and a
+    /// heading named for its module, then Test support and Unconnected
+    /// types, which open the same way, and returns their contents entries.
+    pub(crate) fn grouped(&mut self, order: &Order) -> Vec<Item> {
         let mut contents = Vec::new();
-        for (index, level) in order.levels.iter().enumerate() {
-            let id = format!("level.{}", index + 1);
-            let text = if index == 0 {
-                "Level 1: top-level types".to_owned()
-            } else {
-                format!("Level {}", index + 1)
-            };
-            contents.push(self.section_item(&text, &id, level));
-            self.heading(2, &id, &text);
-            for &decl in level {
+        let krate = self.krate;
+        let modules = groups(&order.sequence, |d| {
+            krate.modules[krate.decls[d].module].path.clone()
+        });
+        for (index, group) in modules.iter().enumerate() {
+            let id = format!("group.{}", index + 1);
+            let text = group.caption(&krate.title);
+            contents.push(self.section_item(&text, &id, &group.decls));
+            self.section_start(&id, &text);
+            for &decl in &group.decls {
                 self.decl(decl);
             }
         }
@@ -33,7 +35,7 @@ impl Builder<'_> {
                 continue;
             }
             contents.push(self.section_item(text, id, decls));
-            self.heading(2, id, text);
+            self.section_start(id, text);
             for &decl in decls {
                 self.decl(decl);
             }
@@ -41,6 +43,11 @@ impl Builder<'_> {
         contents
     }
 
+    /// Adds the rule and the heading that open a section of types.
+    fn section_start(&mut self, id: &str, text: &str) {
+        self.nodes.push(Node::Rule);
+        self.heading(2, id, text);
+    }
     fn section_item(&self, text: &str, id: &str, decls: &[DeclId]) -> Item {
         Item {
             inlines: vec![anchor(text, id)],
