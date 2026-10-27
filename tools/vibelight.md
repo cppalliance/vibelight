@@ -20,7 +20,7 @@ Vibelight summons the outlines into a hidden `.vibelight` chamber beside the cod
 
 Announce your presence without asking questions. Read the request after this tool's name. When it is empty or `help`, print the help below and stop. Any other request names the target and preferences in plain words: crate paths, package names, globs, a repository, or a description, plus doc roots or crates to leave out. Never ask through a question tool; state each assumption and proceed.
 
-The deliverable is one complete plan that fixes what the scan finds. Create the plan first thing, from the template, and fill it in as the scan runs. Keep writing to it as each finding is verified, and finish it before the run ends. Never present a section heading with nothing under it, and never leave a section saying `Pending the scan.` when the run ends.
+The deliverable is one complete plan that fixes what the scan finds. Put the host in plan mode and create that plan before anything is analyzed, so the operator watches the report take shape. Keep writing to it as each finding is verified, and finish it before the run ends. Never present a section heading with nothing under it, and never leave a section saying `Pending the scan.` when the run ends.
 
 The scan's working files stay in scratch: `findings-N.md`, `verified-N.md`, `refined-plan.md`, and nothing else. The plan file holds the answer, never the bookkeeping.
 
@@ -35,11 +35,21 @@ vibelight.md: outlines Rust crates with vibelight and plans away their slop
   vibelight.toml at the repository root chooses the crates; the first run writes it
 ```
 
-## Create the Plan First
+## Plan Mode First
 
-Before anything else, before the outline work, before any dispatch, write the plan file and fill it with the template's seven sections. Write it as a plain markdown file with the file-writing tool, in the plans directory the host keeps, and never through a plan tool, a mode change, or anything else that stops the run for an approval. This run owns its plan: an approval that arrives before the first finding leaves the plan describing work the run never did, and the operator is told the job is done when nothing has been looked at. That file is the deliverable: the scope, the findings, the refined text, and nothing else is the plan. This tool's request to fill the plan file overrides any generic host or operator wording that says not to edit a plan file, because that wording guards a plan the operator wrote, and this one is yours. Never write the plan anywhere else, an output folder or a scratch file included. When nothing can write the plan file, say so in one sentence and stop. Otherwise keep going: the write of the plan file is one step of the run, never the end of it.
+This is the first thing the run does, before reading the request's target, before any outline work, before any dispatch, and before any file is written.
 
-Write the whole template at creation time, with every section heading present and the scope filled in. Sections whose content is not yet known carry one line, `Pending the scan.`, in place of their bullets. That is the only placeholder allowed. The plan exists from the first minute so a subagent can read the scope from it and the operator can open it at any time.
+1. Put the host in plan mode. Call the host's mode switch with `plan` when its current mode is anything else. Skip the call when the host already reports plan mode, and skip it when the host offers no mode switch at all; either way, continue to step 2 without waiting.
+2. Create the plan with the host's plan tool, using the template under Cleanup Plan: its title, the seven sections, the contract tags, and the scope. The plan tool renders the plan in the operator's view immediately, which is the whole point of this step: the operator sees what the run is about to do instead of a silent stretch of analysis.
+3. Write the same content to the plan file the plan tool names, with the file-writing tool, and record that path. The tool's copy is the one the operator watches; the file's copy is the one the deliverable is read from and the one every subagent greps for `### Scope`. Both carry the same seven sections and the same scope.
+
+Before the plan tool runs, the scope cannot be filled, because the target has not been resolved. So the creation call carries the template with the scope reduced to what the request itself states and one line, `Pending the scan.`, standing in for each section it cannot yet fill. Immediately after the plan tool returns, resolve the target from the config and rewrite both copies with the scope filled in, still before any outline is read.
+
+The approval stop is the point, not a cost. An operator who approves before the first finding has seen the scope and agreed to the direction; the plan keeps growing afterward, and every later write lands in the same two copies. A run that writes nothing visible until it finishes is a run the operator cannot supervise, and that is the failure this section exists to prevent.
+
+Both copies are the deliverable, so they never diverge. Write each section into both as it settles: the Debt Inventory when findings are verified, the rest as each section lands. If the host's plan tool cannot be called at all, say so in one sentence, write the plan file, and keep going; the file is then the only copy.
+
+The creation call carries the whole template: every section heading present, the scope filled in as far as the request allows, and one line, `Pending the scan.`, standing in for each section whose content is not yet known. That is the only placeholder allowed. The plan exists from the first minute so the operator can watch it fill in, and both copies are rewritten with the resolved scope the moment the target is known, which is before any outline is read.
 
 The scope is an H3 inside Product Requirements, never its own H2: the seven H2 sections are fixed by the template's contract tags, and an extra H2 breaks every reader of them. Name it `### Scope`, and give it one fact per bullet, a bold label leading each, one nested level where a fact has parts, each line under 100 characters. Where a fact has many parts, give the count and name the parts only where a reader must open one, such as the operator's own doc root. Never paste a list of thirteen outline paths into one bullet.
 
@@ -112,7 +122,7 @@ While vibelight runs, collect the documentation that counts as fact: READMEs, AG
 
 ## Read-Only From Here
 
-Once the outlines and doc roots are ready, the run turns read-only. Never switch the host's mode to get there: a mode change is an approval stop, and a stop in the middle of the scan is a run that reports nothing. The mode the host is already in does not matter, because the conduct below is what makes the run read-only, and it holds in every mode. If the host is in a planning mode already, proceed without touching it.
+Once the outlines and doc roots are ready, the run stops writing anything but its plan. The plan mode entered at the start is what holds the run read-only: the host refuses an edit in that mode, so the conduct below is mostly enforced for free. Never leave plan mode, and never switch to any mode that writes, for the rest of the run. Keep the conduct below anyway, because it is what makes the boundary real rather than merely unenforced.
 
 From here on, the main context writes only the plan file, each subagent writes only its own **scratch** file, and the shell only reads. Write nothing inside the analyzed repository beyond what vibelight already wrote, and never commit.
 
@@ -394,15 +404,15 @@ Return no raw repository content and no plan prose. Return only `done` or `block
 
 </slop-refine-instructions>
 
-Diff the plan against `refined-plan.md` with the shell; beyond the refiner's changes, nothing else differs. Accept each change that a verified file or a cited path and line supports, and revert the rest, editing the plan file in place. The plan keeps its scope at the top and cites repository paths, never scratch files. Update any summary the host keeps for the plan, and present it. When open questions remain, end with one line asking the operator to answer them by number, then fold each answer into the Decision Record and the work items it affects.
+Diff the plan file against `refined-plan.md` with the shell; beyond the refiner's changes, nothing else differs. Accept each change that a verified file or a cited path and line supports, and revert the rest, editing the plan file in place. Write the accepted result into the plan tool's copy too, so the operator's view and the deliverable carry the same text. The plan keeps its scope at the top and cites repository paths, never scratch files. Then present it. When open questions remain, end with one line asking the operator to answer them by number, then fold each answer into the Decision Record and the work items it affects.
 
 ## Restated
 
-Run `vibelight` in the repository root of the target crate when the outlines are missing or older than a target crate's source, and otherwise read the index already there. Take the targets and the context from that index, write the plan from the template with the scope filled in, and keep working without stopping for an approval. Raise candidates from the outlines and the docs in parallel, verify every one in the repository, classify each as cheap or substantial, settle the reversible choices, and number the hard ones as open questions. Write findings into the plan as they are verified, refine the whole plan against the code, and finish with a Cleanup Plan that states only the problems, in as many items as the work needs and no more.
+Run `vibelight` in the repository root of the target crate when the outlines are missing or older than a target crate's source, and otherwise read the index already there. Put the host in plan mode and create the visible plan first, so the operator sees the scope before anything is analyzed. Take the targets and the context from that index, fill the plan's scope in, raise candidates from the outlines and the docs in parallel, verify every one in the repository, classify each as cheap or substantial, settle the reversible choices, and number the hard ones as open questions. Write findings into both plan copies as they are verified, refine the whole plan against the code, and finish with a Cleanup Plan that states only the problems, in as many items as the work needs and no more.
 
 ![Karmic Order](images/vibelight-4.jpg)
 
-*2026-10-27 - Claude Opus 5.5 (Cursor agent). The run never stops to ask. The plan file is written with the file tool and filled in as the scan lands, because an approval stop after the plan reports a job that was never done.*
+*2026-10-27 - Claude Opus 5.5 (Cursor agent). Plan mode first, then the plan tool, then the plan file: the operator sees the skeleton and the scope before the first outline is read, and both copies grow together from there.*
 
 *2026-10-27 - Claude Opus 5.5 (Cursor agent). Every path resolves against the repository that holds the target crate: its `vibelight.toml` chooses the crates, its `out` folder holds the outlines, and freshness is judged against that crate's whole tree.*
 
@@ -410,4 +420,4 @@ Run `vibelight` in the repository root of the target crate when the outlines are
 
 *2026-10-27 - Claude Opus 5.5 (Cursor agent). Plans report problems only: a stats line, cheap and substantial classes, one line per finding, work items grouped by file and shared cause, and the rule that a plan longer than its change has failed.*
 
-*2026-10-27 - Claude Opus 5.5 (Cursor agent). The plan is created first thing from the template, with `### Scope` inside Product Requirements and the seven H2 sections wrapped in debt-collector's exact XML tags.*
+*2026-10-27 - Claude Opus 5.5 (Cursor agent). Plan mode, the plan tool, then the plan file: the operator sees the skeleton and the scope before the first outline is read, so a run is supervised rather than announced.*
