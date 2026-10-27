@@ -87,6 +87,22 @@ pub(crate) fn vis(vis: &Visibility) -> Vis {
     }
 }
 
+/// Returns a visibility as written, such as `pub(crate)`; empty for none.
+/// `pub(in crate)`, `pub(in self)`, and `pub(in super)` print the way
+/// rustfmt writes them, without the `in`.
+pub(crate) fn spelled(vis: &Visibility, file: &SourceFile) -> String {
+    match vis {
+        Visibility::Inherited => String::new(),
+        Visibility::Restricted(r) => match r.path.get_ident() {
+            Some(word) if ["crate", "self", "super"].iter().any(|k| word == k) => {
+                format!("pub({word})")
+            }
+            _ => file.clean(crate::typerefs::range_of(vis, file)),
+        },
+        Visibility::Public(_) => "pub".to_owned(),
+    }
+}
+
 /// Returns the normalized source text inside a meta list's delimiters.
 pub(crate) fn list_text(list: &MetaList, file: &SourceFile) -> String {
     let span = match &list.delimiter {

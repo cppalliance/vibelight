@@ -9,45 +9,60 @@ pub(crate) enum Seg {
     Ref(RefId),
 }
 
-/// Text assembled from source slices, with type names split out.
+/// Text assembled from source slices, with type names split out. The first
+/// list is the C++ spelling, with each reference's and pointer's sigil
+/// after its type, as in `T mut& 'a`; the second is the Rust spelling, as
+/// in `&'a mut T`, kept only when the two differ.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub(crate) struct Text(pub(crate) Vec<Seg>);
+pub(crate) struct Text(pub(crate) Vec<Seg>, pub(crate) Option<Vec<Seg>>);
 
 impl Text {
     /// Builds text with no type names.
     pub(crate) fn plain(text: impl Into<String>) -> Text {
         let text = text.into();
         if text.is_empty() {
-            Text(Vec::new())
+            Text(Vec::new(), None)
         } else {
-            Text(vec![Seg::Plain(text)])
+            Text(vec![Seg::Plain(text)], None)
         }
     }
 
     /// Appends plain characters, merging with a plain run at the end.
     pub(crate) fn push_str(&mut self, text: &str) {
-        if text.is_empty() {
-            return;
-        }
-        if let Some(Seg::Plain(last)) = self.0.last_mut() {
-            last.push_str(text);
-        } else {
-            self.0.push(Seg::Plain(text.to_owned()));
+        push_plain(&mut self.0, text);
+        if let Some(rust) = &mut self.1 {
+            push_plain(rust, text);
         }
     }
 
     pub(crate) fn push_ref(&mut self, id: RefId) {
         self.0.push(Seg::Ref(id));
+        if let Some(rust) = &mut self.1 {
+            rust.push(Seg::Ref(id));
+        }
     }
 
-    /// Appends another text.
+    /// Appends another text, in both spellings.
     pub(crate) fn append(&mut self, other: &Text) {
-        for seg in &other.0 {
-            match seg {
-                Seg::Plain(text) => self.push_str(text),
-                Seg::Ref(id) => self.push_ref(*id),
-            }
+        if self.1.is_none() && other.1.is_some() {
+            self.1 = Some(self.0.clone());
         }
+        extend(&mut self.0, &other.0);
+        if let Some(rust) = &mut self.1 {
+            extend(rust, other.rust());
+        }
+    }
+
+    /// Returns the segments as Rust spells them.
+    pub(crate) fn rust(&self) -> &[Seg] {
+        self.1.as_deref().unwrap_or(&self.0)
+    }
+
+    /// Gives the text a Rust spelling of its own, such as a re-export's
+    /// `path as Alias` for the C++ `Alias = path`.
+    pub(crate) fn spelled(mut self, rust: Vec<Seg>) -> Text {
+        self.1 = (rust != self.0).then_some(rust);
+        self
     }
 
     /// Returns the ids of the type names in the text, in order.
@@ -68,6 +83,27 @@ impl Text {
             }
         }
         out
+    }
+}
+
+/// Appends plain characters to a list, merging with a plain run at its end.
+fn push_plain(segs: &mut Vec<Seg>, text: &str) {
+    if text.is_empty() {
+        return;
+    }
+    if let Some(Seg::Plain(last)) = segs.last_mut() {
+        last.push_str(text);
+    } else {
+        segs.push(Seg::Plain(text.to_owned()));
+    }
+}
+
+fn extend(segs: &mut Vec<Seg>, other: &[Seg]) {
+    for seg in other {
+        match seg {
+            Seg::Plain(text) => push_plain(segs, text),
+            Seg::Ref(id) => segs.push(Seg::Ref(*id)),
+        }
     }
 }
 

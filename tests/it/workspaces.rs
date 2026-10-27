@@ -7,7 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 
-use crate::support::{self, copy_dir, fixtures, has_ext, read_outputs};
+use crate::config::{MEMBERS, lines, vibelight_in};
+use crate::support::{self, copy_dir, fixtures, has_ext, read_outputs, read_plain};
 
 fn workspaces() -> PathBuf {
     fixtures().join("workspaces")
@@ -18,32 +19,39 @@ fn text(path: &Path) -> &str {
 }
 
 /// Runs the binary with `args`, writing into `out`.
-fn vibelight(args: &[&str], out: &Path, links: bool) -> Output {
-    let mut command = support::vibelight();
-    command.args(args).arg("-o").arg(out);
-    if !links {
-        command.arg("--no-source-links");
-    }
-    command.output().expect("the vibelight binary runs")
+fn vibelight(args: &[&str], out: &Path) -> Output {
+    support::vibelight()
+        .args(args)
+        .arg("-o")
+        .arg(out)
+        .output()
+        .expect("the vibelight binary runs")
 }
 
-fn goldens() -> Vec<(String, String)> {
-    read_outputs(&workspaces().join("garden").join("expected"))
+/// A copy of a workspace fixture whose config outlines its members.
+fn copy(name: &str) -> (tempfile::TempDir, PathBuf) {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let repo = tmp.path().join(name);
+    copy_dir(&workspaces().join(name), &repo);
+    fs::write(repo.join("vibelight.toml"), MEMBERS).expect("the config can be written");
+    (tmp, repo)
+}
+
+fn goldens(name: &str) -> Vec<(String, String)> {
+    read_outputs(&workspaces().join(name).join("expected"))
 }
 
 #[test]
 fn a_workspace_run_matches_the_goldens_of_every_crate() {
-    let garden = workspaces().join("garden");
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = vibelight(&["--workspace", text(&garden)], tmp.path(), false);
-    let stderr = String::from_utf8(result.stderr).expect("stderr is UTF-8");
-    assert!(result.status.success(), "{stderr}");
+    let (_tmp, repo) = copy("garden");
+    let result = vibelight_in(&repo, &["-o", "out"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert_eq!(
-        stderr.lines().collect::<Vec<_>>(),
+        lines(&result.stderr),
         ["note: skipped testonly: it has only tests, examples, or benches"]
     );
-    let written = read_outputs(tmp.path());
-    let expected = goldens();
+    let written = read_plain(&repo.join("out"));
+    let expected = goldens("garden");
     let names = |files: &[(String, String)]| -> Vec<String> {
         files.iter().map(|(name, _)| name.clone()).collect()
     };
@@ -65,37 +73,30 @@ fn naming_the_crates_in_reverse_gives_the_same_files() {
         .collect();
     let forward: Vec<&str> = dirs.iter().map(|dir| text(dir)).collect();
     let reversed: Vec<&str> = forward.iter().rev().copied().collect();
-    let first = tempfile::tempdir().expect("a temporary folder can be made");
-    let second = tempfile::tempdir().expect("a temporary folder can be made");
-    assert!(vibelight(&forward, first.path(), false).status.success());
-    assert!(vibelight(&reversed, second.path(), false).status.success());
-    let files = read_outputs(first.path());
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let (first, second) = (tmp.path().join("first"), tmp.path().join("second"));
+    assert!(vibelight(&forward, &first).status.success());
+    assert!(vibelight(&reversed, &second).status.success());
+    let files = read_plain(&first);
+    assert!(files == read_plain(&second), "the order changed a file");
     assert!(
-        files == read_outputs(second.path()),
-        "the order changed a file"
-    );
-    assert!(
-        files == goldens(),
+        files == goldens("garden"),
         "named crates differ from the workspace run"
     );
 }
 
 #[test]
 fn follow_globs_pull_in_only_the_matching_path_dependencies() {
-    let alpha = workspaces().join("garden").join("crates").join("alpha");
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = vibelight(&[text(&alpha), "--follow", "crates/b*"], tmp.path(), false);
-    assert!(
-        result.status.success(),
-        "{}",
-        String::from_utf8_lossy(&result.stderr)
-    );
-    let expected: Vec<(String, String)> = goldens()
+    let (_tmp, repo) = copy("garden");
+    fs::write(repo.join("vibelight.toml"), "follow = [\"crates/b*\"]\n").unwrap();
+    let result = vibelight_in(&repo, &["crates/alpha", "-o", "out"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let expected: Vec<(String, String)> = goldens("garden")
         .into_iter()
         .filter(|(name, _)| name.starts_with("alpha.") || name.starts_with("beta."))
         .collect();
     assert!(
-        read_outputs(tmp.path()) == expected,
+        read_plain(&repo.join("out")) == expected,
         "alpha and beta only, and the same files as in the larger run"
     );
 }
@@ -141,26 +142,28 @@ struct Links {
     values: usize,
 }
 
-/// Runs a copy of a workspace fixture with source links on and checks that
-/// every link of every page reaches a file and an id that exist.
+/// Runs a copy of a workspace fixture and checks that every link of every
+/// outline reaches a file and an id that exist, from the folder the outline
+/// sits in.
 fn every_link_lands(name: &str) -> Links {
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let copy = tmp.path().join(name);
-    copy_dir(&workspaces().join(name), &copy);
-    let out = copy.join("out");
-    assert!(
-        vibelight(&["--workspace", text(&copy)], &out, true)
-            .status
-            .success()
-    );
-    let pages = read_outputs(&out);
+    let (_tmp, repo) = copy(name);
+    let out = repo.join("out");
+    assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
+    let mut pages: Vec<(String, PathBuf, String)> = Vec::new();
+    for folder in [out.clone(), out.join("html")] {
+        for (file, page) in read_outputs(&folder) {
+            if file != "index.md" {
+                pages.push((file, folder.clone(), page));
+            }
+        }
+    }
     let mut counts = Links {
         same: 0,
         cross: 0,
         source: 0,
         values: 0,
     };
-    for (file, page) in &pages {
+    for (file, folder, page) in &pages {
         for href in hrefs(file, page) {
             let (target, fragment) = href.split_once('#').unwrap_or((href.as_str(), ""));
             if ["fn.", "const.", "static."]
@@ -175,11 +178,14 @@ fn every_link_lands(name: &str) -> Links {
                     "{file}: #{fragment} is missing"
                 );
                 counts.same += 1;
-            } else if let Some((_, other)) = pages.iter().find(|(name, _)| name == target) {
+            } else if let Some((_, _, other)) = pages.iter().find(|(name, _, _)| name == target) {
                 assert!(ids(other).contains(fragment), "{file}: {href} is missing");
                 counts.cross += 1;
             } else {
-                assert!(out.join(target).is_file(), "{file}: {href} names no file");
+                assert!(
+                    folder.join(target).is_file(),
+                    "{file}: {href} names no file"
+                );
                 counts.source += 1;
             }
         }
@@ -191,7 +197,7 @@ fn every_link_lands(name: &str) -> Links {
 fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
     let found = every_link_lands("garden");
     assert!(
-        found.same > 20 && found.cross >= 8 && found.source > 10,
+        found.same > 20 && found.cross >= 8 && found.source > 20,
         "{} {} {}",
         found.same,
         found.cross,
@@ -202,20 +208,15 @@ fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
 
 #[test]
 fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let values = workspaces().join("values");
-    let result = vibelight(&["--workspace", text(&values)], tmp.path(), false);
+    let (_tmp, repo) = copy("values");
+    let result = vibelight_in(&repo, &["-o", "out"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert!(
-        result.status.success(),
-        "{}",
-        String::from_utf8_lossy(&result.stderr)
-    );
-    assert!(
-        String::from_utf8_lossy(&result.stderr).is_empty(),
+        result.stderr.is_empty(),
         "no name is unresolved or ambiguous"
     );
-    let written = read_outputs(tmp.path());
-    let expected = read_outputs(&values.join("expected"));
+    let written = read_plain(&repo.join("out"));
+    let expected = goldens("values");
     assert_eq!(written.len(), 6);
     for ((file, got), (_, want)) in written.iter().zip(&expected) {
         assert!(
@@ -252,26 +253,22 @@ fn naming_the_value_crates_in_reverse_gives_the_same_files() {
         .collect();
     let reversed: Vec<&str> = forward.iter().rev().map(String::as_str).collect();
     let forward: Vec<&str> = forward.iter().map(String::as_str).collect();
-    let first = tempfile::tempdir().expect("a temporary folder can be made");
-    let second = tempfile::tempdir().expect("a temporary folder can be made");
-    assert!(vibelight(&forward, first.path(), false).status.success());
-    assert!(vibelight(&reversed, second.path(), false).status.success());
-    let files = read_outputs(first.path());
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let (first, second) = (tmp.path().join("first"), tmp.path().join("second"));
+    assert!(vibelight(&forward, &first).status.success());
+    assert!(vibelight(&reversed, &second).status.success());
+    let files = read_plain(&first);
+    assert!(files == read_plain(&second), "the order changed a file");
     assert!(
-        files == read_outputs(second.path()),
-        "the order changed a file"
-    );
-    assert!(
-        files == read_outputs(&workspaces().join("values").join("expected")),
+        files == goldens("values"),
         "named crates differ from the workspace run"
     );
 }
 
 #[test]
 fn two_crates_that_would_write_one_file_name_are_an_error() {
-    let clash = workspaces().join("clash");
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = vibelight(&["--workspace", text(&clash)], tmp.path(), false);
+    let (_tmp, repo) = copy("clash");
+    let result = vibelight_in(&repo, &["-o", "out"]);
     assert_eq!(result.status.code(), Some(1));
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
@@ -282,19 +279,9 @@ fn two_crates_that_would_write_one_file_name_are_an_error() {
 
 #[test]
 fn external_items_show_the_doc_line_of_an_item_from_another_crate_of_the_run() {
-    let garden = workspaces().join("garden");
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = vibelight(
-        &["--workspace", text(&garden), "--facts"],
-        tmp.path(),
-        false,
-    );
-    assert!(
-        result.status.success(),
-        "{}",
-        String::from_utf8_lossy(&result.stderr)
-    );
-    let facade = fs::read_to_string(tmp.path().join("facade.md")).expect("facade.md was written");
+    let (_tmp, repo) = copy("garden");
+    assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
+    let facade = fs::read_to_string(repo.join("out").join("facade.md")).unwrap();
     assert!(
         facade.contains(
             "## External items\n\n\
@@ -306,7 +293,7 @@ fn external_items_show_the_doc_line_of_an_item_from_another_crate_of_the_run() {
         ),
         "{facade}"
     );
-    let alpha = fs::read_to_string(tmp.path().join("alpha.md")).expect("alpha.md was written");
+    let alpha = fs::read_to_string(repo.join("out").join("alpha.md")).unwrap();
     assert!(
         alpha.contains("- `delta::Stray`, 1 use by [Meter](#type.alpha.Meter)\n- `gamma`"),
         "a crate outside the run has no doc line:\n{alpha}"
@@ -317,7 +304,7 @@ fn external_items_show_the_doc_line_of_an_item_from_another_crate_of_the_run() {
 fn one_named_crate_with_nothing_to_outline_still_fails() {
     let testonly = workspaces().join("garden").join("crates").join("testonly");
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = vibelight(&[text(&testonly)], tmp.path(), false);
+    let result = vibelight(&[text(&testonly)], tmp.path());
     assert_eq!(result.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&result.stderr).contains("not a crate"));
 }
@@ -334,28 +321,23 @@ const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
 <a id=\"legend\"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Levels](#levels)
+- [rooted](#mod.rooted)
   - [Root](#type.rooted.Root)
-- [Modules](#modules)
-  - [rooted](#mod.rooted)
 
 **MACROS:** none
 
@@ -364,24 +346,26 @@ const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
 
 - [Root](#type.rooted.Root)
 
-<a id=\"unconnected\"></a>
-## Unconnected types
+<a id=\"levels\"></a>
+## Levels
+
+- Unconnected types
+  - [Root](#type.rooted.Root)
+
+<a id=\"mod.rooted\"></a>
+## rooted
 
 <a id=\"type.rooted.Root\"></a>
 ### Root
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// A root type.
-struct Root;
+pub struct Root;
 ```
-
-<a id=\"modules\"></a>
-## Modules
-
-<a id=\"mod.rooted\"></a>
-### rooted
-
-- [Root](#type.rooted.Root)
 ";
 
 #[test]
@@ -403,14 +387,13 @@ fn a_root_manifest_that_is_also_a_package_is_outlined_with_its_members() {
         "\n[workspace]\nmembers = [\"sub\"]\n",
     );
     package(&root.join("sub"), "sub", member_lib, "");
-    let out = tmp.path().join("out");
-    let result = vibelight(&["--workspace", text(&root)], &out, false);
+    let result = vibelight_in(&root.join("sub"), &[]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert!(
-        result.status.success(),
-        "{}",
-        String::from_utf8_lossy(&result.stderr)
+        root.join("vibelight.toml").is_file(),
+        "the root got the config"
     );
-    let files = read_outputs(&out);
+    let files = read_plain(&root.join(".vibelight"));
     let names: Vec<&str> = files.iter().map(|(name, _)| name.as_str()).collect();
     assert_eq!(names, ["rooted.html", "rooted.md", "sub.html", "sub.md"]);
     assert!(files[1].1 == ROOTED, "rooted.md differs:\n{}", files[1].1);

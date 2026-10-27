@@ -2,7 +2,6 @@
 
 mod attach;
 mod attrs;
-mod check;
 mod collect;
 mod collect_bases;
 mod collect_body;
@@ -26,13 +25,18 @@ mod document_surface;
 mod document_values;
 mod exclude;
 mod flatten;
+mod folders;
 mod glob;
+mod index;
 mod inputs;
 mod layout;
 mod layout_decl;
 mod layout_head;
 mod layout_items;
 mod layout_members;
+mod layout_rust;
+mod layout_rust_decl;
+mod layout_rust_items;
 mod layout_special;
 mod legend;
 mod macros;
@@ -52,6 +56,7 @@ mod resolve_run;
 mod resolve_values;
 mod root;
 mod route;
+mod scaffold;
 mod settings;
 mod source;
 mod source_links;
@@ -64,17 +69,13 @@ mod typerefs;
 mod typerefs_edits;
 mod wrap;
 
-use std::collections::BTreeSet;
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use anyhow::{Context, Result};
 use clap::error::ErrorKind;
-use clap::{CommandFactory, Parser, ValueEnum};
-
-use crate::settings::{Flags, KillList, MembersBy, OrderBy, Profile};
+use clap::{CommandFactory, Parser};
 
 /// The `--version` text; the nightly workflow sets `VIBELIGHT_NIGHTLY` at
 /// build time to name its build.
@@ -83,87 +84,22 @@ const VERSION: &str = match option_env!("VIBELIGHT_NIGHTLY") {
     None => env!("CARGO_PKG_VERSION"),
 };
 
-/// Writes a C++-header-style outline of a Rust crate's declarations and
-/// comments: one markdown file and one linked HTML file per target.
+/// Writes an outline of each Rust crate's declarations and comments: a
+/// markdown file with everything a model analyzing the code can use, and a
+/// linked HTML page for browsing it. Run it with no arguments in a
+/// repository: the first run writes a `vibelight.toml` that chooses the
+/// crates, and every run reads it.
 #[derive(Debug, Parser)]
 #[command(version = VERSION, about)]
-#[expect(
-    clippy::struct_excessive_bools,
-    reason = "each bool is one command-line switch"
-)]
 struct Args {
     /// Crate directories or their `Cargo.toml` files, or a single `.rs`
-    /// file. With the workspace switch, the one directory to start looking
-    /// for the workspace from. With none, `vibelight.toml` chooses them.
+    /// file, in place of the crates `vibelight.toml` chooses.
     crate_paths: Vec<PathBuf>,
-    /// The directory to write both formats into; created if missing.
+    /// The folder to write into, in place of the config's: the markdown
+    /// files and the index go in it, and the HTML files in its `html`
+    /// folder. It is created if missing.
     #[arg(short, long, value_name = "DIR")]
     out: Option<PathBuf>,
-    /// The directory for the markdown files, in place of the one for both.
-    #[arg(long, value_name = "DIR")]
-    md_out: Option<PathBuf>,
-    /// The directory for the HTML files, in place of the one for both.
-    #[arg(long, value_name = "DIR")]
-    html_out: Option<PathBuf>,
-    /// Leave out the links back to source files and lines in both formats.
-    #[arg(long)]
-    no_source_links: bool,
-    /// Turn the source links of the markdown files on or off.
-    #[arg(long, value_name = "on|off")]
-    md_source_links: Option<Switch>,
-    /// Turn the source links of the HTML files on or off.
-    #[arg(long, value_name = "on|off")]
-    html_source_links: Option<Switch>,
-    /// How much of the macro kill list to show: every entry, only the
-    /// counts, or nothing.
-    #[arg(long, value_name = "full|counts|off")]
-    kill_list: Option<KillList>,
-    /// Add the facts: a counts line and a used-by line under each
-    /// declaration, and a section of declarations with the same shape.
-    #[arg(long)]
-    facts: bool,
-    /// Order the declarations by level, then a Modules section, or in one
-    /// section per module, with an index by level.
-    #[arg(long, value_name = "levels|modules")]
-    order: Option<OrderBy>,
-    /// Order each type's functions by name, or by the inherent impl that
-    /// holds them, in source order, under a line naming its file. `impl`
-    /// makes the output follow how the code is split across files.
-    #[arg(long, value_name = "name|impl")]
-    members: Option<MembersBy>,
-    /// Change the defaults for one kind of reader. `analysis` turns the
-    /// source links off, shows only the kill list's counts, turns the facts
-    /// on, and orders by module; switches and config keys still win.
-    #[arg(long, value_name = "analysis")]
-    profile: Option<Profile>,
-    /// Outline every member of the workspace that holds the given
-    /// directory, or the current one.
-    #[arg(long)]
-    workspace: bool,
-    /// Also outline each path dependency whose directory, relative to the
-    /// workspace root or else the first crate, matches this glob; repeat it
-    /// for more globs.
-    #[arg(long, value_name = "GLOB")]
-    follow: Vec<String>,
-    /// Leave out each crate whose directory, relative to the workspace root
-    /// or else the first crate, matches this glob, whichever way the run
-    /// chose it; repeat it for more globs.
-    #[arg(long, value_name = "GLOB")]
-    exclude: Vec<String>,
-    /// Write nothing. Compare the markdown files with what a run would
-    /// write, and exit with 1 when one differs, is missing, or is stale.
-    #[arg(long)]
-    check: bool,
-    /// Check the HTML files too.
-    #[arg(long)]
-    check_html: bool,
-}
-
-/// A switch value for one format's source links.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-enum Switch {
-    On,
-    Off,
 }
 
 fn main() -> ExitCode {
@@ -177,46 +113,30 @@ fn main() -> ExitCode {
     }
 }
 
-fn flags(args: &Args) -> Flags {
-    let switch = |s: Option<Switch>| s.map(|s| s == Switch::On);
-    Flags {
-        paths: args.crate_paths.clone(),
-        workspace: args.workspace,
-        follow: args.follow.clone(),
-        exclude: args.exclude.clone(),
-        out: args.out.clone(),
-        md_out: args.md_out.clone(),
-        html_out: args.html_out.clone(),
-        no_source_links: args.no_source_links,
-        md_source_links: switch(args.md_source_links),
-        html_source_links: switch(args.html_source_links),
-        kill_list: args.kill_list,
-        facts: args.facts,
-        order: args.order,
-        members: args.members,
-        profile: args.profile,
-    }
-}
-
 fn run(args: &Args) -> Result<ExitCode> {
     let cwd = env::current_dir().context("cannot read the current directory")?;
-    let config = config::find(&cwd)?;
-    let plan = settings::plan(&flags(args), config.as_ref())?;
+    let stamp = stamp::now()?;
+    let mut notes = Vec::new();
+    let mut config = config::find(&cwd)?;
+    if config.is_none() && args.crate_paths.is_empty() {
+        let Some(written) = scaffold::write(&cwd)? else {
+            usage("name a crate, or run vibelight inside a Rust repository");
+        };
+        let path = shown(&written.path, &cwd);
+        notes.push(match written.left_out {
+            0 => format!("created {path}; edit it to choose the crates"),
+            n => format!(
+                "created {path}, which leaves out {n} crate{}; edit it to choose the crates",
+                plural(n)
+            ),
+        });
+        config = Some(config::read(&written.path)?);
+    }
+    let plan = settings::plan(&args.crate_paths, args.out.as_deref(), config.as_ref());
     let Some(selection) = &plan.selection else {
-        Args::command()
-            .error(
-                ErrorKind::MissingRequiredArgument,
-                "name a crate, pass --workspace, or add a vibelight.toml that names the crates",
-            )
-            .exit();
+        usage("name a crate, or set `workspace` or `crates` in vibelight.toml");
     };
     let chosen = inputs::choose(selection, &plan.follow, &plan.exclude)?;
-    let checking = args.check || args.check_html;
-    let stamp = if checking {
-        stamp::PLACEHOLDER.to_owned()
-    } else {
-        stamp::now()?
-    };
     let pipeline::Outcome {
         files,
         mut warnings,
@@ -224,28 +144,24 @@ fn run(args: &Args) -> Result<ExitCode> {
         ambiguous,
         spelled,
     } = pipeline::outline(&chosen, &plan, &stamp)?;
-    let written: BTreeSet<PathBuf> = files.iter().map(|(path, _)| path.clone()).collect();
-    let stale = plan
-        .markdown
-        .as_ref()
-        .map(|output| check::stale(&output.dir, &written))
-        .unwrap_or_default();
-    let code = if checking {
-        check_files(&files, &stale, args.check_html, &cwd)
-    } else {
-        write_files(&files, &plan)?;
-        ExitCode::SUCCESS
-    };
-    for note in &chosen.notes {
-        eprintln!("note: {note}");
+    let written = folders::write(&files, &plan)?;
+    let mut paths: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
+    paths.sort();
+    for path in &paths {
+        println!("{path}");
     }
-    if !checking {
-        for path in &stale {
-            eprintln!(
-                "warning: {} is stale: no crate of this run writes it",
-                shown(path, &cwd)
-            );
-        }
+    notes.extend(chosen.notes.iter().cloned());
+    if let Some(path) = &written.gitignore {
+        notes.push(format!("created {}", shown(path, &cwd)));
+    }
+    for path in &written.removed {
+        notes.push(format!(
+            "removed {}: no crate of this run writes it",
+            shown(path, &cwd)
+        ));
+    }
+    for note in &notes {
+        eprintln!("note: {note}");
     }
     warnings.sort();
     warnings.dedup();
@@ -266,83 +182,23 @@ fn run(args: &Args) -> Result<ExitCode> {
             plural(spelled)
         );
     }
-    let stale_warnings = if checking { 0 } else { stale.len() };
-    let count = warnings.len()
-        + stale_warnings
-        + usize::from(unresolved > 0 || ambiguous > 0)
-        + usize::from(spelled > 0);
+    let count =
+        warnings.len() + usize::from(unresolved > 0 || ambiguous > 0) + usize::from(spelled > 0);
     if count > 0 {
         eprintln!("{count} warning{}", plural(count));
     }
-    Ok(code)
+    Ok(ExitCode::SUCCESS)
+}
+
+/// Stops with clap's usage error, which exits with 2.
+fn usage(message: &str) -> ! {
+    Args::command()
+        .error(ErrorKind::MissingRequiredArgument, message)
+        .exit()
 }
 
 fn plural(count: usize) -> &'static str {
     if count == 1 { "" } else { "s" }
-}
-
-/// Writes every file whose content changed, creating the folders of the
-/// formats it writes, and prints the path of every file of the run, sorted.
-/// A file whose text differs only in its stamp is left as it is, so its
-/// stamp keeps the time its content last changed.
-fn write_files(files: &[(PathBuf, String)], plan: &settings::Plan) -> Result<()> {
-    for output in [&plan.markdown, &plan.html].into_iter().flatten() {
-        fs::create_dir_all(&output.dir)
-            .with_context(|| format!("cannot create output directory {}", output.dir.display()))?;
-    }
-    for (path, text) in files {
-        if check::compare(path, text).is_some() {
-            fs::write(path, text).with_context(|| format!("cannot write {}", path.display()))?;
-        }
-    }
-    let mut written: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
-    written.sort();
-    for path in &written {
-        println!("{path}");
-    }
-    Ok(())
-}
-
-/// Compares the markdown files, and the HTML files when `html` is true,
-/// with the files on disk, prints one line for each problem and a count,
-/// and returns the exit code.
-fn check_files(files: &[(PathBuf, String)], stale: &[PathBuf], html: bool, cwd: &Path) -> ExitCode {
-    let checked: Vec<&(PathBuf, String)> = files
-        .iter()
-        .filter(|(path, _)| html || path.extension().is_some_and(|e| e == "md"))
-        .collect();
-    let mut problems: Vec<check::Problem> = checked
-        .iter()
-        .filter_map(|(path, text)| check::compare(path, text))
-        .collect();
-    problems.extend(stale.iter().cloned().map(check::Problem::Stale));
-    for problem in &problems {
-        match problem {
-            check::Problem::Differs(path, line) => println!(
-                "differs: {} (first difference at line {line})",
-                shown(path, cwd)
-            ),
-            check::Problem::Missing(path) => println!("missing: {}", shown(path, cwd)),
-            check::Problem::Stale(path) => println!("stale: {}", shown(path, cwd)),
-        }
-    }
-    if problems.is_empty() {
-        let n = checked.len();
-        let files = if n == 1 {
-            "file matches"
-        } else {
-            "files match"
-        };
-        println!("check passed: {n} {files}");
-        ExitCode::SUCCESS
-    } else {
-        println!(
-            "check failed: {} problem{}",
-            problems.len(),
-            plural(problems.len())
-        );
-        ExitCode::from(1)
-    }
 }
 
 /// Shows a path relative to the current directory when it lies inside it.

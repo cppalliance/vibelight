@@ -11,9 +11,9 @@ pub(crate) fn fixtures() -> PathBuf {
         .join("fixtures")
 }
 
-/// The fixtures the no-link checks run over: every folder but `links`,
-/// whose golden is rendered with source links on, and `workspaces`, which
-/// holds multi-crate runs.
+/// The fixtures the golden checks run over: every folder but `links`,
+/// whose golden keeps its source links, and `workspaces`, which holds
+/// multi-crate runs.
 pub(crate) fn fixture_names() -> Vec<String> {
     let mut names: Vec<String> = fs::read_dir(fixtures())
         .expect("the fixtures folder is readable")
@@ -43,13 +43,6 @@ pub(crate) fn input_of(dir: &Path) -> PathBuf {
         .expect("a fixture without src holds one .rs file")
 }
 
-/// Returns the extra switches in a fixture folder's `args.txt`, if any.
-pub(crate) fn fixture_args(dir: &Path) -> Vec<String> {
-    fs::read_to_string(dir.join("args.txt"))
-        .map(|text| text.split_whitespace().map(str::to_owned).collect())
-        .unwrap_or_default()
-}
-
 /// Tells whether a file name has the given extension.
 pub(crate) fn has_ext(name: &str, ext: &str) -> bool {
     Path::new(name)
@@ -69,42 +62,68 @@ pub(crate) fn vibelight() -> Command {
 }
 
 /// Runs the binary on `input`, writing into `out`.
-pub(crate) fn run(input: &Path, out: &Path, links: bool) -> Output {
-    run_with(input, out, links, &[])
+pub(crate) fn run(input: &Path, out: &Path) -> Output {
+    vibelight()
+        .arg(input)
+        .arg("-o")
+        .arg(out)
+        .output()
+        .expect("the vibelight binary runs")
 }
 
-/// Runs the binary on `input`, writing into `out`, with more switches.
-pub(crate) fn run_with(input: &Path, out: &Path, links: bool, extra: &[String]) -> Output {
-    let mut command = vibelight();
-    command.arg(input).arg("-o").arg(out).args(extra);
-    if !links {
-        command.arg("--no-source-links");
-    }
-    command.output().expect("the vibelight binary runs")
-}
-
-/// Runs the binary into a fresh folder and returns each written file's
-/// name and text, sorted by name.
-pub(crate) fn outputs(input: &Path, links: bool) -> Vec<(String, String)> {
-    outputs_with(input, links, &[])
-}
-
-/// Like `outputs`, with more switches.
-pub(crate) fn outputs_with(input: &Path, links: bool, extra: &[String]) -> Vec<(String, String)> {
+/// Runs the binary into a fresh folder and returns each outline's name and
+/// text without its source links, sorted by name.
+pub(crate) fn outputs(input: &Path) -> Vec<(String, String)> {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = run_with(input, tmp.path(), links, extra);
+    let out = tmp.path().join("out");
+    let result = run(input, &out);
     assert!(
         result.status.success(),
         "vibelight failed: {}",
         String::from_utf8_lossy(&result.stderr)
     );
-    read_outputs(tmp.path())
+    read_plain(&out)
 }
 
-/// Reads every file in a folder, sorted by name.
+/// Reads the outlines a run wrote into `out`: the markdown files in it,
+/// less the index, and the HTML files in its `html` folder, sorted by name.
+pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
+    let mut files: Vec<(String, String)> = read_outputs(out)
+        .into_iter()
+        .filter(|(name, _)| has_ext(name, "md") && name != "index.md")
+        .chain(
+            read_outputs(&out.join("html"))
+                .into_iter()
+                .filter(|(name, _)| has_ext(name, "html")),
+        )
+        .collect();
+    files.sort();
+    files
+}
+
+/// Like `read_run`, with the source links removed, so runs from different
+/// folders compare equal.
+pub(crate) fn read_plain(out: &Path) -> Vec<(String, String)> {
+    read_run(out)
+        .into_iter()
+        .map(|(name, text)| {
+            let plain = if has_ext(&name, "md") {
+                strip_markdown_links(&text)
+            } else {
+                strip_html_links(&text)
+            };
+            (name, plain)
+        })
+        .collect()
+}
+
+/// Reads every file in a folder, sorted by name; nothing when the folder
+/// is missing.
 pub(crate) fn read_outputs(dir: &Path) -> Vec<(String, String)> {
-    let mut files: Vec<(String, String)> = fs::read_dir(dir)
-        .expect("the output folder is readable")
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut files: Vec<(String, String)> = entries
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.is_file())
         .map(|p| {
@@ -153,102 +172,6 @@ pub(crate) fn rust_files(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// The headings, marks, and code block texts of one outline file.
-#[derive(Debug, PartialEq, Eq)]
-pub(crate) struct Parts {
-    pub(crate) headings: Vec<String>,
-    pub(crate) marks: Vec<String>,
-    pub(crate) blocks: Vec<String>,
-}
-
-/// Reads the headings, marks, and block texts of a markdown outline.
-pub(crate) fn markdown_parts(md: &str) -> Parts {
-    let mut parts = Parts {
-        headings: Vec::new(),
-        marks: Vec::new(),
-        blocks: Vec::new(),
-    };
-    let mut fence: Option<String> = None;
-    let mut block = Vec::new();
-    for line in md.lines() {
-        if let Some(marks) = &fence {
-            if line == marks {
-                parts.blocks.push(block.join("\n"));
-                block.clear();
-                fence = None;
-            } else {
-                block.push(line.to_owned());
-            }
-            continue;
-        }
-        if line.len() >= 3 && line.chars().all(|c| c == '`') {
-            fence = Some(line.to_owned());
-        } else if line.starts_with('#') {
-            parts
-                .headings
-                .push(line.trim_start_matches('#').trim().to_owned());
-        } else if line.starts_with("**MACRO**") || line.starts_with("**UNSUPPORTED:**") {
-            parts.marks.push(without_source(&line.replace("**", "")));
-        }
-    }
-    parts
-}
-
-/// Reads the headings, marks, and block texts of an HTML outline.
-pub(crate) fn html_parts(html: &str) -> Parts {
-    let mut parts = Parts {
-        headings: Vec::new(),
-        marks: Vec::new(),
-        blocks: Vec::new(),
-    };
-    let mut rest = html;
-    while let Some(start) = rest.find("<pre><code>") {
-        let after = &rest[start + "<pre><code>".len()..];
-        let end = after.find("</code></pre>").expect("every block closes");
-        parts.blocks.push(unescape(&strip_tags(&after[..end])));
-        rest = &after[end..];
-    }
-    for line in html.lines() {
-        if line.starts_with("<h1") || line.starts_with("<h2") || line.starts_with("<h3") {
-            parts.headings.push(unescape(&strip_tags(line)));
-        } else if line.starts_with("<p class=\"mark\"") {
-            parts
-                .marks
-                .push(without_source(&unescape(&strip_tags(line))));
-        }
-    }
-    parts
-}
-
-fn without_source(line: &str) -> String {
-    line.find(" (source: ")
-        .map_or(line, |at| &line[..at])
-        .to_owned()
-}
-
-/// Removes every tag.
-pub(crate) fn strip_tags(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    let mut inside = false;
-    for c in text.chars() {
-        match c {
-            '<' => inside = true,
-            '>' if inside => inside = false,
-            _ if !inside => out.push(c),
-            _ => {}
-        }
-    }
-    out
-}
-
-/// Turns the escapes vibelight writes back into characters.
-pub(crate) fn unescape(text: &str) -> String {
-    text.replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&amp;", "&")
-}
-
 /// Removes the source links from a markdown outline: each `Source:` line
 /// with its one blank line, and each ` (source: ...)` suffix.
 pub(crate) fn strip_markdown_links(md: &str) -> String {
@@ -277,7 +200,7 @@ pub(crate) fn strip_markdown_links(md: &str) -> String {
 
 /// Removes the source links from an HTML outline: each `Source:` line and
 /// each ` (source: ...)` span go, and each link around a member name turns
-/// into the span the no-links output has, with the same id if it has one.
+/// into a plain span, with the same id if it has one.
 pub(crate) fn strip_html_links(html: &str) -> String {
     const OPEN: &str = "<a class=\"src\" href=\"";
     let mut out = String::new();

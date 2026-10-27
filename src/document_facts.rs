@@ -162,8 +162,8 @@ fn counts(decl: &Decl, refs: &[TypeRef]) -> String {
     if !decl.special.is_empty() {
         parts.push(count(
             decl.special.len(),
-            "special member",
-            "special members",
+            "Default/From/Drop impl",
+            "Default/From/Drop impls",
         ));
     }
     if functions > 0 {

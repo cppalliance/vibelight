@@ -1,0 +1,133 @@
+<!-- Updated 2026-01-01T00:00:00Z -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>member_order</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+a.cross{color:var(--cross)}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+span.src{cursor:default}
+.stamp{margin:0;color:var(--muted);font-size:13px}
+:target{background:var(--target)}
+</style>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="#surface">Public surface</a></li>
+<li><a href="#unconnected">Unconnected types</a>
+<ul>
+<li><a href="#type.member_order.Based">Based</a></li>
+<li><a href="#type.member_order.Grouped">Grouped</a></li>
+<li><a href="#type.member_order.Order">Order</a></li>
+<li><a href="#type.member_order.Scrambled">Scrambled</a></li>
+<li><a href="#type.member_order.Triple">Triple</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.member_order">member_order</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<main>
+<p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
+<h1 id="crate.member_order">member_order</h1>
+<pre><code><span class="c">//! Member order inside a block.</span></code></pre>
+<p class="kill"><b class="m">MACROS:</b> none</p>
+<h2 id="surface">Public surface</h2>
+<ul class="surface">
+<li><a href="#type.member_order.Based">Based</a></li>
+<li><a href="#type.member_order.Grouped">Grouped</a></li>
+<li><a href="#type.member_order.Order">Order</a></li>
+<li><a href="#type.member_order.Scrambled">Scrambled</a></li>
+<li><a href="#type.member_order.Triple">Triple</a></li>
+</ul>
+<h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.member_order.Based">Based</h3>
+<pre><code><span class="c">/// The base list is sorted.</span>
+<span class="k">struct</span> Based : AsRef&lt;str&gt;, Clone, Debug
+{
+    <span class="src">Based</span>();
+}</code></pre>
+<h3 id="type.member_order.Grouped">Grouped</h3>
+<pre><code><span class="c">/// Trait items in scrambled order.</span>
+<span class="k">trait</span> Grouped
+{
+    <span class="k">using</span> <span class="src">Out</span>;
+
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8;
+
+    <span class="k">static</span> <span class="src">build</span>() -&gt; Self;
+
+    <span class="src">member</span>();
+}</code></pre>
+<h3 id="type.member_order.Order">Order</h3>
+<pre><code><span class="c">/// Variants keep their declared order.</span>
+<span class="k">enum</span> Order
+{
+    <span class="src">Zulu</span>,
+
+    <span class="src">Alpha</span>,
+
+    <span class="src">Mike</span>,
+}</code></pre>
+<h3 id="type.member_order.Scrambled">Scrambled</h3>
+<pre><code><span class="c">/// Members in scrambled order.</span>
+<span class="k">struct</span> Scrambled
+{
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9;
+
+    <span class="src">zeta</span>: u8,
+
+    <span class="src">alpha</span>: u8,
+
+    <span class="src">Alpha</span>: u8,
+
+    <span class="k">static</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>;
+
+    <span class="src">Apply</span>();
+
+    <span class="src">apply</span>();
+
+    <span class="src">zed</span>();
+
+<span class="k">private:</span>
+    <span class="src">beta</span>: u8,
+
+    <span class="k">static</span> <span class="src">hidden</span>();
+}</code></pre>
+<h3 id="type.member_order.Triple">Triple</h3>
+<pre><code><span class="c">/// Tuple fields keep their declared order.</span>
+<span class="k">struct</span> Triple(u8, String, bool);</code></pre>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.member_order">member_order</h3>
+<ul>
+<li><a href="#type.member_order.Based">Based</a></li>
+<li><a href="#type.member_order.Grouped">Grouped</a></li>
+<li><a href="#type.member_order.Order">Order</a></li>
+<li><a href="#type.member_order.Scrambled">Scrambled</a></li>
+<li><a href="#type.member_order.Triple">Triple</a></li>
+</ul>
+</main>
+</body>
+</html>

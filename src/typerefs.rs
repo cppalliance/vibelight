@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{Path, PointerMutability, TraitBound, Type, TypePath, TypePtr, TypeReference};
 
-use crate::model::{FileId, Loc, ModId, RefId, Text, TypeRef, Written};
+use crate::model::{FileId, Loc, ModId, RefId, Seg, Text, TypeRef, Written};
 use crate::source::{SourceFile, normalize, scan};
 use crate::typerefs_edits::{Piece, marked, needs_parens, pieces};
 
@@ -216,34 +216,17 @@ impl Slicer<'_> {
             kept.clear();
         }
 
-        let mut raw = String::with_capacity(range.len());
-        let mut at = range.start;
-        let comments = scan(text, range.clone());
-        let mut comment = comments.iter().peekable();
-        for (span, piece) in pieces(&kept, &cuts, &inserts, &range) {
-            push_without_comments(&mut raw, text, at..span.start, &mut comment);
-            match piece {
-                Piece::Mark(index) => {
-                    let code = MARK + u32::try_from(index).unwrap_or(0);
-                    raw.push(char::from_u32(code).unwrap_or(' '));
-                }
-                Piece::Cut => {}
-                Piece::Insert(suffix) => raw.push_str(suffix),
-            }
-            at = span.end;
-            while comment.peek().is_some_and(|c| c.range.start < at) {
-                comment.next();
-            }
-        }
-        push_without_comments(&mut raw, text, at..range.end, &mut comment);
-
+        let (raw, rust) = raws(text, &range, pieces(&kept, &cuts, &inserts, &range));
         let mut out = Text::default();
         let mut ids = Vec::new();
-        for c in normalize(&raw).chars() {
+        let mut by_mark = vec![0; kept.len()];
+        let normalized = normalize(&raw);
+        for c in normalized.chars() {
             let code = c as u32;
             if (MARK..MARK + MARKS).contains(&code) {
                 let item = &kept[(code - MARK) as usize];
                 let id = self.refs.len();
+                by_mark[(code - MARK) as usize] = id;
                 self.refs.push(TypeRef {
                     text: self.file.clean(item.range.clone()),
                     path: item.segments.clone(),
@@ -271,8 +254,68 @@ impl Slicer<'_> {
                 out.push_str(c.encode_utf8(&mut buffer));
             }
         }
+        let rust = normalize(&rust);
+        if rust != normalized {
+            out = out.spelled(respelled(&rust, &by_mark));
+        }
         (out, ids)
     }
+}
+
+/// Builds a slice's two raw texts, each type name as its mark and each
+/// comment as a space: the C++ one with each reference edit made, and the
+/// Rust one as written.
+fn raws(
+    text: &str,
+    range: &Range<usize>,
+    pieces: Vec<(Range<usize>, Piece<'_>)>,
+) -> (String, String) {
+    let mut raw = String::with_capacity(range.len());
+    let mut rust = String::with_capacity(range.len());
+    let mut at = range.start;
+    let comments = scan(text, range.clone());
+    let mut comment = comments.iter().peekable();
+    for (span, piece) in pieces {
+        let mut gap = String::new();
+        push_without_comments(&mut gap, text, at..span.start, &mut comment);
+        raw.push_str(&gap);
+        rust.push_str(&gap);
+        match piece {
+            Piece::Mark(index) => {
+                let code = MARK + u32::try_from(index).unwrap_or(0);
+                let mark = char::from_u32(code).unwrap_or(' ');
+                raw.push(mark);
+                rust.push(mark);
+            }
+            Piece::Cut => push_without_comments(&mut rust, text, span.clone(), &mut comment),
+            Piece::Insert(suffix) => raw.push_str(suffix),
+        }
+        at = span.end;
+        while comment.peek().is_some_and(|c| c.range.start < at) {
+            comment.next();
+        }
+    }
+    let mut tail = String::new();
+    push_without_comments(&mut tail, text, at..range.end, &mut comment);
+    raw.push_str(&tail);
+    rust.push_str(&tail);
+    (raw, rust)
+}
+
+/// Turns the normalized Rust text back into segments, each mark the
+/// reference its type name got in the C++ pass.
+fn respelled(rust: &str, by_mark: &[RefId]) -> Vec<Seg> {
+    let mut spelled = Text::default();
+    for c in rust.chars() {
+        let code = c as u32;
+        if (MARK..MARK + MARKS).contains(&code) {
+            spelled.push_ref(by_mark[(code - MARK) as usize]);
+        } else {
+            let mut buffer = [0u8; 4];
+            spelled.push_str(c.encode_utf8(&mut buffer));
+        }
+    }
+    spelled.0
 }
 
 /// Appends `text[range]`, replacing each comment in it with one space.
@@ -339,6 +382,32 @@ mod tests {
         let (text, refs) = slice_type("type A = Box<dyn Fn(u32) -> Out /* note */ + Send>;");
         assert_eq!(text, "Box<dyn Fn(u32) -> Out + Send>");
         assert_eq!(refs, ["Box", "Fn", "u32", "Out", "Send"]);
+    }
+
+    #[test]
+    fn the_rust_spelling_keeps_each_sigil_where_it_is_written() {
+        let file = SourceFile::new("a.rs".into(), "type A = &'a mut Vec</* x */ &Block>;");
+        let item: syn::ItemType = syn::parse_str(&file.text).unwrap();
+        let mut refs = Vec::new();
+        let mut slicer = Slicer {
+            file: &file,
+            file_id: 0,
+            refs: &mut refs,
+            module: 0,
+            generics: &[],
+        };
+        let text = slicer.node(&*item.ty, |f| f.visit_type(&item.ty));
+        assert_eq!(text.visible(&refs), "Vec<Block&> mut& 'a");
+        let rust = Text(text.rust().to_vec(), None);
+        assert_eq!(rust.visible(&refs), "&'a mut Vec<&Block>");
+        assert_eq!(
+            refs.len(),
+            2,
+            "each name is one reference in both spellings"
+        );
+        let (plain, refs) = slice_type("type A = Vec<Block>;");
+        assert_eq!(plain, "Vec<Block>");
+        assert_eq!(refs.len(), 2);
     }
 
     #[test]

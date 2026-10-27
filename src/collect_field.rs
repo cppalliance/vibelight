@@ -56,6 +56,7 @@ impl Collector<'_> {
                     cfgs: attrs::cfgs(&field.attrs, file),
                     attrs: attrs::api(&field.attrs, file),
                     marks: mark.into_iter().collect(),
+                    vis: attrs::spelled(&field.vis, file),
                 },
                 loc,
                 self_fields: Vec::new(),
@@ -92,6 +93,7 @@ impl Collector<'_> {
                 meta: Meta {
                     notes,
                     cfgs: attrs::cfgs(&field.attrs, file),
+                    vis: attrs::spelled(&field.vis, file),
                     ..Meta::default()
                 },
             });

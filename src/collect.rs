@@ -263,6 +263,7 @@ impl Collector<'_> {
             cfgs: attrs::cfgs(&m.attrs, &self.files[here.file]),
             attrs: attrs::api(&m.attrs, &self.files[here.file]),
             marks: Vec::new(),
+            vis: String::new(),
         };
         self.modules[here.module].items.push(ModItem {
             name: sort,

@@ -1,6 +1,7 @@
 //! Chooses the crates of a run: crate paths, the members of a workspace,
 //! and the path dependencies that follow globs allow, less the crates that
-//! exclude globs leave out.
+//! exclude globs leave out. A crate named on the command line is never
+//! left out.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -23,15 +24,21 @@ pub(crate) struct Package {
     pub(crate) input: Input,
     /// The path dependencies its manifest names.
     pub(crate) deps: Vec<Dep>,
+    /// True when the run reached it by following a path dependency rather
+    /// than choosing it.
+    pub(crate) followed: bool,
 }
 
 /// The crates a run starts from.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Selection {
-    /// Crate paths, each of which must be a crate, and crate folders that a
-    /// glob found, which are skipped with a note when they have nothing to
-    /// outline.
-    Paths {
+    /// Crate paths from the command line, each of which must be a crate, or
+    /// one `.rs` file. No exclude glob leaves one out.
+    Named(Vec<PathBuf>),
+    /// The config's `crates`: paths, each of which must be a crate, and
+    /// crate folders that a glob found, which are skipped with a note when
+    /// they have nothing to outline.
+    Listed {
         paths: Vec<PathBuf>,
         globbed: Vec<PathBuf>,
     },
@@ -54,33 +61,30 @@ pub(crate) struct Chosen {
 
 /// Chooses the crates of a run from the selection and the follow globs,
 /// and then leaves out each crate that an exclude glob matches. An
-/// excluded crate is never read, and it is not followed into. A crate path
-/// that is excluded gets a note, and so does an exclude glob that matches
-/// no crate the run considered.
+/// excluded crate is never read, and it is not followed into. A crate the
+/// config lists and also excludes gets a note, and so does an exclude glob
+/// that matches no crate the config's selection considered. A single `.rs`
+/// file has no folder to follow from or exclude, so the globs pass it by.
 ///
 /// # Errors
-/// Returns an error for a single `.rs` file given with other crates or with
-/// follow or exclude globs, a workspace selection with no workspace, a crate
-/// path that cannot be read or has nothing to outline, or no crate left.
+/// Returns an error for a single `.rs` file given with other crates, a
+/// workspace selection with no workspace, a crate path that cannot be read
+/// or has nothing to outline, or no crate left.
 pub(crate) fn choose(
     selection: &Selection,
     follow: &[String],
     exclude: &Exclude,
 ) -> Result<Chosen> {
-    let (paths, globbed, workspace): (&[PathBuf], &[PathBuf], Option<&PathBuf>) = match selection {
-        Selection::Paths { paths, globbed } => (paths, globbed, None),
-        Selection::Workspace(start) => (&[], &[], Some(start)),
+    let none: &[PathBuf] = &[];
+    let (named, paths, globbed, workspace) = match selection {
+        Selection::Named(named) => (named.as_slice(), none, none, None),
+        Selection::Listed { paths, globbed } => (none, paths.as_slice(), globbed.as_slice(), None),
+        Selection::Workspace(start) => (none, none, none, Some(start)),
     };
-    if let Some(file) = paths.iter().find(|p| p.is_file() && !is_manifest(p)) {
-        if paths.len() > 1 || !globbed.is_empty() || !follow.is_empty() {
+    if let Some(file) = named.iter().find(|p| p.is_file() && !is_manifest(p)) {
+        if named.len() > 1 {
             bail!(
                 "{} is a single file, which cannot be outlined together with other crates",
-                file.display()
-            );
-        }
-        if !exclude.globs.is_empty() {
-            bail!(
-                "{} is a single file, which has no crate folder for an exclude glob to match",
                 file.display()
             );
         }
@@ -92,12 +96,14 @@ pub(crate) fn choose(
                 dir,
                 input,
                 deps: Vec::new(),
+                followed: false,
             }],
             notes: Vec::new(),
         });
     }
     let first = workspace
         .cloned()
+        .or_else(|| named.first().map(|p| crate_dir(p)))
         .or_else(|| paths.first().map(|p| crate_dir(p)))
         .or_else(|| globbed.first().cloned())
         .unwrap_or_else(|| PathBuf::from("."));
@@ -106,7 +112,7 @@ pub(crate) fn choose(
         Some(w) => w.root.clone(),
         None => manifest::normalize(&first)?,
     };
-    let mut filter = Filter::new(exclude, &base);
+    let mut filter = Filter::new(exclude);
     let mut chosen: BTreeMap<PathBuf, Package> = BTreeMap::new();
     let mut notes = Vec::new();
     if workspace.is_some() {
@@ -122,6 +128,10 @@ pub(crate) fn choose(
             }
         }
     } else {
+        for path in named {
+            let package = package(root::find(&crate_dir(path))?)?;
+            chosen.insert(package.dir.clone(), package);
+        }
         for path in paths {
             let dir = manifest::normalize(&crate_dir(path))?;
             if filter.excludes(&dir) {
@@ -146,7 +156,9 @@ pub(crate) fn choose(
     if !follow.is_empty() {
         pull_in(&mut chosen, &base, follow, &mut filter, &mut notes)?;
     }
-    notes.extend(filter.unmatched());
+    if named.is_empty() {
+        notes.extend(filter.unmatched());
+    }
     notes.sort();
     notes.dedup();
     if chosen.is_empty() {
@@ -183,7 +195,8 @@ fn pull_in(
         if !follow.iter().any(|g| glob::matches(g, &rel)) || filter.excludes(&dir) {
             continue;
         }
-        if let Some(package) = optional(&dir, notes)? {
+        if let Some(mut package) = optional(&dir, notes)? {
+            package.followed = true;
             queue.extend(package.deps.iter().map(|d| d.dir.clone()));
             chosen.insert(package.dir.clone(), package);
         }
@@ -218,7 +231,12 @@ fn crate_dir(path: &Path) -> PathBuf {
 fn package(input: Input) -> Result<Package> {
     let dir = manifest::normalize(&input.dir)?;
     let deps = dependencies(&dir)?;
-    Ok(Package { dir, input, deps })
+    Ok(Package {
+        dir,
+        input,
+        deps,
+        followed: false,
+    })
 }
 
 fn dependencies(dir: &Path) -> Result<Vec<Dep>> {

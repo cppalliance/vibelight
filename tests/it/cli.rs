@@ -2,53 +2,26 @@
 //! endings, exit codes, and repeat runs.
 
 use std::fs;
-use std::process::Command;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, input_of, outputs, read_outputs, run, run_with, rust_files,
+    copy_dir, fixture_names, fixtures, input_of, outputs, read_run, run, rust_files, vibelight,
 };
 
 #[test]
-fn the_analysis_profile_turns_the_source_links_off_without_their_switch() {
-    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let input = fixtures().join("links");
-    let profile = ["--profile".to_owned(), "analysis".to_owned()];
-    assert!(
-        run_with(&input, tmp.path(), true, &profile)
-            .status
-            .success()
-    );
-    let md = fs::read_to_string(tmp.path().join("links.md")).expect("the outline was written");
-    let html = fs::read_to_string(tmp.path().join("links.html")).expect("the page was written");
-    assert!(!md.contains("Source: "), "{md}");
-    assert!(
-        md.contains("\n## Levels\n") && md.contains("\nCounts: "),
-        "{md}"
-    );
-    assert!(!html.contains("<p class=\"source\">") && !html.contains("<a class=\"src\""));
-    let plain = tmp.path().join("plain");
-    assert!(run(&input, &plain, true).status.success());
-    let md = fs::read_to_string(plain.join("links.md")).expect("the outline was written");
-    assert!(
-        md.contains("Source: "),
-        "a run without the profile keeps its links"
-    );
-}
-
-#[test]
 fn a_second_run_gives_identical_bytes() {
-    for links in [false, true] {
-        let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-        let input = fixtures().join("prompt");
-        let first = tmp.path().join("first");
-        let second = tmp.path().join("second");
-        assert!(run(&input, &first, links).status.success());
-        assert!(run(&input, &second, links).status.success());
-        let one = read_outputs(&first);
-        let two = read_outputs(&second);
-        assert!(!links || one.iter().any(|(_, t)| t.contains("Source: ")));
-        assert_eq!(one, two);
-    }
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let input = fixtures().join("prompt");
+    let first = tmp.path().join("first");
+    let second = tmp.path().join("second");
+    assert!(run(&input, &first).status.success());
+    assert!(run(&input, &second).status.success());
+    let one = read_run(&first);
+    assert!(one.iter().all(|(_, text)| text.contains("Source: ")));
+    assert_eq!(one, read_run(&second));
+    assert_eq!(
+        fs::read(first.join("index.md")).unwrap(),
+        fs::read(second.join("index.md")).unwrap()
+    );
 }
 
 #[test]
@@ -63,8 +36,8 @@ fn crlf_copies_give_the_same_output() {
             fs::write(&path, text.replace('\n', "\r\n")).expect("a fixture copy is writable");
         }
         assert_eq!(
-            outputs(&input_of(&original), false),
-            outputs(&input_of(&copy), false),
+            outputs(&input_of(&original)),
+            outputs(&input_of(&copy)),
             "{name}"
         );
     }
@@ -75,30 +48,41 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let out = tmp.path().join("a").join("b");
     let input = fixtures().join("structs");
-    assert!(run(&input, &out, false).status.success());
+    assert!(run(&input, &out).status.success());
     fs::write(out.join("structs.md"), "stale").expect("the output is writable");
-    assert!(run(&input, &out, false).status.success());
+    assert!(run(&input, &out).status.success());
     let text = fs::read_to_string(out.join("structs.md")).expect("the outline was written");
     assert!(text.starts_with("*Updated 2026-01-01T00:00:00Z*\n\n<a id=\"crate.structs\"></a>"));
+    assert!(out.join("html").join("structs.html").is_file());
+    assert!(
+        !out.join(".gitignore").exists(),
+        "a folder -o names is not vibelight's own"
+    );
 }
 
 #[test]
 fn stdout_lists_the_written_paths_sorted() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = run(&fixtures().join("multi"), tmp.path(), false);
+    let result = run(&fixtures().join("multi"), &tmp.path().join("out"));
     let stdout = String::from_utf8(result.stdout).expect("stdout is UTF-8");
     let names: Vec<String> = stdout
         .lines()
         .map(|l| {
-            l.rsplit(['/', '\\'])
-                .next()
-                .expect("a path has a name")
-                .to_owned()
+            let mut parts = l.rsplit(['/', '\\']);
+            let name = parts.next().expect("a path has a name");
+            let folder = parts.next().expect("a path has a folder");
+            format!("{folder}/{name}")
         })
         .collect();
     assert_eq!(
         names,
-        ["multi-cli.html", "multi-cli.md", "multi.html", "multi.md"]
+        [
+            "html/multi-cli.html",
+            "html/multi.html",
+            "out/index.md",
+            "out/multi-cli.md",
+            "out/multi.md"
+        ]
     );
 }
 
@@ -117,7 +101,7 @@ fn a_custom_lib_path_is_read_from_the_manifest() {
         "//! Top.\n\n/// A thing.\npub struct Thing;\n",
     )
     .expect("a file can be written");
-    let written = outputs(&dir, false);
+    let written = outputs(&dir);
     let names: Vec<&str> = written.iter().map(|(n, _)| n.as_str()).collect();
     assert_eq!(names, ["core_x.html", "core_x.md"]);
     assert!(written[1].1.contains("### Thing"));
@@ -129,30 +113,45 @@ fn unusable_input_exits_with_1() {
     let out = tmp.path().join("out");
     let empty = tmp.path().join("empty");
     fs::create_dir_all(&empty).expect("a folder can be made");
-    let result = run(&empty, &out, false);
+    let result = run(&empty, &out);
     assert_eq!(result.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&result.stderr).contains("not a crate"));
     let workspace = tmp.path().join("workspace");
     fs::create_dir_all(&workspace).expect("a folder can be made");
     fs::write(workspace.join("Cargo.toml"), "[workspace]\nmembers = []\n")
         .expect("a manifest can be written");
-    let result = run(&workspace, &out, false);
+    let result = run(&workspace, &out);
     assert_eq!(result.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&result.stderr).contains("workspace manifest"));
 }
 
 #[test]
 fn usage_errors_keep_clap_exit_code() {
-    let result = Command::new(env!("CARGO_BIN_EXE_vibelight"))
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let result = vibelight()
+        .current_dir(tmp.path())
         .output()
         .expect("the binary runs");
     assert_eq!(result.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("name a crate, or run vibelight inside a Rust repository"),
+        "{stderr}"
+    );
+    for removed in ["--facts", "--workspace", "--check", "--no-source-links"] {
+        let result = vibelight()
+            .args([".", removed])
+            .current_dir(tmp.path())
+            .output()
+            .expect("the binary runs");
+        assert_eq!(result.status.code(), Some(2), "{removed}");
+    }
 }
 
 #[test]
 fn warnings_name_file_and_line_and_end_with_a_count() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = run(&fixtures().join("unparsable"), tmp.path(), false);
+    let result = run(&fixtures().join("unparsable"), tmp.path());
     assert!(result.status.success());
     let stderr = String::from_utf8(result.stderr).expect("stderr is UTF-8");
     let lines: Vec<&str> = stderr.lines().collect();
@@ -176,11 +175,7 @@ fn warnings_name_file_and_line_and_end_with_a_count() {
 #[test]
 fn spellings_add_one_warning_line_only_when_an_item_has_two_spellings() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
-    let result = run(
-        &fixtures().join("spellings"),
-        &tmp.path().join("two"),
-        false,
-    );
+    let result = run(&fixtures().join("spellings"), &tmp.path().join("two"));
     assert!(result.status.success());
     let stderr = String::from_utf8(result.stderr).expect("stderr is UTF-8");
     assert_eq!(
@@ -190,11 +185,7 @@ fn spellings_add_one_warning_line_only_when_an_item_has_two_spellings() {
             "1 warning"
         ]
     );
-    let result = run(
-        &fixtures().join("spellings-none"),
-        &tmp.path().join("one"),
-        false,
-    );
+    let result = run(&fixtures().join("spellings-none"), &tmp.path().join("one"));
     assert!(result.status.success());
     assert!(
         result.stderr.is_empty(),
@@ -211,7 +202,7 @@ fn changing_a_declaration_changes_the_output() {
     let lib = copy.join("src").join("lib.rs");
     let text = fs::read_to_string(&lib).expect("the fixture is readable");
     fs::write(&lib, text.replace("pub x: i32", "pub x: i64")).expect("the copy is writable");
-    let before = outputs(&fixtures().join("structs"), false);
-    let after = outputs(&copy, false);
+    let before = outputs(&fixtures().join("structs"));
+    let after = outputs(&copy);
     assert_ne!(before, after);
 }

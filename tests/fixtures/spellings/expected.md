@@ -10,47 +10,38 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Level 1: top-level types](#level.1)
+- [Levels](#levels)
+- [spellings](#mod.spellings)
   - [Timer](#type.spellings.Timer)
-- [Level 2](#level.2)
   - [Clock](#type.spellings.Clock)
-- [Unconnected types](#unconnected)
+  - [Duration](#type.spellings.Duration)
+  - [Wrapper](#type.spellings.Wrapper)
+- [bare](#mod.spellings.bare)
   - [bare::Label](#type.spellings.bare.Label)
+- [debug](#mod.spellings.debug)
   - [debug::Dial](#type.spellings.debug.Dial)
   - [debug::Gauge](#type.spellings.debug.Gauge)
   - [debug::Knob](#type.spellings.debug.Knob)
-  - [Duration](#type.spellings.Duration)
+- [other](#mod.spellings.other)
   - [other::Badge](#type.spellings.other.Badge)
   - [other::Pin](#type.spellings.other.Pin)
-  - [Wrapper](#type.spellings.Wrapper)
-- [Modules](#modules)
-  - [spellings](#mod.spellings)
-  - [bare](#mod.spellings.bare)
-  - [debug](#mod.spellings.debug)
-  - [other](#mod.spellings.other)
 - [Spellings](#spellings)
 
 **MACROS:** 2 derive lists
-- **MACRO** `derive: serde::Serialize`, in [Timer](#type.spellings.Timer)
-- **MACRO** `derive: Serialize`, in [Clock](#type.spellings.Clock)
 
 <a id="surface"></a>
 ## Public surface
@@ -69,171 +60,220 @@
 - [Timer](#type.spellings.Timer)
 - [Wrapper](#type.spellings.Wrapper)
 
-<a id="level.1"></a>
-## Level 1: top-level types
+<a id="levels"></a>
+## Levels
+
+- Level 1: top-level types
+  - [Timer](#type.spellings.Timer)
+- Level 2
+  - [Clock](#type.spellings.Clock)
+- Unconnected types
+  - [bare::Label](#type.spellings.bare.Label)
+  - [debug::Dial](#type.spellings.debug.Dial)
+  - [debug::Gauge](#type.spellings.debug.Gauge)
+  - [debug::Knob](#type.spellings.debug.Knob)
+  - [Duration](#type.spellings.Duration)
+  - [other::Badge](#type.spellings.other.Badge)
+  - [other::Pin](#type.spellings.other.Pin)
+  - [Wrapper](#type.spellings.Wrapper)
+
+<a id="mod.spellings"></a>
+## spellings
 
 <a id="type.spellings.Timer"></a>
 ### Timer
+
+Counts: 3 fields, 2 functions
+
+Used by: nothing
 
 **MACRO** derive: serde::Serialize
 
 ```
 /// A timer that names its laps.
-struct Timer : Display
-{
-    laps: Map<u32, String>,
+#[derive(serde::Serialize)]
+pub struct Timer {
+    pub laps: Map<u32, String>,
 
-    names: std::collections::BTreeMap<u32, String>,
+    pub names: std::collections::BTreeMap<u32, String>,
 
-    period: ::std::time::Duration,
-
-    next(clock: crate::Clock&) -> std::option::Option<Clock>;
-
-    wait(extra: std::time::Duration) -> Vec<String>;
+    pub period: ::std::time::Duration,
 }
-```
 
-<a id="level.2"></a>
-## Level 2
+// impl in src/lib.rs
+impl Timer {
+    pub fn next(&self, clock: &crate::Clock) -> std::option::Option<Clock>;
+
+    pub fn wait(&self, extra: std::time::Duration) -> Vec<String>;
+}
+
+impl std::fmt::Display for Timer {}
+```
 
 <a id="type.spellings.Clock"></a>
 ### Clock
+
+Counts: 4 fields (2 Option)
+
+Used by: [Timer](#type.spellings.Timer)
 
 **MACRO** derive: Serialize
 
 ```
 /// A clock with an optional alarm.
-struct Clock : Display
-{
+#[derive(Serialize)]
+pub struct Clock {
     /// When the alarm rings; see `core::option::Option`.
-    alarm: Option<u8>,
+    pub alarm: Option<u8>,
 
-    label: String,
+    pub label: String,
 
-    snooze: Option<u8>,
+    pub snooze: Option<u8>,
 
-    step: core::time::Duration,
+    pub step: core::time::Duration,
 }
-```
 
-<a id="unconnected"></a>
-## Unconnected types
-
-<a id="type.spellings.bare.Label"></a>
-### bare::Label
-
-```
-/// A label that shows itself through the standard Display.
-struct Label : Display;
-```
-
-<a id="type.spellings.debug.Dial"></a>
-### debug::Dial
-
-```
-/// A dial that writes Debug through the fmt module.
-struct Dial : Debug;
-```
-
-<a id="type.spellings.debug.Gauge"></a>
-### debug::Gauge
-
-```
-/// A gauge that derives Debug, which adds no spelling.
-struct Gauge : Debug;
-```
-
-<a id="type.spellings.debug.Knob"></a>
-### debug::Knob
-
-```
-/// A knob that writes Debug with its full path.
-struct Knob : Debug;
+impl fmt::Display for Clock {}
 ```
 
 <a id="type.spellings.Duration"></a>
 ### Duration
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// The crate's own Duration, so the standard one has no bare spelling to
 /// prefer.
-struct Duration;
-```
-
-<a id="type.spellings.other.Badge"></a>
-### other::Badge
-
-```
-/// A badge that shows itself through the other crate's Display.
-struct Badge
-    : other_crate::Display;
-```
-
-<a id="type.spellings.other.Pin"></a>
-### other::Pin
-
-```
-/// A pin that names the other crate's Display by its full path.
-struct Pin
-    : other_crate::Display;
+pub struct Duration;
 ```
 
 <a id="type.spellings.Wrapper"></a>
 ### Wrapper
 
+Counts: 1 field, 2 functions
+
+Used by: nothing
+
 ```
 /// A wrapper whose impl names std::string::String only in its self type,
 /// which does not count.
-struct Wrapper<T>
-{
-    inner: T,
+pub struct Wrapper<T> {
+    pub inner: T,
+}
 
-    is_empty() -> bool;
+// impl in src/lib.rs
+impl Wrapper<std::string::String> {
+    pub fn len(&self) -> usize;
 
-    len() -> usize;
+    pub fn is_empty(&self) -> bool;
 }
 ```
 
-<a id="modules"></a>
-## Modules
-
-<a id="mod.spellings"></a>
-### spellings
-
-- [Clock](#type.spellings.Clock)
-- [Duration](#type.spellings.Duration)
-- [Timer](#type.spellings.Timer)
-- [Wrapper](#type.spellings.Wrapper)
-
 <a id="mod.spellings.bare"></a>
-### bare
+## bare
 
 ```
 //! The standard Display written bare after a use.
 ```
 
-- [bare::Label](#type.spellings.bare.Label)
+<a id="type.spellings.bare.Label"></a>
+### bare::Label
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A label that shows itself through the standard Display.
+pub struct Label;
+
+impl Display for Label {}
+```
 
 <a id="mod.spellings.debug"></a>
-### debug
+## debug
 
 ```
 //! Debug by derive and by hand. A derive name is never counted.
 ```
 
-- [debug::Dial](#type.spellings.debug.Dial)
-- [debug::Gauge](#type.spellings.debug.Gauge)
-- [debug::Knob](#type.spellings.debug.Knob)
+<a id="type.spellings.debug.Dial"></a>
+### debug::Dial
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A dial that writes Debug through the fmt module.
+pub struct Dial;
+
+impl fmt::Debug for Dial {}
+```
+
+<a id="type.spellings.debug.Gauge"></a>
+### debug::Gauge
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A gauge that derives Debug, which adds no spelling.
+#[derive(Debug)]
+pub struct Gauge;
+```
+
+<a id="type.spellings.debug.Knob"></a>
+### debug::Knob
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A knob that writes Debug with its full path.
+pub struct Knob;
+
+impl std::fmt::Debug for Knob {}
+```
 
 <a id="mod.spellings.other"></a>
-### other
+## other
 
 ```
 //! Another crate's Display, which never merges with the standard one.
 ```
 
-- [other::Badge](#type.spellings.other.Badge)
-- [other::Pin](#type.spellings.other.Pin)
+<a id="type.spellings.other.Badge"></a>
+### other::Badge
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A badge that shows itself through the other crate's Display.
+pub struct Badge;
+
+impl Display for Badge {}
+```
+
+<a id="type.spellings.other.Pin"></a>
+### other::Pin
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A pin that names the other crate's Display by its full path.
+pub struct Pin;
+
+impl other_crate::Display for Pin {}
+```
 
 <a id="spellings"></a>
 ## Spellings

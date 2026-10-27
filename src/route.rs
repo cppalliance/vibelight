@@ -115,7 +115,7 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
                 reference.target = None;
                 reference.canonical = Some(full);
                 decl.bases.push(Base {
-                    text: Text(vec![Seg::Ref(r)]),
+                    text: Text(vec![Seg::Ref(r)], None),
                     name: last,
                     path_ref: Some(r),
                     ..Base::default()
@@ -232,7 +232,7 @@ mod tests {
 
     fn base(id: usize, name: &str) -> Base {
         Base {
-            text: Text(vec![Seg::Ref(id)]),
+            text: Text(vec![Seg::Ref(id)], None),
             name: name.to_owned(),
             path_ref: Some(id),
             ..Base::default()

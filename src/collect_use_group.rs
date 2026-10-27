@@ -85,6 +85,7 @@ impl Collector<'_> {
                 cfgs: cfgs.clone(),
                 attrs: api.clone(),
                 marks: Vec::new(),
+                vis: attrs::spelled(&u.vis, file),
             };
             if index == 0 {
                 meta.notes.splice(0..0, notes.iter().cloned());

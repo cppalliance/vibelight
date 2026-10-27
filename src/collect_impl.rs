@@ -21,7 +21,8 @@ use crate::typerefs::range_of;
 struct Parts<'p> {
     attrs: &'p [Attribute],
     ident: &'p syn::Ident,
-    vis: Vis,
+    /// `None` for a trait item, which is public.
+    vis: Option<&'p syn::Visibility>,
     kind: MemberKind,
     lead: Vec<Comment>,
     trail: &'p [Comment],
@@ -93,6 +94,19 @@ impl Collector<'_> {
         self.discard(&here, scope);
         let range = range_of(i, file);
         let head_end = file.start(i.brace_token.span.open());
+        let first = [
+            i.modifiers.defaultness.map(|t| t.span),
+            i.unsafety.map(|t| t.span),
+        ];
+        let first = first
+            .into_iter()
+            .flatten()
+            .next()
+            .unwrap_or(i.impl_token.span);
+        let header = file
+            .clean(file.start(first)..head_end)
+            .trim_end_matches(',')
+            .to_owned();
         let mut notes = self.node_notes(&here, &i.attrs, lead, range.start..head_end);
         if let Some(text) = self.trailing(&here, trail) {
             notes.push(Note::Plain(vec![text]));
@@ -108,6 +122,7 @@ impl Collector<'_> {
         }
         self.impls.push(Impl {
             loc,
+            header,
             self_text,
             self_ref,
             trait_,
@@ -160,11 +175,10 @@ impl Collector<'_> {
                     let loc = loc(&here, c.ident.span());
                     let (value, marks) = self.value(&here, &c.expr, Holder::Impl(id), loc);
                     let kind = MemberKind::Const { ty, value };
-                    let vis = attrs::vis(&c.vis);
                     let parts = Parts {
                         attrs: &c.attrs,
                         ident: &c.ident,
-                        vis,
+                        vis: Some(&c.vis),
                         kind,
                         lead,
                         trail: &trail,
@@ -184,11 +198,10 @@ impl Collector<'_> {
                         .into_iter()
                         .collect();
                     let kind = MemberKind::Fn(sig);
-                    let vis = attrs::vis(&f.vis);
                     let parts = Parts {
                         attrs: &f.attrs,
                         ident: &f.sig.ident,
-                        vis,
+                        vis: Some(&f.vis),
                         kind,
                         lead,
                         trail: &trail,
@@ -208,11 +221,10 @@ impl Collector<'_> {
                     text.append(&self.slicer(&here).node(&t.ty, |f| f.visit_type(&t.ty)));
                     let loc = loc(&here, t.ident.span());
                     let kind = MemberKind::Type(text);
-                    let vis = attrs::vis(&t.vis);
                     let parts = Parts {
                         attrs: &t.attrs,
                         ident: &t.ident,
-                        vis,
+                        vis: Some(&t.vis),
                         kind,
                         lead,
                         trail: &trail,
@@ -318,7 +330,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &c.attrs,
                         ident: &c.ident,
-                        vis: Vis::Public,
+                        vis: None,
                         kind,
                         lead,
                         trail: &trail,
@@ -344,7 +356,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &f.attrs,
                         ident: &f.sig.ident,
-                        vis: Vis::Public,
+                        vis: None,
                         kind,
                         lead,
                         trail: &trail,
@@ -362,7 +374,7 @@ impl Collector<'_> {
                     let parts = Parts {
                         attrs: &t.attrs,
                         ident: &t.ident,
-                        vis: Vis::Public,
+                        vis: None,
                         kind,
                         lead,
                         trail: &trail,
@@ -461,16 +473,21 @@ impl Collector<'_> {
     /// its range.
     fn member(&mut self, here: &Here, parts: Parts<'_>) -> Member {
         let notes = self.node_notes(here, parts.attrs, parts.lead, parts.range);
+        let file = &self.files[here.file];
         Member {
             name: parts.ident.to_string(),
-            vis: parts.vis,
+            vis: parts.vis.map_or(Vis::Public, attrs::vis),
             kind: parts.kind,
             meta: Meta {
                 notes,
                 trailing: self.trailing(here, parts.trail),
-                cfgs: attrs::cfgs(parts.attrs, &self.files[here.file]),
-                attrs: attrs::api(parts.attrs, &self.files[here.file]),
+                cfgs: attrs::cfgs(parts.attrs, file),
+                attrs: attrs::api(parts.attrs, file),
                 marks: parts.marks,
+                vis: parts
+                    .vis
+                    .map(|v| attrs::spelled(v, file))
+                    .unwrap_or_default(),
             },
             loc: parts.loc,
             self_fields: Vec::new(),

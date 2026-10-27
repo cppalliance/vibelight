@@ -50,7 +50,7 @@ mod tests {
             crate_docs: None,
             legend: Vec::new(),
             contents: Vec::new(),
-            kill_summary: Some("none".into()),
+            kill_summary: "none".into(),
             kill: Vec::new(),
             sections: vec![Node::Code(Block {
                 lines: vec![line],

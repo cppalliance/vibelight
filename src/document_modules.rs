@@ -76,7 +76,7 @@ impl Builder<'_> {
                 .filter(|&d| self.krate.decls[d].module == m)
                 .collect();
             self.module_head(m, 2);
-            if let Some(block) = module_block(self.krate, m) {
+            if let Some(block) = module_block(self.krate, m, self.notation) {
                 self.code(block);
             }
             for &d in &decls {

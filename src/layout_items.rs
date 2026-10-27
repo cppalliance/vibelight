@@ -7,15 +7,23 @@ use crate::layout::{
     line_text, mark_line, note_lines, plain, section, sections, sort_entries,
 };
 use crate::layout_decl::{BodyParts, body};
+use crate::layout_rust_items as rust;
 use crate::model::{
     Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
 };
+use crate::settings::Notation;
 
-/// Builds a module's trailing block: the public items, then `internal:` and
-/// `private:` with theirs, each section grouped as re-exports, macro marks,
-/// constants, statics, free functions, and extern blocks.
-pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
+/// Builds a module's trailing block: the public items, then the internal
+/// and private ones, each section grouped as re-exports, macro marks,
+/// constants, statics, free functions, and extern blocks. The C++ notation
+/// labels the sections `internal:` and `private:`; Rust spells each item's
+/// visibility instead.
+pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Option<Block> {
     let module = &krate.modules[id];
+    let entry = |item: &Item, at: ValueRef| match notation {
+        Notation::Cpp => item_entry(krate, item, at),
+        Notation::Rust => rust::item_entry(krate, item),
+    };
     let mut sections = sections(6);
     let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
@@ -30,7 +38,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         } = item.kind
         {
             let entries = use_groups.entry((item.vis, set)).or_default();
-            entries.push(item_entry(krate, item, at));
+            entries.push(entry(item, at));
             continue;
         }
         let group = match &item.kind {
@@ -48,7 +56,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 continue;
             }
         };
-        sections[section(item.vis)][group].push(item_entry(krate, item, at));
+        sections[section(item.vis)][group].push(entry(item, at));
     }
     for ((vis, _), mut entries) in use_groups {
         sort_entries(&mut entries, &krate.refs);
@@ -65,15 +73,25 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     for group in sections.iter_mut().flatten() {
         sort_entries(group, &krate.refs);
     }
+    let word = match notation {
+        Notation::Cpp => "using",
+        Notation::Rust => "use",
+    };
     for (groups, items) in sections.iter_mut().zip(&foreign) {
         let reexports = std::mem::take(&mut groups[0]);
         if !reexports.is_empty() {
-            groups[0] = vec![packed(reexports)];
+            groups[0] = vec![packed(reexports, word)];
         }
-        groups[5] = extern_blocks(krate, items);
+        groups[5] = match notation {
+            Notation::Cpp => extern_blocks(krate, items),
+            Notation::Rust => rust::extern_blocks(krate, items),
+        };
     }
     let mut block = Block::default();
-    join_sections(sections, Vis::Public, &mut block);
+    match notation {
+        Notation::Cpp => join_sections(sections, Vis::Public, &mut block),
+        Notation::Rust => join_groups(sections.into_iter().flatten().collect(), &mut block),
+    }
     let dangling = note_lines(&module.dangling, 0, "///");
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
@@ -153,17 +171,17 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     }
 }
 
-/// Packs sorted re-export entries into one entry, so their `using` lines
-/// sit together. An entry with a line above its first `using` line, such
-/// as a comment or a `// cfg:` line, keeps a blank line on each side, so
-/// that line never seems to cover its neighbors.
-fn packed(entries: Vec<Entry>) -> Entry {
+/// Packs sorted re-export entries into one entry, so their `using` or `use`
+/// lines sit together; `word` is the keyword. An entry with a line above
+/// its first `using` line, such as a comment or a `// cfg:` line, keeps a
+/// blank line on each side, so that line never seems to cover its
+/// neighbors.
+fn packed(entries: Vec<Entry>, word: &str) -> Entry {
     let plain = |entry: &Entry| {
         entry
             .lines
             .first()
-            .and_then(|line| line.spans.first())
-            .is_some_and(|span| *span == key("using"))
+            .is_some_and(|line| line.spans.contains(&key(word)))
     };
     let name = entries[0].name.clone();
     let mut lines = Vec::new();
@@ -282,13 +300,18 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
     entries
 }
 
-/// Builds a docs fence: `//!` lines, then one `// cfg:` line per `cfg`.
-pub(crate) fn docs_block(notes: &[Note], cfgs: &[String]) -> Option<Block> {
+/// Builds a docs fence: `//!` lines, then one line per `cfg`, a `// cfg:`
+/// line in the C++ notation and a `#![cfg(...)]` line in Rust.
+pub(crate) fn docs_block(notes: &[Note], cfgs: &[String], notation: Notation) -> Option<Block> {
     let mut lines = note_lines(notes, 0, "//!");
     for cfg in cfgs {
+        let span = match notation {
+            Notation::Cpp => Span::Comment(format!("// cfg: {cfg}")),
+            Notation::Rust => plain(&format!("#![cfg({cfg})]")),
+        };
         lines.push(Line {
             indent: 0,
-            spans: vec![Span::Comment(format!("// cfg: {cfg}"))],
+            spans: vec![span],
             trailing: None,
         });
     }
@@ -298,7 +321,19 @@ pub(crate) fn docs_block(notes: &[Note], cfgs: &[String]) -> Option<Block> {
     })
 }
 
-/// One `implements:` line of the Other impls section.
+/// Returns `implements: Trait for Type;`.
+fn implements(item: &Impl) -> Vec<Span> {
+    let mut spans = vec![key("implements:"), plain(" ")];
+    if let Some(base) = &item.trait_ {
+        spans.extend(code(&base.text));
+    }
+    spans.push(plain(" for "));
+    spans.extend(code(&item.self_text));
+    spans.push(plain(";"));
+    spans
+}
+
+/// One trait-impl line of the Other impls section.
 pub(crate) struct Implements {
     /// Comment lines printed above the line.
     pub(crate) notes: Vec<Line>,
@@ -309,10 +344,15 @@ pub(crate) struct Implements {
     pub(crate) loc: Loc,
 }
 
-/// Builds the Other impls section: `implements:` lines for trait impls,
-/// sorted by trait and then by self type, and a block for each inherent
-/// impl, sorted by self type.
-pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec<(Block, Loc)>) {
+/// Builds the Other impls section: a line for each trait impl, sorted by
+/// trait and then by self type, `implements: Trait for Type;` or, in Rust,
+/// the impl's header with empty braces, and a block for each inherent impl,
+/// sorted by self type.
+pub(crate) fn other_impls(
+    krate: &Crate,
+    ids: &[usize],
+    notation: Notation,
+) -> (Vec<Implements>, Vec<(Block, Loc)>) {
     let refs = &krate.refs;
     let mut traits: Vec<&Impl> = Vec::new();
     let mut inherent: Vec<&Impl> = Vec::new();
@@ -337,13 +377,10 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
     let lines = traits
         .into_iter()
         .map(|item| {
-            let mut spans = vec![key("implements:"), plain(" ")];
-            if let Some(base) = &item.trait_ {
-                spans.extend(code(&base.text));
-            }
-            spans.push(plain(" for "));
-            spans.extend(code(&item.self_text));
-            spans.push(plain(";"));
+            let spans = match notation {
+                Notation::Cpp => implements(item),
+                Notation::Rust => rust::implements(item),
+            };
             let mut marks = item.marks.clone();
             if !item.attributes.is_empty() {
                 marks.push(format!("attribute: {}", item.attributes.join(", ")));
@@ -359,6 +396,9 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
     let blocks = inherent
         .into_iter()
         .map(|item| {
+            if notation == Notation::Rust {
+                return (rust::inherent_block(krate, item), item.loc);
+            }
             let mut block = Block {
                 lines: note_lines(&item.notes, 0, "///"),
                 repeats: Vec::new(),

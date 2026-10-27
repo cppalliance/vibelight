@@ -6,7 +6,7 @@ use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
 use crate::model::{Crate, DeclId, ModId, ValueRef};
 use crate::order::Order;
-use crate::settings::{KillList, Options, OrderBy};
+use crate::settings::{KillList, Notation, Options, OrderBy};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 
@@ -92,11 +92,13 @@ pub(crate) struct Document {
     pub(crate) title: String,
     pub(crate) id: String,
     pub(crate) crate_docs: Option<Block>,
-    /// The Legend section, which both files print after the crate docs.
+    /// The Legend section, printed after the crate docs; empty for a format
+    /// without one.
     pub(crate) legend: Vec<Item>,
     pub(crate) contents: Vec<Item>,
-    /// The macro counts; `None` when the kill list is off.
-    pub(crate) kill_summary: Option<String>,
+    /// The macro counts.
+    pub(crate) kill_summary: String,
+    /// One entry per macro; empty when the kill list shows only its counts.
     pub(crate) kill: Vec<Item>,
     pub(crate) sections: Vec<Node>,
     pub(crate) refs: Vec<crate::model::TypeRef>,
@@ -110,7 +112,11 @@ pub(crate) struct Document {
 pub(crate) struct Builder<'a> {
     pub(crate) krate: &'a Crate,
     pub(crate) links: Option<&'a LinkBase>,
+    /// The C++ blocks, which ids, order, and naming read.
     pub(crate) blocks: &'a [Block],
+    /// The blocks the document prints for the declarations.
+    pub(crate) printed: &'a [Block],
+    pub(crate) notation: Notation,
     pub(crate) texts: Vec<String>,
     pub(crate) decl_ids: Vec<String>,
     pub(crate) mod_ids: Vec<String>,
@@ -130,6 +136,8 @@ pub(crate) struct Inputs<'a> {
     pub(crate) others: &'a [usize],
     pub(crate) order: &'a Order,
     pub(crate) blocks: &'a [Block],
+    /// The blocks to print, in the format's notation.
+    pub(crate) printed: &'a [Block],
     pub(crate) spellings: &'a [Entry],
     pub(crate) surface: &'a [crate::surface::Entry],
     /// Every crate of the run's first doc line for each declaration.
@@ -144,6 +152,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         others,
         order,
         blocks,
+        printed,
         spellings,
         surface,
         docs,
@@ -156,6 +165,8 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         krate,
         links,
         blocks,
+        printed,
+        notation: options.notation,
         texts,
         decl_ids,
         mod_ids,
@@ -164,10 +175,13 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         heading: String::new(),
         facts: options.facts.then_some(order),
     };
-    let mut contents = vec![Item {
-        inlines: vec![anchor("Legend", "legend")],
-        children: Vec::new(),
-    }];
+    let mut contents = Vec::new();
+    if options.legend {
+        contents.push(Item {
+            inlines: vec![anchor("Legend", "legend")],
+            children: Vec::new(),
+        });
+    }
     contents.extend(b.surface(surface));
     let modules = b.sorted_modules();
     match options.order {
@@ -196,17 +210,21 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
     }
     contents.extend(b.external(docs));
     contents.extend(b.shapes());
-    let (summary, entries) = b.kill_list();
-    let (kill_summary, kill) = match options.kill_list {
-        KillList::Full => (Some(summary), entries),
-        KillList::Counts => (Some(summary), Vec::new()),
-        KillList::Off => (None, Vec::new()),
+    let (kill_summary, entries) = b.kill_list();
+    let kill = match options.kill_list {
+        KillList::Full => entries,
+        KillList::Counts => Vec::new(),
+    };
+    let legend = if options.legend {
+        crate::legend::items()
+    } else {
+        Vec::new()
     };
     Document {
         title: krate.title.clone(),
         id: format!("crate.{}", krate.name),
-        crate_docs: docs_block(&krate.modules[0].docs, &[]),
-        legend: crate::legend::items(options),
+        crate_docs: docs_block(&krate.modules[0].docs, &[], options.notation),
+        legend,
         contents,
         kill_summary,
         kill,

@@ -47,6 +47,8 @@ pub(crate) struct Meta {
     pub(crate) attrs: Vec<String>,
     /// Macro marks printed directly above the node inside a block.
     pub(crate) marks: Vec<String>,
+    /// The visibility as written, such as `pub(crate)`; empty for none.
+    pub(crate) vis: String,
 }
 
 /// How far a node is visible, which picks the section it prints in.
@@ -83,6 +85,9 @@ pub(crate) struct Sig {
     /// The generic parameter list, `<...>`, or empty.
     pub(crate) generics: Text,
     pub(crate) receiver: Receiver,
+    /// The receiver as written when the C++ spelling drops it, such as
+    /// `&'a mut self`.
+    pub(crate) self_text: Option<String>,
     /// The parameters, a kept receiver first.
     pub(crate) params: Vec<Param>,
     /// The return type, without the arrow.
@@ -157,10 +162,12 @@ pub(crate) enum Shape {
     Tuple(Vec<Param>),
     Unit,
     Enum(Vec<Variant>),
-    /// A trait: the keyword prefix (`unsafe `, `auto `) and supertraits.
+    /// A trait: the keyword prefix (`unsafe `, `auto `) and supertraits,
+    /// with the supertraits as written for the Rust spelling.
     Trait {
         prefix: String,
         supertraits: Vec<Base>,
+        bounds: String,
     },
     /// A type alias target, or a trait alias's bounds.
     Alias(Text),
@@ -220,6 +227,9 @@ pub(crate) struct Decl {
     /// Traits from every derive attribute, merged and sorted; after routing,
     /// only the ones the `derive:` mark still shows.
     pub(crate) derives: Vec<String>,
+    /// Every derived trait as written, merged and sorted, which routing
+    /// leaves alone.
+    pub(crate) written_derives: Vec<String>,
     /// A reference for each name in `derives` as collected, for routing.
     pub(crate) derive_refs: Vec<RefId>,
     /// The special members routing builds from standard traits.

@@ -38,6 +38,7 @@ impl Collector<'_> {
             cfgs: attrs::cfgs(&f.attrs, file),
             attrs: attrs::api(&f.attrs, file),
             marks: mark.into_iter().collect(),
+            vis: attrs::spelled(&f.vis, file),
         };
         self.modules[here.module].items.push(Item {
             name: f.sig.ident.to_string(),
@@ -84,6 +85,7 @@ impl Collector<'_> {
         } = attach(&mut self.pools[here.file], file, scope, &children);
         let mut comments = leading.into_iter().zip(trailing);
         let mut receiver = Receiver::None;
+        let mut self_text = None;
         let mut params = Vec::new();
         for arg in &sig.inputs {
             let (lead, trail) = comments.next().unwrap_or_default();
@@ -100,6 +102,7 @@ impl Collector<'_> {
                         let text = self.slicer(here).node(r, |f| f.visit_receiver(r));
                         params.push(self.param(here, &r.attrs, text, lead, trail, range));
                     } else {
+                        self_text = Some(file.clean(range.clone()));
                         self.discard(here, range);
                     }
                 }
@@ -125,6 +128,7 @@ impl Collector<'_> {
             name: sig.ident.to_string(),
             generics,
             receiver,
+            self_text,
             params,
             ret,
             where_clause,

@@ -1,20 +1,16 @@
-//! Checks that the two files of each target agree and that every link
-//! inside them lands on an anchor.
+//! Checks that every link inside each target's two files lands on an
+//! anchor, and that ids never repeat.
 
 use std::collections::BTreeSet;
 
-use crate::support::{
-    fixture_args, fixture_names, fixtures, has_ext, html_parts, input_of, markdown_parts, outputs,
-    outputs_with,
-};
+use crate::support::{fixture_names, fixtures, has_ext, input_of, outputs};
 
-/// Returns each target's markdown and HTML text, for every fixture, run
-/// with the switches of its `args.txt`.
+/// Returns each target's markdown and HTML text, for every fixture.
 fn pairs() -> Vec<(String, String, String)> {
     let mut out = Vec::new();
     for name in fixture_names() {
         let dir = fixtures().join(&name);
-        let written = outputs_with(&input_of(&dir), false, &fixture_args(&dir));
+        let written = outputs(&input_of(&dir));
         for (file, md) in written.iter().filter(|(f, _)| has_ext(f, "md")) {
             let stem = file.trim_end_matches(".md");
             let html = written
@@ -28,17 +24,6 @@ fn pairs() -> Vec<(String, String, String)> {
         }
     }
     out
-}
-
-#[test]
-fn markdown_and_html_hold_the_same_headings_marks_and_blocks() {
-    for (target, md, html) in pairs() {
-        assert_eq!(
-            markdown_parts(&md),
-            html_parts(&html),
-            "{target}: the two files disagree"
-        );
-    }
 }
 
 /// Returns the inside of every tag in an HTML file. Text never holds a raw
@@ -186,7 +171,7 @@ fn markdown_never_puts_a_link_inside_a_fence() {
 
 #[test]
 fn html_escapes_angle_brackets_and_ampersands() {
-    let written = outputs(&input_of(&fixtures().join("names")), false);
+    let written = outputs(&input_of(&fixtures().join("names")));
     let html = &written
         .iter()
         .find(|(f, _)| f == "names.html")

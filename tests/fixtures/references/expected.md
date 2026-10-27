@@ -10,32 +10,27 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Levels](#levels)
+- [references](#mod.references)
   - [Marker](#type.references.Marker)
   - [Source](#type.references.Source)
   - [Table](#type.references.Table)
   - [Views](#type.references.Views)
 - [Other impls](#impls)
-- [Modules](#modules)
-  - [references](#mod.references)
 
 **MACROS:** none
 
@@ -52,126 +47,154 @@
 - [Table](#type.references.Table)
 - [Views](#type.references.Views)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="levels"></a>
+## Levels
+
+- Unconnected types
+  - [Marker](#type.references.Marker)
+  - [Source](#type.references.Source)
+  - [Table](#type.references.Table)
+  - [Views](#type.references.Views)
+
+<a id="mod.references"></a>
+## references
+
+```
+/// The default name.
+pub const NAME: &str = "views";
+
+/// Raw bytes behind a reference.
+pub static BYTES: &[u8] = &[1, 2];
+
+/// Applies a function to a string.
+pub fn apply<F>(text: &mut String, f: F) -> usize
+where
+    F: Fn(&mut String) -> usize;
+
+/// Finds the first item.
+pub fn first<'a>(items: &'a [&'a str]) -> Option<&'a str>;
+
+/// Picks an item with a closure that returns a reference.
+pub fn pick<'a, T>(choose: impl Fn(&T) -> &'a T, items: &'a [T]) -> Option<&'a T>;
+```
 
 <a id="type.references.Marker"></a>
 ### Marker
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// Marks a type.
-trait Marker
-{
-}
+pub trait Marker {}
 ```
 
 <a id="type.references.Source"></a>
 ### Source
 
+Counts: 2 functions
+
+Used by: nothing
+
 ```
 /// A source of bytes.
-trait Source
-{
-    name() -> str&;
+pub trait Source {
+    fn read(&mut self, buf: &mut [u8]) -> usize;
 
-    read(buf: [u8] mut&) mut -> usize;
+    fn name(&self) -> &str;
 }
 ```
 
 <a id="type.references.Table"></a>
 ### Table
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// A borrowed table.
-using Table<'a> = [(str& 'a, u8*)]& 'a;
+pub type Table<'a> = &'a [(&'a str, *const u8)];
 ```
 
 <a id="type.references.Views"></a>
 ### Views
 
+Counts: 13 fields, 9 functions
+
+Used by: nothing
+
+Fields:
+
+- `shared`: get
+- `unique`: set
+- `name`: into_name, rename, same
+- `items`: none
+- `read`: none
+- `write`: none
+- `shown`: none
+- `check`: none
+- `callback`: none
+- `both`: none
+- `wrapped`: none
+- `raw_call`: none
+- `step`: none
+
 ```
 /// Borrowed and raw views of one value.
-struct Views<'a, T>
-{
-    shared: T& 'a,
+pub struct Views<'a, T> {
+    pub shared: &'a T,
 
-    unique: T mut& 'a,
+    pub unique: &'a mut T,
 
-    name: str& 'static,
+    pub name: &'static str,
 
-    items: [T& 'a]& 'a,
+    pub items: &'a [&'a T],
 
-    read: T*,
+    pub read: *const T,
 
-    write: T mut*,
+    pub write: *mut T,
 
-    shown: dyn Display& 'a,
+    pub shown: &'a dyn Display,
 
-    check: Box<dyn Fn(str&) -> usize>,
+    pub check: Box<dyn Fn(&str) -> usize>,
 
-    callback: (dyn Fn(str&) -> usize)& 'a,
+    pub callback: &'a dyn Fn(&str) -> usize,
 
-    both: (dyn Display + Send)& 'a,
+    pub both: &'a (dyn Display + Send),
 
-    wrapped: (dyn Fn(str&) -> usize)& 'a,
+    pub wrapped: &'a (dyn Fn(&str) -> usize),
 
-    raw_call: (dyn Fn() -> bool)*,
+    pub raw_call: *const dyn Fn() -> bool,
 
-    step: (fn(u8) -> u8)& 'a,
+    pub step: &'a fn(u8) -> u8,
+}
 
-    clear() mut;
+// impl in src/lib.rs
+impl<'a, T> Views<'a, T> {
+    pub fn get(&self) -> &T;
 
-    get() -> T&;
+    pub fn set(&mut self, value: T);
 
-    into_name(self) -> str& 'static;
+    pub fn into_name(self) -> &'static str;
 
-    lookup(
-        keys: Vec<str& 'a>&,
-        table: std::collections::BTreeMap<String, T mut& 'a>&) mut ->
-        Option<T mut& 'a>;
+    pub fn rename(mut self, name: &'static str) -> Self;
 
-    poll(self: Pin<Self mut&>);
+    pub fn same(self: &Self, other: &Self) -> bool;
 
-    rename(mut self, name: str& 'static) -> Self;
+    pub fn clear(self: &mut Self);
 
-    render(out: impl Write mut&, items: [Box<dyn Display>]&);
+    pub fn poll(self: Pin<&mut Self>);
 
-    same(other: Self&) -> bool;
+    pub fn render(&self, out: &mut impl Write, items: &[Box<dyn Display>]);
 
-    set(value: T) mut;
+    pub fn lookup(&mut self, keys: &Vec<&'a str>, table: &std::collections::BTreeMap<String, &'a mut T>) -> Option<&'a mut T>;
 }
 ```
 
 <a id="impls"></a>
 ## Other impls
 
-- `implements: Marker for T&;`
-- `implements: Marker for u8*;`
-
-<a id="modules"></a>
-## Modules
-
-<a id="mod.references"></a>
-### references
-
-- [Marker](#type.references.Marker)
-- [Source](#type.references.Source)
-- [Table](#type.references.Table)
-- [Views](#type.references.Views)
-
-```
-/// The default name.
-constexpr NAME: str& = "views";
-
-/// Raw bytes behind a reference.
-static BYTES: [u8]& = &[1, 2];
-
-/// Applies a function to a string.
-apply<F>(text: String mut&, f: F) -> usize where F: Fn(String mut&) -> usize;
-
-/// Finds the first item.
-first<'a>(items: [str& 'a]& 'a) -> Option<str& 'a>;
-
-/// Picks an item with a closure that returns a reference.
-pick<'a, T>(choose: impl Fn(T&) -> T& 'a, items: [T]& 'a) -> Option<T& 'a>;
-```
+- `impl<T> Marker for &T {}`
+- `impl Marker for *const u8 {}`

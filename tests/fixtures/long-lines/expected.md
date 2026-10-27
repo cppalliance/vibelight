@@ -10,30 +10,25 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Levels](#levels)
+- [long_lines](#mod.long_lines)
   - [Container](#type.long_lines.Container)
   - [Registry](#type.long_lines.Registry)
   - [Wide](#type.long_lines.Wide)
-- [Modules](#modules)
-  - [long_lines](#mod.long_lines)
 
 **MACROS:** none
 
@@ -44,16 +39,30 @@
 - [Registry](#type.long_lines.Registry)
 - [Wide](#type.long_lines.Wide)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="levels"></a>
+## Levels
+
+- Unconnected types
+  - [Container](#type.long_lines.Container)
+  - [Registry](#type.long_lines.Registry)
+  - [Wide](#type.long_lines.Wide)
+
+<a id="mod.long_lines"></a>
+## long_lines
 
 <a id="type.long_lines.Container"></a>
 ### Container
 
+Counts: 2 fields
+
+Used by: nothing
+
 ```
 /// A header whose where clause moves.
-class Container<K, V>
-    where K: Ord + Clone + std::fmt::Debug + Send + Sync, V: Clone + Send
+pub struct Container<K, V>
+where
+    K: Ord + Clone + std::fmt::Debug + Send + Sync,
+    V: Clone + Send,
 {
     keys: Vec<K>,
 
@@ -64,13 +73,17 @@ class Container<K, V>
 <a id="type.long_lines.Registry"></a>
 ### Registry
 
+Counts: 3 fields
+
+Used by: nothing
+
 ```
 /// A header whose where clause breaks one predicate per line.
-class Registry<K, V, S>
-    where
-        K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
-        V: Clone + Send + Sync + std::fmt::Debug,
-        S: std::hash::BuildHasher + Default
+pub struct Registry<K, V, S>
+where
+    K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
+    V: Clone + Send + Sync + std::fmt::Debug,
+    S: std::hash::BuildHasher + Default,
 {
     keys: Vec<K>,
 
@@ -83,57 +96,44 @@ class Registry<K, V, S>
 <a id="type.long_lines.Wide"></a>
 ### Wide
 
+Counts: 1 field, 9 functions
+
+Used by: nothing
+
+Fields:
+
+- `a_field_with_a_very_long_type`: none
+
 ```
 /// Members that test the long-line rule.
-struct Wide
-{
+pub struct Wide {
     /// This doc comment line is deliberately longer than eighty columns so it shows comments never wrap.
-    a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>>,
+    pub a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>>,
+}
 
-    static exactly_at_80(first_value: u64, second_value: u64) -> Option<String>;
+// impl in src/lib.rs
+impl Wide {
+    pub fn exactly_at_80(first_value: u64, second_value: u64) -> Option<String>;
 
-    static fits_with_comment(value: u64) -> u64; // a trailing comment that pushes past eighty
+    pub fn one_over_limit(first_value: u64, second_value: u64) -> Option<String>;
 
-    static huge(
-        an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap<String, Vec<u64>>);
+    pub fn long_first_line(argument_number_one: u64, argument_number_two: u64) -> u64;
 
-    static long_first_line(
-        argument_number_one: u64,
-        argument_number_two: u64) -> u64;
+    pub fn tail_also_breaks(argument_number_one: u64, argument_number_two: u64) -> std::collections::BTreeMap<String, Vec<u64>>;
 
-    static one_over_limit(first_value: u64, second_value: u64) ->
-        Option<String>;
+    pub fn register(&mut self, name_of_the_thing: &str, handler_for_the_thing: Box<dyn Fn(u32)>, priority: u8);
 
-    static tail_also_breaks(
-        argument_number_one: u64,
-        argument_number_two: u64) ->
-        std::collections::BTreeMap<String, Vec<u64>>;
+    pub fn register_bounded<T>(&mut self, name: &str, value: T)
+    where
+        T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash;
 
-    register(
-        name_of_the_thing: str&,
-        handler_for_the_thing: Box<dyn Fn(u32)>,
-        priority: u8) mut;
+    pub fn route<R, L>(&self, read: R, load: L)
+    where
+        R: Fn(String) -> Option<String> + Send + Sync + 'static,
+        L: Fn(String, Option<u32>) -> Result<String, u8> + Send;
 
-    register_bounded<T>(
-        name: str&,
-        value: T) mut
-        where T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash;
+    pub fn huge(an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap<String, Vec<u64>>);
 
-    route<R, L>(
-        read: R,
-        load: L)
-        where
-            R: Fn(String) -> Option<String> + Send + Sync + 'static,
-            L: Fn(String, Option<u32>) -> Result<String, u8> + Send;
+    pub fn fits_with_comment(value: u64) -> u64; // a trailing comment that pushes past eighty
 }
 ```
-
-<a id="modules"></a>
-## Modules
-
-<a id="mod.long_lines"></a>
-### long_lines
-
-- [Container](#type.long_lines.Container)
-- [Registry](#type.long_lines.Registry)
-- [Wide](#type.long_lines.Wide)

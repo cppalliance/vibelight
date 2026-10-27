@@ -45,6 +45,7 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let mut impl_notes = std::mem::take(&mut item.notes);
         let trait_ = item.trait_.clone();
         let loc = item.loc;
+        let header = item.header.clone();
         let special = trait_
             .as_ref()
             .and_then(|base| route::special_kind(&krate.refs, base));
@@ -61,6 +62,9 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
                 loc,
                 members: member_names(&members),
                 range: start..start + members.len(),
+                header,
+                notes: impl_notes.clone(),
+                trait_impl: trait_.is_some(),
             });
         }
         decl.members.extend(members);
@@ -108,6 +112,14 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
     for (decl, list) in krate.decls.iter_mut().zip(notes) {
         decl.impl_notes = sorted_notes(list);
     }
+    move_impl_marks(krate);
+    route::finish(krate);
+    others
+}
+
+/// Moves each kill list entry of a macro in an attached impl to the type
+/// the impl attached to.
+fn move_impl_marks(krate: &mut Crate) {
     for mark in &mut krate.macros {
         if let Holder::Impl(id) = mark.holder {
             if let Some(decl) = krate.impls[id].attached {
@@ -115,8 +127,6 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
             }
         }
     }
-    route::finish(krate);
-    others
 }
 
 /// Puts a type's impl comment groups in print order: trait impls by trait

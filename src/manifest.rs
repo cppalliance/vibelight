@@ -217,7 +217,23 @@ fn subdirs(dir: &Path) -> Vec<PathBuf> {
 /// sorted. A `workspace = true` entry takes its path from the workspace.
 /// Dev-dependencies never count.
 pub(crate) fn path_deps(dir: &Path, table: &Table, workspace: Option<&Workspace>) -> Vec<Dep> {
-    let kinds = ["dependencies", "build-dependencies"];
+    deps_in(
+        dir,
+        table,
+        workspace,
+        &["dependencies", "build-dependencies"],
+    )
+}
+
+/// Returns the path dependencies a manifest names in the tables `kinds`
+/// name, such as `dev-dependencies`, and in the same tables under every
+/// `[target.*]`, sorted.
+pub(crate) fn deps_in(
+    dir: &Path,
+    table: &Table,
+    workspace: Option<&Workspace>,
+    kinds: &[&str],
+) -> Vec<Dep> {
     let mut tables: Vec<&Table> = kinds
         .iter()
         .filter_map(|kind| table.get(*kind).and_then(Value::as_table))

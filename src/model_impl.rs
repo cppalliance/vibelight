@@ -40,6 +40,12 @@ pub(crate) struct ImplLoc {
     /// The indexes in the type's members of the members the impl adds, in
     /// source order.
     pub(crate) range: std::ops::Range<usize>,
+    /// The impl's header as written, such as `impl<T> Clone for Box<T>`.
+    pub(crate) header: String,
+    /// The comments above the impl line.
+    pub(crate) notes: Vec<Note>,
+    /// True for a trait impl.
+    pub(crate) trait_impl: bool,
 }
 
 /// The comments above one attached impl line, kept together so the outline
@@ -58,6 +64,8 @@ pub(crate) struct ImplNotes {
 pub(crate) struct Impl {
     /// The `impl` line.
     pub(crate) loc: Loc,
+    /// The header as written, from `unsafe` or `impl` to the brace.
+    pub(crate) header: String,
     /// The self type as written.
     pub(crate) self_text: Text,
     /// The self type's path when it is a plain path, generic arguments

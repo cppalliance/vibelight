@@ -6,8 +6,8 @@ use std::env::{self, VarError};
 
 use anyhow::{Result, bail};
 
-/// The stamp a check run renders. A check compares masked text, so the
-/// value never shows; it has the length of a real stamp.
+/// What the mask writes in place of each time; it has the length of a real
+/// stamp.
 pub(crate) const PLACEHOLDER: &str = "0000-00-00T00:00:00Z";
 
 /// The largest epoch that still has a four-digit year: 9999-12-31T23:59:59Z.

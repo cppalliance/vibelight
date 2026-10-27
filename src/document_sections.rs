@@ -127,7 +127,7 @@ impl Builder<'_> {
                 None,
             );
         }
-        self.code(self.blocks[d].clone());
+        self.code(self.printed[d].clone());
     }
 
     /// Adds the Other impls section and returns its contents entry, when
@@ -179,7 +179,7 @@ impl Builder<'_> {
                 .collect();
             self.nodes.push(Node::List { class: "", items });
         }
-        if let Some(block) = module_block(self.krate, m) {
+        if let Some(block) = module_block(self.krate, m, self.notation) {
             self.code(block);
         }
     }
@@ -203,9 +203,9 @@ impl Builder<'_> {
             self.nodes.push(Node::Source(plain_links(link)));
         }
         let docs = if m == 0 {
-            docs_block(&[], &module.cfgs)
+            docs_block(&[], &module.cfgs, self.notation)
         } else {
-            docs_block(&module.docs, &module.cfgs)
+            docs_block(&module.docs, &module.cfgs, self.notation)
         };
         if let Some(docs) = docs {
             self.code(docs);
@@ -213,7 +213,7 @@ impl Builder<'_> {
     }
 
     fn other_impls(&mut self, ids: &[usize]) {
-        let (lines, blocks) = layout_items::other_impls(self.krate, ids);
+        let (lines, blocks) = layout_items::other_impls(self.krate, ids, self.notation);
         if !lines.is_empty() {
             let items = lines
                 .into_iter()

@@ -1,5 +1,9 @@
 //! Rearranges fixtures in ways the determinism rule says cannot change the
-//! output, and checks every file stays byte for byte the same.
+//! output, and checks every file stays byte for byte the same, source
+//! links aside. The markdown groups each type's functions by the impl that
+//! adds them, in source order, so only a rearrangement that keeps every
+//! impl where it is leaves the markdown unchanged; the HTML stays the same
+//! under all of them.
 
 use std::fs;
 use std::path::Path;
@@ -8,25 +12,40 @@ use std::process::Command;
 use syn::Item;
 use syn::spanned::Spanned;
 
-use crate::support::{copy_dir, fixture_names, fixtures, input_of, outputs, rust_files};
+use crate::support::{copy_dir, fixture_names, fixtures, has_ext, input_of, outputs, rust_files};
 
 /// The one fixture built to fail parsing, which no rearrangement can read.
 const SKIP: &[&str] = &["unparsable"];
 
+/// The files a rearrangement must leave the same.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Same {
+    /// The HTML pages, for a rearrangement that moves impls.
+    Pages,
+    /// Every file, for one that keeps each impl in its place.
+    All,
+}
+
 /// Rearranges a copy of every fixture and compares its outlines with the
 /// original's.
-fn check(transform: impl Fn(&Path)) {
+fn check(same: Same, transform: impl Fn(&Path)) {
+    let kept = |files: Vec<(String, String)>| -> Vec<(String, String)> {
+        files
+            .into_iter()
+            .filter(|(file, _)| same == Same::All || has_ext(file, "html"))
+            .collect()
+    };
     for name in fixture_names() {
         if SKIP.contains(&name.as_str()) {
             continue;
         }
         let original = fixtures().join(&name);
-        let expected = outputs(&input_of(&original), false);
+        let expected = kept(outputs(&input_of(&original)));
         let tmp = tempfile::tempdir().expect("a temporary folder can be made");
         let copy = tmp.path().join(&name);
         copy_dir(&original, &copy);
         transform(&copy);
-        let actual = outputs(&input_of(&copy), false);
+        let actual = kept(outputs(&input_of(&copy)));
         assert_eq!(
             expected.len(),
             actual.len(),
@@ -88,7 +107,7 @@ fn reverse_chunks(lines: &mut Vec<String>, from: usize, ends: &[usize]) {
 
 #[test]
 fn reversed_items_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         for path in rust_files(dir) {
             edit(&path, |text, file| {
                 let mut lines = split_lines(text);
@@ -124,7 +143,7 @@ fn reverse_derive(line: &str) -> String {
 
 #[test]
 fn reversed_derives_and_attributes_change_nothing() {
-    check(|dir| {
+    check(Same::All, |dir| {
         for path in rust_files(dir) {
             edit(&path, |text, _| {
                 let mut lines: Vec<String> = split_lines(text)
@@ -193,7 +212,7 @@ fn cuttable(lines: &[String], file: &syn::File) -> Vec<Cuttable> {
 
 #[test]
 fn split_impls_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         for path in rust_files(dir) {
             edit(&path, |text, file| {
                 let lines = split_lines(text);
@@ -225,7 +244,7 @@ fn split_impls_change_nothing() {
 
 #[test]
 fn merged_impls_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         for path in rust_files(dir) {
             edit(&path, |text, file| {
                 let lines = split_lines(text);
@@ -258,7 +277,7 @@ fn merged_impls_change_nothing() {
 
 #[test]
 fn impls_moved_to_the_root_file_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         let root = dir.join("src").join("lib.rs");
         if !root.exists() || dir.join("src").join("main.rs").exists() {
             return;
@@ -308,7 +327,7 @@ fn prefix(line: &str) -> Option<&str> {
 
 #[test]
 fn file_modules_made_inline_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         let src = dir.join("src");
         edit(&src.join("lib.rs"), |text, file| {
             let mut lines = split_lines(text);
@@ -341,7 +360,7 @@ fn file_modules_made_inline_change_nothing() {
 
 #[test]
 fn inline_modules_moved_to_files_change_nothing() {
-    check(|dir| {
+    check(Same::Pages, |dir| {
         let src = dir.join("src");
         edit(&src.join("lib.rs"), |text, file| {
             let mut lines = split_lines(text);
@@ -373,7 +392,7 @@ fn inline_modules_moved_to_files_change_nothing() {
 
 #[test]
 fn rustfmt_with_a_narrow_width_changes_nothing() {
-    check(|dir| {
+    check(Same::All, |dir| {
         let roots: Vec<_> = ["src/lib.rs", "src/main.rs"]
             .iter()
             .map(|r| dir.join(r))

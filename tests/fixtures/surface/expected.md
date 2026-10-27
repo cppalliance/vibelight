@@ -10,45 +10,37 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Level 1: top-level types](#level.1)
-  - [api::v1::Request](#type.surface.api.v1.Request)
-  - [detail::Handle](#type.surface.detail.Handle)
-- [Test support](#test-support)
+- [Levels](#levels)
+- [surface](#mod.surface)
   - [Fake](#type.surface.Fake)
-- [Unconnected types](#unconnected)
-  - [detail::tools::Tool](#type.surface.detail.tools.Tool)
   - [Internal](#type.surface.Internal)
+- [api](#mod.surface.api)
+- [api::v1](#mod.surface.api.v1)
+  - [api::v1::Request](#type.surface.api.v1.Request)
+- [detail](#mod.surface.detail)
+  - [detail::Handle](#type.surface.detail.Handle)
+- [detail::tools](#mod.surface.detail.tools)
+  - [detail::tools::Tool](#type.surface.detail.tools.Tool)
+- [prelude](#mod.surface.prelude)
   - [prelude::Marker](#type.surface.prelude.Marker)
-- [Modules](#modules)
-  - [surface](#mod.surface)
-  - [api](#mod.surface.api)
-  - [api::v1](#mod.surface.api.v1)
-  - [detail](#mod.surface.detail)
-  - [detail::tools](#mod.surface.detail.tools)
-  - [prelude](#mod.surface.prelude)
-  - [values](#mod.surface.values)
-  - [values::inner](#mod.surface.values.inner)
+- [values](#mod.surface.values)
+- [values::inner](#mod.surface.values.inner)
 
 **MACROS:** 1 definition
-- **MACRO** `macro_rules! hello`, in [surface](#mod.surface)
 
 <a id="surface"></a>
 ## Public surface
@@ -73,98 +65,71 @@
 - [MAX](#mod.surface.values)
 - [start()](#mod.surface)
 
-<a id="level.1"></a>
-## Level 1: top-level types
+<a id="levels"></a>
+## Levels
 
-<a id="type.surface.api.v1.Request"></a>
-### api::v1::Request
-
-```
-/// A request.
-struct Request;
-```
-
-<a id="type.surface.detail.Handle"></a>
-### detail::Handle
-
-```
-/// A handle made public through a re-export.
-struct Handle;
-```
-
-<a id="test-support"></a>
-## Test support
-
-<a id="type.surface.Fake"></a>
-### Fake
-
-```
-/// A fake for tests and benches.
-// cfg: any(test, feature = "test-support")
-struct Fake;
-```
-
-<a id="unconnected"></a>
-## Unconnected types
-
-<a id="type.surface.detail.tools.Tool"></a>
-### detail::tools::Tool
-
-```
-/// A tool.
-struct Tool;
-```
-
-<a id="type.surface.Internal"></a>
-### Internal
-
-```
-/// A crate-only type.
-// internal
-struct Internal;
-```
-
-<a id="type.surface.prelude.Marker"></a>
-### prelude::Marker
-
-```
-/// A marker a glob re-exports.
-struct Marker;
-```
-
-<a id="modules"></a>
-## Modules
+- Level 1: top-level types
+  - [api::v1::Request](#type.surface.api.v1.Request)
+  - [detail::Handle](#type.surface.detail.Handle)
+- Test support
+  - [Fake](#type.surface.Fake)
+- Unconnected types
+  - [detail::tools::Tool](#type.surface.detail.tools.Tool)
+  - [Internal](#type.surface.Internal)
+  - [prelude::Marker](#type.surface.prelude.Marker)
 
 <a id="mod.surface"></a>
-### surface
-
-- [Fake](#type.surface.Fake)
-- [Internal](#type.surface.Internal)
+## surface
 
 ```
-using prelude::*;
-using std::collections::BTreeMap;
-using values::build;
-using values::CURRENT;
-using values::deep;
-using detail::Handle;
-using kit = detail::tools;
-using values::MAX;
+pub use prelude::*;
+pub use std::collections::BTreeMap;
+pub use values::build;
+pub use values::CURRENT;
+pub use values::deep;
+pub use detail::Handle;
+pub use detail::tools as kit;
+pub use values::MAX;
 
 /// Says hello.
 // MACRO macro_rules! hello
 
 /// The number of calls so far.
-static CALLS: u8 = 0;
+pub static CALLS: u8 = 0;
 
 /// Starts the library.
-start();
+pub fn start();
 ```
 
 **MACRO** macro_rules! hello
 
+<a id="type.surface.Fake"></a>
+### Fake
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A fake for tests and benches.
+#[cfg(any(test, feature = "test-support"))]
+pub struct Fake;
+```
+
+<a id="type.surface.Internal"></a>
+### Internal
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A crate-only type.
+pub(crate) struct Internal;
+```
+
 <a id="mod.surface.api"></a>
-### api
+## api
 
 ```
 //! The public API.
@@ -172,84 +137,124 @@ start();
 
 ```
 /// The version in use.
-constexpr VERSION: u8 = 1;
+pub const VERSION: u8 = 1;
 ```
 
 <a id="mod.surface.api.v1"></a>
-### api::v1
+## api::v1
 
 ```
 //! The first version.
 ```
 
-- [api::v1::Request](#type.surface.api.v1.Request)
-
 ```
 /// Sends a request.
-send(request: Request) -> u8;
+pub fn send(request: Request) -> u8;
+```
+
+<a id="type.surface.api.v1.Request"></a>
+### api::v1::Request
+
+Counts: none
+
+Used by: [api::v1](#mod.surface.api.v1)
+
+```
+/// A request.
+pub struct Request;
 ```
 
 <a id="mod.surface.detail"></a>
-### detail
+## detail
 
 ```
 //! Hidden helpers.
 ```
 
-- [detail::Handle](#type.surface.detail.Handle)
-
 ```
 /// A helper that stays hidden.
-helper();
+pub fn helper();
+```
+
+<a id="type.surface.detail.Handle"></a>
+### detail::Handle
+
+Counts: none
+
+Used by: [surface](#mod.surface)
+
+```
+/// A handle made public through a re-export.
+pub struct Handle;
 ```
 
 <a id="mod.surface.detail.tools"></a>
-### detail::tools
+## detail::tools
 
 ```
 //! Tools reached only through a re-export.
 ```
 
-- [detail::tools::Tool](#type.surface.detail.tools.Tool)
+<a id="type.surface.detail.tools.Tool"></a>
+### detail::tools::Tool
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A tool.
+pub struct Tool;
+```
 
 <a id="mod.surface.prelude"></a>
-### prelude
+## prelude
 
 ```
 //! Names a glob brings in.
 ```
 
-- [prelude::Marker](#type.surface.prelude.Marker)
-
 ```
 /// A function a glob re-exports.
-mark();
+pub fn mark();
+```
+
+<a id="type.surface.prelude.Marker"></a>
+### prelude::Marker
+
+Counts: none
+
+Used by: nothing
+
+```
+/// A marker a glob re-exports.
+pub struct Marker;
 ```
 
 <a id="mod.surface.values"></a>
-### values
+## values
 
 ```
 //! Values made public through re-exports.
 ```
 
 ```
-using self::inner::deep;
+pub use self::inner::deep;
 
 /// The largest value.
-constexpr MAX: u8 = 9;
+pub const MAX: u8 = 9;
 
 /// The current value.
-static CURRENT: u8 = 0;
+pub static CURRENT: u8 = 0;
 
 /// Builds a value.
-build() -> u8;
+pub fn build() -> u8;
 ```
 
 <a id="mod.surface.values.inner"></a>
-### values::inner
+## values::inner
 
 ```
 /// A function two re-exports away.
-deep();
+pub fn deep();
 ```

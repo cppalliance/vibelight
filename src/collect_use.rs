@@ -13,7 +13,7 @@ use crate::collect_use_group::{Binding, expand};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Text, TypeRef, Use, Vis,
+    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Seg, Text, TypeRef, Use, Vis,
 };
 use crate::source::{Comment, scan};
 use crate::typerefs::range_of;
@@ -55,7 +55,8 @@ impl Collector<'_> {
     }
 
     /// Returns a re-export's text: `path::Item`, `Alias = path::Item`, or
-    /// `path::*`, with the path as one reference.
+    /// `path::*`, with the path as one reference. Rust spells a rename
+    /// `path::Item as Alias`.
     pub(crate) fn reexport_text(&mut self, here: &Here, binding: &Binding, global: bool) -> Text {
         let lead = if global { "::" } else { "" };
         let written = format!("{lead}{}", binding.written.join("::"));
@@ -83,7 +84,10 @@ impl Collector<'_> {
             foreign: None,
         });
         text.push_ref(id);
-        text
+        match &binding.rename {
+            Some(rename) => text.spelled(vec![Seg::Ref(id), Seg::Plain(format!(" as {rename}"))]),
+            None => text,
+        }
     }
 
     pub(crate) fn item_const(
@@ -168,6 +172,7 @@ impl Collector<'_> {
             cfgs: attrs::cfgs(attrs, &self.files[here.file]),
             attrs: attrs::api(attrs, &self.files[here.file]),
             marks,
+            vis: attrs::spelled(vis, &self.files[here.file]),
         };
         self.modules[here.module].items.push(Item {
             name,
@@ -324,6 +329,7 @@ impl Collector<'_> {
                 cfgs: item_cfgs,
                 attrs: attrs::api(attrs, file),
                 marks: Vec::new(),
+                vis: attrs::spelled(vis, file),
             };
             self.modules[here.module].items.push(Item {
                 name,

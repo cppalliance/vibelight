@@ -154,6 +154,7 @@ impl Collector<'_> {
                     cfgs: attrs::cfgs(&variant.attrs, file),
                     attrs: attrs::api(&variant.attrs, file),
                     marks: mark.into_iter().collect(),
+                    vis: String::new(),
                 },
                 loc,
             });
@@ -202,6 +203,12 @@ impl Collector<'_> {
             .iter()
             .map(|bound| self.bound_base(&here, bound))
             .collect();
+        let bounds = match (t.supertraits.first(), t.supertraits.last()) {
+            (Some(first), Some(last)) => {
+                file.clean(range_of(first, file).start..range_of(last, file).end)
+            }
+            _ => String::new(),
+        };
         let scope = file.end(t.brace_token.span.open())..file.start(t.brace_token.span.close());
         let (members, dangling) = self.trait_items(&here, &t.items, scope, id);
         let range = range_of(t, file);
@@ -224,6 +231,7 @@ impl Collector<'_> {
             Shape::Trait {
                 prefix,
                 supertraits,
+                bounds,
             },
             members,
             dangling,
@@ -357,6 +365,7 @@ impl Collector<'_> {
                 cfgs: attrs::cfgs(attrs, &self.files[here.file]),
                 attrs: attrs::api(attrs, &self.files[here.file]),
                 marks: Vec::new(),
+                vis: attrs::spelled(vis, &self.files[here.file]),
             },
             derives,
             derive_refs,
@@ -382,6 +391,7 @@ impl Collector<'_> {
             shape,
             members,
             meta: head.meta,
+            written_derives: head.derives.clone(),
             derives: head.derives,
             derive_refs: head.derive_refs,
             special: Vec::new(),

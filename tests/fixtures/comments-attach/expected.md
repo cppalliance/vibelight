@@ -10,32 +10,26 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Unconnected types](#unconnected)
+- [Levels](#levels)
+- [comments_attach](#mod.comments_attach)
   - [Config](#type.comments_attach.Config)
   - [Holder](#type.comments_attach.Holder)
-- [Modules](#modules)
-  - [comments_attach](#mod.comments_attach)
 
 **MACROS:** 1 definition
-- **MACRO** `macro_rules! noop`, in [comments_attach](#mod.comments_attach)
 
 <a id="surface"></a>
 ## Public surface
@@ -44,66 +38,76 @@
 - [Holder](#type.comments_attach.Holder)
 - [PATTERN](#mod.comments_attach)
 
-<a id="unconnected"></a>
-## Unconnected types
+<a id="levels"></a>
+## Levels
+
+- Unconnected types
+  - [Config](#type.comments_attach.Config)
+  - [Holder](#type.comments_attach.Holder)
+
+<a id="mod.comments_attach"></a>
+## comments_attach
+
+```
+// MACRO macro_rules! noop
+
+/// Holds a string with comment-like text.
+pub const PATTERN: &str = "// not a comment";
+```
+
+**MACRO** macro_rules! noop
 
 <a id="type.comments_attach.Config"></a>
 ### Config
 
+Counts: 3 fields, 2 functions
+
+Used by: nothing
+
 ```
 // Attached to the struct below.
 /// Docs for Config.
-struct Config
-{
+pub struct Config {
     // Directly above the field.
-    first: u8,
+    pub first: u8,
 
     // Separated from the field by a blank line.
-    second: u8, // Trailing comment on the same line.
+    pub second: u8, // Trailing comment on the same line.
 
-    third: u8,
-
-    /// Takes commented parameters.
-    static build(
-        // The first input.
-        first: u8,
-        second: u8) -> Config;
-
-    /// Holds a comment inside its type.
-    typed(
-        /* the count */
-        items: Vec<u32>);
+    pub third: u8,
 
     // Nothing follows this comment in the struct.
+}
+
+// impl in src/lib.rs
+impl Config {
+    /// Takes commented parameters.
+    pub fn build(
+        // The first input.
+        first: u8,
+        second: u8,
+    ) -> Config;
+
+    /// Holds a comment inside its type.
+    pub fn typed(
+        &self,
+        /* the count */
+        items: Vec<u32>,
+    );
 }
 ```
 
 <a id="type.comments_attach.Holder"></a>
 ### Holder
 
+Counts: 1 field
+
+Used by: nothing
+
 ```
 /// A field whose type holds a comment.
-struct Holder
-{
+pub struct Holder {
     /* inner */
-    items: Vec<u8>,
+    pub items: Vec<u8>,
 }
 ```
-
-<a id="modules"></a>
-## Modules
-
-<a id="mod.comments_attach"></a>
-### comments_attach
-
-- [Config](#type.comments_attach.Config)
-- [Holder](#type.comments_attach.Holder)
-
-```
-// MACRO macro_rules! noop
-
-/// Holds a string with comment-like text.
-constexpr PATTERN: str& = "// not a comment";
-```
-
-**MACRO** macro_rules! noop

@@ -1,4 +1,4 @@
-//! A crate with macros, outlined with only the kill list's counts.
+//! A crate with macros: the markdown counts them, and the HTML lists each one.
 
 /// Defines a constant.
 macro_rules! constant {

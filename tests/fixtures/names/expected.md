@@ -10,42 +10,35 @@
 <a id="legend"></a>
 ## Legend
 
-- Each type is one C++-style block: a `struct` has a public member, and a `class` has none.
-- A type's block holds the members of all its inherent impls, wherever they are written, so a module that holds only impls shows nothing but its docs.
-- Members sit under `public:`, `internal:` (for `pub(crate)`, `pub(super)`, and `pub(in path)`), and `private:`; the first label is left out when it is the default.
-- A `// internal` or `// private` line above a type's header gives the type's own visibility; a public type has none.
-- A member function drops `&self`, shows `&mut self` as a trailing `mut`, and keeps any other receiver, such as `self`, as its first parameter; `static` means no receiver.
-- References and pointers put the sigil after the type: `T&` is `&T`, `T mut&` is `&mut T`, `T*` is `*const T`, and `T mut*` is `*mut T`.
-- `constexpr` marks a `const fn` or a constant, and `using` marks a type alias, an associated type, or a re-export.
-- `Default`, `From<T>`, and `Drop` print as constructors and a destructor; every other trait goes in the base list after the type's name.
-- A `// cfg:` line shows a condition, a `[[...]]` line shows an attribute that shapes the API, and a `// impl` line starts an impl block's comments.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top gathers them.
+- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
+- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
+- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
+- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
+- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
 - Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
+- Each module has a section that holds its declarations by level, and Levels indexes them: level 1 holds the types no other type names, and each type sits one level below the deepest type that names it.
 - Test support holds types behind a `cfg` that lists `test` inside `any(...)`, and Unconnected types holds types that name nothing and that nothing names.
-- With source links on, a `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
+- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
 - The first line is the UTC time the file's content last changed.
 
 - [Legend](#legend)
 - [Public surface](#surface)
-- [Level 1: top-level types](#level.1)
+- [Levels](#levels)
+- [names](#mod.names)
   - [Catalog](#type.names.Catalog)
   - [Pairs](#type.names.Pairs)
-- [Level 2](#level.2)
-  - [model::Record](#type.names.model.Record)
-  - [api::inner::Handle](#type.names.api.inner.Handle)
-  - [api::Token](#type.names.api.Token)
-- [Unconnected types](#unconnected)
-  - [api::inner::Shared](#type.names.api.inner.Shared)
-  - [model::Shared](#type.names.model.Shared)
   - [Twin](#type.names.Twin)
   - [Twin](#type.names.Twin-2)
   - [Wrapper](#type.names.Wrapper)
-- [Modules](#modules)
-  - [names](#mod.names)
-  - [api](#mod.names.api)
-  - [api::inner](#mod.names.api.inner)
-  - [model](#mod.names.model)
+- [api](#mod.names.api)
+  - [api::Token](#type.names.api.Token)
+- [api::inner](#mod.names.api.inner)
+  - [api::inner::Handle](#type.names.api.inner.Handle)
+  - [api::inner::Shared](#type.names.api.inner.Shared)
+- [model](#mod.names.model)
+  - [model::Record](#type.names.model.Record)
+  - [model::Shared](#type.names.model.Shared)
 
 **MACROS:** none
 
@@ -68,160 +61,188 @@
 - [Twin](#type.names.Twin)
 - [Wrapper](#type.names.Wrapper)
 
-<a id="level.1"></a>
-## Level 1: top-level types
+<a id="levels"></a>
+## Levels
+
+- Level 1: top-level types
+  - [Catalog](#type.names.Catalog)
+  - [Pairs](#type.names.Pairs)
+- Level 2
+  - [model::Record](#type.names.model.Record)
+  - [api::inner::Handle](#type.names.api.inner.Handle)
+  - [api::Token](#type.names.api.Token)
+- Unconnected types
+  - [api::inner::Shared](#type.names.api.inner.Shared)
+  - [model::Shared](#type.names.model.Shared)
+  - [Twin](#type.names.Twin)
+  - [Twin](#type.names.Twin-2)
+  - [Wrapper](#type.names.Wrapper)
+
+<a id="mod.names"></a>
+## names
+
+```
+pub use model::Record as Entry;
+```
 
 <a id="type.names.Catalog"></a>
 ### Catalog
 
+Counts: 5 fields
+
+Used by: nothing
+
 ```
 /// Uses names resolved every way rule 39 allows.
-struct Catalog
-{
+pub struct Catalog {
     /// Through a prefix path.
-    first: crate::model::Record,
+    pub first: crate::model::Record,
 
     /// Through a pub use rename at the root.
-    second: Entry,
+    pub second: Entry,
 
     /// Through a glob import.
-    third: api::Handle,
+    pub third: api::Handle,
 
     /// A unique name across the target.
-    fourth: Token,
+    pub fourth: Token,
 
     /// An ambiguous name stays plain.
-    fifth: Shared,
+    pub fifth: Shared,
 }
 ```
 
 <a id="type.names.Pairs"></a>
 ### Pairs
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// Escapes in HTML: <, >, and & in types and comments.
-using Pairs<'a> = [(Token, Option<Vec<Token>>)]& 'a;
-```
-
-<a id="level.2"></a>
-## Level 2
-
-<a id="type.names.model.Record"></a>
-### model::Record
-
-```
-/// A record.
-struct Record
-{
-    id: u32,
-}
-```
-
-<a id="type.names.api.inner.Handle"></a>
-### api::inner::Handle
-
-```
-/// A handle.
-struct Handle;
-```
-
-<a id="type.names.api.Token"></a>
-### api::Token
-
-```
-/// A unique token type.
-struct Token;
-```
-
-<a id="unconnected"></a>
-## Unconnected types
-
-<a id="type.names.api.inner.Shared"></a>
-### api::inner::Shared
-
-```
-/// The other type named Shared.
-struct Shared;
-```
-
-<a id="type.names.model.Shared"></a>
-### model::Shared
-
-```
-/// One of two types named Shared.
-struct Shared;
+pub type Pairs<'a> = &'a [(Token, Option<Vec<Token>>)];
 ```
 
 <a id="type.names.Twin"></a>
 ### Twin
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// The first of two types named Twin, under different cfgs.
-// cfg: unix
-struct Twin;
+#[cfg(unix)]
+pub struct Twin;
 ```
 
 <a id="type.names.Twin-2"></a>
 ### Twin
 
+Counts: none
+
+Used by: nothing
+
 ```
 /// The second Twin.
-// cfg: windows
-struct Twin;
+#[cfg(windows)]
+pub struct Twin;
 ```
 
 <a id="type.names.Wrapper"></a>
 ### Wrapper
 
+Counts: 1 field
+
+Used by: nothing
+
 ```
 /// A generic parameter that shares a type's name stays plain.
-struct Wrapper<Record>
-{
-    inner: Record,
+pub struct Wrapper<Record> {
+    pub inner: Record,
 }
 ```
 
-<a id="modules"></a>
-## Modules
-
-<a id="mod.names"></a>
-### names
-
-- [Catalog](#type.names.Catalog)
-- [Pairs](#type.names.Pairs)
-- [Twin](#type.names.Twin)
-- [Twin](#type.names.Twin-2)
-- [Wrapper](#type.names.Wrapper)
-
-```
-using Entry = model::Record;
-```
-
 <a id="mod.names.api"></a>
-### api
+## api
 
 ```
 //! Re-exports through a glob.
 ```
 
-- [api::Token](#type.names.api.Token)
+```
+pub use self::inner::*;
+```
+
+<a id="type.names.api.Token"></a>
+### api::Token
+
+Counts: none
+
+Used by: [Catalog](#type.names.Catalog), [Pairs](#type.names.Pairs)
 
 ```
-using self::inner::*;
+/// A unique token type.
+pub struct Token;
 ```
 
 <a id="mod.names.api.inner"></a>
-### api::inner
+## api::inner
 
-- [api::inner::Handle](#type.names.api.inner.Handle)
-- [api::inner::Shared](#type.names.api.inner.Shared)
+<a id="type.names.api.inner.Handle"></a>
+### api::inner::Handle
+
+Counts: none
+
+Used by: [Catalog](#type.names.Catalog)
+
+```
+/// A handle.
+pub struct Handle;
+```
+
+<a id="type.names.api.inner.Shared"></a>
+### api::inner::Shared
+
+Counts: none
+
+Used by: nothing
+
+```
+/// The other type named Shared.
+pub struct Shared;
+```
 
 <a id="mod.names.model"></a>
-### model
+## model
 
 ```
 //! The record types.
 ```
 
-- [model::Record](#type.names.model.Record)
-- [model::Shared](#type.names.model.Shared)
+<a id="type.names.model.Record"></a>
+### model::Record
+
+Counts: 1 field
+
+Used by: [Catalog](#type.names.Catalog), [names](#mod.names)
+
+```
+/// A record.
+pub struct Record {
+    pub id: u32,
+}
+```
+
+<a id="type.names.model.Shared"></a>
+### model::Shared
+
+Counts: none
+
+Used by: nothing
+
+```
+/// One of two types named Shared.
+pub struct Shared;
+```

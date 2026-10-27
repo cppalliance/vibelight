@@ -1,20 +1,22 @@
-//! Reads `vibelight.toml`: which crates a run covers and where each format
-//! goes. It is found in the current directory or the first parent that
-//! holds one, and its relative paths are measured from its own directory.
+//! Reads `vibelight.toml`: which crates a run covers and where it writes.
+//! It is found in the current directory or the first parent that holds
+//! one, and its relative paths are measured from its own directory.
 
 use std::fmt::Display;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow, bail};
-use clap::ValueEnum;
+use anyhow::{Context, Result, bail};
 use toml::{Table, Value};
 
-use crate::settings::{KillList, MembersBy, OrderBy, Profile};
 use crate::{glob, manifest};
 
 /// The file looked up in the current directory and its parents.
 pub(crate) const FILE: &str = "vibelight.toml";
+
+/// The folder a run writes into when nothing names another one, beside the
+/// config, or in the current directory without one.
+pub(crate) const OUT: &str = ".vibelight";
 
 /// The crates a config chooses.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,45 +33,20 @@ pub(crate) enum Crates {
     },
 }
 
-/// One format's settings; a key the file leaves out is `None`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub(crate) struct Format {
-    pub(crate) out: Option<PathBuf>,
-    pub(crate) source_links: Option<bool>,
-    pub(crate) enabled: Option<bool>,
-}
-
 /// A parsed `vibelight.toml`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Config {
-    /// The folder that holds the file, where a format without `out` goes.
+    /// The folder that holds the file.
     pub(crate) dir: PathBuf,
     pub(crate) crates: Crates,
     pub(crate) follow: Vec<String>,
     pub(crate) exclude: Vec<String>,
-    pub(crate) markdown: Format,
-    pub(crate) html: Format,
-    pub(crate) kill_list: Option<KillList>,
-    pub(crate) facts: Option<bool>,
-    pub(crate) order: Option<OrderBy>,
-    pub(crate) members: Option<MembersBy>,
-    pub(crate) profile: Option<Profile>,
+    /// The folder to write into, from `out`, or `.vibelight` beside the file.
+    pub(crate) out: PathBuf,
 }
 
-/// The top-level keys a config may hold.
-const KEYS: &[&str] = &[
-    "workspace",
-    "crates",
-    "follow",
-    "exclude",
-    "kill_list",
-    "facts",
-    "order",
-    "members",
-    "profile",
-    "markdown",
-    "html",
-];
+/// The keys a config may hold.
+const KEYS: &[&str] = &["workspace", "crates", "follow", "exclude", "out"];
 
 /// Finds and reads the first `vibelight.toml` in `start` or above it.
 ///
@@ -81,12 +58,20 @@ pub(crate) fn find(start: &Path) -> Result<Option<Config>> {
     for dir in start.ancestors() {
         let path = dir.join(FILE);
         if path.is_file() {
-            let text = fs::read_to_string(&path)
-                .with_context(|| format!("cannot read {}", path.display()))?;
-            return parse(&path, &text).map(Some);
+            return read(&path).map(Some);
         }
     }
     Ok(None)
+}
+
+/// Reads the config file at `path`, an absolute path.
+///
+/// # Errors
+/// Returns an error when the file cannot be read or does not parse.
+pub(crate) fn read(path: &Path) -> Result<Config> {
+    let text =
+        fs::read_to_string(path).with_context(|| format!("cannot read {}", path.display()))?;
+    parse(path, &text)
 }
 
 /// Parses the text of the config file at `path`, an absolute path.
@@ -118,46 +103,22 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         Some(value) => strings(&name, "exclude", value)?,
         None => Vec::new(),
     };
+    let out = match table.get("out") {
+        Some(value) => {
+            let out = value
+                .as_str()
+                .with_context(|| format!("{name}: `out` is a directory"))?;
+            manifest::join(dir, out)
+        }
+        None => dir.join(OUT),
+    };
     Ok(Config {
         dir: dir.to_path_buf(),
         crates,
         follow,
         exclude,
-        markdown: format(&name, dir, "markdown", table.get("markdown"))?,
-        html: format(&name, dir, "html", table.get("html"))?,
-        kill_list: choice(&name, "kill_list", table.get("kill_list"))?,
-        facts: table
-            .get("facts")
-            .map(|value| {
-                value
-                    .as_bool()
-                    .with_context(|| format!("{name}: `facts` is true or false"))
-            })
-            .transpose()?,
-        order: choice(&name, "order", table.get("order"))?,
-        members: choice(&name, "members", table.get("members"))?,
-        profile: choice(&name, "profile", table.get("profile"))?,
+        out,
     })
-}
-
-/// Reads a key whose value is one of a fixed set of words; an unknown
-/// value is an error that names the key and every allowed value.
-fn choice<T: ValueEnum>(
-    name: &impl Display,
-    key: &str,
-    value: Option<&Value>,
-) -> Result<Option<T>> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let allowed: Vec<String> = T::value_variants()
-        .iter()
-        .filter_map(ValueEnum::to_possible_value)
-        .map(|v| format!("`{}`", v.get_name()))
-        .collect();
-    let wrong = || anyhow!("{name}: `{key}` is one of {}", allowed.join(", "));
-    let text = value.as_str().ok_or_else(wrong)?;
-    T::from_str(text, false).map(Some).map_err(|_| wrong())
 }
 
 fn strings(name: &impl Display, key: &str, value: &Value) -> Result<Vec<String>> {
@@ -183,34 +144,6 @@ fn listed(dir: &Path, entries: &[String]) -> Crates {
     Crates::Listed { paths, globbed }
 }
 
-fn format(name: &impl Display, dir: &Path, key: &str, value: Option<&Value>) -> Result<Format> {
-    let Some(value) = value else {
-        return Ok(Format::default());
-    };
-    let table = value
-        .as_table()
-        .with_context(|| format!("{name}: `{key}` is a table, written [{key}]"))?;
-    let mut format = Format::default();
-    for (field, value) in table {
-        let wrong = |kind: &str| format!("{name}: `{key}.{field}` is {kind}");
-        match field.as_str() {
-            "out" => {
-                let out = value.as_str().with_context(|| wrong("a directory"))?;
-                format.out = Some(manifest::join(dir, out));
-            }
-            "source_links" => {
-                format.source_links =
-                    Some(value.as_bool().with_context(|| wrong("true or false"))?);
-            }
-            "enabled" => {
-                format.enabled = Some(value.as_bool().with_context(|| wrong("true or false"))?);
-            }
-            other => bail!("{name}: unknown key `{key}.{other}`"),
-        }
-    }
-    Ok(format)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,8 +159,7 @@ mod tests {
         let (dir, parsed) = config(
             "workspace = true\nfollow = [\"vendor/*\"]\n\
              exclude = [\"crates/build-*\", \"crates/harness-internal/test-plugin\"]\n\
-             [markdown]\nout = \"vibelight\"\nsource_links = false\nenabled = true\n\
-             [html]\nout = \"vibelight/html\"\nsource_links = true\nenabled = false\n",
+             out = \"../outlines\"\n",
         );
         let config = parsed.unwrap();
         assert_eq!(config.crates, Crates::Workspace(dir.clone()));
@@ -236,34 +168,18 @@ mod tests {
             config.exclude,
             ["crates/build-*", "crates/harness-internal/test-plugin"]
         );
-        assert_eq!(
-            config.markdown,
-            Format {
-                out: Some(dir.join("vibelight")),
-                source_links: Some(false),
-                enabled: Some(true),
-            }
-        );
-        assert_eq!(
-            config.html,
-            Format {
-                out: Some(dir.join("vibelight").join("html")),
-                source_links: Some(true),
-                enabled: Some(false),
-            }
-        );
+        assert_eq!(config.out, dir.parent().unwrap().join("outlines"));
     }
 
     #[test]
-    fn missing_keys_and_tables_are_unset() {
+    fn missing_keys_are_unset_and_the_folder_is_vibelights_own() {
         let (dir, parsed) = config("");
         let config = parsed.unwrap();
         assert_eq!(config.dir, dir);
         assert_eq!(config.crates, Crates::Unset);
         assert_eq!(config.follow, Vec::<String>::new());
         assert_eq!(config.exclude, Vec::<String>::new());
-        assert_eq!(config.markdown, Format::default());
-        assert_eq!(config.html, Format::default());
+        assert_eq!(config.out, dir.join(".vibelight"));
     }
 
     #[test]
@@ -304,46 +220,14 @@ mod tests {
     #[test]
     fn unknown_keys_and_wrong_types_are_errors_that_name_the_key() {
         let error = |text: &str| config(text).1.unwrap_err().to_string();
-        assert!(error("markdwn = 1\n").contains("unknown key `markdwn`"));
-        assert!(error("[html]\noutt = \"x\"\n").contains("unknown key `html.outt`"));
-        assert!(error("[markdown]\nsource_links = \"no\"\n").contains("`markdown.source_links`"));
+        assert!(error("workspac = true\n").contains("unknown key `workspac`"));
+        assert!(error("[markdown]\nout = \"x\"\n").contains("unknown key `markdown`"));
+        assert!(error("facts = true\n").contains("unknown key `facts`"));
         assert!(error("workspace = 3\n").contains("`workspace` is true or a directory"));
         assert!(error("crates = \"a\"\n").contains("`crates` is a list of strings"));
         assert!(error("exclude = \"crates/*\"\n").contains("`exclude` is a list of strings"));
         assert!(error("exclude = [\"a\", 2]\n").contains("`exclude` is a list of strings"));
-        assert!(error("exclud = []\n").contains("unknown key `exclud`"));
+        assert!(error("out = 1\n").contains("`out` is a directory"));
         assert!(error("workspace = true\ncrates = []\n").contains("not both"));
-        assert!(
-            error("kill_list = \"some\"\n")
-                .contains("`kill_list` is one of `full`, `counts`, `off`")
-        );
-        assert!(error("kill_list = 1\n").contains("`kill_list` is one of"));
-        assert!(error("facts = \"yes\"\n").contains("`facts` is true or false"));
-        assert!(error("order = \"files\"\n").contains("`order` is one of `levels`, `modules`"));
-        assert!(error("members = \"file\"\n").contains("`members` is one of `name`, `impl`"));
-    }
-
-    #[test]
-    fn the_kill_list_key_takes_its_three_words() {
-        for (text, mode) in [
-            ("full", KillList::Full),
-            ("counts", KillList::Counts),
-            ("off", KillList::Off),
-        ] {
-            let parsed = config(&format!("kill_list = \"{text}\"\n")).1.unwrap();
-            assert_eq!(parsed.kill_list, Some(mode));
-        }
-        assert_eq!(config("").1.unwrap().kill_list, None);
-        assert_eq!(config("facts = true\n").1.unwrap().facts, Some(true));
-        assert_eq!(config("").1.unwrap().facts, None);
-        let modules = config("order = \"modules\"\n").1.unwrap();
-        assert_eq!(modules.order, Some(OrderBy::Modules));
-        let by_impl = config("members = \"impl\"\n").1.unwrap();
-        assert_eq!(by_impl.members, Some(MembersBy::Impl));
-        assert_eq!(config("").1.unwrap().members, None);
-        let analysis = config("profile = \"analysis\"\n").1.unwrap();
-        assert_eq!(analysis.profile, Some(Profile::Analysis));
-        let error = config("profile = \"review\"\n").1.unwrap_err().to_string();
-        assert!(error.contains("`profile` is one of `analysis`"), "{error}");
     }
 }
