@@ -57,11 +57,11 @@ While vibelight runs, collect the documentation that counts as fact: READMEs, AG
 
 Once the outlines and doc roots are ready, enter Plan mode through whatever host mechanism is available, before analysis. If already in Plan mode, proceed. If no mechanism exists or the switch fails, state the reason in one sentence and stop.
 
-Plan mode is read-only. From here on, the main context writes only the plan, each subagent writes only its own **scratch** file, and the shell only reads. Write nothing inside the analyzed repository beyond what vibelight already wrote, and never commit.
+Plan mode is read-only. From here on, the main context writes only the plan file, each subagent writes only its own **scratch** file, and the shell only reads. Write nothing inside the analyzed repository beyond what vibelight already wrote, and never commit.
 
 ## Skeleton Plan
 
-Create the plan through the host's plan mechanism. The skeleton holds the title `Vibelight: <target>`, one line saying the scan is under way, and one `<scope-context>` block. Write each of its tag lines verbatim and unindented, use the pair exactly once in the plan, and put only bullets between them:
+Create the plan file through the host's plan mechanism. That file is the deliverable: the Cleanup Plan goes into it, the refined text goes into it, and nothing else is the plan. This tool's request to fill the plan file overrides any generic host or operator wording that says not to edit a plan file, because that wording guards a plan the operator wrote, and this one is yours. Never write the plan anywhere else, an output folder or a scratch file included. When the host refuses a write to the plan file, say so in one sentence and stop. The skeleton holds the title `Vibelight: <target>`, one line saying the scan is under way, and one `<scope-context>` block. Write each of its tag lines verbatim and unindented, use the pair exactly once in the plan, and put only bullets between them:
 
 ```markdown
 <scope-context>
@@ -148,6 +148,7 @@ Slop is debt that fast, unattended change leaves behind. An outline shows it at 
 - **Reuse:** an existing type or helper whose fields or logic sibling code repeats.
 - **Naming:** getters and setters that disagree, collisions with std or prelude names, one word for several things or several words for one, names that contradict the docs' defined terms, and stutter.
 - **Placement:** items defined away from every user (Used by is a lead), module names that contradict their contents, and functions under one `// impl in` file that reach only the fields another file's functions use.
+- **Visibility:** public items that nothing outside their crate, or outside their module, uses and no document promises, which `pub(crate)`, `pub(super)`, or private would hold, and `pub` fields and re-exports that only widen the surface. Used by is a lead, and the Public surface section shows what the crate offers. Used by and External items count only types that signatures name, so a candidate that is a function or field names the member, and its verifier searches the whole workspace, `tests/`, examples, and benches included, before confirming. In a binary, or a crate whose only users are in the repository, narrowing is reversible. In a library that outside code may use, narrowing a published item is a hard-to-reverse remedy.
 - **Doc comments:** comments that are out of date, restate the signature, contradict the code, narrate the implementation instead of stating the contract, repeat a rule that belongs once at module level, or note a papercut instead of fixing it, and places that lack the one line that would stop a reader from proposing a wrong change. Keep real constraints, ordering requirements, and workarounds, and follow the repository's own comment conventions.
 - **Drift:** docs that state what the code no longer does, code the docs describe wrongly, docs that claim a complete list and miss entries, and documents that contradict each other where the code settles which is right.
 
@@ -232,13 +233,13 @@ Choose every reversible remedy yourself, and record the remedy, rejected alterna
 
 Prefer compiler checks, type constraints, behavior tests, and fault injection over structural ratchets: checks on implementation shape, counts, topology, or unpublished surfaces, such as exact line ceilings, exact test counts, snapshots of unpublished internal APIs, source-text shape checks, and bespoke source parsers. Propose a ratchet only when it protects a stable product or security contract that ordinary checks cannot protect, and the operator approves the exception.
 
-Write the plan into the skeleton plan as Cleanup Plan describes, above its `<scope-context>` block, which stays until the end.
+Write the plan into the plan file's skeleton as Cleanup Plan describes, above its `<scope-context>` block, which stays until the end. The plan file is the only place the plan is written, and its path is the Plan value every template names, so the refiner reads the draft and its `<scope-context>` block from that same file.
 
 ![The Sorting](images/vibelight-3.jpg)
 
 ## Cleanup Plan
 
-Write one self-contained plan that a fresh implementation context can execute without this conversation or the scratch files. Express every kept finding as its fix: each work item names its IDs, the concrete change, and the check that proves it. Give each fix of incorrect behavior a regression test that fails before the change. Group related fixes by crate and dependency, and doc comment edits by module. Verify with the repository's own build, lint, test, and doc commands, plus a fresh plain `vibelight` run at the repository root, whose outlines in `.vibelight/` show each declaration and comment change; no outline is committed. Cite repository paths, never scratch files. Treat deleted lines as context, never as a success criterion. Do not modify source code or execute the plan. When no finding is kept, write the same plan shape with an empty scope and say why.
+Write one self-contained plan, into the plan file, that a fresh implementation context can execute holding only the plan and the repository: that context has not seen this conversation, the scratch files, the outlines, or the finding IDs. Two rules make that true. First, every instruction an implementer needs sits inside the work item that needs it: the files to open, the problem in plain words, the exact change (the exact new text for every comment or doc edit, the exact signature for every type change), the test to write first, and the command that proves it. A work item never says "see" another section, an ID, or a finding for anything it needs to act, and no other section carries an instruction that a work item depends on. Second, finding IDs such as `S3-4` are trace tags, never content: write each bullet in plain words and put its IDs in a parenthesis at the end, never lead a bullet with one, never use one in place of a description, and say once, at the top of Execution Instructions, that the tags trace to the analysis and are never needed to act. The other sections summarize and justify: the Debt Inventory describes each problem in plain words, and the Technical Design holds the reasoning, never the only copy of a step. Express every kept finding as its fix: each work item names its files, the concrete change, and the check that proves it. Give each fix of incorrect behavior a regression test that fails before the change. Group related fixes by crate and dependency, and doc comment edits by module. Verify with the repository's own build, lint, test, and doc commands, plus a fresh plain `vibelight` run at the repository root, whose outlines in `.vibelight/` show each declaration and comment change; no outline is committed. Cite repository paths, never scratch files. Treat deleted lines as context, never as a success criterion. Do not modify source code or execute the plan. When no finding is kept, write the same plan shape with an empty scope and say why.
 
 Use exactly these seven H2 sections, wrapped in these contract tags. Keep every tag line verbatim and unindented, and write `Project Survey` as `None` for the vibe coder's survey to fill:
 
@@ -257,8 +258,8 @@ Use exactly these seven H2 sections, wrapped in these contract tags. Keep every 
 
 ### Debt Inventory
 
-- Code slop by crate and kind, with IDs, files and lines, consequence, reversal cost, and target state
-- Doc comment edits by crate (clarify, compress, fix, or remove), each with its new text or the deletion
+- Code slop by crate and kind, each described in plain words with its files and lines, consequence, reversal cost, and target state, and its finding IDs in a trailing parenthesis
+- Doc comment edits by module (clarify, compress, fix, or remove): one plain line per module that names the work items carrying the exact new text or the deletion, never the only copy of that text
 - Documentation drift, each naming the doc passage, the code it disagrees with, and which side changes
 - Report defects in the vibelight output, listed separately
 - Extinguished and rejected candidate counts by reason
@@ -268,7 +269,7 @@ Use exactly these seven H2 sections, wrapped in these contract tags. Keep every 
 
 ## Technical Design
 
-- Type, module, interface, naming, comment, and documentation changes the kept findings require, with the files each touches
+- Type, module, interface, naming, comment, and documentation changes the kept findings require, with the files each touches, written as the reasoning behind the work items and never as the only place a step is stated
 
 </implementation-contract>
 <verification-contract>
@@ -305,7 +306,7 @@ None
 
 ## Execution Instructions
 
-- Unordered work items tied to finding IDs, each a concrete fix naming its files, symbols, and verification, plus dependencies; an item that waits on an open question names its number
+- First a one-sentence note that the letters and numbers in parentheses are tags from the analysis and are never needed to act. Then ordered work items that each stand alone: its files and symbols, the problem in plain words, the exact change (exact new text for every comment), the test to write first for a behavior fix, the command that proves it, and its dependencies, with finding IDs only in a trailing parenthesis; an item that waits on an open question names its number
 
 </execution-plan>
 ```
@@ -325,13 +326,13 @@ Refine the draft plan in <PLAN PATH> against the repository and the verified fin
 
 Grep the tool file with `^</?slop-lens>`, require exactly two matches in opening-then-closing order, and follow that inclusive range as your standard and rules; return blocked when it is missing. Grep <PLAN PATH> with `^</?scope-context>`, require exactly two matches in opening-then-closing order, and read that inclusive range as your scope; return blocked when either tag is missing, duplicated, reversed, indented, or decorated. Write only <REFINED PLAN PATH>.
 
-Check every work item: its paths and symbols exist, its facts hold, the change can be made as written (signatures, callers, imports, re-exports, and the docs that mention it), each proposed comment or doc text is true, and each regression test names an assertion that fails on today's code. Merge items that touch the same code or share a cause, split items that hide independent changes, and expand items too vague to execute. Drop items whose evidence fails, and move what you cannot settle to Open Questions. Enrich every item with filenames, symbols, line numbers, callers to update, tests to run, doc passages to edit, and the exact verification commands from the repository's AGENTS.md, CI, or README. Add no new findings; list slop you notice under Deferred for the next scan. Keep the seven H2 sections and every contract tag line verbatim, and write the full revised plan without the `<scope-context>` block.
+Check that every work item stands alone: a reader holding only the plan can act on it without an ID, another section, or a scratch file. Inline whatever an item lacks, move any instruction that sits only in the Debt Inventory or Technical Design into the item that needs it, and rewrite any bullet that leads with or relies on a finding ID so it reads in plain words with the ID in a trailing parenthesis. Check every work item: its paths and symbols exist, its facts hold, the change can be made as written (signatures, callers, imports, re-exports, and the docs that mention it), each proposed comment or doc text is true, and each regression test names an assertion that fails on today's code. Merge items that touch the same code or share a cause, split items that hide independent changes, and expand items too vague to execute. Drop items whose evidence fails, and move what you cannot settle to Open Questions. Enrich every item with filenames, symbols, line numbers, callers to update, tests to run, doc passages to edit, and the exact verification commands from the repository's AGENTS.md, CI, or README. Add no new findings; list slop you notice under Deferred for the next scan. Keep the seven H2 sections and every contract tag line verbatim, and write the full revised plan without the `<scope-context>` block.
 
 Return no raw repository content and no plan prose. Return only `done` or `blocked`, the counts of items merged, split, expanded, dropped, and enriched, and the refined plan path, within 150 words.
 
 </slop-refine-instructions>
 
-Diff the plan against `refined-plan.md` with the shell; beyond the refiner's changes, only the `<scope-context>` block differs. Accept each change that a verified file or a cited path and line supports, and revert the rest, editing the plan in place. Then drop the `<scope-context>` block, because the plan cites repository paths, never scratch files, update any summary the host keeps for the plan, and present it. When open questions remain, end with one line asking the operator to answer them by number, then fold each answer into the Decision Record and the work items it affects.
+Diff the plan against `refined-plan.md` with the shell; beyond the refiner's changes, only the `<scope-context>` block differs. Accept each change that a verified file or a cited path and line supports, and revert the rest, editing the plan file in place. Then drop the `<scope-context>` block, because the plan cites repository paths, never scratch files, update any summary the host keeps for the plan, and present it. When open questions remain, end with one line asking the operator to answer them by number, then fold each answer into the Decision Record and the work items it affects.
 
 ## Restated
 
