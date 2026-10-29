@@ -75,6 +75,10 @@ pub(crate) struct Impl {
     pub(crate) trait_: Option<Base>,
     /// An inherent impl's members; a trait impl shows none.
     pub(crate) members: Vec<Member>,
+    /// A trait impl's functions, constants, and types, for analysis only:
+    /// attach never moves them and no outline shows them, and every
+    /// reference they write is a comment reference.
+    pub(crate) trait_members: Vec<Member>,
     /// Macro invocations in the impl's body.
     pub(crate) marks: Vec<String>,
     /// Attribute macros on the impl, sorted.

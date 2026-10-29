@@ -9,12 +9,15 @@ use syn::{
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
+use crate::collect_body_code::Code;
 use crate::collect_use_group::{Binding, expand};
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
-    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Seg, Text, TypeRef, Use, Vis,
+    Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Seg, Text, TypeRef, Use,
+    ValueRef, Vis,
 };
+use crate::model_body::{BodyKind, Owner};
 use crate::source::{Comment, scan};
 use crate::typerefs::range_of;
 
@@ -26,7 +29,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&u.attrs) {
+        if self.test_only(here, &u.attrs, u) {
             return;
         }
         let global = u.leading_colon.is_some();
@@ -97,13 +100,20 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&c.attrs) || c.ident == "_" {
+        if self.test_only(here, &c.attrs, c) {
             return;
         }
         let here = here.with(&c.generics);
+        if c.ident == "_" {
+            let owner = Owner::Anon(here.module);
+            self.body(&here, BodyKind::AnonConst, owner, Code::Expr(&c.expr), None);
+            return;
+        }
         let ty = self.slicer(&here).node(&*c.ty, |f| f.visit_type(&c.ty));
         let loc = loc(&here, c.ident.span());
-        let (value, marks) = self.value(&here, &c.expr, Holder::Module(here.module), loc);
+        let owner = self.next_item(&here);
+        let holder = Holder::Module(here.module);
+        let (value, marks) = self.value(&here, &c.expr, holder, loc, BodyKind::Const, owner);
         let kind = ItemKind::Const { ty, value };
         self.push_value_item(
             &here,
@@ -126,12 +136,14 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&s.attrs) {
+        if self.test_only(here, &s.attrs, s) {
             return;
         }
         let ty = self.slicer(here).node(&*s.ty, |f| f.visit_type(&s.ty));
         let loc = loc(here, s.ident.span());
-        let (value, marks) = self.value(here, &s.expr, Holder::Module(here.module), loc);
+        let owner = self.next_item(here);
+        let holder = Holder::Module(here.module);
+        let (value, marks) = self.value(here, &s.expr, holder, loc, BodyKind::Static, owner);
         let mutable = matches!(s.mutability, StaticMutability::Mut(_));
         let kind = ItemKind::Static { mutable, ty, value };
         self.push_value_item(
@@ -166,6 +178,7 @@ impl Collector<'_> {
         range: Range<usize>,
     ) {
         let notes = self.node_notes(here, attrs, lead, range);
+        let (raw_doc, lints) = self.attr_facts(here, attrs);
         let meta = Meta {
             notes,
             trailing: self.trailing(here, trail),
@@ -173,6 +186,8 @@ impl Collector<'_> {
             attrs: attrs::api(attrs, &self.files[here.file]),
             marks,
             vis: attrs::spelled(vis, &self.files[here.file]),
+            raw_doc,
+            lints,
         };
         self.modules[here.module].items.push(Item {
             name,
@@ -183,21 +198,32 @@ impl Collector<'_> {
         });
     }
 
+    /// Returns the owner of the next item pushed to the module.
+    pub(crate) fn next_item(&self, here: &Here) -> Owner {
+        Owner::Item(ValueRef {
+            module: here.module,
+            item: self.modules[here.module].items.len(),
+        })
+    }
+
     /// Returns a constant's value as written, or `None` with one mark per
     /// macro the value calls. A value holding a comment is not shown either.
+    /// The value records a body of `kind` that belongs to `owner`.
     pub(crate) fn value(
         &mut self,
         here: &Here,
         expr: &Expr,
         holder: Holder,
         loc: Loc,
+        kind: BodyKind,
+        owner: Owner,
     ) -> (Option<String>, Vec<String>) {
         let files = self.files;
         let file = &files[here.file];
         let range = range_of(expr, file);
         let calls = macros::expr_macros(expr);
         let has_comment = !scan(&file.text, range.clone()).is_empty();
-        self.discard(here, range.clone());
+        self.body(here, kind, owner, Code::Expr(expr), None);
         if !calls.is_empty() {
             for call in &calls {
                 self.macros.push(MacroUse {
@@ -226,7 +252,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&block.attrs) {
+        if self.test_only(here, &block.attrs, block) {
             return;
         }
         let files = self.files;
@@ -315,7 +341,7 @@ impl Collector<'_> {
                     continue;
                 }
             };
-            if attrs::is_test_only(attrs) {
+            if self.test_only(here, attrs, item) {
                 continue;
             }
             let mut notes = std::mem::take(&mut block_notes);
@@ -323,6 +349,7 @@ impl Collector<'_> {
             let mut item_cfgs = attrs::cfgs(attrs, file);
             item_cfgs.extend(cfgs.iter().cloned());
             attrs::sort_marks(&mut item_cfgs);
+            let (raw_doc, lints) = self.attr_facts(here, attrs);
             let meta = Meta {
                 notes,
                 trailing: self.trailing(here, &trail_i),
@@ -330,6 +357,8 @@ impl Collector<'_> {
                 attrs: attrs::api(attrs, file),
                 marks: Vec::new(),
                 vis: attrs::spelled(vis, file),
+                raw_doc,
+                lints,
             };
             self.modules[here.module].items.push(Item {
                 name,

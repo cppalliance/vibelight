@@ -34,7 +34,7 @@ impl Collector<'_> {
         } = attach(&mut self.pools[here.file], file, scope, &children);
         let mut members = Vec::new();
         for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
-            if attrs::is_test_only(&field.attrs) {
+            if self.test_only(here, &field.attrs, field) {
                 continue;
             }
             let Some(ident) = &field.ident else {
@@ -46,6 +46,7 @@ impl Collector<'_> {
             let loc = loc(here, ident.span());
             let notes = self.node_notes(here, &field.attrs, lead, range_of(field, file));
             let mark = self.attribute_mark(&field.attrs, helpers, Holder::Decl(id), loc);
+            let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             members.push(Member {
                 name: ident.to_string(),
                 vis: attrs::vis(&field.vis),
@@ -57,6 +58,8 @@ impl Collector<'_> {
                     attrs: attrs::api(&field.attrs, file),
                     marks: mark.into_iter().collect(),
                     vis: attrs::spelled(&field.vis, file),
+                    raw_doc,
+                    lints,
                 },
                 loc,
                 self_fields: Vec::new(),
@@ -79,7 +82,7 @@ impl Collector<'_> {
         } = attach(&mut self.pools[here.file], file, scope, &children);
         let mut params = Vec::new();
         for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
-            if attrs::is_test_only(&field.attrs) {
+            if self.test_only(here, &field.attrs, field) {
                 continue;
             }
             let text = self
@@ -88,12 +91,15 @@ impl Collector<'_> {
             let mut comments = lead;
             comments.extend(trail);
             let notes = self.node_notes(here, &field.attrs, comments, range_of(field, file));
+            let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             params.push(Param {
                 text,
                 meta: Meta {
                     notes,
                     cfgs: attrs::cfgs(&field.attrs, file),
                     vis: attrs::spelled(&field.vis, file),
+                    raw_doc,
+                    lints,
                     ..Meta::default()
                 },
             });
@@ -114,7 +120,7 @@ impl Collector<'_> {
         } = attach(&mut self.pools[here.file], file, scope, &children);
         let mut params = Vec::new();
         for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
-            if attrs::is_test_only(&field.attrs) {
+            if self.test_only(here, &field.attrs, field) {
                 continue;
             }
             let Some(ident) = &field.ident else {
@@ -129,11 +135,14 @@ impl Collector<'_> {
             let mut comments = lead;
             comments.extend(trail);
             let notes = self.node_notes(here, &field.attrs, comments, range_of(field, file));
+            let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             params.push(Param {
                 text,
                 meta: Meta {
                     notes,
                     cfgs: attrs::cfgs(&field.attrs, file),
+                    raw_doc,
+                    lints,
                     ..Meta::default()
                 },
             });

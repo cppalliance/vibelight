@@ -5,7 +5,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use syn::{Attribute, Item};
+use syn::{Attribute, Item, ItemMod};
 
 use crate::attrs;
 use crate::model::{FileId, ModId, Warning};
@@ -36,6 +36,9 @@ pub(crate) struct Tree {
     pub(crate) files: Vec<SourceFile>,
     pub(crate) modules: Vec<ModSource>,
     pub(crate) warnings: Vec<Warning>,
+    /// The files that test-only `mod` items, and the modules inside them,
+    /// load, crate-relative, sorted. They never join the tree.
+    pub(crate) test_files: Vec<String>,
 }
 
 /// Walks the module tree from `root`, a crate-relative file path.
@@ -49,12 +52,14 @@ pub(crate) fn walk(crate_dir: &Path, root: &str) -> Result<Tree> {
             files: Vec::new(),
             modules: Vec::new(),
             warnings: Vec::new(),
+            test_files: Vec::new(),
         },
         chain: Vec::new(),
     };
     let text = fs::read_to_string(crate_dir.join(root))
         .with_context(|| format!("cannot read root file {}", crate_dir.join(root).display()))?;
     walker.file_module(Vec::new(), None, root, &text, true);
+    walker.tree.test_files.sort();
     Ok(walker.tree)
 }
 
@@ -132,6 +137,7 @@ impl Walker<'_> {
                 continue;
             };
             if attrs::is_test_only(&m.attrs) {
+                self.test_module(m, child_dir, path_base);
                 continue;
             }
             let mut path = self.tree.modules[module].path.clone();
@@ -143,10 +149,7 @@ impl Walker<'_> {
                 let source = &self.tree.files[file];
                 let scope = source.end(brace.span.open())..source.start(brace.span.close());
                 let line = u32::try_from(m.mod_token.span.start().line).unwrap_or(0);
-                let dir = match &path_value {
-                    Some(value) => join(path_base, value),
-                    None => join(child_dir, &name),
-                };
+                let dir = inline_dir(path_value.as_deref(), &name, child_dir, path_base);
                 let (_, inner) = attrs::split_inner(&m.attrs);
                 let id = self.tree.modules.len();
                 self.tree.modules.push(ModSource {
@@ -162,18 +165,8 @@ impl Walker<'_> {
                 self.children(id, inner_items, &dir, &dir);
                 continue;
             }
-            let candidates = match &path_value {
-                Some(value) => vec![(join(path_base, value), true)],
-                None => vec![
-                    (join(child_dir, &format!("{name}.rs")), false),
-                    (join(child_dir, &format!("{name}/mod.rs")), true),
-                ],
-            };
-            let found = candidates.iter().find_map(|(rel, mod_rs)| {
-                fs::read_to_string(self.crate_dir.join(rel))
-                    .ok()
-                    .map(|text| (rel.clone(), *mod_rs, text))
-            });
+            let candidates = candidates(path_value.as_deref(), &name, child_dir, path_base);
+            let found = self.load(&candidates);
             let line = u32::try_from(m.mod_token.span.start().line).unwrap_or(0);
             let declaring = self.tree.files[file].rel.clone();
             match found {
@@ -194,6 +187,57 @@ impl Walker<'_> {
                     );
                     self.missing(path, decl, file, line, "missing file");
                 }
+            }
+        }
+    }
+
+    /// Reads the first candidate file that exists: its path, whether it
+    /// holds its children the way a `mod.rs` does, and its text.
+    fn load(&self, candidates: &[(String, bool)]) -> Option<(String, bool, String)> {
+        candidates.iter().find_map(|(rel, mod_rs)| {
+            fs::read_to_string(self.crate_dir.join(rel))
+                .ok()
+                .map(|text| (rel.clone(), *mod_rs, text))
+        })
+    }
+
+    /// Records the file a test-only module loads, and the files of the
+    /// modules inside it, without parsing any of them into the tree.
+    fn test_module(&mut self, m: &ItemMod, child_dir: &str, path_base: &str) {
+        let name = crate::typerefs::strip_raw(&m.ident.to_string());
+        let path_value = attrs::path_attr(&m.attrs);
+        if let Some((_, items)) = &m.content {
+            let dir = inline_dir(path_value.as_deref(), &name, child_dir, path_base);
+            self.test_children(items, &dir, &dir);
+            return;
+        }
+        let candidates = candidates(path_value.as_deref(), &name, child_dir, path_base);
+        let Some((rel, mod_rs, text)) = self.load(&candidates) else {
+            return;
+        };
+        if self.tree.test_files.contains(&rel) || self.chain.contains(&rel) {
+            return;
+        }
+        self.tree.test_files.push(rel.clone());
+        let file = SourceFile::new(rel.clone(), &text);
+        let Ok(parsed) = syn::parse_file(&file.text) else {
+            return;
+        };
+        let base = dir_of(&rel);
+        let child_dir = if mod_rs {
+            base.clone()
+        } else {
+            join(&base, &name)
+        };
+        self.test_children(&parsed.items, &child_dir, &base);
+    }
+
+    /// Records the files of every module declared among a test module's
+    /// items.
+    fn test_children(&mut self, items: &[Item], child_dir: &str, path_base: &str) {
+        for item in items {
+            if let Item::Mod(m) = item {
+                self.test_module(m, child_dir, path_base);
             }
         }
     }
@@ -226,6 +270,33 @@ impl Walker<'_> {
             line,
             message,
         });
+    }
+}
+
+/// Returns the files a `mod name;` item may load, each with whether it
+/// holds its children the way a `mod.rs` does: the `#[path]` value, or
+/// `name.rs`, then `name/mod.rs`.
+fn candidates(
+    path_value: Option<&str>,
+    name: &str,
+    child_dir: &str,
+    path_base: &str,
+) -> Vec<(String, bool)> {
+    match path_value {
+        Some(value) => vec![(join(path_base, value), true)],
+        None => vec![
+            (join(child_dir, &format!("{name}.rs")), false),
+            (join(child_dir, &format!("{name}/mod.rs")), true),
+        ],
+    }
+}
+
+/// Returns the directory an inline module's children live in: its
+/// `#[path]` value, or its name below `child_dir`.
+fn inline_dir(path_value: Option<&str>, name: &str, child_dir: &str, path_base: &str) -> String {
+    match path_value {
+        Some(value) => join(path_base, value),
+        None => join(child_dir, name),
     }
 }
 
@@ -339,6 +410,39 @@ mod tests {
             .map(|w| (w.file.as_str(), w.line))
             .collect();
         assert_eq!(lines, [("lib.rs", 1), ("broken.rs", 1)]);
+    }
+
+    #[test]
+    fn test_only_modules_record_their_files_without_joining_the_tree() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        write(
+            dir,
+            "src/lib.rs",
+            "mod a;\n#[cfg(test)]\nmod tests;\n#[cfg(test)]\nmod inline { mod helper; }\n",
+        );
+        write(
+            dir,
+            "src/a.rs",
+            "#[cfg(test)]\n#[path = \"a_tests.rs\"]\nmod tests;\n",
+        );
+        write(dir, "src/a_tests.rs", "");
+        write(dir, "src/tests.rs", "mod deep;\n");
+        write(dir, "src/tests/deep.rs", "");
+        write(dir, "src/inline/helper.rs", "");
+        let tree = walk(dir, "src/lib.rs").unwrap();
+        assert_eq!(
+            tree.test_files,
+            [
+                "src/a_tests.rs",
+                "src/inline/helper.rs",
+                "src/tests.rs",
+                "src/tests/deep.rs"
+            ]
+        );
+        let files: Vec<&str> = tree.files.iter().map(|f| f.rel.as_str()).collect();
+        assert_eq!(files, ["src/lib.rs", "src/a.rs"]);
+        assert!(tree.warnings.is_empty(), "{:?}", tree.warnings);
     }
 
     #[test]

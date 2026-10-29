@@ -1,7 +1,9 @@
 //! The data model every step shares: modules, declarations, impls, and text.
 
 use std::cmp::Ordering;
+use std::ops::Range;
 
+use crate::model_body::{AttrPath, Body};
 use crate::source::SourceFile;
 
 /// Index into [`Crate::files`].
@@ -20,6 +22,7 @@ pub(crate) struct Loc {
     pub(crate) line: u32,
 }
 
+pub(crate) use crate::model_body::{BodyName, BodyOwner};
 pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
 pub(crate) use crate::text::{CrossRef, Reach, Seg, Text, TypeRef, ValueRef, Where, Written};
 
@@ -49,6 +52,11 @@ pub(crate) struct Meta {
     pub(crate) marks: Vec<String>,
     /// The visibility as written, such as `pub(crate)`; empty for none.
     pub(crate) vis: String,
+    /// The doc text before flattening, for analysis: each doc line without
+    /// the one space after `///`, block docs beautified.
+    pub(crate) raw_doc: Option<String>,
+    /// The lint attributes as written, such as `allow(dead_code)`, sorted.
+    pub(crate) lints: Vec<String>,
 }
 
 /// How far a node is visible, which picks the section it prints in.
@@ -341,6 +349,10 @@ pub(crate) struct Module {
     pub(crate) vis: Vis,
     /// Whether it, or a module around it, is test support.
     pub(crate) test_support: bool,
+    /// The raw doc text of the `mod` line, then of the module's inner docs.
+    pub(crate) raw_doc: Option<String>,
+    /// The lint attributes of the `mod` line and the inner ones, sorted.
+    pub(crate) lints: Vec<String>,
 }
 
 /// The kind of a macro, in kill list order.
@@ -380,27 +392,6 @@ pub(crate) struct Warning {
     pub(crate) message: String,
 }
 
-/// A type name a function body writes. It keeps the type out of
-/// Unconnected (rule 26) and names nothing else.
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct BodyName {
-    pub(crate) name: RefId,
-    pub(crate) owner: BodyOwner,
-}
-
-/// What a function body belongs to. A type that owns a body does not count
-/// as named by it.
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum BodyOwner {
-    /// A free function.
-    Module,
-    /// A method of this impl, which every type its header names owns, such
-    /// as `Engine` in `impl Clone for Box<Engine>`.
-    Impl(usize),
-    /// A default method of this trait.
-    Trait(DeclId),
-}
-
 /// Everything collected from one target.
 #[derive(Debug)]
 pub(crate) struct Crate {
@@ -419,6 +410,16 @@ pub(crate) struct Crate {
     /// such a macro is named at the crate root.
     pub(crate) exported_macros: Vec<(String, ModId)>,
     pub(crate) warnings: Vec<Warning>,
+    /// Every body of the outlined items, for analysis.
+    pub(crate) bodies: Vec<Body>,
+    /// The bytes of each test-only node collect skips, sorted, which the
+    /// census reads as test code.
+    pub(crate) test_ranges: Vec<(FileId, Range<usize>)>,
+    /// The files that test-only `mod` items load, crate-relative, sorted;
+    /// they are never part of the tree.
+    pub(crate) test_files: Vec<String>,
+    /// The paths `serde` attributes name, in collection order.
+    pub(crate) attr_paths: Vec<AttrPath>,
 }
 
 impl Crate {

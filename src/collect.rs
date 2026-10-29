@@ -5,15 +5,16 @@ use std::ops::Range;
 use std::path::Path;
 
 use proc_macro2::Span;
-use syn::{Attribute, Generics, Item, ItemMacro, ItemMod, WhereClause};
+use syn::{Attribute, Generics, Item, ItemMacro, ItemMod};
 
 use crate::attrs;
 use crate::comments::{Attached, NoteCx, Pool, attach};
 use crate::macros;
 use crate::model::{
     BodyName, Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse,
-    Meta, ModId, Module, Note, Text, TypeRef, Vis, Warning, Where,
+    Meta, ModId, Module, Note, TypeRef, Vis, Warning,
 };
+use crate::model_body::{AttrPath, Body};
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile};
 use crate::typerefs::{Slicer, range_of, strip_raw};
@@ -49,6 +50,9 @@ pub(crate) struct Collector<'a> {
     pub(crate) macros: Vec<MacroUse>,
     exported_macros: Vec<(String, ModId)>,
     pub(crate) warnings: Vec<Warning>,
+    pub(crate) bodies: Vec<Body>,
+    pub(crate) test_ranges: Vec<(FileId, Range<usize>)>,
+    pub(crate) attr_paths: Vec<AttrPath>,
     /// The notes, `cfg`s, and visibility of each module's `mod` line.
     mod_lines: BTreeMap<ModId, (Vec<Note>, Vec<String>, Vis)>,
     /// Each child module, keyed by its parent and the `mod` item's index.
@@ -63,6 +67,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         files,
         modules: sources,
         warnings,
+        test_files,
     } = tree;
     let mut collector = Collector {
         files: &files,
@@ -76,6 +81,9 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         macros: Vec::new(),
         exported_macros: Vec::new(),
         warnings,
+        bodies: Vec::new(),
+        test_ranges: Vec::new(),
+        attr_paths: Vec::new(),
         mod_lines: BTreeMap::new(),
         children: BTreeMap::new(),
         invocations: Vec::new(),
@@ -95,6 +103,8 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
             dangling: Vec::new(),
             vis: Vis::Public,
             test_support: false,
+            raw_doc: None,
+            lints: Vec::new(),
         });
         if let Some(decl) = source.decl {
             collector.children.insert(decl, id);
@@ -104,6 +114,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         collector.module(id, source);
     }
     collector.finish_invocations();
+    collector.module_facts(&sources);
     let Collector {
         refs,
         body_names,
@@ -113,8 +124,12 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         macros,
         exported_macros,
         warnings,
+        bodies,
+        mut test_ranges,
+        attr_paths,
         ..
     } = collector;
+    test_ranges.sort_by_key(|(file, range)| (*file, range.start, range.end));
     Crate {
         name: name.to_owned(),
         title: title.to_owned(),
@@ -127,6 +142,10 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         macros,
         exported_macros,
         warnings,
+        bodies,
+        test_ranges,
+        test_files,
+        attr_paths,
     }
 }
 
@@ -223,7 +242,7 @@ impl Collector<'_> {
     }
 
     fn item_macro(&mut self, here: &Here, m: &ItemMacro, lead: Vec<Comment>, trail: &[Comment]) {
-        if attrs::is_test_only(&m.attrs) {
+        if self.test_only(here, &m.attrs, m) {
             return;
         }
         self.discard(
@@ -257,6 +276,7 @@ impl Collector<'_> {
             holder: Holder::Module(here.module),
             loc,
         });
+        let (raw_doc, lints) = self.attr_facts(here, &m.attrs);
         let meta = Meta {
             notes,
             trailing: self.trailing(here, trail),
@@ -264,6 +284,8 @@ impl Collector<'_> {
             attrs: attrs::api(&m.attrs, &self.files[here.file]),
             marks: Vec::new(),
             vis: String::new(),
+            raw_doc,
+            lints,
         };
         self.modules[here.module].items.push(ModItem {
             name: sort,
@@ -282,7 +304,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&m.attrs) {
+        if self.test_only(here, &m.attrs, m) {
             return;
         }
         let Some(&child) = self.children.get(&(here.module, index)) else {
@@ -421,43 +443,6 @@ impl Collector<'_> {
             loc,
         });
         Some(text)
-    }
-
-    /// Returns a generic parameter list as `<...>`, each parameter sliced
-    /// on its own, or empty text.
-    pub(crate) fn generics_text(&mut self, here: &Here, generics: &Generics) -> Text {
-        let mut text = Text::default();
-        if generics.params.is_empty() {
-            return text;
-        }
-        text.push_str("<");
-        for (i, param) in generics.params.iter().enumerate() {
-            if i > 0 {
-                text.push_str(", ");
-            }
-            let part = self
-                .slicer(here)
-                .node(param, |f| syn::visit::Visit::visit_generic_param(f, param));
-            text.append(&part);
-        }
-        text.push_str(">");
-        text
-    }
-
-    /// Returns a `where` clause, each predicate sliced on its own.
-    pub(crate) fn where_text(
-        &mut self,
-        here: &Here,
-        clause: Option<&WhereClause>,
-    ) -> Option<Where> {
-        let clause = clause.filter(|c| !c.predicates.is_empty())?;
-        let mut predicates = Vec::new();
-        for predicate in &clause.predicates {
-            predicates.push(self.slicer(here).node(predicate, |f| {
-                syn::visit::Visit::visit_where_predicate(f, predicate);
-            }));
-        }
-        Some(Where(predicates))
     }
 }
 

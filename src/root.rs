@@ -21,6 +21,18 @@ pub(crate) struct Target {
     pub(crate) root: String,
     /// True for the library target, the one dependencies name.
     pub(crate) lib: bool,
+    pub(crate) kind: TargetKind,
+}
+
+/// What a target is, set where the target is found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TargetKind {
+    /// A package's library target.
+    Lib,
+    /// A package's binary target.
+    Bin,
+    /// A single `.rs` file outlined on its own.
+    SingleFile,
 }
 
 /// The crate being outlined: its directory and its targets, sorted by stem.
@@ -106,6 +118,7 @@ fn single_file(path: &Path) -> Result<Input> {
             crate_name: stem.replace('-', "_"),
             root: name.to_owned(),
             lib: false,
+            kind: TargetKind::SingleFile,
         }],
     })
 }
@@ -205,6 +218,7 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             crate_name: name,
             root,
             lib: true,
+            kind: TargetKind::Lib,
         });
     }
     for (name, root) in bins {
@@ -219,6 +233,7 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             title: name,
             root,
             lib: false,
+            kind: TargetKind::Bin,
         });
     }
     targets
@@ -359,6 +374,19 @@ mod tests {
             [("demo".into(), "demo".into(), "demo.rs".into())]
         );
         assert_eq!(input.dir, tmp.path());
+        assert_eq!(input.targets[0].kind, TargetKind::SingleFile);
+    }
+
+    #[test]
+    fn each_target_records_its_kind_beside_lib() {
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "Cargo.toml", "[package]\nname = \"foo\"\n");
+        write(tmp.path(), "src/lib.rs", "");
+        write(tmp.path(), "src/main.rs", "");
+        let input = find(tmp.path()).unwrap();
+        let kinds: Vec<(bool, TargetKind)> =
+            input.targets.iter().map(|t| (t.lib, t.kind)).collect();
+        assert_eq!(kinds, [(true, TargetKind::Lib), (false, TargetKind::Bin)]);
     }
 
     #[test]

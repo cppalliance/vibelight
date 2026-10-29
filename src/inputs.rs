@@ -12,6 +12,7 @@ use toml::Value;
 use crate::exclude::{Exclude, Filter};
 use crate::glob;
 use crate::manifest::{self, Dep, Workspace};
+use crate::manifest_facts::{self, ManifestFacts};
 use crate::root::{self, Input};
 
 /// One crate of a run.
@@ -27,6 +28,8 @@ pub(crate) struct Package {
     /// True when the run reached it by following a path dependency rather
     /// than choosing it.
     pub(crate) followed: bool,
+    /// What analysis reads from its manifest.
+    pub(crate) facts: ManifestFacts,
 }
 
 /// The crates a run starts from.
@@ -97,6 +100,7 @@ pub(crate) fn choose(
                 input,
                 deps: Vec::new(),
                 followed: false,
+                facts: ManifestFacts::default(),
             }],
             notes: Vec::new(),
         });
@@ -231,11 +235,13 @@ fn crate_dir(path: &Path) -> PathBuf {
 fn package(input: Input) -> Result<Package> {
     let dir = manifest::normalize(&input.dir)?;
     let deps = dependencies(&dir)?;
+    let facts = manifest_facts::read(&dir)?;
     Ok(Package {
         dir,
         input,
         deps,
         followed: false,
+        facts,
     })
 }
 

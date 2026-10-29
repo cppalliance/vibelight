@@ -9,12 +9,14 @@ use syn::{
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
+use crate::collect_body_code::Code;
 use crate::comments::{Attached, attach};
 use crate::macros;
 use crate::model::{
     Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, RefId, Shape, Text,
     Variant, VariantFields, Vis, Where,
 };
+use crate::model_body::{BodyKind, Owner};
 use crate::source::Comment;
 use crate::typerefs::range_of;
 
@@ -40,7 +42,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&s.attrs) {
+        if self.test_only(here, &s.attrs, s) {
             return;
         }
         let here = here.with(&s.generics);
@@ -80,7 +82,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&u.attrs) {
+        if self.test_only(here, &u.attrs, u) {
             return;
         }
         let here = here.with(&u.generics);
@@ -111,7 +113,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&e.attrs) {
+        if self.test_only(here, &e.attrs, e) {
             return;
         }
         let here = here.with(&e.generics);
@@ -128,7 +130,7 @@ impl Collector<'_> {
         } = attach(&mut self.pools[here.file], file, scope, &children);
         let mut variants = Vec::new();
         for ((variant, lead_v), trail_v) in e.variants.iter().zip(leading).zip(trailing) {
-            if attrs::is_test_only(&variant.attrs) {
+            if self.test_only(&here, &variant.attrs, variant) {
                 continue;
             }
             let fields = match &variant.fields {
@@ -137,13 +139,14 @@ impl Collector<'_> {
                 Fields::Named(named) => VariantFields::Named(self.variant_named(&here, named)),
             };
             let discriminant = variant.discriminant.as_ref().map(|(_, expr)| {
-                let range = range_of(expr, file);
-                self.discard(&here, range.clone());
-                file.clean(range)
+                let owner = Owner::Variant(id, variant.ident.to_string());
+                self.body(&here, BodyKind::Discriminant, owner, Code::Expr(expr), None);
+                file.clean(range_of(expr, file))
             });
             let loc = loc(&here, variant.ident.span());
             let notes = self.node_notes(&here, &variant.attrs, lead_v, range_of(variant, file));
             let mark = self.attribute_mark(&variant.attrs, helpers, Holder::Decl(id), loc);
+            let (raw_doc, lints) = self.attr_facts(&here, &variant.attrs);
             variants.push(Variant {
                 name: variant.ident.to_string(),
                 fields,
@@ -155,6 +158,8 @@ impl Collector<'_> {
                     attrs: attrs::api(&variant.attrs, file),
                     marks: mark.into_iter().collect(),
                     vis: String::new(),
+                    raw_doc,
+                    lints,
                 },
                 loc,
             });
@@ -184,7 +189,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&t.attrs) {
+        if self.test_only(here, &t.attrs, t) {
             return;
         }
         let here = here.with(&t.generics);
@@ -245,7 +250,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&t.attrs) {
+        if self.test_only(here, &t.attrs, t) {
             return;
         }
         let here = here.with(&t.generics);
@@ -287,7 +292,7 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&t.attrs) {
+        if self.test_only(here, &t.attrs, t) {
             return;
         }
         let here = here.with(&t.generics);
@@ -335,6 +340,7 @@ impl Collector<'_> {
             .map(|name| self.derive_ref(here, name))
             .collect();
         let attributes = macros::attribute_macros(attrs, !derives.is_empty());
+        let (raw_doc, lints) = self.attr_facts(here, attrs);
         let id = self.decls.len();
         if !derives.is_empty() {
             self.macros.push(MacroUse {
@@ -366,6 +372,8 @@ impl Collector<'_> {
                 attrs: attrs::api(attrs, &self.files[here.file]),
                 marks: Vec::new(),
                 vis: attrs::spelled(vis, &self.files[here.file]),
+                raw_doc,
+                lints,
             },
             derives,
             derive_refs,

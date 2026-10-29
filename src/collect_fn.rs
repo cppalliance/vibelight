@@ -7,8 +7,10 @@ use syn::{Attribute, FnArg, ItemFn, ReceiverKind, ReturnType, Safety, Signature,
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
+use crate::collect_body_code::Code;
 use crate::comments::{Attached, attach};
 use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
+use crate::model_body::BodyKind;
 use crate::source::Comment;
 use crate::typerefs::range_of;
 
@@ -20,18 +22,21 @@ impl Collector<'_> {
         lead: Vec<Comment>,
         trail: &[Comment],
     ) {
-        if attrs::is_test_only(&f.attrs) {
+        if self.test_only(here, &f.attrs, f) {
             return;
         }
         let files = self.files;
         let file = &files[here.file];
-        self.discard(here, range_of(&*f.block, file));
         let here = here.with(&f.sig.generics);
+        let owner = self.next_item(&here);
+        let code = Code::Block(&f.block);
+        self.body(&here, BodyKind::Fn, owner, code, Some(&f.sig));
         self.body_names(&here, &f.block, BodyOwner::Module);
         let sig = self.sig(&here, &f.sig);
         let loc = loc(&here, f.sig.ident.span());
         let notes = self.node_notes(&here, &f.attrs, lead, range_of(f, file));
         let mark = self.attribute_mark(&f.attrs, false, Holder::Module(here.module), loc);
+        let (raw_doc, lints) = self.attr_facts(&here, &f.attrs);
         let meta = Meta {
             notes,
             trailing: self.trailing(&here, trail),
@@ -39,6 +44,8 @@ impl Collector<'_> {
             attrs: attrs::api(&f.attrs, file),
             marks: mark.into_iter().collect(),
             vis: attrs::spelled(&f.vis, file),
+            raw_doc,
+            lints,
         };
         self.modules[here.module].items.push(Item {
             name: f.sig.ident.to_string(),
@@ -148,10 +155,13 @@ impl Collector<'_> {
     ) -> Param {
         lead.extend(trail);
         let notes = self.node_notes(here, attrs, lead, range);
+        let (raw_doc, lints) = self.attr_facts(here, attrs);
         Param {
             text,
             meta: Meta {
                 notes,
+                raw_doc,
+                lints,
                 ..Meta::default()
             },
         }

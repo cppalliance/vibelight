@@ -132,7 +132,7 @@ impl NoteCx<'_> {
         for comment in comments {
             events.push((
                 comment.range.start,
-                Event::Plain(self.plain_lines(&comment)),
+                Event::Plain(comment_lines(self.file, &comment)),
             ));
         }
         events.sort_by_key(|(at, _)| *at);
@@ -163,44 +163,18 @@ impl NoteCx<'_> {
     /// Returns the lines of one doc attribute, or `None` when the attribute
     /// is not a doc comment.
     fn doc_lines(&mut self, attr: &Attribute) -> Option<Vec<String>> {
-        let Meta::NameValue(nv) = &attr.meta else {
-            return None;
-        };
-        if !nv.path.is_ident("doc") {
-            return None;
-        }
-        if let Some(value) = string_value(&nv.value) {
-            let start = range_of(attr, self.file).start;
-            let source = &self.file.text[start..];
-            if source.starts_with("/**") || source.starts_with("/*!") {
-                return Some(beautify(&value));
+        match doc_text(attr, self.file, self.crate_dir)? {
+            DocText::Written(lines) | DocText::Included(lines) => Some(lines),
+            DocText::Unreadable(path) => {
+                let line = self.file.line_of(range_of(attr, self.file).start);
+                self.warnings.push(Warning {
+                    file: self.file.rel.clone(),
+                    line,
+                    message: format!("cannot read doc file {path}"),
+                });
+                None
             }
-            return Some(value.split('\n').map(str::to_owned).collect());
         }
-        let Expr::Macro(call) = &nv.value else {
-            return None;
-        };
-        if !call.mac.path.is_ident("include_str") {
-            return None;
-        }
-        let literal: syn::LitStr = call.mac.parse_body().ok()?;
-        let dir = self.file.rel.rfind('/').map_or("", |i| &self.file.rel[..i]);
-        let path = self.crate_dir.join(dir).join(literal.value());
-        if let Ok(text) = fs::read_to_string(&path) {
-            return Some(
-                text.replace("\r\n", "\n")
-                    .lines()
-                    .map(str::to_owned)
-                    .collect(),
-            );
-        }
-        let line = self.file.line_of(range_of(attr, self.file).start);
-        self.warnings.push(Warning {
-            file: self.file.rel.clone(),
-            line,
-            message: format!("cannot read doc file {}", literal.value()),
-        });
-        None
     }
 
     /// Flattens doc lines into a note, turning names from code spans and
@@ -253,30 +227,80 @@ impl NoteCx<'_> {
         }
         Some(Note::Doc(out))
     }
+}
 
-    /// Returns an ordinary comment's lines. A block comment's continuation
-    /// lines lose their leading whitespace, except one space before a
-    /// leading `*`, the way rustfmt re-indents them, so reformatting the
-    /// source never changes the output.
-    fn plain_lines(&self, comment: &Comment) -> Vec<String> {
-        let text = &self.file.text[comment.range.clone()];
-        text.split('\n')
-            .enumerate()
-            .map(|(i, line)| {
-                let line = line.trim_end();
-                if i == 0 {
-                    return line.to_owned();
-                }
-                match line.find(|c: char| !c.is_whitespace()) {
-                    Some(at) if at > 0 && line[at..].starts_with('*') => {
-                        format!(" {}", &line[at..])
-                    }
-                    Some(at) => line[at..].to_owned(),
-                    None => String::new(),
-                }
-            })
-            .collect()
+/// The text of one doc attribute.
+pub(crate) enum DocText {
+    /// Lines written in the source, each still with the space after `///`.
+    Written(Vec<String>),
+    /// The lines of the file an `include_str!` names.
+    Included(Vec<String>),
+    /// The path, as written, of a file an `include_str!` names that cannot
+    /// be read.
+    Unreadable(String),
+}
+
+/// Returns the text of one doc attribute, or `None` when the attribute is
+/// not a doc comment.
+pub(crate) fn doc_text(attr: &Attribute, file: &SourceFile, crate_dir: &Path) -> Option<DocText> {
+    let Meta::NameValue(nv) = &attr.meta else {
+        return None;
+    };
+    if !nv.path.is_ident("doc") {
+        return None;
     }
+    if let Some(value) = string_value(&nv.value) {
+        let start = range_of(attr, file).start;
+        let source = &file.text[start..];
+        if source.starts_with("/**") || source.starts_with("/*!") {
+            return Some(DocText::Written(beautify(&value)));
+        }
+        return Some(DocText::Written(
+            value.split('\n').map(str::to_owned).collect(),
+        ));
+    }
+    let Expr::Macro(call) = &nv.value else {
+        return None;
+    };
+    if !call.mac.path.is_ident("include_str") {
+        return None;
+    }
+    let literal: syn::LitStr = call.mac.parse_body().ok()?;
+    let dir = file.rel.rfind('/').map_or("", |i| &file.rel[..i]);
+    let path = crate_dir.join(dir).join(literal.value());
+    Some(match fs::read_to_string(&path) {
+        Ok(text) => DocText::Included(
+            text.replace("\r\n", "\n")
+                .lines()
+                .map(str::to_owned)
+                .collect(),
+        ),
+        Err(_) => DocText::Unreadable(literal.value()),
+    })
+}
+
+/// Returns an ordinary comment's lines. A block comment's continuation
+/// lines lose their leading whitespace, except one space before a leading
+/// `*`, the way rustfmt re-indents them, so reformatting the source never
+/// changes the output.
+pub(crate) fn comment_lines(file: &SourceFile, comment: &Comment) -> Vec<String> {
+    let text = &file.text[comment.range.clone()];
+    text.split('\n')
+        .enumerate()
+        .map(|(i, line)| {
+            let line = line.trim_end();
+            if i == 0 {
+                return line.to_owned();
+            }
+            match line.find(|c: char| !c.is_whitespace()) {
+                Some(at) if at > 0 && line[at..].starts_with('*') => {
+                    format!(" {}", &line[at..])
+                }
+                Some(at) => line[at..].to_owned(),
+                None => String::new(),
+            }
+        })
+        .collect()
 }
 
 /// Turns the text of a `/** */` doc comment into lines: a blank first or
@@ -349,31 +373,13 @@ mod tests {
     fn block_comments_keep_relative_indent() {
         let text = "    /* first\n     * second */\n";
         let file = SourceFile::new("a.rs".into(), text);
-        let mut refs = Vec::new();
-        let mut warnings = Vec::new();
-        let cx = NoteCx {
-            file: &file,
-            refs: &mut refs,
-            module: 0,
-            generics: &[],
-            crate_dir: Path::new("."),
-            warnings: &mut warnings,
-        };
         let comment = scan(text, 0..text.len()).remove(0);
-        assert_eq!(cx.plain_lines(&comment), ["/* first", " * second */"]);
+        assert_eq!(comment_lines(&file, &comment), ["/* first", " * second */"]);
         let text = "/* A block comment\n   kept as written. */\n";
         let file = SourceFile::new("b.rs".into(), text);
-        let cx = NoteCx {
-            file: &file,
-            refs: cx.refs,
-            module: 0,
-            generics: &[],
-            crate_dir: Path::new("."),
-            warnings: cx.warnings,
-        };
         let comment = scan(text, 0..text.len()).remove(0);
         assert_eq!(
-            cx.plain_lines(&comment),
+            comment_lines(&file, &comment),
             ["/* A block comment", "kept as written. */"]
         );
     }

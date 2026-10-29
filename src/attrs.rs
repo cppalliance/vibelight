@@ -69,6 +69,22 @@ pub(crate) fn api(attrs: &[Attribute], file: &SourceFile) -> Vec<String> {
     out
 }
 
+/// The attributes that set a lint level.
+const LINT_LEVELS: [&str; 5] = ["allow", "deny", "expect", "forbid", "warn"];
+
+/// Returns a node's lint attributes as written, such as `allow(dead_code)`,
+/// normalized and sorted. A lint attribute inside a `cfg_attr` that is not
+/// test-only counts, without its condition.
+pub(crate) fn lints(attrs: &[Attribute], file: &SourceFile) -> Vec<String> {
+    let mut out: Vec<String> = crate::macros::effective(attrs)
+        .iter()
+        .filter(|meta| LINT_LEVELS.iter().any(|level| meta.path().is_ident(level)))
+        .map(|meta| file.clean(crate::typerefs::range_of(meta, file)))
+        .collect();
+    sort_marks(&mut out);
+    out
+}
+
 /// Sorts `cfg` and attribute lines by name and drops repeats.
 pub(crate) fn sort_marks(marks: &mut Vec<String>) {
     marks.sort_by(|a, b| name_order(a, b));
@@ -170,6 +186,22 @@ mod tests {
         assert_eq!(
             cfgs(&list, &file),
             ["all(unix, not(test))", "feature = \"x\""]
+        );
+    }
+
+    #[test]
+    fn lint_attributes_are_normalized_sorted_and_read_through_cfg_attr() {
+        let (list, file) = attrs(
+            "#[expect(clippy::too_many_lines, reason = \"one match\")]\n\
+             #[cfg_attr(feature = \"x\", allow( dead_code ))]\n\
+             #[cfg_attr(test, allow(unused))]\n#[must_use]\nstruct A;",
+        );
+        assert_eq!(
+            lints(&list, &file),
+            [
+                "allow(dead_code)",
+                "expect(clippy::too_many_lines, reason = \"one match\")"
+            ]
         );
     }
 

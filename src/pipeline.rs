@@ -17,8 +17,9 @@ use crate::settings::{Notation, Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    attach, collect, document, document_external, index, layout_decl, layout_rust_decl, modtree,
-    order, render_html, render_md, resolve, resolve_run, spellings, surface, test_support,
+    attach, collect, collect_check, document, document_external, index, layout_decl,
+    layout_rust_decl, modtree, order, render_html, render_md, resolve, resolve_run, spellings,
+    surface, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -68,6 +69,12 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         krates.push(krate);
     }
     resolve_run::link(&mut krates, &crate_map(chosen, &targets));
+    for krate in &krates {
+        collect_check::validate_body_facts(krate)?;
+    }
+    for package in &chosen.packages {
+        collect_check::validate_package_facts(package)?;
+    }
     let first_docs = document_external::first_docs(&krates);
     let mut docs: Vec<(Built, Built)> = Vec::new();
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {

@@ -78,6 +78,7 @@ impl Collector<'_> {
         let trailing = self.trailing(here, trail);
         let loc = loc(here, u.use_token.span);
         let vis = attrs::vis(&u.vis);
+        let (raw_doc, lints) = self.attr_facts(here, &u.attrs);
         for (index, entry) in named.into_iter().enumerate() {
             let mut meta = Meta {
                 notes: entry.notes,
@@ -86,6 +87,8 @@ impl Collector<'_> {
                 attrs: api.clone(),
                 marks: Vec::new(),
                 vis: attrs::spelled(&u.vis, file),
+                raw_doc: raw_doc.clone(),
+                lints: lints.clone(),
             };
             if index == 0 {
                 meta.notes.splice(0..0, notes.iter().cloned());
