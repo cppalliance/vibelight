@@ -15,12 +15,17 @@ fn links_golden_matches_with_the_output_beside_the_crate() {
     copy_dir(&fixtures().join("links"), &copy);
     let out = copy.join("out");
     assert!(run(&copy, &out).status.success());
-    let actual = fs::read_to_string(out.join("links.md")).expect("the outline was written");
-    let expected = fs::read_to_string(copy.join("expected.md")).expect("the golden is readable");
-    assert!(
-        actual == expected,
-        "--- expected\n{expected}\n--- actual\n{actual}"
-    );
+    for (written, golden) in [
+        (out.join("links.md"), "expected.md"),
+        (out.join("html").join("links.html"), "expected.html"),
+    ] {
+        let actual = fs::read_to_string(&written).expect("the outline was written");
+        let expected = fs::read_to_string(copy.join(golden)).expect("the golden is readable");
+        assert!(
+            actual == expected,
+            "{golden}\n--- expected\n{expected}\n--- actual\n{actual}"
+        );
+    }
 }
 
 #[test]

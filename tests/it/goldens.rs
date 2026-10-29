@@ -7,8 +7,8 @@ use std::fs;
 
 use crate::support::{fixtures, has_ext, input_of, outputs};
 
-/// Runs one fixture and compares each markdown file, and each HTML file
-/// that has a golden, byte for byte.
+/// Runs one fixture and compares each markdown and HTML file with its
+/// golden, byte for byte; an output without a golden fails.
 fn check(name: &str) {
     let dir = fixtures().join(name);
     let written = outputs(&input_of(&dir));
@@ -25,9 +25,6 @@ fn check(name: &str) {
         } else {
             dir.join(format!("expected.{stem}.{ext}"))
         };
-        if ext == "html" && !golden.exists() {
-            continue;
-        }
         let expected = fs::read_to_string(&golden)
             .unwrap_or_else(|_| panic!("{name}: missing golden {}", golden.display()));
         assert!(

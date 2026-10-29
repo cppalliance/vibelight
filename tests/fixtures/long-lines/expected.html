@@ -1,0 +1,177 @@
+<!-- Updated 2026-01-01T00:00:00Z -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>long_lines</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5;--box:#eef1f4}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000;--box:#1c242e}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:none;padding:.75rem 0;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+a.cross{color:var(--cross)}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+span.src{cursor:default}
+.stamp{margin:0;color:var(--muted);font-size:13px}
+:target{background:var(--target)}
+.c code{font:inherit;background:none;padding:0}
+.doc p,.doc ul,.doc h4{max-width:46rem}
+.doc p,.doc li{font:15px/1.55 system-ui,sans-serif;color:var(--fg);margin:.5rem 0}
+.doc ul{margin:.5rem 0;padding-left:1.25rem;list-style:disc}
+.doc h4{margin:1rem 0 .35rem;font-size:15px}
+.doc code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--side);border-radius:3px;padding:.05em .25em}
+.doc pre{max-width:64rem}
+.dim{opacity:.5}
+.toggle{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.button{display:block;margin:0 0 1rem;padding:.3rem .6rem;border:1px solid var(--rule);border-radius:5px;background:var(--bg);color:var(--fg);font-size:13px;text-align:center;cursor:pointer}
+.button:hover{background:var(--side)}
+.toggle:focus-visible~nav .button{outline:2px solid var(--link)}
+.toggle~nav .button .on{display:none}
+.toggle:checked~nav .button .on{display:inline}
+.toggle:checked~nav .button .off{display:none}
+.toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
+.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+</style>
+</head>
+<body>
+<input type="checkbox" id="vibelight-comments" class="toggle" aria-label="Hide member comments">
+<nav>
+<label for="vibelight-comments" class="button"><span class="on">Show comments</span><span class="off">Hide comments</span></label>
+<ul>
+<li><a href="#legend">Legend</a></li>
+<li><a href="#surface">Public surface</a></li>
+<li><a href="#unconnected">Unconnected types</a>
+<ul>
+<li><a href="#type.long_lines.Container">Container</a></li>
+<li><a href="#type.long_lines.Registry">Registry</a></li>
+<li><a href="#type.long_lines.Wide">Wide</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.long_lines">long_lines</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+<main>
+<p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
+<h1 id="crate.long_lines">long_lines</h1>
+<div class="doc">
+<p><span class="c">The long-line rule.</span></p>
+</div>
+<h2 id="legend">Legend</h2>
+<ul class="legend">
+<li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
+<li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
+<li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
+<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
+<li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
+<li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
+<li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment keeps the fixed layout of its block.</li>
+</ul>
+<p class="kill"><b class="m">MACROS:</b> none</p>
+<h2 id="surface">Public surface</h2>
+<ul class="surface">
+<li><a href="#type.long_lines.Container">Container</a></li>
+<li><a href="#type.long_lines.Registry">Registry</a></li>
+<li><a href="#type.long_lines.Wide">Wide</a></li>
+</ul>
+<hr>
+<h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.long_lines.Container">Container</h3>
+<div class="doc mc-doc">
+<p><span class="c">A header whose where clause moves.</span></p>
+</div>
+<pre><code><span class="k">class</span> Container&lt;K, V&gt;
+    <span class="k">where</span> K: Ord + Clone + std::fmt::Debug + Send + Sync, V: Clone + Send
+{
+    <span class="src">keys</span>: Vec&lt;K&gt;,
+
+    <span class="src">values</span>: Vec&lt;V&gt;,
+}</code></pre>
+<h3 id="type.long_lines.Registry">Registry</h3>
+<div class="doc mc-doc">
+<p><span class="c">A header whose where clause breaks one predicate per line.</span></p>
+</div>
+<pre><code><span class="k">class</span> Registry&lt;K, V, S&gt;
+    <span class="k">where</span>
+        K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
+        V: Clone + Send + Sync + std::fmt::Debug,
+        S: std::hash::BuildHasher + Default
+{
+    <span class="src">keys</span>: Vec&lt;K&gt;,
+
+    <span class="src">state</span>: S,
+
+    <span class="src">values</span>: Vec&lt;V&gt;,
+}</code></pre>
+<h3 id="type.long_lines.Wide">Wide</h3>
+<div class="doc mc-doc">
+<p><span class="c">Members that test the long-line rule.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Wide
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">This doc comment line is deliberately longer than eighty columns so it shows comments never wrap.</span></div>
+    <span class="src">a_field_with_a_very_long_type</span>: std::collections::BTreeMap&lt;String, std::collections::BTreeSet&lt;u64&gt;&gt;,
+
+    <span class="k">static</span> <span class="src">exactly_at_80</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
+
+    <span class="k">static</span> <span class="src">fits_with_comment</span>(value: u64) -&gt; u64 <span class="c">// a trailing comment that pushes past eighty</span>
+
+    <span class="k">static</span> <span class="src">huge</span>(
+        an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap&lt;String, Vec&lt;u64&gt;&gt;)
+
+    <span class="k">static</span> <span class="src">long_first_line</span>(
+        argument_number_one: u64,
+        argument_number_two: u64) -&gt; u64
+
+    <span class="k">static</span> <span class="src">one_over_limit</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
+
+    <span class="k">static</span> <span class="src">tail_also_breaks</span>(
+        argument_number_one: u64,
+        argument_number_two: u64) -&gt;
+        std::collections::BTreeMap&lt;String, Vec&lt;u64&gt;&gt;
+
+    <span class="src">register</span>(
+        name_of_the_thing: str&amp;,
+        handler_for_the_thing: Box&lt;dyn Fn(u32)&gt;,
+        priority: u8) <span class="k">mut</span>
+
+    <span class="src">register_bounded</span>&lt;T&gt;(
+        name: str&amp;,
+        value: T) <span class="k">mut</span>
+        <span class="k">where</span> T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash
+
+    <span class="src">route</span>&lt;R, L&gt;(
+        read: R,
+        load: L)
+        <span class="k">where</span>
+            R: Fn(String) -&gt; Option&lt;String&gt; + Send + Sync + 'static,
+            L: Fn(String, Option&lt;u32&gt;) -&gt; Result&lt;String, u8&gt; + Send
+}</code></pre>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.long_lines">long_lines</h3>
+<ul>
+<li><a href="#type.long_lines.Container">Container</a></li>
+<li><a href="#type.long_lines.Registry">Registry</a></li>
+<li><a href="#type.long_lines.Wide">Wide</a></li>
+</ul>
+</main>
+</body>
+</html>

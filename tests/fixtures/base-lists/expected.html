@@ -1,0 +1,405 @@
+<!-- Updated 2026-01-01T00:00:00Z -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>base_lists</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5;--box:#eef1f4}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000;--box:#1c242e}}
+body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
+nav ul{list-style:none;margin:0;padding-left:1rem}
+nav>ul{padding-left:0}
+main{flex:1;min-width:0;padding:1rem 2rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+pre{background:none;padding:.75rem 0;overflow-x:auto}
+pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.k{color:var(--key)}
+.c{color:var(--com)}
+.c a{color:inherit;text-decoration:underline}
+a.cross{color:var(--cross)}
+b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
+.source{color:var(--muted)}
+a.src{color:inherit}
+span.src{cursor:default}
+.stamp{margin:0;color:var(--muted);font-size:13px}
+:target{background:var(--target)}
+.c code{font:inherit;background:none;padding:0}
+.doc p,.doc ul,.doc h4{max-width:46rem}
+.doc p,.doc li{font:15px/1.55 system-ui,sans-serif;color:var(--fg);margin:.5rem 0}
+.doc ul{margin:.5rem 0;padding-left:1.25rem;list-style:disc}
+.doc h4{margin:1rem 0 .35rem;font-size:15px}
+.doc code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--side);border-radius:3px;padding:.05em .25em}
+.doc pre{max-width:64rem}
+.dim{opacity:.5}
+.toggle{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.button{display:block;margin:0 0 1rem;padding:.3rem .6rem;border:1px solid var(--rule);border-radius:5px;background:var(--bg);color:var(--fg);font-size:13px;text-align:center;cursor:pointer}
+.button:hover{background:var(--side)}
+.toggle:focus-visible~nav .button{outline:2px solid var(--link)}
+.toggle~nav .button .on{display:none}
+.toggle:checked~nav .button .on{display:inline}
+.toggle:checked~nav .button .off{display:none}
+.toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
+.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+</style>
+</head>
+<body>
+<input type="checkbox" id="vibelight-comments" class="toggle" aria-label="Hide member comments">
+<nav>
+<label for="vibelight-comments" class="button"><span class="on">Show comments</span><span class="off">Hide comments</span></label>
+<ul>
+<li><a href="#legend">Legend</a></li>
+<li><a href="#surface">Public surface</a></li>
+<li><a href="#group.1">custom</a>
+<ul>
+<li><a href="#type.base_lists.custom.Homemade">custom::Homemade</a></li>
+<li><a href="#type.base_lists.custom.Display">custom::Display</a></li>
+</ul>
+</li>
+<li><a href="#group.2">base_lists</a>
+<ul>
+<li><a href="#type.base_lists.Error">Error</a></li>
+<li><a href="#type.base_lists.Holder">Holder</a></li>
+<li><a href="#type.base_lists.Labeled">Labeled</a></li>
+<li><a href="#type.base_lists.Local">Local</a></li>
+<li><a href="#type.base_lists.Clone">Clone</a></li>
+<li><a href="#type.base_lists.Mixed">Mixed</a></li>
+<li><a href="#type.base_lists.Named">Named</a></li>
+</ul>
+</li>
+<li><a href="#unconnected">Unconnected types</a>
+<ul>
+<li><a href="#type.base_lists.bare.Imported">bare::Imported</a></li>
+<li><a href="#type.base_lists.Bits">Bits</a></li>
+<li><a href="#type.base_lists.globbed.Starred">globbed::Starred</a></li>
+<li><a href="#type.base_lists.Marker">Marker</a></li>
+<li><a href="#type.base_lists.Ordered">Ordered</a></li>
+<li><a href="#type.base_lists.other.Foreign">other::Foreign</a></li>
+<li><a href="#type.base_lists.Plain">Plain</a></li>
+<li><a href="#type.base_lists.Renamed">Renamed</a></li>
+<li><a href="#type.base_lists.Run">Run</a></li>
+<li><a href="#type.base_lists.RunError">RunError</a></li>
+<li><a href="#type.base_lists.Secret">Secret</a></li>
+<li><a href="#type.base_lists.Sink">Sink</a></li>
+<li><a href="#type.base_lists.Spelled">Spelled</a></li>
+<li><a href="#type.base_lists.Wide">Wide</a></li>
+<li><a href="#type.base_lists.Wrapped">Wrapped</a></li>
+</ul>
+</li>
+<li><a href="#modules">Modules</a>
+<ul>
+<li><a href="#mod.base_lists">base_lists</a></li>
+<li><a href="#mod.base_lists.bare">bare</a></li>
+<li><a href="#mod.base_lists.custom">custom</a></li>
+<li><a href="#mod.base_lists.globbed">globbed</a></li>
+<li><a href="#mod.base_lists.other">other</a></li>
+</ul>
+</li>
+<li><a href="#spellings">Spellings</a></li>
+</ul>
+</nav>
+<main>
+<p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
+<h1 id="crate.base_lists">base_lists</h1>
+<div class="doc">
+<p><span class="c">Base lists: short names, long paths, wrapping, collisions, and supertraits.</span></p>
+</div>
+<h2 id="legend">Legend</h2>
+<ul class="legend">
+<li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
+<li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
+<li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
+<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
+<li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
+<li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
+<li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment keeps the fixed layout of its block.</li>
+</ul>
+<p class="kill"><b class="m">MACROS:</b> 1 derive list</p>
+<ul class="kill">
+<li><b class="m">MACRO</b> <code>derive: From</code>, in <a href="#macro.1">Wrapped</a></li>
+</ul>
+<h2 id="surface">Public surface</h2>
+<ul class="surface">
+<li><a href="#mod.base_lists.bare">bare</a></li>
+<li><a href="#type.base_lists.bare.Imported">bare::Imported</a></li>
+<li><a href="#type.base_lists.Bits">Bits</a></li>
+<li><a href="#type.base_lists.Clone">Clone</a></li>
+<li><a href="#mod.base_lists.custom">custom</a></li>
+<li><a href="#type.base_lists.custom.Display">custom::Display</a></li>
+<li><a href="#type.base_lists.custom.Homemade">custom::Homemade</a></li>
+<li><a href="#type.base_lists.Error">Error</a></li>
+<li><a href="#mod.base_lists.globbed">globbed</a></li>
+<li><a href="#type.base_lists.globbed.Starred">globbed::Starred</a></li>
+<li><a href="#type.base_lists.Holder">Holder</a></li>
+<li><a href="#type.base_lists.Labeled">Labeled</a></li>
+<li><a href="#type.base_lists.Local">Local</a></li>
+<li><a href="#type.base_lists.Marker">Marker</a></li>
+<li><a href="#type.base_lists.Mixed">Mixed</a></li>
+<li><a href="#type.base_lists.Named">Named</a></li>
+<li><a href="#type.base_lists.Ordered">Ordered</a></li>
+<li><a href="#mod.base_lists.other">other</a></li>
+<li><a href="#type.base_lists.other.Foreign">other::Foreign</a></li>
+<li><a href="#type.base_lists.Plain">Plain</a></li>
+<li><a href="#type.base_lists.Renamed">Renamed</a></li>
+<li><a href="#type.base_lists.Run">Run</a></li>
+<li><a href="#type.base_lists.RunError">RunError</a></li>
+<li><a href="#type.base_lists.Secret">Secret</a></li>
+<li><a href="#type.base_lists.Sink">Sink</a></li>
+<li><a href="#type.base_lists.Spelled">Spelled</a></li>
+<li><a href="#type.base_lists.Wide">Wide</a></li>
+<li><a href="#type.base_lists.Wrapped">Wrapped</a></li>
+</ul>
+<hr>
+<h2 id="group.1">custom</h2>
+<h3 id="type.base_lists.custom.Homemade">custom::Homemade</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's Display, which prints its path on its own line.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Homemade
+    : <a href="#type.base_lists.custom.Display">custom::Display</a></code></pre>
+<h3 id="type.base_lists.custom.Display">custom::Display</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's own Display.</span></p>
+</div>
+<pre><code><span class="k">trait</span> Display
+{
+}</code></pre>
+<hr>
+<h2 id="group.2">base_lists</h2>
+<h3 id="type.base_lists.Error">Error</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's own error, whose name collides with std::error::Error.</span></p>
+</div>
+<pre><code><span class="k">enum</span> Error
+    : Debug, std::error::Error
+    , <a href="#type.base_lists.Named">Named</a>
+{
+    <span class="src">Failed</span>,
+}</code></pre>
+<h3 id="type.base_lists.Holder">Holder</h3>
+<div class="doc mc-doc">
+<p><span class="c">Generics, a where clause, and a trait of this crate.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Holder&lt;T&gt;
+    : Debug
+    , <a href="#type.base_lists.Named">Named</a>
+    <span class="k">where</span> T: Copy
+{
+    <span class="src">value</span>: T,
+}</code></pre>
+<h3 id="type.base_lists.Labeled">Labeled</h3>
+<div class="doc mc-doc">
+<p><span class="c">A standard supertrait and a supertrait of this crate.</span></p>
+</div>
+<pre><code><span class="k">trait</span> Labeled
+    : Display
+    , <a href="#type.base_lists.Named">Named</a>
+{
+}</code></pre>
+<h3 id="type.base_lists.Local">Local</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's own Clone, a trait nothing declares, and a renamed standard</span> <span class="c">trait.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Local
+    : Debug
+    , <a href="#type.base_lists.Clone">Clone</a>
+    , Unknown</code></pre>
+<h3 id="type.base_lists.Clone">Clone</h3>
+<div class="doc mc-doc">
+<p><span class="c">A trait of this crate that shares a prelude name.</span></p>
+</div>
+<pre><code><span class="k">trait</span> Clone
+{
+}</code></pre>
+<h3 id="type.base_lists.Mixed">Mixed</h3>
+<div class="doc mc-doc">
+<p><span class="c">A trait of this crate and one of another crate take the comma form.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Mixed
+    : Debug
+    , <a href="#type.base_lists.Named">Named</a>
+    , serde::Serialize</code></pre>
+<h3 id="type.base_lists.Named">Named</h3>
+<div class="doc mc-doc">
+<p><span class="c">A trait of this crate.</span></p>
+</div>
+<pre><code><span class="k">trait</span> Named
+{
+    <span class="src">name</span>() -&gt; String
+}</code></pre>
+<hr>
+<h2 id="unconnected">Unconnected types</h2>
+<h3 id="type.base_lists.bare.Imported">bare::Imported</h3>
+<div class="doc mc-doc">
+<p><span class="c">Display through the use, which is the standard one.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Imported : Display</code></pre>
+<h3 id="type.base_lists.Bits">Bits</h3>
+<div class="doc mc-doc">
+<p><span class="c">A union with standard derives.</span></p>
+</div>
+<pre><code><span class="k">union</span> Bits : Copy, Debug
+{
+    <span class="src">int</span>: u32,
+
+    <span class="src">float</span>: f32,
+}</code></pre>
+<h3 id="type.base_lists.globbed.Starred">globbed::Starred</h3>
+<div class="doc mc-doc">
+<p><span class="c">A Display from the glob, which prints as written.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Starred
+    : Display</code></pre>
+<h3 id="type.base_lists.Marker">Marker</h3>
+<div class="doc mc-doc">
+<p><span class="c">A unit struct whose list fits on the head line.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Marker : Debug, Eq, Hash</code></pre>
+<h3 id="type.base_lists.Ordered">Ordered</h3>
+<div class="doc mc-doc">
+<p><span class="c">Standard derives that are not special members, and comparisons with</span> <span class="c">another type written by hand. The crate's own Clone trait never sits on</span> <span class="c">the shared line, so the standard Clone keeps its short name.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Ordered(u8)
+    : Clone, Eq, Ord, PartialEq, PartialEq&lt;u8&gt;, PartialOrd, PartialOrd&lt;u8&gt;</code></pre>
+<h3 id="type.base_lists.other.Foreign">other::Foreign</h3>
+<div class="doc mc-doc">
+<p><span class="c">The other crate's Display, which stays apart from the standard one.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Foreign
+    : other_crate::Display</code></pre>
+<h3 id="type.base_lists.Plain">Plain</h3>
+<div class="doc mc-doc">
+<p><span class="c">Standard supertraits and a lifetime bound.</span></p>
+</div>
+<pre><code><span class="k">trait</span> Plain : 'static, Send, Sync
+{
+}</code></pre>
+<h3 id="type.base_lists.Renamed">Renamed</h3>
+<div class="doc mc-doc">
+<p><span class="c">The standard Display through a renaming use.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Renamed : Display</code></pre>
+<h3 id="type.base_lists.Run">Run</h3>
+<div class="doc mc-doc">
+<p><span class="c">Standard traits only, so the list stays on the head line.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Run : Debug, Display
+{
+    <span class="src">id</span>: u32,
+}</code></pre>
+<h3 id="type.base_lists.RunError">RunError</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's Error makes std::error::Error keep its full path.</span></p>
+</div>
+<pre><code><span class="k">struct</span> RunError : Debug, Display, std::error::Error
+{
+    <span class="src">reason</span>: String,
+}</code></pre>
+<h3 id="type.base_lists.Secret">Secret</h3>
+<div class="doc mc-doc">
+<p><span class="c">A class with a standard trait.</span></p>
+</div>
+<pre><code><span class="k">class</span> Secret : Display
+{
+    <span class="src">value</span>: u8,
+}</code></pre>
+<h3 id="type.base_lists.Sink">Sink</h3>
+<div class="doc mc-doc">
+<p><span class="c">Two traits named Write keep their full paths.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Sink : std::fmt::Write, std::io::Write</code></pre>
+<h3 id="type.base_lists.Spelled">Spelled</h3>
+<div class="doc mc-doc">
+<p><span class="c">The standard Display written in full, with no use.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Spelled : Display</code></pre>
+<h3 id="type.base_lists.Wide">Wide</h3>
+<div class="doc mc-doc">
+<p><span class="c">So many standard traits that the list wraps.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Wide(u64)
+    : Binary, Copy, Debug, Display, Eq, Hash, LowerExp, LowerHex, Octal, Ord
+    , Pointer, UpperExp, UpperHex</code></pre>
+<h3 id="type.base_lists.Wrapped">Wrapped</h3>
+<p class="mark" id="macro.1"><b class="m">MACRO</b> derive: From</p>
+<div class="doc mc-doc">
+<p><span class="c">A bare derive of From comes from another crate, so it stays on the mark.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Wrapped(u8) : Debug</code></pre>
+<h2 id="modules">Modules</h2>
+<h3 id="mod.base_lists">base_lists</h3>
+<ul>
+<li><a href="#type.base_lists.Bits">Bits</a></li>
+<li><a href="#type.base_lists.Clone">Clone</a></li>
+<li><a href="#type.base_lists.Error">Error</a></li>
+<li><a href="#type.base_lists.Holder">Holder</a></li>
+<li><a href="#type.base_lists.Labeled">Labeled</a></li>
+<li><a href="#type.base_lists.Local">Local</a></li>
+<li><a href="#type.base_lists.Marker">Marker</a></li>
+<li><a href="#type.base_lists.Mixed">Mixed</a></li>
+<li><a href="#type.base_lists.Named">Named</a></li>
+<li><a href="#type.base_lists.Ordered">Ordered</a></li>
+<li><a href="#type.base_lists.Plain">Plain</a></li>
+<li><a href="#type.base_lists.Renamed">Renamed</a></li>
+<li><a href="#type.base_lists.Run">Run</a></li>
+<li><a href="#type.base_lists.RunError">RunError</a></li>
+<li><a href="#type.base_lists.Secret">Secret</a></li>
+<li><a href="#type.base_lists.Sink">Sink</a></li>
+<li><a href="#type.base_lists.Spelled">Spelled</a></li>
+<li><a href="#type.base_lists.Wide">Wide</a></li>
+<li><a href="#type.base_lists.Wrapped">Wrapped</a></li>
+</ul>
+<h3 id="mod.base_lists.bare">bare</h3>
+<div class="doc mc-doc">
+<p><span class="c">The standard Display after a use of the trait itself.</span></p>
+</div>
+<ul>
+<li><a href="#type.base_lists.bare.Imported">bare::Imported</a></li>
+</ul>
+<h3 id="mod.base_lists.custom">custom</h3>
+<div class="doc mc-doc">
+<p><span class="c">A trait of this crate named Display.</span></p>
+</div>
+<ul>
+<li><a href="#type.base_lists.custom.Display">custom::Display</a></li>
+<li><a href="#type.base_lists.custom.Homemade">custom::Homemade</a></li>
+</ul>
+<h3 id="mod.base_lists.globbed">globbed</h3>
+<div class="doc mc-doc">
+<p><span class="c">A Display that can only come from a glob import.</span></p>
+</div>
+<ul>
+<li><a href="#type.base_lists.globbed.Starred">globbed::Starred</a></li>
+</ul>
+<h3 id="mod.base_lists.other">other</h3>
+<div class="doc mc-doc">
+<p><span class="c">Another crate's trait that is also named Display.</span></p>
+</div>
+<ul>
+<li><a href="#type.base_lists.other.Foreign">other::Foreign</a></li>
+</ul>
+<h2 id="spellings">Spellings</h2>
+<ul class="spellings">
+<li><code>std::fmt::Debug</code> is written 2 ways; prefer <code>Debug</code>, which is not used yet:
+<ul>
+<li><code>Dbg</code>, once</li>
+<li><code>fmt::Debug</code>, 4 times</li>
+</ul>
+</li>
+<li><code>std::fmt::Display</code> is written 4 ways; pick one and search for the rest:
+<ul>
+<li><code>D</code>, once</li>
+<li><code>Display</code>, once</li>
+<li><code>fmt::Display</code>, 5 times</li>
+<li><code>std::fmt::Display</code>, once</li>
+</ul>
+</li>
+</ul>
+</main>
+</body>
+</html>
