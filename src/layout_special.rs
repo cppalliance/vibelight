@@ -2,6 +2,7 @@
 //! packed group.
 
 use crate::layout::{Entry, Line, Span, code, key, note_lines, plain};
+use crate::layout_marker::Marker;
 use crate::model::{Special, SpecialKind, TypeRef, name_order};
 
 /// Builds the special members of a type named `name` as one entry. No blank
@@ -21,7 +22,7 @@ pub(crate) fn special_entry(specials: &[Special], name: &str, refs: &[TypeRef]) 
     let mut lines = Vec::new();
     let mut previous: Option<bool> = None;
     for special in sorted {
-        let mut member = note_lines(&special.notes, 4, "///");
+        let mut member = note_lines(&special.notes, 4, Marker::DOC);
         let commented = !member.is_empty();
         if previous.is_some_and(|was| was || commented) {
             lines.push(Line::default());
@@ -53,7 +54,6 @@ fn special_line(special: &Special, name: &str) -> Line {
     if special.derived {
         spans.extend([plain(" = "), key("default")]);
     }
-    spans.push(plain(";"));
     Line {
         indent: 4,
         spans,

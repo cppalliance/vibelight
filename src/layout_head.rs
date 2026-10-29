@@ -68,7 +68,6 @@ pub(crate) fn header_lines(
     }
     if !has_body {
         if let Some(end) = lines.last_mut() {
-            end.spans.push(plain(";"));
             end.trailing.clone_from(&decl.meta.trailing);
         }
     }
@@ -178,7 +177,7 @@ mod tests {
         let source = "pub struct Run;\n\
                       impl std::fmt::Display for Run {}\n\
                       impl std::fmt::Debug for Run {}\n";
-        assert_eq!(head(source, "Run"), ["struct Run : Debug, Display;"]);
+        assert_eq!(head(source, "Run"), ["struct Run : Debug, Display"]);
     }
 
     #[test]
@@ -216,7 +215,7 @@ mod tests {
             [
                 "struct Wide",
                 "    : Binary, Debug, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp",
-                "    , UpperHex, Write;"
+                "    , UpperHex, Write"
             ]
         );
         assert!(lines.iter().all(|l| l.chars().count() <= MAX_WIDTH));
@@ -228,7 +227,7 @@ mod tests {
                       where\n    T: Copy;\n";
         let lines = head(source, "Pair");
         assert!(
-            lines.last().unwrap().ends_with("where T: Copy;"),
+            lines.last().unwrap().ends_with("where T: Copy"),
             "{lines:?}"
         );
     }

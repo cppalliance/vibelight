@@ -4,6 +4,7 @@
 //! one line for each trait impl.
 
 use crate::layout::{Block, Line, Repeat, Span, key, mark_line, note_lines, spaced};
+use crate::layout_marker::Marker;
 use crate::layout_rust::{
     above, attr_lines, code, fn_lines, line, plain, value_line, vis, where_lines,
 };
@@ -19,7 +20,9 @@ type Lines = (Vec<Line>, Vec<Repeat>);
 pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     let decl = &krate.decls[id];
     let mut block = Block::default();
-    block.lines.extend(note_lines(&decl.meta.notes, 0, "///"));
+    block
+        .lines
+        .extend(note_lines(&decl.meta.notes, 0, Marker::DOC));
     block
         .lines
         .extend(attr_lines(&decl.written_derives, &decl.meta, 0));
@@ -172,7 +175,7 @@ fn joined(params: &[Param]) -> Vec<Span> {
 /// Returns a field or a parameter on a line of its own, with the lines above
 /// it.
 fn param_lines(param: &Param, indent: usize) -> Lines {
-    let mut lines = note_lines(&param.meta.notes, indent, "///");
+    let mut lines = note_lines(&param.meta.notes, indent, Marker::DOC);
     lines.extend(attr_lines(&[], &param.meta, indent));
     let mut spans = vec![plain(&vis(&param.meta))];
     spans.extend(code(&param.text));
@@ -196,7 +199,7 @@ fn body(krate: &Crate, decl: &Decl) -> Vec<Lines> {
     if let Shape::Enum(variants) = &decl.shape {
         entries.extend(variants.iter().map(variant_lines));
     }
-    let dangling = note_lines(&decl.dangling, 4, "///");
+    let dangling = note_lines(&decl.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
         entries.push((dangling, Vec::new()));
     }
@@ -313,10 +316,14 @@ fn impls(krate: &Crate, decl: &Decl, block: &mut Block) {
     for loc in locs.iter().filter(|l| !l.trait_impl && !l.range.is_empty()) {
         block.lines.push(Line::default());
         let file = &krate.files[loc.loc.file].rel;
-        block
-            .lines
-            .push(line(0, vec![Span::Comment(format!("// impl in {file}"))]));
-        block.lines.extend(note_lines(&loc.notes, 0, "///"));
+        block.lines.push(line(
+            0,
+            vec![
+                Span::Marker(Marker::IMPL_IN.spaced),
+                Span::Comment(file.clone()),
+            ],
+        ));
+        block.lines.extend(note_lines(&loc.notes, 0, Marker::DOC));
         block
             .lines
             .push(line(0, vec![plain(&format!("{} {{", loc.header))]));
@@ -336,7 +343,7 @@ fn impls(krate: &Crate, decl: &Decl, block: &mut Block) {
             block.lines.push(Line::default());
         }
         last_bare = bare;
-        block.lines.extend(note_lines(&loc.notes, 0, "///"));
+        block.lines.extend(note_lines(&loc.notes, 0, Marker::DOC));
         block
             .lines
             .push(line(0, vec![plain(&format!("{} {{}}", loc.header))]));

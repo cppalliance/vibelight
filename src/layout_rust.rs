@@ -4,6 +4,7 @@
 //! since its reader is a model.
 
 use crate::layout::{Line, Repeat, Span, key, mark_line, note_lines, width};
+use crate::layout_marker::Marker;
 use crate::model::{Loc, Meta, Note, Seg, Sig, Text, TypeRef, Where};
 
 /// The widest a constant's line may be and still show its value.
@@ -44,7 +45,7 @@ pub(crate) fn vis(meta: &Meta) -> String {
 /// Returns the lines above a node: its doc comments, its attribute lines,
 /// and its macro marks, with their repeats.
 pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc) -> (Vec<Line>, Vec<Repeat>) {
-    let mut lines = note_lines(&meta.notes, indent, "///");
+    let mut lines = note_lines(&meta.notes, indent, Marker::DOC);
     lines.extend(attr_lines(&[], meta, indent));
     let mut repeats = Vec::new();
     for mark in &meta.marks {
@@ -140,7 +141,7 @@ pub(crate) fn fn_lines(sig: &Sig, vis: &str, indent: usize, trailing: Option<Str
         head.push(plain("("));
         lines.push(line(indent, head));
         for (notes, mut param) in params {
-            lines.extend(note_lines(notes, indent + 4, "///"));
+            lines.extend(note_lines(notes, indent + 4, Marker::DOC));
             param.push(plain(","));
             lines.push(line(indent + 4, param));
         }

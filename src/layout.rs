@@ -1,5 +1,6 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
+use crate::layout_marker::Marker;
 use crate::model::{
     Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, ValueRef, Vis, Where, name_order,
 };
@@ -17,6 +18,11 @@ pub(crate) enum Span {
     Ref(RefId),
     /// Comment text, including `// cfg:` lines.
     Comment(String),
+    /// The text that opens a comment line, which the HTML drops.
+    Marker(&'static str),
+    /// An attribute shown at the end of a signature, printed at half the
+    /// contrast of the code around it.
+    Dim(String),
     /// A type name in a comment, which links in HTML but never counts.
     DocRef(RefId),
     /// A bold label: `MACRO` or `UNSUPPORTED:`.
@@ -65,6 +71,8 @@ pub(crate) fn span_text<'a>(span: &'a Span, refs: &'a [TypeRef]) -> &'a str {
         Span::Key(s) | Span::Code(s) | Span::Comment(s) | Span::Name(s, _) | Span::Value(s, ..) => {
             s
         }
+        Span::Marker(s) => s,
+        Span::Dim(s) => s,
         Span::Ref(id) | Span::DocRef(id) => &refs[*id].text,
         Span::Label(label) => label,
     }
@@ -119,24 +127,23 @@ pub(crate) fn plain(text: &str) -> Span {
     Span::Code(text.to_owned())
 }
 
-/// Returns the lines of notes at an indent; doc comments use `prefix`.
-pub(crate) fn note_lines(notes: &[Note], indent: usize, prefix: &str) -> Vec<Line> {
+/// Returns the lines of notes at an indent; `marker` opens each doc line.
+pub(crate) fn note_lines(notes: &[Note], indent: usize, marker: Marker) -> Vec<Line> {
     let mut out = Vec::new();
     for note in notes {
         match note {
             Note::Doc(lines) => {
                 for text in lines {
                     let mut spans = Vec::new();
-                    let starts_bare = match text.0.first() {
-                        Some(Seg::Plain(s)) => !s.starts_with(char::is_whitespace),
-                        Some(Seg::Ref(_)) => true,
-                        None => false,
+                    // A line with no segments prints the bare marker, while
+                    // an empty first segment keeps the space, so a `///` line
+                    // whose attribute held only whitespace prints as it did.
+                    let already_indented = match text.0.first() {
+                        Some(Seg::Plain(s)) => s.starts_with(char::is_whitespace),
+                        Some(Seg::Ref(_)) => false,
+                        None => true,
                     };
-                    spans.push(Span::Comment(if starts_bare {
-                        format!("{prefix} ")
-                    } else {
-                        prefix.to_owned()
-                    }));
+                    spans.push(Span::Marker(marker.text(already_indented)));
                     for seg in &text.0 {
                         spans.push(match seg {
                             Seg::Plain(s) => Span::Comment(s.clone()),
@@ -150,14 +157,37 @@ pub(crate) fn note_lines(notes: &[Note], indent: usize, prefix: &str) -> Vec<Lin
                     });
                 }
             }
-            Note::Plain(lines) => out.extend(lines.iter().map(|line| Line {
-                indent,
-                spans: vec![Span::Comment(line.clone())],
-                trailing: None,
-            })),
+            Note::Plain(lines) => {
+                out.extend(lines.iter().map(|line| plain_marker_line(line, indent)));
+            }
         }
     }
     out
+}
+
+/// Returns one ordinary comment line, its `//` kept in a marker span so the
+/// HTML can drop it while the markdown prints it. The line's own leading
+/// spaces stay in its text, and its indent alone is the layout indent, so
+/// the markdown prints exactly what the source shows.
+fn plain_marker_line(line: &str, indent: usize) -> Line {
+    let trimmed = line.trim_start();
+    let lead = &line[..line.len() - trimmed.len()];
+    let mut spans = Vec::new();
+    if !lead.is_empty() {
+        spans.push(Span::Comment(lead.to_owned()));
+    }
+    match trimmed.strip_prefix("//") {
+        Some(rest) => {
+            spans.push(Span::Marker(Marker::PLAIN.bare));
+            spans.push(Span::Comment(rest.to_owned()));
+        }
+        None => spans.push(Span::Comment(trimmed.to_owned())),
+    }
+    Line {
+        indent,
+        spans,
+        trailing: None,
+    }
 }
 
 /// Returns a mark line, `// MACRO text`, and its repeat.
@@ -170,7 +200,7 @@ pub(crate) fn mark_line(
     let line = Line {
         indent,
         spans: vec![
-            Span::Comment("// ".to_owned()),
+            Span::Marker(Marker::PLAIN.spaced),
             Span::Label(label),
             Span::Comment(format!(" {text}")),
         ],
@@ -185,20 +215,14 @@ pub(crate) fn mark_line(
 }
 
 /// Returns the lines printed above a node: its notes, `cfg` lines, and
-/// marks, with the marks' repeats.
+/// marks, with the marks' repeats. An attribute does not print here: it
+/// closes the signature it belongs to, where a function's line ends.
 pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc) -> (Vec<Line>, Vec<Repeat>) {
-    let mut lines = note_lines(&meta.notes, indent, "///");
+    let mut lines = note_lines(&meta.notes, indent, Marker::DOC);
     for cfg in &meta.cfgs {
         lines.push(Line {
             indent,
-            spans: vec![Span::Comment(format!("// cfg: {cfg}"))],
-            trailing: None,
-        });
-    }
-    for attr in &meta.attrs {
-        lines.push(Line {
-            indent,
-            spans: vec![Span::Code(format!("[[{attr}]]"))],
+            spans: vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
             trailing: None,
         });
     }
@@ -252,10 +276,12 @@ pub(crate) fn section(vis: Vis) -> usize {
     }
 }
 
-/// Joins the sections that have entries in the order public, `internal:`,
-/// `private:`, a blank line and the label before each. The first section
-/// leaves its label out when its visibility is `default`, the section a
-/// reader assumes: public in a struct or a module, private in a class.
+/// Joins a type body's sections that have entries in the order public,
+/// `internal:`, `private:`, a blank line and the label before each. The first
+/// section leaves its label out when its visibility is `default`, the section
+/// a reader assumes: public in a struct, private in a class. Only a type uses
+/// this: a module has no enclosing brace, so its items carry their own
+/// visibility line instead.
 pub(crate) fn join_sections(sections: Sections, default: Vis, block: &mut Block) {
     let labels = [
         (Vis::Public, "public:"),
@@ -296,7 +322,9 @@ pub(crate) fn spaced(members: impl IntoIterator<Item = Vec<Line>>) -> Vec<Line> 
 }
 
 /// Builds a function's lines, with `static` first when `is_static`. `name`
-/// is the span that prints the function's name.
+/// is the span that prints the function's name. The function's attributes
+/// close the signature, in place of the semicolon, so `[[must_use]]` reads as
+/// a note on the line rather than a line of its own.
 pub(crate) fn fn_lines(
     krate: &Crate,
     sig: &crate::model::Sig,
@@ -304,6 +332,7 @@ pub(crate) fn fn_lines(
     trailing: Option<String>,
     indent: usize,
     is_static: bool,
+    attrs: &[String],
 ) -> Vec<Line> {
     let mut head = Vec::new();
     if is_static {
@@ -320,7 +349,7 @@ pub(crate) fn fn_lines(
         .params
         .iter()
         .map(|p| ParamParts {
-            notes: note_lines(&p.meta.notes, 0, "///"),
+            notes: note_lines(&p.meta.notes, 0, Marker::DOC),
             text: code(&p.text),
         })
         .collect();
@@ -335,15 +364,29 @@ pub(crate) fn fn_lines(
         after,
         ret: sig.ret.as_ref().map(code),
         where_clause: sig.where_clause.as_ref().map(where_parts),
-        end: vec![plain(";")],
+        // An attribute closes the signature. The page needs no semicolon, so
+        // a function without one ends at its return type.
+        end: attributes_end(attrs),
     };
     wrap::function(&parts, indent, trailing, &krate.refs)
+}
+
+/// Returns the spans that close a signature: its attributes, each dimmed, or
+/// nothing when it has none. The attribute is separated from the return type
+/// by one space.
+fn attributes_end(attrs: &[String]) -> Vec<Span> {
+    let mut spans = Vec::new();
+    for attr in attrs {
+        spans.push(plain(" "));
+        spans.push(Span::Dim(format!("[[{attr}]]")));
+    }
+    spans
 }
 
 /// Returns a constant's line, showing its value only when the whole line
 /// fits.
 pub(crate) fn const_line(
-    mut spans: Vec<Span>,
+    spans: Vec<Span>,
     value: Option<&str>,
     indent: usize,
     trailing: Option<String>,
@@ -351,7 +394,7 @@ pub(crate) fn const_line(
 ) -> Line {
     if let Some(value) = value {
         let mut with = spans.clone();
-        with.push(plain(&format!(" = {value};")));
+        with.push(plain(&format!(" = {value}")));
         if width(indent, &with, refs) <= MAX_WIDTH {
             return Line {
                 indent,
@@ -360,7 +403,6 @@ pub(crate) fn const_line(
             };
         }
     }
-    spans.push(plain(";"));
     Line {
         indent,
         spans,

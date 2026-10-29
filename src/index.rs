@@ -21,6 +21,40 @@ pub(crate) struct Entry {
     pub(crate) bytes: usize,
 }
 
+/// Renders `html/index.html`: one linked line per page of the run, so the
+/// HTML folder has a place to start.
+pub(crate) fn render_html(entries: &[Entry], stamp: &str) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "{}", crate::stamp::html_comment(stamp));
+    out.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
+    out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
+    out.push_str("<title>Outlines</title>\n<style>\n");
+    out.push_str(crate::render_style::STYLE);
+    out.push_str("</style>\n</head>\n<body>\n<main>\n");
+    let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
+    out.push_str("<h1>Outlines</h1>\n<div class=\"doc\">\n");
+    out.push_str("<p>One page for each target of the run, each with its crate's folder, ");
+    out.push_str("whether the run selected the crate or followed a path dependency to it, ");
+    out.push_str("and the size of its markdown outline.</p>\n<ul>\n");
+    for entry in entries {
+        let how = if entry.followed {
+            "followed"
+        } else {
+            "selected"
+        };
+        let _ = writeln!(
+            out,
+            "<li><a href=\"{stem}.html\">{stem}</a> <code>{dir}</code>, {how}, {kb} KB \
+             of markdown</li>",
+            stem = crate::render_html::escape(&entry.stem),
+            dir = crate::render_html::escape(&entry.dir),
+            kb = entry.bytes.div_ceil(1024),
+        );
+    }
+    out.push_str("</ul>\n</div>\n</main>\n</body>\n</html>\n");
+    out
+}
+
 /// Renders the index, one line per entry in the order given.
 pub(crate) fn render(entries: &[Entry]) -> String {
     let mut out = String::from(

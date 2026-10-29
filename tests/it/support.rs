@@ -86,7 +86,8 @@ pub(crate) fn outputs(input: &Path) -> Vec<(String, String)> {
 }
 
 /// Reads the outlines a run wrote into `out`: the markdown files in it,
-/// less the index, and the HTML files in its `html` folder, sorted by name.
+/// less the index, and the HTML files in its `html` folder, less the index,
+/// sorted by name.
 pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
     let mut files: Vec<(String, String)> = read_outputs(out)
         .into_iter()
@@ -94,7 +95,7 @@ pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
         .chain(
             read_outputs(&out.join("html"))
                 .into_iter()
-                .filter(|(name, _)| has_ext(name, "html")),
+                .filter(|(name, _)| has_ext(name, "html") && name != "index.html"),
         )
         .collect();
     files.sort();

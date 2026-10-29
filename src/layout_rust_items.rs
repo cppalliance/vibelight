@@ -3,6 +3,7 @@
 //! blocks, and the Rust form of the Other impls section.
 
 use crate::layout::{Block, Entry, Line, join_groups, key, mark_line, note_lines, sort_entries};
+use crate::layout_marker::Marker;
 use crate::layout_rust::{above, code, fn_lines, line, plain, value_line, vis};
 use crate::layout_rust_decl::member_lines;
 use crate::model::{Crate, Foreign, Impl, Item, ItemKind, name_order};
@@ -157,7 +158,7 @@ pub(crate) fn implements(item: &Impl) -> Vec<crate::layout::Span> {
 /// header and its members.
 pub(crate) fn inherent_block(krate: &Crate, item: &Impl) -> Block {
     let mut block = Block {
-        lines: note_lines(&item.notes, 0, "///"),
+        lines: note_lines(&item.notes, 0, Marker::DOC),
         repeats: Vec::new(),
     };
     block
@@ -169,7 +170,7 @@ pub(crate) fn inherent_block(krate: &Crate, item: &Impl) -> Block {
         members.push(lines);
         block.repeats.extend(repeats);
     }
-    let dangling = note_lines(&item.dangling, 4, "///");
+    let dangling = note_lines(&item.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
         members.push(dangling);
     }

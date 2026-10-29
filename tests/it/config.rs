@@ -181,13 +181,14 @@ fn crate_arguments_choose_the_crates_and_the_config_still_places_the_files() {
     let result = vibelight_in(&repo, &["crates/beta"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
     let stdout = lines(&result.stdout);
-    assert_eq!(stdout.len(), 3, "{stdout:?}");
+    assert_eq!(stdout.len(), 4, "{stdout:?}");
     assert!(
         Path::new(&stdout[0]).ends_with("docs/beta.md"),
         "{stdout:?}"
     );
     assert!(Path::new(&stdout[1]).ends_with("docs/html/beta.html"));
-    assert!(Path::new(&stdout[2]).ends_with("docs/index.md"));
+    assert!(Path::new(&stdout[2]).ends_with("docs/html/index.html"));
+    assert!(Path::new(&stdout[3]).ends_with("docs/index.md"));
     assert!(repo.join("docs").join(".gitignore").is_file());
     let alone = tmp.path().join("alone");
     let result = vibelight_in(&repo, &["crates/beta", "-o", alone.to_str().unwrap()]);

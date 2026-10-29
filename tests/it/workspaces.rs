@@ -179,7 +179,12 @@ fn every_link_lands(name: &str) -> Links {
                 );
                 counts.same += 1;
             } else if let Some((_, _, other)) = pages.iter().find(|(name, _, _)| name == target) {
-                assert!(ids(other).contains(fragment), "{file}: {href} is missing");
+                // A link with no fragment names a whole page, as the index's
+                // link to each outline does.
+                assert!(
+                    fragment.is_empty() || ids(other).contains(fragment),
+                    "{file}: {href} is missing"
+                );
                 counts.cross += 1;
             } else {
                 assert!(
@@ -241,7 +246,10 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
 fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
     let found = every_link_lands("values");
     assert_eq!(found.values, 8, "four in relay and four in front");
-    assert_eq!(found.cross, 8, "every value link here crosses to origin");
+    assert_eq!(
+        found.cross, 11,
+        "the eight value links, and the index's one link to each of the three pages"
+    );
 }
 
 #[test]

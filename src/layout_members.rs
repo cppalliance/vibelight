@@ -3,6 +3,7 @@
 use crate::layout::{
     Entry, Line, Span, above, code, const_line, fn_lines, key, note_lines, plain, spaced, width,
 };
+use crate::layout_marker::Marker;
 use crate::model::{Crate, Member, MemberKind, Param, TypeRef, Variant, VariantFields};
 use crate::wrap::MAX_WIDTH;
 
@@ -24,7 +25,6 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
                 *first = after;
             }
             spans.extend(rest);
-            spans.push(plain(";"));
             lines.push(Line {
                 indent: 4,
                 spans,
@@ -68,6 +68,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
                 trailing,
                 4,
                 member.kind.is_static_fn(),
+                &member.meta.attrs,
             ));
         }
         MemberKind::Mark(_) | MemberKind::Unsupported(_) => {}
@@ -181,7 +182,7 @@ fn expanded_variant(
         },
     ];
     lines.extend(spaced(fields.iter().map(|field| {
-        let mut field_lines = note_lines(&field.meta.notes, 8, "///");
+        let mut field_lines = note_lines(&field.meta.notes, 8, Marker::DOC);
         let mut spans = code(&field.text);
         spans.push(plain(","));
         field_lines.push(Line {
@@ -206,7 +207,7 @@ fn expanded_variant(
 /// the last ending in a comma.
 pub(crate) fn param_lines(fields: &[Param], indent: usize) -> Vec<Line> {
     spaced(fields.iter().enumerate().map(|(i, field)| {
-        let mut lines = note_lines(&field.meta.notes, indent, "///");
+        let mut lines = note_lines(&field.meta.notes, indent, Marker::DOC);
         let mut spans = code(&field.text);
         if i + 1 < fields.len() {
             spans.push(plain(","));

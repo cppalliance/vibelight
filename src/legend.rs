@@ -19,6 +19,30 @@ const LINES: &[&str] = &[
     "The first line is the UTC time the file's content last changed.",
 ];
 
+/// The lines of the HTML legend: the notation a reader of the page meets
+/// that the markdown legend does not explain, in the same `backtick` style.
+const HTML_LINES: &[&str] = &[
+    "A type prints as a C++ declaration: `class` when every member is private and `struct` when one is public, with the members of all its impls merged in.",
+    "`static` marks a function with no receiver; `() mut` marks one that takes `&mut self`, and a method with no marker takes `&self`.",
+    "`: Clone, Debug` is the base list: the standard traits a type derives or implements, by short name.",
+    "`internal:` opens the `pub(crate)` members and `private:` the rest; a type that is not public gets `// internal` or `// private` above its header.",
+    "`[[...]]` is an attribute that shapes the API or its wire format, such as `[[must_use]]` or `[[serde(rename = \"id\")]]`.",
+    "`implements: Trait for Type;` is an impl with no declared type to attach to, such as a blanket impl.",
+    "`MACRO` marks a macro definition, an invocation, a derive from another crate, or an attribute macro.",
+    "A doc comment prints as prose, and `backticked` text prints in the code font; a member's comment keeps the fixed layout of its block.",
+];
+
+/// Returns the HTML legend as list items.
+pub(crate) fn html_items() -> Vec<Item> {
+    HTML_LINES
+        .iter()
+        .map(|line| Item {
+            inlines: inlines(line),
+            children: Vec::new(),
+        })
+        .collect()
+}
+
 /// Returns the legend as list items.
 pub(crate) fn items() -> Vec<Item> {
     LINES

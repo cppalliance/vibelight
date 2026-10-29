@@ -26,7 +26,7 @@ fn a_workspace_run_without_one_member_changes_no_other_file() {
     let result = vibelight_in(&repo, &["-o", "less"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert_eq!(lines(&result.stderr), [NOTE]);
-    assert_eq!(lines(&result.stdout).len(), 5, "{:?}", result.stdout);
+    assert_eq!(lines(&result.stdout).len(), 6, "{:?}", result.stdout);
     let less = read_plain(&repo.join("less"));
     assert_eq!(
         names(&less),

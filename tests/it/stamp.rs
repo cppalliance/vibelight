@@ -42,7 +42,7 @@ fn a_second_run_at_another_time_rewrites_nothing_and_still_lists_every_file() {
     let second = run_at(&repo, LATER, &[]);
     assert!(second.status.success(), "{:?}", lines(&second.stderr));
     assert_eq!(lines(&second.stdout), lines(&first.stdout));
-    assert_eq!(lines(&second.stdout).len(), 7);
+    assert_eq!(lines(&second.stdout).len(), 8);
     assert_eq!(read_outputs(&folder), before);
     assert_eq!(read_outputs(&folder.join("html")), html_before);
     assert_eq!(first_line(&folder.join("alpha.md")), FIRST_STAMP);

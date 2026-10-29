@@ -3,10 +3,11 @@
 use std::collections::BTreeMap;
 
 use crate::layout::{
-    Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, join_sections, key,
-    line_text, mark_line, note_lines, plain, section, sections, sort_entries,
+    Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, key, line_text,
+    mark_line, note_lines, plain, section, sections, sort_entries,
 };
 use crate::layout_decl::{BodyParts, body};
+use crate::layout_marker::Marker;
 use crate::layout_rust_items as rust;
 use crate::model::{
     Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
@@ -87,12 +88,12 @@ pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Opti
             Notation::Rust => rust::extern_blocks(krate, items),
         };
     }
+    // The bucket order still groups the module's items by visibility, but no
+    // section label is printed: a module has no enclosing type to annotate, so
+    // each item carries its own `// internal` or `// private` line instead.
     let mut block = Block::default();
-    match notation {
-        Notation::Cpp => join_sections(sections, Vis::Public, &mut block),
-        Notation::Rust => join_groups(sections.into_iter().flatten().collect(), &mut block),
-    }
-    let dangling = note_lines(&module.dangling, 0, "///");
+    join_groups(sections.into_iter().flatten().collect(), &mut block);
+    let dangling = note_lines(&module.dangling, 0, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
             block.lines.push(Line::default());
@@ -128,13 +129,17 @@ pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
 fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     let refs = &krate.refs;
     let (mut lines, mut repeats) = above(&item.meta, 0, item.loc);
+    // A module has no enclosing type, so the item's own visibility prints
+    // above it, where a type's header carries its own.
+    if let Some(line) = crate::layout_decl::visibility_line(item.vis, 0) {
+        lines.push(line);
+    }
     let name = Span::Value(item.name.clone(), item.loc, at);
     let trailing = item.meta.trailing.clone();
     match &item.kind {
         ItemKind::Reexport { text, .. } => {
             let mut spans = vec![key("using"), plain(" ")];
             spans.extend(code(text));
-            spans.push(plain(";"));
             lines.push(Line {
                 indent: 0,
                 spans,
@@ -161,7 +166,15 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
             spans.extend(code(ty));
             lines.push(const_line(spans, value.as_deref(), 0, trailing, refs));
         }
-        ItemKind::Fn(sig) => lines.extend(fn_lines(krate, sig, name, trailing, 0, false)),
+        ItemKind::Fn(sig) => lines.extend(fn_lines(
+            krate,
+            sig,
+            name,
+            trailing,
+            0,
+            false,
+            &item.meta.attrs,
+        )),
         ItemKind::Foreign { .. } | ItemKind::Unsupported(_) => {}
     }
     Entry {
@@ -235,7 +248,7 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
                 Foreign::Type => {
                     lines.push(Line {
                         indent: 4,
-                        spans: vec![key("struct"), plain(" "), name, plain(";")],
+                        spans: vec![key("struct"), plain(" "), name],
                         trailing,
                     });
                     0
@@ -248,7 +261,6 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
                     }
                     spans.extend([name, plain(": ")]);
                     spans.extend(code(ty));
-                    spans.push(plain(";"));
                     lines.push(Line {
                         indent: 4,
                         spans,
@@ -258,7 +270,8 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
                 }
                 Foreign::Fn(sig) => {
                     let fn_name = Span::Name(sig.name.clone(), item.loc);
-                    lines.extend(fn_lines(krate, sig, fn_name, trailing, 4, false));
+                    let attrs = &item.meta.attrs;
+                    lines.extend(fn_lines(krate, sig, fn_name, trailing, 4, false, attrs));
                     2
                 }
             };
@@ -303,15 +316,15 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
 /// Builds a docs fence: `//!` lines, then one line per `cfg`, a `// cfg:`
 /// line in the C++ notation and a `#![cfg(...)]` line in Rust.
 pub(crate) fn docs_block(notes: &[Note], cfgs: &[String], notation: Notation) -> Option<Block> {
-    let mut lines = note_lines(notes, 0, "//!");
+    let mut lines = note_lines(notes, 0, Marker::MODULE);
     for cfg in cfgs {
-        let span = match notation {
-            Notation::Cpp => Span::Comment(format!("// cfg: {cfg}")),
-            Notation::Rust => plain(&format!("#![cfg({cfg})]")),
+        let spans = match notation {
+            Notation::Cpp => vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
+            Notation::Rust => vec![plain(&format!("#![cfg({cfg})]"))],
         };
         lines.push(Line {
             indent: 0,
-            spans: vec![span],
+            spans,
             trailing: None,
         });
     }
@@ -329,7 +342,6 @@ fn implements(item: &Impl) -> Vec<Span> {
     }
     spans.push(plain(" for "));
     spans.extend(code(&item.self_text));
-    spans.push(plain(";"));
     spans
 }
 
@@ -386,7 +398,7 @@ pub(crate) fn other_impls(
                 marks.push(format!("attribute: {}", item.attributes.join(", ")));
             }
             Implements {
-                notes: note_lines(&item.notes, 0, "///"),
+                notes: note_lines(&item.notes, 0, Marker::DOC),
                 spans,
                 marks,
                 loc: item.loc,
@@ -400,7 +412,7 @@ pub(crate) fn other_impls(
                 return (rust::inherent_block(krate, item), item.loc);
             }
             let mut block = Block {
-                lines: note_lines(&item.notes, 0, "///"),
+                lines: note_lines(&item.notes, 0, Marker::DOC),
                 repeats: Vec::new(),
             };
             let mut header = vec![key("impl"), plain(" ")];

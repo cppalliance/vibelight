@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>relay</title>
 <style>
-:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000}}
+:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5;--box:#eef1f4}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000;--box:#1c242e}}
 body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
 nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
 nav ul{list-style:none;margin:0;padding-left:1rem}
@@ -16,7 +16,7 @@ main{flex:1;min-width:0;padding:1rem 2rem}
 hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
-pre{background:var(--side);border-radius:6px;padding:.75rem 1rem;overflow-x:auto}
+pre{background:none;padding:.75rem 0;overflow-x:auto}
 pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .k{color:var(--key)}
 .c{color:var(--com)}
@@ -28,11 +28,31 @@ a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
 :target{background:var(--target)}
+.c code{font:inherit;background:none;padding:0}
+.doc p,.doc ul,.doc h4{max-width:46rem}
+.doc p,.doc li{font:15px/1.55 system-ui,sans-serif;color:var(--fg);margin:.5rem 0}
+.doc ul{margin:.5rem 0;padding-left:1.25rem;list-style:disc}
+.doc h4{margin:1rem 0 .35rem;font-size:15px}
+.doc code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--side);border-radius:3px;padding:.05em .25em}
+.doc pre{max-width:64rem}
+.dim{opacity:.5}
+.toggle{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.button{display:block;margin:0 0 1rem;padding:.3rem .6rem;border:1px solid var(--rule);border-radius:5px;background:var(--bg);color:var(--fg);font-size:13px;text-align:center;cursor:pointer}
+.button:hover{background:var(--side)}
+.toggle:focus-visible~nav .button{outline:2px solid var(--link)}
+.toggle~nav .button .on{display:none}
+.toggle:checked~nav .button .on{display:inline}
+.toggle:checked~nav .button .off{display:none}
+.toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
+.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
+<input type="checkbox" id="vibelight-comments" class="toggle" aria-label="Hide member comments">
 <nav>
+<label for="vibelight-comments" class="button"><span class="on">Show comments</span><span class="off">Hide comments</span></label>
 <ul>
+<li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
 <li><a href="#modules">Modules</a>
 <ul>
@@ -44,7 +64,20 @@ span.src{cursor:default}
 <main>
 <p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
 <h1 id="crate.relay">relay</h1>
-<pre><code><span class="c">//! Relay: re-exports origin's values and links to one in a comment.</span></code></pre>
+<div class="doc">
+<p><span class="c">Relay: re-exports origin's values and links to one in a comment.</span></p>
+</div>
+<h2 id="legend">Legend</h2>
+<ul class="legend">
+<li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
+<li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
+<li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
+<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
+<li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
+<li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
+<li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment keeps the fixed layout of its block.</li>
+</ul>
 <p class="kill"><b class="m">MACROS:</b> none</p>
 <h2 id="surface">Public surface</h2>
 <ul class="surface">
@@ -55,12 +88,12 @@ span.src{cursor:default}
 </ul>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.relay">relay</h3>
-<pre><code><span class="k">using</span> <a class="cross" href="origin.html#const.origin.gauge.LIMIT">origin::gauge::LIMIT</a>;
-<span class="k">using</span> <a class="cross" href="origin.html#fn.origin.gauge.measure">origin::gauge::measure</a>;
-<span class="k">using</span> <a class="cross" href="origin.html#static.origin.gauge.TOTAL">origin::gauge::TOTAL</a>;
+<pre><code><span class="k">using</span> <a class="cross" href="origin.html#const.origin.gauge.LIMIT">origin::gauge::LIMIT</a>
+<span class="k">using</span> <a class="cross" href="origin.html#fn.origin.gauge.measure">origin::gauge::measure</a>
+<span class="k">using</span> <a class="cross" href="origin.html#static.origin.gauge.TOTAL">origin::gauge::TOTAL</a>
 
-<span class="c">/// Takes a reading through `<a class="cross" href="origin.html#fn.origin.gauge.measure">origin::gauge::measure</a>`.</span>
-<span class="src" id="fn.relay.read">read</span>() -&gt; u32;</code></pre>
+<span class="c"> Takes a reading through </span><code><span class="c"><a class="cross" href="origin.html#fn.origin.gauge.measure">origin::gauge::measure</a></span></code><span class="c">.</span>
+<span class="src" id="fn.relay.read">read</span>() -&gt; u32</code></pre>
 </main>
 </body>
 </html>

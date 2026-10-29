@@ -77,6 +77,7 @@ fn stdout_lists_the_written_paths_sorted() {
     assert_eq!(
         names,
         [
+            "html/index.html",
             "html/multi-cli.html",
             "html/multi.html",
             "out/index.md",

@@ -7,6 +7,7 @@ use crate::layout::{
     plain, section, sections, sort_entries, where_parts,
 };
 use crate::layout_head::header_lines;
+use crate::layout_marker::Marker;
 use crate::layout_members::{member_entry, variant_entry};
 use crate::layout_special::special_entry;
 use crate::model::{
@@ -20,10 +21,12 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
     let decl = &krate.decls[id];
     let refs = &krate.refs;
     let mut block = Block::default();
-    block.lines.extend(note_lines(&decl.meta.notes, 0, "///"));
+    block
+        .lines
+        .extend(note_lines(&decl.meta.notes, 0, Marker::DOC));
     for group in &decl.impl_notes {
         block.lines.push(impl_header(decl, group.base));
-        block.lines.extend(note_lines(&group.notes, 0, "///"));
+        block.lines.extend(note_lines(&group.notes, 0, Marker::DOC));
     }
     let cfgs = Meta {
         cfgs: decl.meta.cfgs.clone(),
@@ -31,9 +34,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
         ..Meta::default()
     };
     block.lines.extend(above(&cfgs, 0, decl.loc).0);
-    if let Some(line) = visibility_line(decl.vis) {
-        block.lines.push(line);
-    }
     if let Shape::Alias(target) = &decl.shape {
         block.lines.push(alias_line(decl, target));
         return block;
@@ -79,17 +79,22 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
     block
 }
 
-/// Returns the line above the header of a type that is not public, which
-/// gives its own visibility: `// internal` or `// private`.
-fn visibility_line(vis: Vis) -> Option<Line> {
+/// Returns the line above a module's free item that is not public, which
+/// gives its own visibility: `// internal` or `// private`. A type does not
+/// take one: its members' `internal:` and `private:` sections already say
+/// what a reader needs, and a line above the header was only noise.
+pub(crate) fn visibility_line(vis: Vis, indent: usize) -> Option<Line> {
     let text = match vis {
         Vis::Public => return None,
-        Vis::Internal => "// internal",
-        Vis::Private => "// private",
+        Vis::Internal => "internal",
+        Vis::Private => "private",
     };
     Some(Line {
-        indent: 0,
-        spans: vec![Span::Comment(text.to_owned())],
+        indent,
+        spans: vec![
+            Span::Marker(Marker::VISIBILITY.spaced),
+            Span::Comment(text.to_owned()),
+        ],
         trailing: None,
     })
 }
@@ -125,7 +130,10 @@ fn order_groups(
 fn impl_line(file: &str) -> Line {
     Line {
         indent: 4,
-        spans: vec![Span::Comment(format!("// impl in {file}"))],
+        spans: vec![
+            Span::Marker(Marker::IMPL_IN.spaced),
+            Span::Comment(file.to_owned()),
+        ],
         trailing: None,
     }
 }
@@ -142,7 +150,7 @@ fn brace(text: &str) -> Line {
 /// base list prints it, or the type's own name for an inherent impl. The
 /// trait is a comment reference, so it links in HTML and names nothing.
 fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
-    let mut spans = vec![Span::Comment("// impl ".to_owned())];
+    let mut spans = vec![Span::Marker(Marker::IMPL.spaced)];
     match base.and_then(|index| decl.bases.get(index)) {
         Some(base) => spans.extend(code(&base.text).into_iter().map(|span| match span {
             Span::Ref(id) => Span::DocRef(id),
@@ -187,7 +195,6 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
         spans.push(plain(" "));
         spans.extend(where_parts(clause).one);
     }
-    spans.push(plain(";"));
     Line {
         indent: 0,
         spans,
@@ -311,7 +318,7 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     }
     let mut block = Block::default();
     join_sections(sections, default, &mut block);
-    let dangling = note_lines(parts.dangling, 4, "///");
+    let dangling = note_lines(parts.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
             block.lines.push(Line::default());

@@ -217,7 +217,10 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         KillList::Counts => Vec::new(),
     };
     let legend = if options.legend {
-        crate::legend::items()
+        match options.notation {
+            Notation::Cpp => crate::legend::html_items(),
+            Notation::Rust => crate::legend::items(),
+        }
     } else {
         Vec::new()
     };

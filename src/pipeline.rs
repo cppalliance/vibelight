@@ -131,6 +131,10 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     outcome
         .files
         .push((markdown.dir.join(index::FILE), index::render(&entries)));
+    outcome.files.push((
+        html.dir.join("index.html"),
+        index::render_html(&entries, stamp),
+    ));
     Ok(outcome)
 }
 

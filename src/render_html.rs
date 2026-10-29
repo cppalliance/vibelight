@@ -5,9 +5,23 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::document::{Document, Inline, Item, Link, Node};
-use crate::layout::{Block, Line, Span};
-use crate::model::{Loc, Reach, TypeRef, ValueRef};
+use crate::layout::{Block, Line, Span, span_text};
+use crate::model::{Loc, TypeRef, ValueRef};
 use crate::render_style::STYLE;
+
+/// The id of the checkbox that hides the member comments, which the sidebar
+/// label and the style sheet both name.
+const TOGGLE_ID: &str = "vibelight-comments";
+
+/// The least indentation a comment line needs to be a member's comment and so
+/// go in a box: a comment at indent 0 states the type's own contract, such as
+/// `// internal` or `// impl Trait`, and stays visible.
+const MEMBER_COMMENT_INDENT: usize = 4;
+
+/// The box's left and right padding, which its margin subtracts so the
+/// comment's text starts on the member's column. It matches the `padding` in
+/// the box's rule in `render_style`.
+const BOX_PADDING: &str = ".9rem";
 
 /// A page of the run that other pages link into: its file name, the anchor
 /// id of each of its declarations, and the id of each of its functions,
@@ -39,23 +53,25 @@ pub(crate) fn render(
     out.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
     out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
     let _ = writeln!(out, "<title>{}</title>", escape(&doc.title));
-    let _ = write!(out, "<style>\n{STYLE}</style>\n</head>\n<body>\n<nav>\n");
-    page.list(&mut out, &doc.contents, "");
-    out.push_str("</nav>\n<main>\n");
-    let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
+    out.push_str("<style>\n");
+    out.push_str(STYLE);
+    out.push_str("</style>\n</head>\n<body>\n");
+    // The first element of the page: a checkbox the sidebar's label toggles,
+    // so hiding the member comments needs no script.
     let _ = writeln!(
         out,
-        "<h1 id=\"{}\">{}</h1>",
-        attr(&doc.id),
-        escape(&doc.title)
+        "<input type=\"checkbox\" id=\"{TOGGLE_ID}\" class=\"toggle\" aria-label=\"Hide member \
+         comments\">"
     );
-    if let Some(docs) = &doc.crate_docs {
-        page.pre(&mut out, docs);
-    }
-    if !doc.legend.is_empty() {
-        out.push_str("<h2 id=\"legend\">Legend</h2>\n");
-        page.list(&mut out, &doc.legend, "legend");
-    }
+    out.push_str("<nav>\n");
+    let _ = writeln!(
+        out,
+        "<label for=\"{TOGGLE_ID}\" class=\"button\"><span class=\"on\">Show comments</span>\
+         <span class=\"off\">Hide comments</span></label>"
+    );
+    page.list(&mut out, &doc.contents, "");
+    out.push_str("</nav>\n<main>\n");
+    page.head(&mut out, stamp);
     let _ = writeln!(
         out,
         "<p class=\"kill\"><b class=\"m\">MACROS:</b> {}</p>",
@@ -125,10 +141,12 @@ pub(crate) fn render(
     out
 }
 
-struct Page<'a> {
-    doc: &'a Document,
-    member_links: Option<&'a dyn Fn(Loc) -> String>,
-    run: &'a [Anchors],
+/// One page's renderer: its document, its member links, and the other pages
+/// of the run.
+pub(crate) struct Page<'a> {
+    pub(crate) doc: &'a Document,
+    pub(crate) member_links: Option<&'a dyn Fn(Loc) -> String>,
+    pub(crate) run: &'a [Anchors],
 }
 
 impl Page<'_> {
@@ -136,112 +154,187 @@ impl Page<'_> {
         &self.doc.refs
     }
 
-    fn pre(&self, out: &mut String, block: &Block) {
-        out.push_str("<pre><code>");
-        for (i, line) in block.lines.iter().enumerate() {
-            if i > 0 {
-                out.push('\n');
-            }
-            self.line(out, line);
+    /// Writes the top of the page: the stamp, the title, the crate docs, and
+    /// the legend.
+    fn head(&self, out: &mut String, stamp: &str) {
+        let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
+        let _ = writeln!(
+            out,
+            "<h1 id=\"{}\">{}</h1>",
+            attr(&self.doc.id),
+            escape(&self.doc.title)
+        );
+        if let Some(docs) = &self.doc.crate_docs {
+            self.crate_docs(out, docs);
         }
+        if !self.doc.legend.is_empty() {
+            out.push_str("<h2 id=\"legend\">Legend</h2>\n");
+            self.list(out, &self.doc.legend, "legend");
+        }
+    }
+
+    /// Writes the crate's own docs: prose that the comment toggle leaves
+    /// alone, since it introduces the page rather than documenting a member.
+    fn crate_docs(&self, out: &mut String, block: &Block) {
+        let doc = leading_doc(&block.lines);
+        if doc == 0 {
+            return;
+        }
+        let spans = |out: &mut String, spans: &[Span]| self.ticked(out, spans);
+        let text_of = |span: &Span| span_text(span, self.refs()).to_owned();
+        crate::render_prose::block(
+            out,
+            &block.lines[..doc],
+            &crate::render_prose::Inline {
+                spans: &spans,
+                text_of: &text_of,
+                hideable: false,
+            },
+        );
+    }
+
+    fn pre(&self, out: &mut String, block: &Block) {
+        let doc = leading_doc(&block.lines);
+        if doc > 0 {
+            // The prose path uses the same tick scan as a code line, so a
+            // backticked name in a doc comment prints in the code font.
+            let spans = |out: &mut String, spans: &[Span]| self.ticked(out, spans);
+            let text_of = |span: &Span| span_text(span, self.refs()).to_owned();
+            crate::render_prose::block(
+                out,
+                &block.lines[..doc],
+                &crate::render_prose::Inline {
+                    spans: &spans,
+                    text_of: &text_of,
+                    hideable: true,
+                },
+            );
+        }
+        let rest = &block.lines[doc..];
+        if rest.is_empty() {
+            return;
+        }
+        out.push_str("<pre><code>");
+        self.code_lines(out, rest);
         out.push_str("</code></pre>\n");
     }
 
-    fn line(&self, out: &mut String, line: &Line) {
-        if !line.spans.is_empty() {
-            out.push_str(&" ".repeat(line.indent));
+    /// Writes a block's code lines, each run of member comment lines in its
+    /// own box.
+    ///
+    /// A blank line is never written into the flow as its own text. The one
+    /// the layout puts between members becomes the box's own margin when a
+    /// comment line follows it, so it leaves with the box when the box is
+    /// hidden; before a code line it is written as one newline. A newline is
+    /// written before a box and never after it, because a box is a block and
+    /// ends its own line: that is what leaves two members adjacent once their
+    /// comments are hidden.
+    fn code_lines(&self, out: &mut String, lines: &[Line]) {
+        let mut first = true;
+        let mut open_box = false;
+        // True once a box closed: the block ended that line, so the next line
+        // needs no newline of its own.
+        let mut after_box = false;
+        // Blank lines seen since the last line written.
+        let mut blanks = 0usize;
+        for line in lines {
+            let blank = line.spans.is_empty() && line.trailing.is_none();
+            let boxed = !blank
+                && line.indent >= MEMBER_COMMENT_INDENT
+                && matches!(line.spans.first(), Some(Span::Marker(_)));
+            if boxed {
+                if open_box {
+                    // Inside a box the lines are one text run, so a newline
+                    // joins them and the box's `white-space: pre` keeps it.
+                    out.push('\n');
+                    self.comment_line(out, line);
+                } else {
+                    if !first && !after_box {
+                        out.push('\n');
+                    }
+                    // The blanks seen become the box's own margin, so the gap
+                    // they stood for is hidden with the box.
+                    //
+                    // The box's left edge sits one padding-width left of the
+                    // member's column, so the comment's text starts exactly
+                    // where the declaration's text does. `ch` is the code
+                    // font's own character width, which is the unit the
+                    // layout indents in, so the box names the code font and
+                    // never the page's proportional one.
+                    let _ = write!(
+                        out,
+                        "<div class=\"mc\" style=\"margin-left:calc({}ch - {})\">",
+                        line.indent, BOX_PADDING
+                    );
+                    open_box = true;
+                    self.comment_line(out, line);
+                }
+                blanks = 0;
+                after_box = false;
+                first = false;
+                continue;
+            }
+            if open_box {
+                // The box is an inline-block, so it does not end its own line
+                // the way a block does: a newline after it is what keeps the
+                // next code line clear of the box.
+                out.push_str("</div>\n");
+                open_box = false;
+                after_box = true;
+            }
+            if blank {
+                blanks += 1;
+                continue;
+            }
+            if !first && !after_box {
+                out.push('\n');
+            }
+            for _ in 0..blanks {
+                out.push('\n');
+            }
+            blanks = 0;
+            after_box = false;
+            self.line(out, line);
+            first = false;
         }
-        self.spans(out, &line.spans);
-        if let Some(trailing) = &line.trailing {
-            let _ = write!(out, " <span class=\"c\">{}</span>", escape(trailing));
+        if open_box {
+            out.push_str("</div>");
         }
     }
 
-    fn spans(&self, out: &mut String, spans: &[Span]) {
-        let mut in_comment = false;
-        for span in spans {
-            let comment = matches!(span, Span::Comment(_) | Span::DocRef(_));
-            if comment && !in_comment {
-                out.push_str("<span class=\"c\">");
-            } else if !comment && in_comment {
-                out.push_str("</span>");
+    /// Writes a boxed member comment line's text, whose spacing the box's own
+    /// `white-space: pre` keeps. The box's margin and padding put the text on
+    /// the member's column, so any whitespace the comment marker and the
+    /// source comment left at the start is dropped rather than pushing the
+    /// first word off that column.
+    fn comment_line(&self, out: &mut String, line: &Line) {
+        let mut started = false;
+        let mut trimmed: Vec<Span> = Vec::new();
+        for span in &line.spans {
+            if started {
+                trimmed.push(span.clone());
+                continue;
             }
-            in_comment = comment;
             match span {
-                Span::Key(text) => {
-                    let _ = write!(out, "<span class=\"k\">{}</span>", escape(text));
+                Span::Marker(_) => {}
+                Span::Comment(text) => match text.trim_start() {
+                    "" => {}
+                    rest => {
+                        started = true;
+                        trimmed.push(Span::Comment(rest.to_owned()));
+                    }
+                },
+                Span::DocRef(_) | Span::Ref(_) => {
+                    started = true;
+                    trimmed.push(span.clone());
                 }
-                Span::Code(text) | Span::Comment(text) => out.push_str(&escape(text)),
-                Span::Ref(id) | Span::DocRef(id) => self.reference(out, *id),
-                Span::Label(label) => {
-                    let _ = write!(out, "<b class=\"m\">{}</b>", escape(label));
-                }
-                Span::Name(text, loc) => self.name(out, text, *loc, None),
-                Span::Value(text, loc, value) => {
-                    let id = self.doc.value_ids.get(value).map(String::as_str);
-                    self.name(out, text, *loc, id);
+                other => {
+                    started = true;
+                    trimmed.push(other.clone());
                 }
             }
         }
-        if in_comment {
-            out.push_str("</span>");
-        }
-    }
-
-    /// Writes a member or item name: a link to its source line when links
-    /// are on, otherwise a span, with its id when it has one.
-    fn name(&self, out: &mut String, text: &str, loc: Loc, id: Option<&str>) {
-        let id = id.map_or_else(String::new, |id| format!(" id=\"{}\"", attr(id)));
-        match self.member_links {
-            Some(link) => {
-                let _ = write!(
-                    out,
-                    "<a class=\"src\" href=\"{}\"{id}>{}</a>",
-                    attr(&link(loc)),
-                    escape(text)
-                );
-            }
-            None => {
-                let _ = write!(out, "<span class=\"src\"{id}>{}</span>", escape(text));
-            }
-        }
-    }
-
-    fn reference(&self, out: &mut String, id: usize) {
-        let reference = &self.refs()[id];
-        let local = match (reference.target, reference.value) {
-            (Some(target), _) => Some(&self.doc.decl_ids[target]),
-            (None, Some(value)) => self.doc.value_ids.get(&value),
-            (None, None) => None,
-        };
-        let other = reference.foreign.and_then(|f| {
-            let page = self.run.get(f.krate)?;
-            let anchor = match f.reach {
-                Reach::Decl(decl) => page.ids.get(decl)?,
-                Reach::Value(value) => page.values.get(&value)?,
-            };
-            Some((&page.file, anchor))
-        });
-        match (local, other) {
-            (Some(href), _) => {
-                let _ = write!(
-                    out,
-                    "<a href=\"#{}\">{}</a>",
-                    attr(href),
-                    escape(&reference.text)
-                );
-            }
-            (None, Some((file, anchor))) => {
-                let _ = write!(
-                    out,
-                    "<a class=\"cross\" href=\"{}#{}\">{}</a>",
-                    attr(file),
-                    attr(anchor),
-                    escape(&reference.text)
-                );
-            }
-            (None, None) => out.push_str(&escape(&reference.text)),
-        }
+        self.ticked(out, &trimmed);
     }
 
     fn list(&self, out: &mut String, items: &[Item], class: &str) {
@@ -309,6 +402,21 @@ fn source_link(link: &Link) -> String {
     )
 }
 
+/// Returns how many of a block's leading lines are doc comment lines, the
+/// run the page renders as prose. A block that opens with anything else, a
+/// mark or code, has no prose run.
+fn leading_doc(lines: &[Line]) -> usize {
+    lines
+        .iter()
+        .take_while(|line| {
+            matches!(
+                line.spans.first(),
+                Some(Span::Marker(mark)) if mark.starts_with("///") || mark.starts_with("//!")
+            )
+        })
+        .count()
+}
+
 /// Escapes text for HTML content.
 pub(crate) fn escape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
@@ -324,7 +432,7 @@ pub(crate) fn escape(text: &str) -> String {
 }
 
 /// Escapes text for an attribute value in double quotes.
-fn attr(text: &str) -> String {
+pub(crate) fn attr(text: &str) -> String {
     escape(text).replace('"', "&quot;")
 }
 
@@ -336,73 +444,5 @@ mod tests {
     fn escapes_markup() {
         assert_eq!(escape("Vec<&'a T>"), "Vec&lt;&amp;'a T&gt;");
         assert_eq!(attr("a\"b"), "a&quot;b");
-    }
-
-    #[test]
-    fn a_foreign_name_links_into_its_page_and_member_names_are_spans_without_links() {
-        use crate::model::CrossRef;
-
-        let refs = vec![TypeRef {
-            text: "Gauge".into(),
-            path: vec!["Gauge".into()],
-            global: false,
-            module: 0,
-            generics: Vec::new(),
-            comment: false,
-            may_be_value: false,
-            target: None,
-            value: None,
-            canonical: Some(vec!["b".into(), "Gauge".into()]),
-            written: None,
-            foreign: Some(CrossRef {
-                krate: 1,
-                reach: Reach::Decl(0),
-            }),
-        }];
-        let line = Line {
-            indent: 4,
-            spans: vec![
-                Span::Name("gauge".into(), Loc { file: 0, line: 1 }),
-                Span::Code(": ".into()),
-                Span::Ref(0),
-            ],
-            trailing: None,
-        };
-        let doc = Document {
-            title: "a".into(),
-            id: "crate.a".into(),
-            crate_docs: None,
-            legend: Vec::new(),
-            contents: Vec::new(),
-            kill_summary: "none".into(),
-            kill: Vec::new(),
-            sections: vec![Node::Code(Block {
-                lines: vec![line],
-                repeats: Vec::new(),
-            })],
-            refs,
-            decl_ids: Vec::new(),
-            value_ids: BTreeMap::new(),
-        };
-        let run = [
-            Anchors {
-                file: "a.html".into(),
-                ids: Vec::new(),
-                values: BTreeMap::new(),
-            },
-            Anchors {
-                file: "b.html".into(),
-                ids: vec!["type.b.parts.Gauge".into()],
-                values: BTreeMap::new(),
-            },
-        ];
-        let html = render(&doc, None, &run, crate::stamp::PLACEHOLDER);
-        assert!(
-            html.contains(
-                "<span class=\"src\">gauge</span>: \
-                 <a class=\"cross\" href=\"b.html#type.b.parts.Gauge\">Gauge</a>"
-            ),
-            "{html}"
-        );
     }
 }

@@ -76,7 +76,7 @@ pub(crate) const HTML: Options = Options {
     facts: false,
     order: OrderBy::Groups,
     members: MembersBy::Name,
-    legend: false,
+    legend: true,
 };
 
 /// Where one format is written, and the options that shape it.
