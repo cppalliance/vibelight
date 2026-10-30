@@ -26,6 +26,23 @@ impl Group {
             self.key.join("::")
         }
     }
+
+    /// Returns the declaration that leads the group: the first one that
+    /// belongs to the group's own module, since a lone type from another
+    /// module can open the group. `module_of` gives the path of the module
+    /// that holds a declaration.
+    pub(crate) fn lead(&self, module_of: impl Fn(DeclId) -> Vec<String>) -> DeclId {
+        self.decls
+            .iter()
+            .copied()
+            .find(|&d| {
+                let mut key = module_of(d);
+                key.truncate(DEPTH);
+                key == self.key
+            })
+            .or_else(|| self.decls.first().copied())
+            .unwrap_or_default()
+    }
 }
 
 /// Splits `sequence` into groups. A run is a stretch of declarations whose

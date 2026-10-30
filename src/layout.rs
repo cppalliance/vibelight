@@ -276,35 +276,39 @@ pub(crate) fn section(vis: Vis) -> usize {
     }
 }
 
-/// Joins a type body's sections that have entries in the order public,
-/// `internal:`, `private:`, a blank line and the label before each. The first
-/// section leaves its label out when its visibility is `default`, the section
-/// a reader assumes: public in a struct, private in a class. Only a type uses
-/// this: a module has no enclosing brace, so its items carry their own
-/// visibility line instead.
-pub(crate) fn join_sections(sections: Sections, default: Vis, block: &mut Block) {
+/// Joins a type body's data sections, then its member sections, each set in
+/// the order public, `internal:`, `private:`, with a blank line before every
+/// section that has entries. A label opens a section only when its
+/// visibility is not the access already in effect, which starts as `default`,
+/// the access the keyword gives: public in a struct, private in a class. So a
+/// visibility that holds both data and members can print its label twice,
+/// as a C++ header does. Only a type uses this: a module has no enclosing
+/// brace, so its items carry their own visibility line instead.
+pub(crate) fn join_sections(data: Sections, members: Sections, default: Vis, block: &mut Block) {
     let labels = [
         (Vis::Public, "public:"),
         (Vis::Internal, "internal:"),
         (Vis::Private, "private:"),
     ];
-    let mut first = true;
-    for ((vis, label), groups) in labels.into_iter().zip(sections) {
-        if groups.iter().all(Vec::is_empty) {
-            continue;
-        }
-        if !(first && vis == default) {
+    let mut current = default;
+    for set in [data, members] {
+        for ((vis, label), groups) in labels.into_iter().zip(set) {
+            if groups.iter().all(Vec::is_empty) {
+                continue;
+            }
             if !block.lines.is_empty() {
                 block.lines.push(Line::default());
             }
-            block.lines.push(Line {
-                indent: 0,
-                spans: vec![key(label)],
-                trailing: None,
-            });
+            if vis != current {
+                block.lines.push(Line {
+                    indent: 0,
+                    spans: vec![key(label)],
+                    trailing: None,
+                });
+                current = vis;
+            }
+            join_groups(groups, block);
         }
-        join_groups(groups, block);
-        first = false;
     }
 }
 

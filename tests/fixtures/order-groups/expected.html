@@ -54,21 +54,21 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">engine</a>
+<li><a href="#group.1">engine · Core</a>
 <ul>
 <li><a href="#type.order_groups.App">App</a></li>
 <li><a href="#type.order_groups.engine.Core">engine::Core</a></li>
 <li><a href="#type.order_groups.engine.Plan">engine::Plan</a></li>
 </ul>
 </li>
-<li><a href="#group.2">engine::sched</a>
+<li><a href="#group.2">engine::sched · Queue</a>
 <ul>
 <li><a href="#type.order_groups.engine.sched.Queue">engine::sched::Queue</a></li>
 <li><a href="#type.order_groups.engine.sched.deep.Slot">engine::sched::deep::Slot</a></li>
 <li><a href="#type.order_groups.store.Db">store::Db</a></li>
 </ul>
 </li>
-<li><a href="#group.3">order_groups</a>
+<li><a href="#group.3">order_groups · Log</a>
 <ul>
 <li><a href="#type.order_groups.Log">Log</a></li>
 <li><a href="#type.order_groups.Level">Level</a></li>
@@ -102,7 +102,8 @@ span.src{cursor:default}
 <li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
+<li>A module's item that is not public gets <code>// internal</code> or <code>// private</code> above it.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -127,7 +128,7 @@ span.src{cursor:default}
 <li><a href="#type.order_groups.util.Spare">util::Spare</a></li>
 </ul>
 <hr>
-<h2 id="group.1">engine</h2>
+<h2 id="group.1">engine · Core</h2>
 <h3 id="type.order_groups.App">App</h3>
 <div class="doc mc-doc">
 <p><span class="c">The only root: it names Core, Db, and Log, in that order.</span></p>
@@ -156,7 +157,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Plan</code></pre>
 <hr>
-<h2 id="group.2">engine::sched</h2>
+<h2 id="group.2">engine::sched · Queue</h2>
 <h3 id="type.order_groups.engine.sched.Queue">engine::sched::Queue</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Core; names Slot.</span></p>
@@ -176,7 +177,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Db</code></pre>
 <hr>
-<h2 id="group.3">order_groups</h2>
+<h2 id="group.3">order_groups · Log</h2>
 <h3 id="type.order_groups.Log">Log</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by App, in the crate root.</span></p>

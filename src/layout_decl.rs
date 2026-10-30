@@ -98,9 +98,10 @@ pub(crate) fn visibility_line(vis: Vis, indent: usize) -> Option<Line> {
     })
 }
 
-/// Sorts every group of a body but its fields, which keep their declared
-/// order as variants do, then adds each impl's functions, in source order,
-/// after the other functions of their section.
+/// Sorts every group of a body's members, then adds each impl's functions,
+/// in source order, after the other functions of their section. The fields
+/// and the variants are not here: they keep their declared order in the
+/// data sections.
 fn order_groups(
     sections: &mut Sections,
     impls: &[(String, Range<usize>)],
@@ -108,10 +109,8 @@ fn order_groups(
     refs: &[TypeRef],
 ) {
     for groups in sections.iter_mut() {
-        for (index, group) in groups.iter_mut().enumerate() {
-            if index != 2 {
-                sort_entries(group, refs);
-            }
+        for group in groups.iter_mut() {
+            sort_entries(group, refs);
         }
     }
     for ((file, _), held) in impls.iter().zip(by_impl) {
@@ -229,15 +228,17 @@ fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
 /// What goes between a type's braces.
 pub(crate) struct BodyParts<'b> {
     pub(crate) members: &'b [Member],
-    /// An enum's variants, which take the fields' place in declared order.
+    /// An enum's variants, which print as its data, in declared order.
     pub(crate) variants: Option<&'b [Variant]>,
-    /// A class prints its private members without a label.
+    /// A class starts private and any other type starts public, and a label
+    /// prints only where the access changes from there.
     pub(crate) class: bool,
     /// Every member of a trait is public.
     pub(crate) all_public: bool,
     pub(crate) dangling: &'b [Note],
     pub(crate) end_marks: &'b [String],
-    /// The special members, printed after the fields as one packed group.
+    /// The special members, printed as one packed group after the data and
+    /// the constants.
     pub(crate) special: &'b [Special],
     /// The type's name, which the special members spell.
     pub(crate) name: &'b str,
@@ -246,11 +247,14 @@ pub(crate) struct BodyParts<'b> {
     pub(crate) impls: &'b [(String, Range<usize>)],
 }
 
-/// Builds the lines between a type's braces: the public groups, then
-/// `internal:` and `private:` with theirs, then comments with nothing after
-/// them, macro marks, and unsupported lines.
+/// Builds the lines between a type's braces: the data first, a struct's
+/// fields or an enum's variants, then every other member, each set in the
+/// order public, `internal:`, `private:` with a label wherever the access
+/// changes, then comments with nothing after them, macro marks, and
+/// unsupported lines.
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
+    let mut data = sections(6);
     let mut sections = sections(6);
     let mut by_impl: Vec<[Vec<Entry>; 3]> =
         parts.impls.iter().map(|_| Default::default()).collect();
@@ -279,12 +283,13 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         let entry = member_entry(krate, member);
         match held.filter(|_| matches!(member.kind, MemberKind::Fn(_))) {
             Some(k) => by_impl[k][section(vis)].push(entry),
+            None if group == 2 => data[section(vis)][group].push(entry),
             None => sections[section(vis)][group].push(entry),
         }
     }
     order_groups(&mut sections, parts.impls, by_impl, refs);
     if let Some(variants) = parts.variants {
-        sections[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
+        data[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }
     let default = if parts.class {
         Vis::Private
@@ -295,7 +300,7 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         sections[section(default)][3].push(entry);
     }
     let mut block = Block::default();
-    join_sections(sections, default, &mut block);
+    join_sections(data, sections, default, &mut block);
     let dangling = note_lines(parts.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {

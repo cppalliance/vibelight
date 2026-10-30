@@ -1,11 +1,40 @@
 //! Builds the document's sections: declarations, modules, and other impls.
 
+use std::collections::BTreeMap;
+
 use crate::document::{Builder, Inline, Item, Link, Node, SourceLink, anchor};
-use crate::groups::groups;
+use crate::groups::{Group, groups};
 use crate::layout::Block;
 use crate::layout_items::{self, docs_block, module_block};
-use crate::model::{DeclId, Loc, ModId};
+use crate::model::{Crate, DeclId, Loc, ModId};
 use crate::order::{Order, path_cmp};
+
+/// Returns the path of the module that holds a declaration.
+fn module_path(krate: &Crate, d: DeclId) -> Vec<String> {
+    krate.modules[krate.decls[d].module].path.clone()
+}
+
+/// Returns each group's caption: its module and its lead type joined by a
+/// middle dot, such as the module `execute::scheduler` and the type
+/// `Scheduler`, so a sidebar of groups reads as a list of top-level objects.
+/// A caption that still repeats takes ` (2)`, ` (3)`, and so on.
+fn captions(krate: &Crate, groups: &[Group]) -> Vec<String> {
+    let mut seen: BTreeMap<String, usize> = BTreeMap::new();
+    groups
+        .iter()
+        .map(|group| {
+            let lead = &krate.decls[group.lead(|d| module_path(krate, d))].name;
+            let caption = format!("{} \u{b7} {lead}", group.caption(&krate.title));
+            let times = seen.entry(caption.clone()).or_insert(0);
+            *times += 1;
+            if *times == 1 {
+                caption
+            } else {
+                format!("{caption} ({times})")
+            }
+        })
+        .collect()
+}
 
 impl Builder<'_> {
     /// Adds the groups of the dependency order, each opened by a rule and a
@@ -14,14 +43,12 @@ impl Builder<'_> {
     pub(crate) fn grouped(&mut self, order: &Order) -> Vec<Item> {
         let mut contents = Vec::new();
         let krate = self.krate;
-        let modules = groups(&order.sequence, |d| {
-            krate.modules[krate.decls[d].module].path.clone()
-        });
-        for (index, group) in modules.iter().enumerate() {
+        let modules = groups(&order.sequence, |d| module_path(krate, d));
+        let captions = captions(krate, &modules);
+        for (index, (group, text)) in modules.iter().zip(&captions).enumerate() {
             let id = format!("group.{}", index + 1);
-            let text = group.caption(&krate.title);
-            contents.push(self.section_item(&text, &id, &group.decls));
-            self.section_start(&id, &text);
+            contents.push(self.section_item(text, &id, &group.decls));
+            self.section_start(&id, text);
             for &decl in &group.decls {
                 self.decl(decl);
             }

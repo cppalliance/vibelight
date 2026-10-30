@@ -81,7 +81,8 @@ span.src{cursor:default}
 <li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
+<li>A module's item that is not public gets <code>// internal</code> or <code>// private</code> above it.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -138,13 +139,17 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Scrambled
 {
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
-
     <span class="src">zeta</span>: u8,
 
     <span class="src">alpha</span>: u8,
 
     <span class="src">Alpha</span>: u8,
+
+<span class="k">private:</span>
+    <span class="src">beta</span>: u8,
+
+<span class="k">public:</span>
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
 
     <span class="k">static</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
 
@@ -155,8 +160,6 @@ span.src{cursor:default}
     <span class="src">zed</span>()
 
 <span class="k">private:</span>
-    <span class="src">beta</span>: u8,
-
     <span class="k">static</span> <span class="src">hidden</span>()
 }</code></pre>
 <h3 id="type.member_order.Triple">Triple</h3>

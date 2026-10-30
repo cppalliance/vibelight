@@ -78,7 +78,8 @@ span.src{cursor:default}
 <li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li><code>internal:</code> opens the <code>pub(crate)</code> members and <code>private:</code> the rest; a type that is not public gets <code>// internal</code> or <code>// private</code> above its header.</li>
+<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
+<li>A module's item that is not public gets <code>// internal</code> or <code>// private</code> above it.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -98,6 +99,20 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Scheduler
 {
+<span class="k">private:</span>
+    <span class="src">chains</span>: Vec&lt;u32&gt;,
+
+    <span class="src">tasks</span>: Vec&lt;u32&gt;,
+
+    <span class="src">queue</span>: Vec&lt;u32&gt;,
+
+    <span class="src">pending</span>: Vec&lt;u32&gt;,
+
+    <span class="src">issued</span>: Vec&lt;u32&gt;,
+
+    <span class="src">spare</span>: u8,
+
+<span class="k">public:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>
     <span class="k">static</span> <span class="src">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Admits queued tasks.</span></div>
@@ -114,19 +129,6 @@ span.src{cursor:default}
     <span class="src">spawn</span>() <span class="k">mut</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Forgets the issued effects.</span></div>
     <span class="src">withdraw</span>() <span class="k">mut</span>
-
-<span class="k">private:</span>
-    <span class="src">chains</span>: Vec&lt;u32&gt;,
-
-    <span class="src">tasks</span>: Vec&lt;u32&gt;,
-
-    <span class="src">queue</span>: Vec&lt;u32&gt;,
-
-    <span class="src">pending</span>: Vec&lt;u32&gt;,
-
-    <span class="src">issued</span>: Vec&lt;u32&gt;,
-
-    <span class="src">spare</span>: u8,
 }</code></pre>
 <h3 id="type.field_index.Small">Small</h3>
 <div class="doc mc-doc">
@@ -134,15 +136,16 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Small
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns both.</span></div>
-    <span class="src">both</span>() -&gt; u8
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the first.</span></div>
-    <span class="src">first</span>() -&gt; u8
-
 <span class="k">private:</span>
     <span class="src">a</span>: u8,
 
     <span class="src">b</span>: u8,
+
+<span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns both.</span></div>
+    <span class="src">both</span>() -&gt; u8
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the first.</span></div>
+    <span class="src">first</span>() -&gt; u8
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.field_index">field_index</h3>
