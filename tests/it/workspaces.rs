@@ -111,23 +111,39 @@ fn follow_globs_pull_in_only_the_matching_path_dependencies() {
     );
 }
 
-/// Returns each link target in an outline: `href` values in HTML, and the
-/// `url` of each location in markdown.
-fn hrefs(file: &str, page: &str) -> Vec<String> {
-    let (open, close) = if has_ext(file, "html") {
-        ("href=\"", '"')
-    } else {
-        ("\"url\":\"", '"')
-    };
+/// Returns each link target in an HTML page: its `href` values.
+fn hrefs(page: &str) -> Vec<String> {
+    let open = "href=\"";
     let mut out = Vec::new();
     let mut rest = page;
     while let Some(at) = rest.find(open) {
         let after = &rest[at + open.len()..];
-        let end = after.find(close).expect("a link closes");
+        let end = after.find('"').expect("a link closes");
         out.push(after[..end].replace("&amp;", "&"));
         rest = &after[end..];
     }
     out
+}
+
+/// Returns the source file each location of a markdown outline names, as
+/// a path from the outline's folder: the `root` of the outline of the
+/// target that holds the file, joined with the file.
+fn sources(page: &str, pages: &[(String, PathBuf, String)]) -> Vec<PathBuf> {
+    let root_of = |stem: Option<&str>| match stem {
+        None => support::root_of(page),
+        Some(stem) => {
+            let file = format!("{stem}.md");
+            let (_, _, other) = (pages.iter().find(|(name, _, _)| *name == file))
+                .unwrap_or_else(|| panic!("no {file} for a location"));
+            support::root_of(other)
+        }
+    };
+    (support::locations(page).iter())
+        .map(|loc| {
+            let (stem, file) = support::split_location(loc);
+            Path::new(&root_of(stem)).join(file)
+        })
+        .collect()
 }
 
 /// Returns every anchor id a page defines.
@@ -174,7 +190,18 @@ fn every_link_lands(name: &str) -> Links {
         values: 0,
     };
     for (file, folder, page) in &pages {
-        for href in hrefs(file, page) {
+        if has_ext(file, "md") {
+            for source in sources(page, &pages) {
+                assert!(
+                    folder.join(&source).is_file(),
+                    "{file}: {} names no file",
+                    source.display()
+                );
+                counts.source += 1;
+            }
+            continue;
+        }
+        for href in hrefs(page) {
             let (target, fragment) = href.split_once('#').unwrap_or((href.as_str(), ""));
             if ["fn.", "const.", "static."]
                 .iter()
@@ -330,11 +357,11 @@ fn one_named_crate_with_nothing_to_outline_still_fails() {
 const ROOTED: &str = r#"*Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"rooted","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":6,"to":9}]}
-{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Root"],"evidence":"no hit of `Root` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Root"],"evidence":"no hit of `Root` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"surface","path":"Root","kind":"struct"}
-{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":1}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"The root package."}
-{"k":"struct","path":"Root","rust":"pub struct Root","loc":{"file":"src/lib.rs","line":0}}
+{"k":"struct","path":"Root","rust":"pub struct Root","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Root","text":"A root type."}
 "#;
 

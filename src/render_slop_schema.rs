@@ -2,16 +2,21 @@
 //! one compact JSON object whose `k` key names its kind. These types are
 //! the schema: a field that is not an `Option` is required, an optional
 //! field is left out when it is empty, and the fields print in the order
-//! they are declared. The catalog's records are in `render_slop_catalog`.
+//! they are declared. The catalog's records are in `render_slop_catalog`,
+//! and `render_slop_split` cuts a record too wide for one line into `more`
+//! records.
+
+use std::fmt;
 
 #[cfg(test)]
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Deserializer};
+use serde::{Serialize, Serializer};
 
 use crate::render_slop_catalog::{
     AliasRecord, ExternRecord, FieldRecord, FnRecord, ImplRecord, MacroRecord, ModRecord,
     TraitRecord, TypeRecord, UnsupportedRecord, UseRecord, ValueRecord, VariantRecord,
 };
+use crate::render_slop_split::Node;
 
 /// The schema version the outline header carries.
 pub(crate) const SCHEMA: u32 = 1;
@@ -20,6 +25,8 @@ pub(crate) const SCHEMA: u32 = 1;
 /// print in this order: the header, the modules, the leads, the surface,
 /// the external items, the spellings, the wire keys, and then the catalog,
 /// module by module, where a `doc` record follows the record it belongs to.
+/// A `more` record follows the record it continues, or another `more`
+/// record of that record.
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(Deserialize))]
 #[serde(tag = "k")]
@@ -72,6 +79,8 @@ pub(crate) enum Record {
     Macro(MacroRecord),
     #[serde(rename = "unsupported")]
     Unsupported(UnsupportedRecord),
+    #[serde(rename = "more")]
+    More(MoreRecord),
 }
 
 /// Leaves an optional list out of the output when it is absent or empty.
@@ -104,6 +113,10 @@ pub(crate) struct Header {
     /// The crate's folder below the base of the run; left out for the base.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) dir: Option<String>,
+    /// The crate's folder from the markdown folder, with forward slashes,
+    /// which a location's file is below; the goldens leave it out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) root: Option<String>,
 }
 
 /// The second record: the output lines each module's catalog records take.
@@ -125,18 +138,61 @@ pub(crate) struct ModuleRange {
     pub(crate) to: Option<usize>,
 }
 
-/// A source line: a crate-relative file with forward slashes, and the link
-/// to it measured from the markdown folder.
-#[derive(Clone, Debug, Default, Serialize)]
-#[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
+/// A source line, written as one string: `<file>:<line>`, or
+/// `<stem>:<file>:<line>` for a file of another target of the run. The
+/// file is relative to the crate, with forward slashes, and holds no
+/// colon, so a reader splits the string from the right.
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Loc {
     /// The outline stem of the other target of the run that holds the file.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) target: Option<String>,
     pub(crate) file: String,
     pub(crate) line: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) url: Option<String>,
+}
+
+impl fmt::Display for Loc {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(target) = &self.target {
+            write!(f, "{target}:")?;
+        }
+        write!(f, "{}:{}", self.file, self.line)
+    }
+}
+
+impl Serialize for Loc {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(self)
+    }
+}
+
+#[cfg(test)]
+impl Loc {
+    /// Reads a location the way it prints, or `None` when the text is no
+    /// location in its printed form.
+    pub(crate) fn parse(text: &str) -> Option<Loc> {
+        let mut parts = text.rsplitn(3, ':');
+        let (line, file) = (parts.next()?, parts.next()?);
+        let target = parts.next();
+        let valid = !file.is_empty()
+            && !file.contains('\\')
+            && target.is_none_or(|target| !target.is_empty())
+            && line.bytes().all(|b| b.is_ascii_digit());
+        let loc = Loc {
+            target: target.map(str::to_owned),
+            file: file.to_owned(),
+            line: line.parse().ok().filter(|_| valid)?,
+        };
+        (loc.to_string() == text).then_some(loc)
+    }
+}
+
+#[cfg(test)]
+impl<'de> Deserialize<'de> for Loc {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Loc, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        Loc::parse(&text)
+            .ok_or_else(|| serde::de::Error::custom(format!("`{text}` is no location")))
+    }
 }
 
 /// How a lead's evidence was found.
@@ -245,4 +301,25 @@ pub(crate) struct WireKeysRecord {
 pub(crate) struct DocRecord {
     pub(crate) path: String,
     pub(crate) text: String,
+}
+
+/// The rest of a record that is too wide for one line: more elements of
+/// one of its arrays, or more of one of its strings.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
+pub(crate) struct MoreRecord {
+    /// The owner's `path`, a lead's first subject, or `modules`.
+    pub(crate) path: String,
+    /// A lead's `id`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) id: Option<String>,
+    /// The field this part continues, its steps joined with dots, such as
+    /// `locs`, `spellings.3.locs`, or `ops.2`.
+    pub(crate) field: String,
+    /// The part's number, from 2; the owner is part 1.
+    pub(crate) part: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) items: Option<Vec<Node>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) text: Option<String>,
 }

@@ -18,7 +18,7 @@ fn a_second_run_gives_identical_bytes() {
     let one = read_run(&first);
     assert!(
         one.iter()
-            .all(|(_, text)| text.contains("\"url\":\"") || text.contains("Source: "))
+            .all(|(_, text)| text.contains("\"root\":\"") || text.contains("Source: "))
     );
     assert_eq!(one, read_run(&second));
     assert_eq!(
@@ -57,7 +57,8 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
     let text = fs::read_to_string(out.join("structs.md")).expect("the outline was written");
     assert!(text.starts_with(
         "*Updated 2026-01-01T00:00:00Z*\n\
-         {\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"structs\",\"target\":\"lib\"}\n"
+         {\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"structs\",\"target\":\"lib\",\
+         \"root\":\""
     ));
     assert!(out.join("html").join("structs.html").is_file());
     assert!(

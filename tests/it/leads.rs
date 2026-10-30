@@ -97,9 +97,11 @@ fn a_crate_with_slop_prints_its_leads_first_with_modes_and_limits() {
     assert!(limits.contains(&"macros".into()), "{limits:?}");
     for lead in &leads {
         let locs = lead["locs"].as_array().expect("a lead has locations");
-        assert!(
-            locs.iter()
-                .all(|loc| loc["file"] == "src/lib.rs" && loc["line"].as_u64() > Some(0))
-        );
+        assert!(locs.iter().all(|loc| {
+            (loc.as_str())
+                .and_then(|loc| loc.strip_prefix("src/lib.rs:"))
+                .and_then(|line| line.parse::<u32>().ok())
+                .is_some_and(|line| line > 0)
+        }));
     }
 }

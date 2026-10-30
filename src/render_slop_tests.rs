@@ -11,7 +11,7 @@ use crate::render_slop::{AnalysisTarget, RenderInput, render};
 use crate::render_slop_check::{Mode, check};
 use crate::root::TargetKind;
 
-/// Renders the outline of a one-file library, without links.
+/// Renders the outline of a one-file library, written beside the crate.
 fn outline(lib: &str) -> String {
     let fixture = fixture(&[("src/lib.rs", lib)]);
     let run = run(&fixture);
@@ -25,7 +25,7 @@ fn outline(lib: &str) -> String {
         stamp: "2026-01-01T00:00:00Z",
         target_kind: TargetKind::Lib,
         shown_dir: ".".to_owned(),
-        link_bases: &[],
+        root: ".".to_owned(),
     };
     let text = render(&input).unwrap();
     check(&text, Mode::Raw).unwrap_or_else(|why| panic!("{why}\n{text}"));
@@ -51,7 +51,7 @@ fn a_library_prints_its_header_modules_and_one_record_per_item() {
     assert_eq!(lines[0], "*Updated 2026-01-01T00:00:00Z*");
     assert!(lines[1].starts_with("{\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\""));
     assert!(
-        lines[1].ends_with("\",\"target\":\"lib\"}"),
+        lines[1].ends_with("\",\"target\":\"lib\",\"root\":\".\"}"),
         "no folder: {}",
         lines[1]
     );
@@ -98,7 +98,7 @@ fn a_trait_prints_its_header_and_each_item_as_a_record() {
     assert_eq!(
         traits,
         [
-            "{\"k\":\"trait\",\"path\":\"Reads\",\"rust\":\"pub trait Reads: Clone\",\"loc\":{\"file\":\"src/lib.rs\",\"line\":2}}"
+            "{\"k\":\"trait\",\"path\":\"Reads\",\"rust\":\"pub trait Reads: Clone\",\"loc\":\"src/lib.rs:2\"}"
         ]
     );
     assert!(text.contains("{\"k\":\"alias\",\"path\":\"Reads::Item\",\"rust\":\"type Item\""));
@@ -150,7 +150,43 @@ fn the_check_rejects_every_kind_of_broken_outline() {
         (broken("*\n", "*\n\n"), "blank"),
         (broken("\"schema\":1", "\"schema\":2"), "schema"),
         (broken("{\"k\":\"modules\"", "{\"k\":\"modules\" "), "form"),
-        (good.replace("\"line\":2", "\"line\":0"), "raw line"),
+        (good.replace("src/lib.rs:2\"", "src/lib.rs:0\""), "raw line"),
+        (broken(",\"root\":\".\"", ""), "no root"),
+        (
+            broken("\"root\":\".\"", "\"root\":\".\\\\x\""),
+            "a backslash root",
+        ),
+        (
+            broken("\"src/lib.rs:2\"", "\"src/lib.rs:02\""),
+            "a padded line",
+        ),
+        (
+            broken("\"src/lib.rs:2\"", "\"src\\\\lib.rs:2\""),
+            "a backslash file",
+        ),
+        (broken("\"src/lib.rs:2\"", "\"src/lib.rs\""), "no line"),
+        (
+            broken("\"src/lib.rs:2\"", "\":src/lib.rs:2\""),
+            "an empty stem",
+        ),
+        (
+            broken("\"src/lib.rs:2\"", "{\"file\":\"src/lib.rs\",\"line\":2}"),
+            "a location object",
+        ),
+        (
+            broken(
+                "\"loc\":\"src/lib.rs:2\"",
+                "\"loc\":\"src/lib.rs:2\",\"url\":\"x\"",
+            ),
+            "a url",
+        ),
+        (
+            broken(
+                "\"text\":\"A.\"",
+                &format!("\"text\":\"{}\"", "a".repeat(900)),
+            ),
+            "a wide line",
+        ),
     ];
     for (text, what) in cases {
         assert!(check(&text, Mode::Raw).is_err(), "{what} passed:\n{text}");
@@ -190,6 +226,106 @@ fn the_check_rejects_every_kind_of_broken_outline() {
         check(&good, Mode::NormalizedGolden).is_err(),
         "a raw line passed as golden"
     );
+}
+
+/// Returns an outline as its golden holds it: no `root`, and each source
+/// line of `src/lib.rs` 0.
+fn as_golden(raw: &str) -> String {
+    let rootless = raw.replacen(",\"root\":\".\"", "", 1);
+    let mut rest = rootless.as_str();
+    let mut golden = String::new();
+    while let Some(at) = rest.find("src/lib.rs:") {
+        let start = at + "src/lib.rs:".len();
+        golden.push_str(&rest[..start]);
+        golden.push('0');
+        rest = rest[start..].trim_start_matches(|c: char| c.is_ascii_digit());
+    }
+    golden.push_str(rest);
+    golden
+}
+
+#[test]
+fn a_golden_has_no_root_and_only_zero_lines() {
+    let golden = as_golden(&sample());
+    check(&golden, Mode::NormalizedGolden).unwrap_or_else(|why| panic!("{why}\n{golden}"));
+    assert!(check(&golden, Mode::Raw).is_err(), "a golden passed as raw");
+    let rooted = golden.replacen("\"target\":\"lib\"", "\"target\":\"lib\",\"root\":\".\"", 1);
+    assert!(
+        check(&rooted, Mode::NormalizedGolden).is_err(),
+        "a root passed"
+    );
+    let linked = golden.replacen(
+        "\"loc\":\"src/lib.rs:0\"",
+        "\"loc\":\"src/lib.rs:0\",\"url\":\"x\"",
+        1,
+    );
+    assert!(
+        check(&linked, Mode::NormalizedGolden).is_err(),
+        "a url passed"
+    );
+    let moved = golden.replacen("\"src/lib.rs:0\"", "\"src/lib.rs:4\"", 1);
+    assert!(
+        check(&moved, Mode::NormalizedGolden).is_err(),
+        "a line passed"
+    );
+}
+
+#[test]
+fn a_wide_doc_continues_in_more_records_that_the_check_follows() {
+    let words = "Words that run on, \"quoted\" and ü, ".repeat(60);
+    let good = outline(&format!("/// {words}\npub struct A;\n"));
+    let parts: Vec<&str> = kind(&good, "more");
+    assert!(parts.len() > 1, "{good}");
+    for (n, part) in parts.iter().enumerate() {
+        let open = format!(
+            "{{\"k\":\"more\",\"path\":\"A\",\"field\":\"text\",\"part\":{},",
+            n + 2
+        );
+        assert!(part.starts_with(&open), "{part}");
+    }
+    assert!(good.lines().all(|line| line.chars().count() <= 900));
+    check(&as_golden(&good), Mode::NormalizedGolden).unwrap();
+    let first = parts[0];
+    let items = "{\"k\":\"more\",\"path\":\"A\",\"field\":\"text\",\"part\":2,\"items\":[\"x\"]}";
+    let lines: Vec<&str> = good.lines().collect();
+    let owner = lines
+        .iter()
+        .position(|l| l.starts_with("{\"k\":\"doc\""))
+        .unwrap();
+    let without = |n: usize| {
+        let kept: Vec<&str> = (lines.iter().enumerate())
+            .filter(|&(i, _)| i != n)
+            .map(|(_, l)| *l)
+            .collect();
+        format!("{}\n", kept.join("\n"))
+    };
+    let cases = [
+        (
+            good.replacen("\"part\":2", "\"part\":3", 1),
+            "a skipped part",
+        ),
+        (
+            good.replacen(first, &format!("{first}\n{first}"), 1),
+            "a repeated part",
+        ),
+        (
+            good.replacen(
+                "\"field\":\"text\",\"part\":2",
+                "\"field\":\"rust\",\"part\":2",
+                1,
+            ),
+            "a field the owner lacks",
+        ),
+        (
+            good.replacen("\"path\":\"A\",\"field\"", "\"path\":\"B\",\"field\"", 1),
+            "another owner",
+        ),
+        (without(owner), "no owner"),
+        (good.replacen(first, items, 1), "items for a string"),
+    ];
+    for (text, what) in cases {
+        assert!(check(&text, Mode::Raw).is_err(), "{what} passed:\n{text}");
+    }
 }
 
 fn is_markdown(path: &Path) -> bool {

@@ -1,13 +1,15 @@
-//! Checks source links: their golden, that normalizing the other goldens
-//! leaves no link or source line behind, and that every target resolves.
-//! The markdown holds each link in the `url` of a location record, and the
-//! HTML in an `href`.
+//! Checks source locations and links: their golden, that normalizing the
+//! other goldens leaves no output folder or source line behind, and that
+//! every location and link resolves. The markdown's header `root` leads
+//! from the markdown folder to the crate, each location string names a
+//! file below it, and nothing else in the markdown depends on where the
+//! run writes; the HTML holds each link in an `href`.
 
 use std::fs;
-use std::path::Path;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, has_ext, input_of, read_plain, read_run, run,
+    copy_dir, fixture_names, fixtures, has_ext, input_of, locations, read_plain, read_run, root_of,
+    run, split_location,
 };
 
 #[test]
@@ -41,14 +43,15 @@ fn stripping_the_links_leaves_no_source_link_in_either_format() {
                 .status
                 .success()
         );
-        for (_, text) in read_run(&out) {
-            if text.contains("\"url\":\"") || text.contains("class=\"src\" href=") {
+        for (file, text) in read_run(&out) {
+            assert!(!text.contains("\"url\":"), "{name}/{file} has a url");
+            if text.contains("\"root\":\"") || text.contains("class=\"src\" href=") {
                 linked += 1;
             }
         }
         for (file, text) in read_plain(&out) {
             for leftover in [
-                "\"url\":",
+                "\"root\":",
                 "<p class=\"source\">",
                 "class=\"src\" href=",
                 "(source: <a",
@@ -64,25 +67,25 @@ fn stripping_the_links_leaves_no_source_link_in_either_format() {
                     "{name}/{file} keeps a source line"
                 );
             }
+            if has_ext(&file, "md") {
+                for loc in locations(&text) {
+                    assert!(loc.ends_with(":0"), "{name}/{file} keeps {loc}");
+                }
+            }
         }
     }
     assert!(linked > 50, "only {linked} files had source links");
 }
 
-/// Returns every source link target in an outline, fragment removed: the
-/// `url` of each location in markdown, and `href` values in HTML, less the
-/// links inside the page and to other pages of the run.
-fn targets(file: &str, page: &str) -> Vec<String> {
-    let (open, close) = if has_ext(file, "html") {
-        ("href=\"", '"')
-    } else {
-        ("\"url\":\"", '"')
-    };
+/// Returns every source link target in an HTML page, fragment removed,
+/// less the links inside the page and to other pages of the run.
+fn targets(page: &str) -> Vec<String> {
+    let open = "href=\"";
     let mut out = Vec::new();
     let mut rest = page;
     while let Some(at) = rest.find(open) {
         let after = &rest[at + open.len()..];
-        let end = after.find(close).expect("a link closes");
+        let end = after.find('"').expect("a link closes");
         let target = after[..end].split('#').next().unwrap_or_default();
         if !target.is_empty() && !has_ext(target, "html") {
             out.push(target.to_owned());
@@ -92,8 +95,15 @@ fn targets(file: &str, page: &str) -> Vec<String> {
     out
 }
 
+/// Returns an outline with its header's `root` taken out.
+fn rootless(md: &str) -> String {
+    let root = serde_json::to_string(&root_of(md)).expect("a root is JSON");
+    let root = format!(",\"root\":{root}");
+    md.replacen(&root, "", 1)
+}
+
 #[test]
-fn targets_resolve_from_inside_beside_and_above_the_crate() {
+fn locations_and_links_resolve_from_inside_beside_and_above_the_crate() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let crate_dir = tmp.path().join("work").join("links");
     copy_dir(&fixtures().join("links"), &crate_dir);
@@ -102,29 +112,49 @@ fn targets_resolve_from_inside_beside_and_above_the_crate() {
         tmp.path().join("work").join("beside"),
         tmp.path().join("work"),
     ];
+    let mut roots = Vec::new();
+    let mut markdown = Vec::new();
     for out in places {
         assert!(run(&crate_dir, &out).status.success());
-        for (file, folder) in [("links.md", out.clone()), ("links.html", out.join("html"))] {
-            let page = fs::read_to_string(folder.join(file)).expect("the outline was written");
-            let found = targets(file, &page);
-            assert!(found.len() > 5, "too few links in {}", folder.display());
-            for target in found {
-                assert!(
-                    Path::new(&folder).join(&target).exists(),
-                    "{target} does not resolve from {}",
-                    folder.display()
-                );
-                assert!(
-                    !target.contains('\\') && !target.contains("?\\"),
-                    "{target}"
-                );
-            }
-            if file == "links.md" {
-                assert!(
-                    page.contains("{\"file\":\"src/lib.rs\",\"line\":6,\"url\":\""),
-                    "a location's file is relative to the crate"
-                );
-            }
+        let md = fs::read_to_string(out.join("links.md")).expect("the outline was written");
+        let root = root_of(&md);
+        assert!(!root.contains('\\'), "{root}");
+        let found = locations(&md);
+        assert!(found.len() > 5, "too few locations in {}", out.display());
+        for loc in found {
+            let (stem, file) = split_location(&loc);
+            assert_eq!(stem, None, "{loc}");
+            assert!(
+                out.join(&root).join(file).is_file(),
+                "{root} and {loc} do not resolve from {}",
+                out.display()
+            );
         }
+        assert!(
+            md.contains("\"loc\":\"src/lib.rs:6\""),
+            "a location's file is relative to the crate"
+        );
+        let html = out.join("html");
+        let page = fs::read_to_string(html.join("links.html")).expect("the page was written");
+        let found = targets(&page);
+        assert!(found.len() > 5, "too few links in {}", html.display());
+        for target in found {
+            assert!(
+                html.join(&target).exists(),
+                "{target} does not resolve from {}",
+                html.display()
+            );
+            assert!(
+                !target.contains('\\') && !target.contains("?\\"),
+                "{target}"
+            );
+        }
+        roots.push(root);
+        markdown.push(rootless(&md));
     }
+    assert_eq!(roots, ["..", "../links", "links"]);
+    assert!(
+        markdown.iter().all(|md| *md == markdown[0]),
+        "only the header's root depends on where the run writes"
+    );
 }

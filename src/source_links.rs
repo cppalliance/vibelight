@@ -69,6 +69,36 @@ impl LinkBase {
             None => path,
         }
     }
+
+    /// Returns the crate directory from the output directory, such as
+    /// `../mycrate`, or `.` for the output directory itself, with forward
+    /// slashes and no encoding. When no relative path exists, it is the
+    /// absolute path, such as `C:/Users/x/crate`.
+    pub(crate) fn root(&self) -> String {
+        let join = |steps: &[&[u8]]| String::from_utf8_lossy(&steps.join(&b'/')).into_owned();
+        if let Some(steps) = steps(&self.out_dir, &self.crate_dir) {
+            return if steps.is_empty() {
+                ".".to_owned()
+            } else {
+                join(&steps)
+            };
+        }
+        let names: Vec<&[u8]> = (self.crate_dir.names.iter())
+            .map(|n| n.as_encoded_bytes())
+            .collect();
+        let path = join(&names);
+        match &self.crate_dir.root {
+            Root::Unix => format!("/{path}"),
+            Root::Disk(letter) => format!("{}:/{path}", char::from(*letter)),
+            Root::Unc(server, share) => {
+                format!(
+                    "//{}/{}/{path}",
+                    server.to_string_lossy(),
+                    share.to_string_lossy()
+                )
+            }
+        }
+    }
 }
 
 /// An absolute path split into its root and its names, with no `.` or `..`
@@ -177,9 +207,9 @@ fn rel_names(rel: &str) -> Vec<&str> {
     names
 }
 
-/// Returns the percent-encoded path of `file` relative to the directory
-/// `dir`, or `None` when the two do not share a root.
-fn relative(dir: &AbsPath, file: &AbsPath) -> Option<String> {
+/// Returns the names that lead from the directory `dir` to `file`, or
+/// `None` when the two do not share a root.
+fn steps<'f>(dir: &AbsPath, file: &'f AbsPath) -> Option<Vec<&'f [u8]>> {
     if !dir.root.matches(&file.root) {
         return None;
     }
@@ -193,7 +223,13 @@ fn relative(dir: &AbsPath, file: &AbsPath) -> Option<String> {
     let downs = file.names[common..]
         .iter()
         .map(|name| name.as_encoded_bytes());
-    let steps: Vec<&[u8]> = ups.chain(downs).collect();
+    Some(ups.chain(downs).collect())
+}
+
+/// Returns the percent-encoded path of `file` relative to the directory
+/// `dir`, or `None` when the two do not share a root.
+fn relative(dir: &AbsPath, file: &AbsPath) -> Option<String> {
+    let steps = steps(dir, file)?;
     let path = encode(&steps.join(&b'/'));
     Some(match steps.first() {
         None => ".".to_owned(),
@@ -271,14 +307,15 @@ mod tests {
 
     #[test]
     fn out_dir_inside_beside_equal_to_and_above_the_crate() {
-        for (out_dir, expected) in [
-            ("w/mycrate/out", "../src/prompt.rs#L136"),
-            ("w/docs", "../mycrate/src/prompt.rs#L136"),
-            ("w/mycrate", "src/prompt.rs#L136"),
-            ("w", "mycrate/src/prompt.rs#L136"),
+        for (out_dir, expected, root) in [
+            ("w/mycrate/out", "../src/prompt.rs#L136", ".."),
+            ("w/docs", "../mycrate/src/prompt.rs#L136", "../mycrate"),
+            ("w/mycrate", "src/prompt.rs#L136", "."),
+            ("w", "mycrate/src/prompt.rs#L136", "mycrate"),
         ] {
             let base = unix("w/mycrate", out_dir);
             assert_eq!(base.target(REL, Some(136)), expected, "out dir {out_dir}");
+            assert_eq!(base.root(), root, "out dir {out_dir}");
         }
     }
 
@@ -340,6 +377,7 @@ mod tests {
         assert_eq!(base.target(REL, Some(136)), format!("{url}#L136"));
         assert_eq!(base.target(REL, None), url);
         assert_eq!(base.text(REL, Some(136)), "src/prompt.rs:136");
+        assert_eq!(base.root(), "C:/Users/x/crate");
     }
 
     #[test]
@@ -354,6 +392,7 @@ mod tests {
                 out_dir,
             };
             assert_eq!(base.target(REL, Some(1)), url);
+            assert_eq!(base.root(), "//server/share/crate");
         }
     }
 
@@ -383,6 +422,7 @@ mod tests {
     #[test]
     fn target_is_percent_encoded_and_text_is_not() {
         let base = unix("w/my crate (old)", "w/out");
+        assert_eq!(base.root(), "../my crate (old)");
         let target = "../my%20crate%20%28old%29/src/a%23b%25c.rs#L2";
         assert_eq!(base.target("src/a#b%c.rs", Some(2)), target);
         assert_eq!(base.text("src/a#b%c.rs", Some(2)), "src/a#b%c.rs:2");

@@ -180,13 +180,10 @@ fn analyze(
             anyhow!("internal error: the leads of the run break an invariant: {why}")
         })?;
     }
-    let link_bases = targets
-        .iter()
-        .map(|&(p, _)| LinkBase::new(&chosen.packages[p].input.dir, markdown))
-        .collect::<std::io::Result<Vec<LinkBase>>>()
-        .context("cannot resolve the crate and output directories")?;
     let mut texts = Vec::new();
     for (t, &(p, target)) in targets.iter().enumerate() {
+        let base = LinkBase::new(&chosen.packages[p].input.dir, markdown)
+            .context("cannot resolve the crate and output directories")?;
         let input = RenderInput {
             analysis_target: AnalysisTarget {
                 run: &run,
@@ -196,7 +193,7 @@ fn analyze(
             stamp,
             target_kind: target.kind,
             shown_dir: shown(&chosen.base, &chosen.packages[p].dir),
-            link_bases: &link_bases,
+            root: base.root(),
         };
         texts.push(
             render_slop::render(&input)

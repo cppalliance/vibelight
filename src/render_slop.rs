@@ -5,9 +5,10 @@
 //! the catalog of every module, declaration, member, and module item,
 //! module by module in path order and by source line inside each. The
 //! outline reads the crates only as resolve and `link` left them, before
-//! any impl is attached, and prints no body's code.
+//! any impl is attached, and prints no body's code. A record too wide for
+//! one line continues in `more` records right after it.
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 use crate::analysis::AnalysisRun;
 use crate::leads::Lead;
@@ -17,8 +18,10 @@ use crate::render_slop_schema::{
     DocRecord, Header, Loc, ModuleRange, Modules, Record, SCHEMA, TargetName,
 };
 use crate::root::TargetKind;
-use crate::source_links::LinkBase;
-use crate::{render_slop_decl, render_slop_items, render_slop_lists, render_slop_wire, stamp};
+use crate::{
+    render_slop_decl, render_slop_items, render_slop_lists, render_slop_split, render_slop_wire,
+    stamp,
+};
 
 /// One target of the run's analysis view.
 #[derive(Clone, Copy)]
@@ -38,9 +41,8 @@ pub(crate) struct RenderInput<'a> {
     pub(crate) target_kind: TargetKind,
     /// The crate's folder below the base of the run, `.` for the base.
     pub(crate) shown_dir: String,
-    /// The markdown folder's link base for each target of the run, by
-    /// target, since a lead may point into another target's files.
-    pub(crate) link_bases: &'a [LinkBase],
+    /// The crate's folder from the markdown folder, with forward slashes.
+    pub(crate) root: String,
 }
 
 /// One record of the catalog and the `doc` record after it, with where it
@@ -64,22 +66,17 @@ pub(crate) struct Outline<'a> {
     pub(crate) t: usize,
     pub(crate) krate: &'a Crate,
     pub(crate) facts: Facts<'a>,
-    bases: &'a [LinkBase],
     pub(crate) entries: Vec<Entry>,
 }
 
 impl Outline<'_> {
     /// Returns a source line of target `target` as this outline writes it.
     pub(crate) fn loc(&self, target: usize, loc: model::Loc) -> Loc {
-        let rel = &self.run.krates[target].files[loc.file].rel;
-        let file = rel.replace('\\', "/");
         Loc {
             target: (target != self.t).then(|| self.run.targets[target].stem.clone()),
-            url: self
-                .bases
-                .get(target)
-                .map(|base| base.target(rel, Some(loc.line))),
-            file,
+            file: self.run.krates[target].files[loc.file]
+                .rel
+                .replace('\\', "/"),
             line: loc.line,
         }
     }
@@ -131,7 +128,8 @@ pub(crate) struct Doc<'d> {
 /// Renders one target's markdown outline, with `stamp` on its first line.
 ///
 /// # Errors
-/// Returns an internal error when a record cannot be written as JSON.
+/// Returns an internal error when a record cannot be written as JSON, or
+/// when the modules record finds no line count that its ranges agree with.
 pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
     let AnalysisTarget { run, target: t } = input.analysis_target;
     let krate = &run.krates[t];
@@ -140,7 +138,6 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
         t,
         krate,
         facts: Facts::new(run, t),
-        bases: input.link_bases,
         entries: Vec::new(),
     };
     let mut lists = render_slop_lists::leads(&outline, input.leads);
@@ -164,14 +161,18 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
             .then_with(|| a.file.cmp(&b.file))
             .then(a.line.cmp(&b.line))
     });
-    let mut ranges: Vec<(Option<usize>, Option<usize>)> = vec![(None, None); krate.modules.len()];
-    let mut line = 3 + lists.len();
+    let mut listed = Vec::new();
+    for record in &lists {
+        listed.extend(render_slop_split::lines(record)?);
+    }
+    let mut catalog = Vec::new();
+    let mut spans: Vec<Option<(usize, usize)>> = vec![None; krate.modules.len()];
     for entry in &entries {
-        for _ in &entry.records {
-            line += 1;
-            let range = &mut ranges[entry.module];
-            range.0.get_or_insert(line);
-            range.1 = Some(line);
+        for record in &entry.records {
+            let first = catalog.len();
+            catalog.extend(render_slop_split::lines(record)?);
+            let span = &mut spans[entry.module];
+            *span = Some((span.map_or(first, |(from, _)| from), catalog.len() - 1));
         }
     }
     let header = Record::Header(Header {
@@ -183,25 +184,53 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
             TargetKind::SingleFile => TargetName::SingleFile,
         },
         dir: (input.shown_dir != ".").then(|| input.shown_dir.clone()),
+        root: Some(input.root.clone()),
     });
-    let modules = Record::Modules(Modules {
-        items: order
-            .iter()
-            .map(|&m| ModuleRange {
-                path: module_path(krate, m),
-                from: ranges[m].0,
-                to: ranges[m].1,
-            })
-            .collect(),
-    });
+    let header = serde_json::to_string(&header)?;
+    let modules = modules(krate, &order, &spans, listed.len())?;
     let mut out = stamp::markdown(input.stamp);
     out.push('\n');
-    let catalog = entries.iter().flat_map(|entry| &entry.records);
-    for record in [&header, &modules].into_iter().chain(&lists).chain(catalog) {
-        out.push_str(&serde_json::to_string(record)?);
+    for line in [&header]
+        .into_iter()
+        .chain(&modules)
+        .chain(&listed)
+        .chain(&catalog)
+    {
+        out.push_str(line);
         out.push('\n');
     }
     Ok(out)
+}
+
+/// Writes the modules record, whose ranges count the lines it takes
+/// itself. `spans` holds each module's first and last line in the catalog,
+/// counted from 0, and `listed` lines sit between the modules record and
+/// the catalog.
+fn modules(
+    krate: &Crate,
+    order: &[ModId],
+    spans: &[Option<(usize, usize)>],
+    listed: usize,
+) -> Result<Vec<String>> {
+    let mut taken = 1;
+    for _ in 0..8 {
+        let before = 2 + taken + listed;
+        let record = Record::Modules(Modules {
+            items: (order.iter())
+                .map(|&m| ModuleRange {
+                    path: module_path(krate, m),
+                    from: spans[m].map(|(from, _)| before + from + 1),
+                    to: spans[m].map(|(_, to)| before + to + 1),
+                })
+                .collect(),
+        });
+        let lines = render_slop_split::lines(&record)?;
+        if lines.len() == taken {
+            return Ok(lines);
+        }
+        taken = lines.len();
+    }
+    bail!("internal error: the modules record takes no settled number of lines")
 }
 
 /// Returns every module of a crate in path order.

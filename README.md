@@ -17,7 +17,7 @@ vibelight reads the Rust crates of a repository and writes an outline of each: e
 - **Every macro marked.** In the HTML, macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and the page lists them all at the top, each with a link to where it sits. The markdown has a `macro` record for each definition and invocation, and lists derives and attribute macros on the record they apply to.
 - **The public surface first.** A library's files list every path a user of the crate can name, through public modules and re-exports, before any type: a Public surface section in the HTML, and one `surface` record per path in the markdown.
 - **Rust for the model.** The markdown writes each signature and each type's shape as one line of Rust, with visibilities, generics, and `where` clauses as in the source. The leads come first, every record names its kind in `k`, and the header gives the schema version, so a model with only the file can follow it.
-- **Links back to the source.** In the HTML, each declaration, impl block, module, and macro links back to where it is written, such as `src/prompt.rs:136`. In the markdown, each declaration's `loc`, or each lead's and impl's `locs`, gives the `file`, the `line`, and a `url`. The links are relative to the output file and end in `#L136`, which GitHub, VS Code, and Cursor open at that line.
+- **Links back to the source.** In the HTML, each declaration, impl block, module, and macro links back to where it is written, such as `src/prompt.rs:136`. The links are relative to the output file and end in `#L136`, which GitHub, VS Code, and Cursor open at that line. In the markdown, each declaration's `loc`, or each lead's and impl's `locs`, is a string such as `src/prompt.rs:136`, and the header's `root` leads from the markdown folder to the crate, so `root` and the file together open the source.
 
 vibelight parses the source with [syn](https://crates.io/crates/syn) and never builds the crate. It needs no Cargo build, no nightly toolchain, and no network, so it works on a fresh clone and on code that does not compile right now.
 
@@ -151,7 +151,7 @@ A section shows up only when it has something in it. Only the HTML file links ty
 
 The markdown has no sections. After the stamp, every line is one record, in this order:
 
-- **Header:** a `vibelight-outline` record with the schema version, the crate's name, the kind of target (`lib`, `bin`, or `single-file`), and the crate's folder below the base of the run.
+- **Header:** a `vibelight-outline` record with the schema version, the crate's name, the kind of target (`lib`, `bin`, or `single-file`), the crate's folder below the base of the run, and `root`, the crate's folder from the markdown folder.
 - **Modules:** a `modules` record with each module's range of lines in the file, so a reader can open one module at a time.
 - **Leads:** one `lead` record per place that looks like slop, with its `id`, its `subjects`, its `evidence`, its `locs`, and a `mode` that says whether the evidence is resolved, direct syntax, or lexical. A lead that rests on something vibelight did not see also lists its `limits`, the blind spots that could make it wrong. More than 5 leads of one id in one module become one summary record with a `module` and a `count` that names every site.
 - **Surface:** for a library, one `surface` record per public path, with its kind and, when the path is a re-export, the item it names.
@@ -175,26 +175,28 @@ The markdown is JSON Lines: after the stamp, every line is one compact JSON obje
 
 A type's whole shape is one `rust` string, such as `pub struct Point { pub x: i32, pub y: i32, label: String }`, and a trait's `rust` is its header, with each trait item a record of its own. Each function's signature is one `sig` string with its `where` clause inline, and a trait impl's function also has `impl`, the impl header. An `impl` record is the impl header, with the `locs` of every block that writes it. A constant or static has a `value` only when its initializer is one literal. `attrs` lists the attributes that shape an API or its wire format, `derives` the derived traits, and `attributes` the attribute macros, with `cfgs` and `lints` beside them and `test_support` on test-support code. Plain comments above a declaration are in its `comment` field, comments with nothing after them in a module, type, or impl body are in `dangling`, and parameter comments are in `param_docs`.
 
-A doc is a `doc` record of its own, never a field, because some tools cut long lines short. Its text is the doc as written, with its line breaks as `\n` and its fenced examples kept exactly. Every location is an object with `file`, relative to the crate with forward slashes, `line`, and `url`, relative to the markdown folder; `lead` and `impl` records have a `locs` array. A subject in another target of the run is written `::<stem>::<path>`, such as `::facade::Panel`, and a location there carries `target`.
+A doc is a `doc` record of its own, never a field, because some tools cut long lines short. Its text is the doc as written, with its line breaks as `\n` and its fenced examples kept exactly. Every location is one string, `<file>:<line>`, with the file relative to the crate and written with forward slashes, such as `src/lib.rs:6`; `lead` and `impl` records have a `locs` array of them. A subject in another target of the run is written `::<stem>::<path>`, such as `::facade::Panel`, and a location there is `<stem>:<file>:<line>`, such as `facade:src/lib.rs:9`. A file never holds a colon, so a reader splits a location from the right and opens the file below the `root` of the outline of the target that holds it.
+
+Since some tools cut long lines short, no line is longer than 900 characters. A record that would be keeps the fields that name it and as much of its widest field as fits, and `more` records right after it carry the rest. Each names its owner by `path`, or a lead by its first subject and its `id`, names the `field` it continues, such as `locs` or `spellings.3.locs` for one element's field, counts its `part` from 2, and holds either `items`, whole elements to add to that array, or `text`, a piece to add to that string. The `modules` ranges count these lines too.
 
 Here are the first four lines of the outline of a small test crate, then a struct, its impl, and a method from further down:
 
 ```text
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"links","target":"lib"}
+{"k":"vibelight-outline","schema":1,"crate":"links","target":"lib","root":".."}
 {"k":"modules","items":[{"path":"crate","from":15,"to":29},{"path":"parts","from":30,"to":35}]}
-{"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":[{"file":"src/parts.rs","line":12,"url":"../src/parts.rs#L12"}],"limits":["macros"]}
+{"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:12"],"limits":["macros"]}
 ```
 
 ```text
-{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":{"file":"src/lib.rs","line":6,"url":"../src/lib.rs#L6"},"token_hits":4}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6","token_hits":4}
 {"k":"doc","path":"Engine","text":"A type with an impl in another file."}
-{"k":"impl","path":"Engine","rust":"impl Engine","locs":[{"file":"src/lib.rs","line":10,"url":"../src/lib.rs#L10"}]}
-{"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":{"file":"src/lib.rs","line":12,"url":"../src/lib.rs#L12"},"body":{"statements":0,"tokens":2}}
+{"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:10"]}
+{"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":"src/lib.rs:12","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"Engine::start","text":"Starts the engine."}
 ```
 
-The `modules` record says lines 15 to 29 hold the root module and lines 30 to 35 hold `parts`, counting the stamp as line 1.
+The `modules` record says lines 15 to 29 hold the root module and lines 30 to 35 hold `parts`, counting the stamp as line 1. The outline sits in `out` inside the crate, so its `root` is `..`, and `src/lib.rs:6` opens as `../src/lib.rs` at line 6.
 
 ### The HTML notation
 

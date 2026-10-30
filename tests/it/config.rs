@@ -6,7 +6,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 
-use crate::support::{copy_dir, fixtures, has_ext, read_outputs, read_plain, read_run, vibelight};
+use crate::support::{
+    copy_dir, fixtures, has_ext, locations, read_outputs, read_plain, read_run, root_of,
+    split_location, vibelight,
+};
 
 /// A copy of the garden workspace, with `config` as its `vibelight.toml`
 /// when it is not empty.
@@ -87,12 +90,19 @@ fn with_no_arguments_the_config_runs_from_a_subfolder_into_its_own_folders() {
     );
     assert!(
         read_plain(&out) == goldens(),
-        "the run is the goldens plus links"
+        "the run is the goldens plus links and the markdown's root"
     );
     let alpha_md = &files[1].1;
-    assert!(alpha_md.contains(
-        "{\"file\":\"src/lib.rs\",\"line\":6,\"url\":\"../crates/alpha/src/lib.rs#L6\"}"
-    ));
+    assert_eq!(root_of(alpha_md), "../crates/alpha");
+    assert!(alpha_md.contains("\"loc\":\"src/lib.rs:6\""));
+    for loc in locations(alpha_md) {
+        let (stem, file) = split_location(&loc);
+        let root = stem.map_or_else(
+            || root_of(alpha_md),
+            |stem| root_of(&fs::read_to_string(out.join(format!("{stem}.md"))).unwrap()),
+        );
+        assert!(out.join(root).join(file).is_file(), "{loc}");
+    }
     let alpha_page = &files[0].1;
     assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L6\""));
     assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L18\""));

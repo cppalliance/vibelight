@@ -1,8 +1,11 @@
 //! Shared helpers: running the binary, copying fixtures, and reading outputs.
 
 use std::fs;
+use std::mem;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+
+use serde_json::Value;
 
 /// The folder holding every fixture.
 pub(crate) fn fixtures() -> PathBuf {
@@ -121,9 +124,10 @@ pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
     files
 }
 
-/// Like `read_run`, with the source links removed, so runs from different
-/// folders compare equal, and with every source line of the markdown made
-/// 0, so a change of layout that moves no declaration changes no golden.
+/// Like `read_run`, with the source links and the markdown's `root`
+/// removed, so runs from different folders compare equal, and with every
+/// source line of the markdown made 0, so a change of layout that moves no
+/// declaration changes no golden.
 pub(crate) fn read_plain(out: &Path) -> Vec<(String, String)> {
     read_run(out)
         .into_iter()
@@ -193,18 +197,21 @@ pub(crate) fn rust_files(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// Normalizes a markdown outline for its golden. The stamp line stays, and
-/// on every record line after it each `url` key goes with its value and
-/// each `line` value becomes 0. A key is a string that a real quote opens
-/// and a colon follows, so no text inside a string, such as a doc that
-/// writes `#L6` or `"line":`, is ever touched, and the keys keep their order.
+/// Normalizes a markdown outline for its golden. The stamp line stays, the
+/// header loses its `root`, and on every record line each structural
+/// location string ends in line 0 and each `line` value becomes 0. A
+/// location string is the value of a `loc` key, an element of a `locs`
+/// array, or an item of a `more` record that continues a `locs` array. A
+/// key is a string that a real quote opens and a colon follows, so no text
+/// inside another string, such as a doc that writes `src/lib.rs:6` or
+/// `"line":`, is ever touched, and the keys keep their order.
 pub(crate) fn normalize_outline(md: &str) -> String {
     let mut out = String::with_capacity(md.len());
     for (n, line) in md.split_inclusive('\n').enumerate() {
         if n == 0 {
             out.push_str(line);
         } else {
-            out.push_str(&normalize_record(line));
+            out.push_str(&normalize_record(line, n == 1));
         }
     }
     out
@@ -223,95 +230,195 @@ fn string_end(bytes: &[u8], start: usize) -> usize {
     bytes.len()
 }
 
+/// Returns a quoted location string with its line made 0.
+fn zero_line(text: &str) -> String {
+    match text.rfind(':') {
+        Some(at) => format!("{}0\"", &text[..=at]),
+        None => text.to_owned(),
+    }
+}
+
 /// Normalizes one compact JSON record, whose text outside its strings is
-/// ASCII.
-fn normalize_record(line: &str) -> String {
+/// ASCII; the header also loses its `root`.
+fn normalize_record(line: &str, header: bool) -> String {
     let bytes = line.as_bytes();
     let mut out = String::with_capacity(line.len());
+    // Each open object or array, with the key whose value it is.
+    let mut open: Vec<(u8, String)> = Vec::new();
+    let mut key = String::new();
+    let mut field = String::new();
     let mut i = 0;
     while i < bytes.len() {
-        if bytes[i] != b'"' {
-            out.push(char::from(bytes[i]));
+        let byte = bytes[i];
+        if byte != b'"' {
+            match byte {
+                b'{' | b'[' => open.push((byte, mem::take(&mut key))),
+                b'}' | b']' => key = open.pop().map(|(_, of)| of).unwrap_or_default(),
+                _ => {}
+            }
+            out.push(char::from(byte));
             i += 1;
             continue;
         }
         let end = string_end(bytes, i);
-        let key = bytes.get(end) == Some(&b':');
-        match &line[i..end] {
-            "\"url\"" if key => {
+        let text = &line[i..end];
+        if bytes.get(end) == Some(&b':') {
+            text.trim_matches('"').clone_into(&mut key);
+            if header && open.len() == 1 && key == "root" {
                 i = string_end(bytes, end + 1);
                 if out.ends_with(',') {
                     out.pop();
                 } else if bytes.get(i) == Some(&b',') {
                     i += 1;
                 }
+                continue;
             }
-            "\"line\"" if key => {
-                out.push_str("\"line\":0");
-                i = end + 1;
+            out.push_str(text);
+            out.push(':');
+            i = end + 1;
+            if key == "line" {
+                out.push('0');
                 while bytes.get(i).is_some_and(u8::is_ascii_digit) {
                     i += 1;
                 }
             }
-            text => {
-                out.push_str(text);
-                i = end;
-            }
+            continue;
         }
+        let (kind, of) = open.last().map_or((b' ', ""), |(b, of)| (*b, of.as_str()));
+        let located = match kind {
+            b'{' => key == "loc",
+            b'[' => of == "locs" || (of == "items" && field.rsplit('.').next() == Some("locs")),
+            _ => false,
+        };
+        if kind == b'{' && open.len() == 1 && key == "field" {
+            text.trim_matches('"').clone_into(&mut field);
+        }
+        if located {
+            out.push_str(&zero_line(text));
+        } else {
+            out.push_str(text);
+        }
+        i = end;
     }
     out
 }
 
+/// Returns every source location of a markdown outline: each `loc`, each
+/// element of a `locs` array, and each item of a `more` record that
+/// continues a `locs` array.
+pub(crate) fn locations(md: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in md.lines().skip(1) {
+        let value: Value = serde_json::from_str(line).expect("a record is JSON");
+        let field = value["field"].as_str().unwrap_or_default();
+        if value["k"] == "more" && field.rsplit('.').next() == Some("locs") {
+            out.extend(strings(&value["items"]));
+        }
+        collect_locations(&value, &mut out);
+    }
+    out
+}
+
+/// Returns the strings of a JSON array.
+fn strings(list: &Value) -> Vec<String> {
+    let items = list.as_array().map_or(&[][..], Vec::as_slice);
+    items
+        .iter()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Adds each `loc` and each element of a `locs` array inside a value.
+fn collect_locations(value: &Value, out: &mut Vec<String>) {
+    match value {
+        Value::Object(map) => {
+            for (key, inner) in map {
+                match key.as_str() {
+                    "loc" => out.extend(inner.as_str().map(str::to_owned)),
+                    "locs" => out.extend(strings(inner)),
+                    _ => collect_locations(inner, out),
+                }
+            }
+        }
+        Value::Array(items) => items.iter().for_each(|item| collect_locations(item, out)),
+        _ => {}
+    }
+}
+
+/// Returns the header's `root` of a markdown outline: the crate's folder
+/// from the markdown folder.
+pub(crate) fn root_of(md: &str) -> String {
+    let header = md.lines().nth(1).expect("an outline has a header");
+    let value: Value = serde_json::from_str(header).expect("the header is JSON");
+    value["root"]
+        .as_str()
+        .expect("the header has a root")
+        .to_owned()
+}
+
+/// Splits a location string from the right into the stem of the target
+/// that holds its file, when that is another target, and the file.
+pub(crate) fn split_location(loc: &str) -> (Option<&str>, &str) {
+    let mut parts = loc.rsplitn(3, ':').skip(1);
+    let file = parts.next().expect("a location names a file");
+    (parts.next(), file)
+}
+
 #[test]
-fn normalizing_drops_links_and_zeroes_lines_in_every_structural_place() {
+fn normalizing_drops_the_root_and_zeroes_lines_in_every_structural_place() {
     let stamp = "*Updated 2026-01-01T00:00:00Z*\n";
-    let loc = |line: u32| {
-        format!("{{\"file\":\"src/lib.rs\",\"line\":{line},\"url\":\"../src/lib.rs#L{line}\"}}")
-    };
+    let header = "{\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"a\",\"target\":\"lib\"}\n";
+    let rooted = header.replace("\"lib\"}", "\"lib\",\"root\":\"../a b\"}");
+    assert_eq!(
+        normalize_outline(&format!("{stamp}{rooted}")),
+        format!("{stamp}{header}")
+    );
     let cases = [
         (
-            format!("{{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":{}}}\n", loc(12)),
-            "{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":{\"file\":\"src/lib.rs\",\"line\":0}}\n",
+            "{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":\"src/lib.rs:12\"}",
+            "{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":\"src/lib.rs:0\"}",
         ),
         (
-            format!(
-                "{{\"k\":\"lead\",\"id\":\"x\",\"mode\":\"lexical\",\"subjects\":[\"a\"],\"evidence\":\"e\",\"locs\":[{},{}]}}\n",
-                loc(3),
-                loc(40)
-            ),
-            "{\"k\":\"lead\",\"id\":\"x\",\"mode\":\"lexical\",\"subjects\":[\"a\"],\"evidence\":\"e\",\"locs\":[{\"file\":\"src/lib.rs\",\"line\":0},{\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+            "{\"k\":\"lead\",\"id\":\"x\",\"subjects\":[\"a\"],\"evidence\":\"at x.rs:3\",\"locs\":[\"src/lib.rs:3\",\"alpha:src/lib.rs:40\"]}",
+            "{\"k\":\"lead\",\"id\":\"x\",\"subjects\":[\"a\"],\"evidence\":\"at x.rs:3\",\"locs\":[\"src/lib.rs:0\",\"alpha:src/lib.rs:0\"]}",
         ),
         (
-            format!("{{\"k\":\"impl\",\"path\":\"A\",\"rust\":\"impl A\",\"locs\":[{}]}}\n", loc(7)),
-            "{\"k\":\"impl\",\"path\":\"A\",\"rust\":\"impl A\",\"locs\":[{\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and x.rs:6\",\"line\":9}]}",
+            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and x.rs:6\",\"line\":0}]}",
         ),
         (
-            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and #L6\",\"line\":9}]}\n"
-                .to_owned(),
-            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and #L6\",\"line\":0}]}\n",
+            "{\"k\":\"spelling\",\"path\":\"p\",\"spellings\":[{\"text\":\"a:1\",\"count\":1,\"locs\":[\"src/a.rs:4\"]}]}",
+            "{\"k\":\"spelling\",\"path\":\"p\",\"spellings\":[{\"text\":\"a:1\",\"count\":1,\"locs\":[\"src/a.rs:0\"]}]}",
         ),
         (
-            "{\"k\":\"lead\",\"locs\":[{\"target\":\"alpha\",\"file\":\"src/lib.rs\",\"line\":2,\"url\":\"../a/src/lib.rs#L2\"}]}\n"
-                .to_owned(),
-            "{\"k\":\"lead\",\"locs\":[{\"target\":\"alpha\",\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+            "{\"k\":\"more\",\"path\":\"p\",\"field\":\"spellings.0.locs\",\"part\":2,\"items\":[\"src/a.rs:5\",\"b:src/b.rs:16\"]}",
+            "{\"k\":\"more\",\"path\":\"p\",\"field\":\"spellings.0.locs\",\"part\":2,\"items\":[\"src/a.rs:0\",\"b:src/b.rs:0\"]}",
         ),
         (
-            "{\"k\":\"mod\",\"path\":\"crate\",\"loc\":{\"file\":\"tool.rs\",\"line\":1,\"url\":\"../tool.rs#L1\"}}\n"
-                .to_owned(),
-            "{\"k\":\"mod\",\"path\":\"crate\",\"loc\":{\"file\":\"tool.rs\",\"line\":0}}\n",
+            "{\"k\":\"more\",\"path\":\"f\",\"field\":\"comments\",\"part\":2,\"items\":[{\"text\":\"// a:1\",\"line\":12}]}",
+            "{\"k\":\"more\",\"path\":\"f\",\"field\":\"comments\",\"part\":2,\"items\":[{\"text\":\"// a:1\",\"line\":0}]}",
         ),
         (
-            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"url\\\":\\\"x\\\" b\"}\n".to_owned(),
-            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"url\\\":\\\"x\\\" b\"}\n",
+            "{\"k\":\"more\",\"path\":\"a\",\"id\":\"x\",\"field\":\"subjects\",\"part\":2,\"items\":[\"b:7\"]}",
+            "{\"k\":\"more\",\"path\":\"a\",\"id\":\"x\",\"field\":\"subjects\",\"part\":2,\"items\":[\"b:7\"]}",
         ),
         (
-            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}\n".to_owned(),
-            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}\n",
+            "{\"k\":\"more\",\"path\":\"a\",\"field\":\"text\",\"part\":3,\"text\":\"see src/lib.rs:5\"}",
+            "{\"k\":\"more\",\"path\":\"a\",\"field\":\"text\",\"part\":3,\"text\":\"see src/lib.rs:5\"}",
+        ),
+        (
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"loc\\\":\\\"x:5\\\", \\\"root\\\":\\\"y\\\" b\"}",
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"loc\\\":\\\"x:5\\\", \\\"root\\\":\\\"y\\\" b\"}",
+        ),
+        (
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}",
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}",
         ),
     ];
     for (record, want) in cases {
-        let got = normalize_outline(&format!("{stamp}{record}"));
-        assert_eq!(got, format!("{stamp}{want}"));
+        let got = normalize_outline(&format!("{stamp}{header}{record}\n"));
+        assert_eq!(got, format!("{stamp}{header}{want}\n"));
     }
     assert_eq!(normalize_outline(stamp), stamp, "the stamp line stays");
 }

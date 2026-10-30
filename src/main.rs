@@ -141,6 +141,9 @@ mod render_slop_facts;
 mod render_slop_items;
 mod render_slop_lists;
 mod render_slop_schema;
+mod render_slop_split;
+#[cfg(test)]
+mod render_slop_split_tests;
 #[cfg(test)]
 mod render_slop_tests;
 mod render_slop_text;
