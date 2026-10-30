@@ -39,14 +39,44 @@ fn a_shape_whose_every_field_another_holds_is_contained() {
 }
 
 #[test]
-fn a_span_beside_a_line_and_a_list_beside_its_length_are_derived() {
+fn a_span_beside_a_line_and_its_text_and_a_list_beside_its_length_are_derived() {
     finds(
         "derived-field",
-        "pub struct Token { pub span: std::ops::Range<usize>, pub line: u32 }\n\
+        "pub struct Token { pub span: std::ops::Range<usize>, pub line: u32, src: std::sync::Arc<str> }\n\
+         pub struct Mark<'a> { pub range: std::ops::Range<usize>, pub column: u32, pub content: &'a str }\n\
          pub struct List { pub items: Vec<u8>, pub items_len: usize }\n",
-        &["List::items, List::items_len", "Token::line, Token::span"],
+        &[
+            "List::items, List::items_len",
+            "Mark::column, Mark::range",
+            "Token::line, Token::span",
+        ],
         "pub struct Token { pub span: std::ops::Range<usize>, pub text: String }\n\
          pub struct List { pub items: Vec<u8>, pub total: usize }\n",
+    );
+}
+
+#[test]
+fn a_span_beside_a_line_without_the_text_it_measures_is_not_derived() {
+    let errors = "use std::num::NonZeroU32;\nuse std::ops::Range;\n\
+         pub enum Error {\n\
+         ParseStructured { kind: u8, span: Option<Range<usize>>, message: String, name: Option<String>, \
+         line: Option<NonZeroU32>, column: Option<NonZeroU32> },\n\
+         }\n\
+         pub struct ParseError { kind: u8, span: Option<Range<usize>>, name: Option<String>, \
+         line: Option<NonZeroU32>, column: Option<NonZeroU32>, inner: Box<Error> }\n\
+         struct Classification { kind: u8, span: Option<Range<usize>>, name: Option<String>, \
+         line: Option<NonZeroU32>, column: Option<NonZeroU32> }\n";
+    assert_eq!(lib(errors, "derived-field"), Vec::<String>::new());
+}
+
+#[test]
+fn every_type_that_holds_one_shape_is_in_its_one_lead() {
+    let classified = "pub struct Classification { kind: u8, span: u32, name: String }\n\
+         pub enum Error { ParseStructured { kind: u8, span: u32, message: String, name: String } }\n\
+         pub struct ParseError { kind: u8, span: u32, name: String, inner: Box<Error> }\n";
+    assert_eq!(
+        lib(classified, "contained-shape"),
+        ["Classification, Error::ParseStructured, ParseError"]
     );
 }
 

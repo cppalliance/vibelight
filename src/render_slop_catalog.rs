@@ -5,11 +5,9 @@
 //! The use facts mean the same on every record that has them: `named_by`
 //! lists the declarations and modules of the target whose signatures name
 //! the item, `reexported_by` the modules that re-export it, `crates` the
-//! other targets of the run whose code is observed to use it, `tests` the
-//! kinds of test, bench, example, build, and doc test code observed to use
-//! it, and `token_hits` how often the scanned sources write its name beyond
-//! the run's declarations of it. The body facts are `body`, `ops`, and
-//! `comments`.
+//! other targets of the run whose code is observed to use it, and `tests`
+//! the kinds of test, bench, example, build, and doc test code observed to
+//! use it. The body facts are `body`, `ops`, and `comments`.
 
 #[cfg(test)]
 use serde::Deserialize;
@@ -84,8 +82,6 @@ pub(crate) struct TypeRecord {
     #[serde(skip_serializing_if = "absent")]
     pub(crate) tests: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) dangling: Option<String>,
@@ -116,8 +112,6 @@ pub(crate) struct TraitRecord {
     pub(crate) crates: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) tests: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,8 +144,6 @@ pub(crate) struct AliasRecord {
     pub(crate) crates: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) tests: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
 }
@@ -257,17 +249,12 @@ pub(crate) struct FnRecord {
     /// The bodies of the run whose direct calls resolve to it.
     #[serde(skip_serializing_if = "absent")]
     pub(crate) direct_callers: Option<Vec<String>>,
-    /// For a method, how often the scanned sources call a method of its name.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) method_name_hits: Option<usize>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) reexported_by: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) crates: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) tests: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) body: Option<BodyRecord>,
     #[serde(skip_serializing_if = "absent")]
@@ -305,8 +292,6 @@ pub(crate) struct ValueRecord {
     #[serde(skip_serializing_if = "absent")]
     pub(crate) tests: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) body: Option<BodyRecord>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) comments: Option<Vec<BodyComment>>,
@@ -329,8 +314,6 @@ pub(crate) struct ExternRecord {
     pub(crate) lints: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) test_support: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) token_hits: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
 }

@@ -117,6 +117,10 @@ pub(crate) struct Header {
     /// which a location's file is below; the goldens leave it out.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) root: Option<String>,
+    /// How many leads the config's `quiet` entries dropped from the
+    /// outline; left out when none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) quieted: Option<usize>,
 }
 
 /// The second record: the output lines each module's catalog records take.

@@ -1,11 +1,13 @@
 //! The papercuts of a run's raw doc text: each doc of a node that holds a
-//! papercut word or phrase outside its code spans.
+//! papercut word or phrase outside its code spans and its boilerplate
+//! passages.
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef, is_value};
 use crate::leads::{Lead, Mode};
 use crate::leads_comments::{PAPERCUT_PHRASES, hits, quoted, shown};
 use crate::leads_comments_words::{prose_words, without_code};
+use crate::leads_docs_text::{boilerplate, without};
 use crate::leads_words::split_param;
 use crate::model::{Crate, Loc, Param, Shape, ValueRef, VariantFields};
 use crate::typerefs::strip_raw;
@@ -115,9 +117,10 @@ fn docs<'a>(t: usize, krate: &'a Crate) -> Vec<Doc<'a>> {
 pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     for (t, krate) in run.krates.iter().enumerate() {
         for doc in docs(t, krate) {
+            let text = without(doc.text, &boilerplate(doc.text, &run.boilerplate));
             let mut found: Vec<&str> = Vec::new();
             let mut first = None;
-            for line in doc.text.lines() {
+            for line in text.lines() {
                 for phrase in hits(&prose_words(&without_code(line)), &PAPERCUT_PHRASES) {
                     if !found.contains(&phrase) {
                         found.push(phrase);

@@ -6,13 +6,13 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
 use crate::leads::Lead;
-use crate::leads_types::{Tok, Ty, identity};
+use crate::leads_types::{Tok, Ty, identity, item_name};
 use crate::leads_words::{bound_name, split_param};
 use crate::model::{
     Crate, DeclId, DeclKind, ItemKind, Loc, MemberKind, Meta, ModId, Receiver, Shape, Sig,
     ValueRef, VariantFields, Vis,
 };
-use crate::model_body::Role;
+use crate::model_body::{BodyFacts, Role, Root, Single};
 use crate::typerefs::strip_raw;
 
 /// One field: of a struct or union, or of an enum's variant.
@@ -413,6 +413,61 @@ pub(crate) fn is_deserialize(name: &str) -> bool {
 pub(crate) fn escapes(run: &AnalysisRun<'_>, item: ItemId) -> bool {
     run.edges_to(item)
         .any(|edge| edge.kind == PathKind::Call(Role::ValueEscape))
+}
+
+/// Tells whether a function is an access seam: its body is one call to a
+/// function of the run, or one method call on a parameter whose type's
+/// inherent method of that name the catalog holds, and that callee is
+/// less visible than the function, which opens it to wider callers.
+pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<'_>) -> bool {
+    let t = func.item.target;
+    let Some(b) = run.body_of(func.item) else {
+        return false;
+    };
+    let facts = &run.krates[t].bodies[b].facts;
+    let callee: Option<&Func<'_>> = match &facts.single {
+        Some(Single::Call(path)) => {
+            let fact = (facts.calls.iter()).position(|c| c.role == Role::Call && c.path == *path);
+            let edge = (run.edges_from(t, b).iter())
+                .find(|e| e.kind == PathKind::Call(Role::Call) && Some(e.fact) == fact);
+            let item = edge.and_then(|edge| edge.item);
+            item.and_then(|item| catalog.funcs.iter().find(|f| f.item == item))
+        }
+        Some(Single::Method(method)) => {
+            let root = (facts.chains.iter()).find_map(|chain| match &chain.root {
+                Root::Param(name) if chain.methods.first() == Some(method) => Some(name),
+                _ => None,
+            });
+            let arg =
+                root.and_then(|name| func.args.iter().find(|a| a.name.as_ref() == Some(name)));
+            let held = arg.and_then(|arg| match arg.ty.deref().0.as_slice() {
+                [Tok::Name(name)] => Some(name.clone()),
+                _ => None,
+            });
+            held.and_then(|held| {
+                catalog.funcs.iter().find(|f| {
+                    let own = f.decl.map(|d| {
+                        let decl = ItemId {
+                            target: f.item.target,
+                            item: ItemRef::Decl(d),
+                        };
+                        item_name(run, decl)
+                    });
+                    f.kind == FnKind::Inherent
+                        && f.name == *method
+                        && own.as_deref() == Some(held.as_str())
+                })
+            })
+        }
+        Some(Single::Field(_)) | None => None,
+    };
+    callee.is_some_and(|callee| func.vis < callee.vis)
+}
+
+/// Tells whether a body builds an `Err` or matches an `Err` arm.
+pub(crate) fn handles_err(facts: &BodyFacts) -> bool {
+    facts.counts.errs > 0
+        || (facts.patterns.iter()).any(|p| p.path.last().is_some_and(|last| last == "Err"))
 }
 
 /// Tells whether a declaration is a wire type: it derives `Serialize` or

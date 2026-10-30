@@ -14,7 +14,7 @@
 {"k":"surface","path":"PATTERN","kind":"value"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
 {"k":"doc","path":"crate","text":"Where comments attach."}
-{"k":"struct","path":"Config","rust":"pub struct Config { pub first: u8, pub second: u8, pub third: u8 }","loc":"src/lib.rs:0","token_hits":3,"comment":"// Attached to the struct below.","dangling":"// Nothing follows this comment in the struct."}
+{"k":"struct","path":"Config","rust":"pub struct Config { pub first: u8, pub second: u8, pub third: u8 }","loc":"src/lib.rs:0","comment":"// Attached to the struct below.","dangling":"// Nothing follows this comment in the struct."}
 {"k":"doc","path":"Config","text":"Docs for Config."}
 {"k":"field","path":"Config::first","rust":"pub first: u8","loc":"src/lib.rs:0","comment":"// Directly above the field."}
 {"k":"field","path":"Config::second","rust":"pub second: u8","loc":"src/lib.rs:0","comment":"// Separated from the field by a blank line.\n// Trailing comment on the same line."}

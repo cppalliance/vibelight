@@ -15,11 +15,11 @@
 {"k":"surface","path":"Point","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
 {"k":"doc","path":"crate","text":"Spellings: each item from outside the crate is written one way, so the\noutline has no Spellings section. A derive name is never counted, so a\nderived Debug beside `fmt::Debug` in an impl is still one way."}
-{"k":"struct","path":"Point","rust":"pub struct Point { pub label: Option<String>, pub tags: Vec<String> }","loc":"src/lib.rs:0","derives":["Clone","Debug","PartialEq"],"named_by":["Line"],"token_hits":3}
+{"k":"struct","path":"Point","rust":"pub struct Point { pub label: Option<String>, pub tags: Vec<String> }","loc":"src/lib.rs:0","derives":["Clone","Debug","PartialEq"],"named_by":["Line"]}
 {"k":"doc","path":"Point","text":"A point whose standard names each have one spelling."}
 {"k":"impl","path":"Point","rust":"impl fmt::Display for Point","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Point::fmt","sig":"fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result","loc":"src/lib.rs:0","impl":"impl fmt::Display for Point","body":{"statements":2,"tokens":19,"nones":1,"macros":["write"]}}
-{"k":"struct","path":"Line","rust":"pub struct Line { pub start: crate::Point, pub end: Point }","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Line","rust":"pub struct Line { pub start: crate::Point, pub end: Point }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Line","text":"A local type written two ways, which the section leaves out."}
 {"k":"impl","path":"Line","rust":"impl fmt::Debug for Line","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Line::fmt","sig":"fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result","loc":"src/lib.rs:0","impl":"impl fmt::Debug for Line","body":{"statements":1,"tokens":3,"macros":["write"]}}

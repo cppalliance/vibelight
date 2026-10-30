@@ -19,7 +19,7 @@
 {"k":"surface","path":"Triple","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
 {"k":"doc","path":"crate","text":"Member order inside a block."}
-{"k":"struct","path":"Scrambled","rust":"pub struct Scrambled { pub zeta: u8, pub alpha: u8, beta: u8, pub Alpha: u8 }","loc":"src/lib.rs:0","lints":["allow(non_snake_case)"],"token_hits":2}
+{"k":"struct","path":"Scrambled","rust":"pub struct Scrambled { pub zeta: u8, pub alpha: u8, beta: u8, pub Alpha: u8 }","loc":"src/lib.rs:0","lints":["allow(non_snake_case)"]}
 {"k":"doc","path":"Scrambled","text":"Members in scrambled order."}
 {"k":"impl","path":"Scrambled","rust":"impl Scrambled","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Scrambled::zed","sig":"pub fn zed(&self)","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
@@ -38,7 +38,7 @@
 {"k":"doc","path":"Order","text":"Variants keep their declared order."}
 {"k":"struct","path":"Triple","rust":"pub struct Triple(pub u8, pub String, pub bool)","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Triple","text":"Tuple fields keep their declared order."}
-{"k":"struct","path":"Based","rust":"pub struct Based","loc":"src/lib.rs:0","token_hits":8}
+{"k":"struct","path":"Based","rust":"pub struct Based","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Based","text":"The base list is sorted."}
 {"k":"impl","path":"Based","rust":"impl Default for Based","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Based::default","sig":"fn default() -> Based","loc":"src/lib.rs:0","impl":"impl Default for Based","body":{"statements":1,"tokens":3}}

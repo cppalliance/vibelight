@@ -1,6 +1,7 @@
 //! Reads the prose of a doc text: its paragraphs, list items, headings,
 //! code blocks, and reference definitions line by line, then each
-//! paragraph's words, code spans, and links character by character.
+//! paragraph's words, code spans, and links character by character. A
+//! paragraph or a code block inside an ignored passage is left unread.
 
 use std::ops::Range;
 
@@ -11,7 +12,17 @@ use crate::leads_docs_text::{Kind, Link, Prose, Tok};
 const ABBREVIATIONS: [&str; 6] = ["cf", "e.g", "etc", "i.e", "vs", "viz"];
 
 /// Reads a doc text's prose.
+#[cfg(test)]
 pub(crate) fn read(doc: &str) -> Prose<'_> {
+    read_except(doc, Vec::new())
+}
+
+/// Reads a doc text's prose outside the `ignored` passages, given as
+/// sorted byte ranges.
+pub(crate) fn read_except(doc: &str, ignored: Vec<Range<usize>>) -> Prose<'_> {
+    let inside = |range: &Range<usize>| {
+        (ignored.iter()).any(|skip| skip.start <= range.start && range.end <= skip.end)
+    };
     let mut reader = Reader {
         prose: Prose {
             doc,
@@ -19,6 +30,7 @@ pub(crate) fn read(doc: &str) -> Prose<'_> {
             headings: Vec::new(),
             links: Vec::new(),
             blocks: Vec::new(),
+            ignored: Vec::new(),
         },
         sentence: 0,
         started: false,
@@ -35,10 +47,10 @@ pub(crate) fn read(doc: &str) -> Prose<'_> {
             let closes =
                 fence(line).is_some_and(|(m, n, info)| m == mark && n >= count && info.is_empty());
             if closes {
-                reader
-                    .prose
-                    .blocks
-                    .push(from..start.saturating_sub(1).max(from));
+                let block = from..start.saturating_sub(1).max(from);
+                if !inside(&block) {
+                    reader.prose.blocks.push(block);
+                }
                 open = None;
             }
             start = next;
@@ -54,7 +66,10 @@ pub(crate) fn read(doc: &str) -> Prose<'_> {
             continue;
         }
         if let Some(from) = paragraph.take() {
-            reader.paragraph(from..start.saturating_sub(1));
+            let range = from..start.saturating_sub(1);
+            if !inside(&range) {
+                reader.paragraph(range);
+            }
         }
         if let Some((mark, count, _)) = opened {
             open = Some((mark, count, next.min(doc.len())));
@@ -67,13 +82,18 @@ pub(crate) fn read(doc: &str) -> Prose<'_> {
         }
         start = next;
     }
-    if let Some(from) = paragraph {
-        reader.paragraph(from..doc.len());
+    if let Some(range) = paragraph.map(|from| from..doc.len()) {
+        if !inside(&range) {
+            reader.paragraph(range);
+        }
     }
-    if let Some((_, _, from)) = open {
-        reader.prose.blocks.push(from..doc.len());
+    if let Some(block) = open.map(|(_, _, from)| from..doc.len()) {
+        if !inside(&block) {
+            reader.prose.blocks.push(block);
+        }
     }
     let mut prose = reader.prose;
+    prose.ignored = ignored;
     for (link, name) in prose.links.iter_mut().zip(reader.names) {
         if let Some(name) = name {
             let defined = definitions.iter().find(|(n, _)| *n == name.to_lowercase());

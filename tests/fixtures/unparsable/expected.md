@@ -4,7 +4,7 @@
 {"k":"surface","path":"Fine","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"Constructs the collector cannot read."}
-{"k":"struct","path":"Fine","rust":"pub struct Fine","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Fine","rust":"pub struct Fine","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Fine","text":"Still collected."}
 {"k":"impl","path":"Fine","rust":"impl Fine","locs":["src/lib.rs:0"]}
 {"k":"unsupported","path":"Fine","text":"verbatim impl item","loc":"src/lib.rs:0"}

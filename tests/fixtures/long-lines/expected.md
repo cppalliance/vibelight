@@ -12,7 +12,7 @@
 {"k":"surface","path":"Wide","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3}
 {"k":"doc","path":"crate","text":"The long-line rule."}
-{"k":"struct","path":"Wide","rust":"pub struct Wide { pub a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>> }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Wide","rust":"pub struct Wide { pub a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Wide","text":"Members that test the long-line rule."}
 {"k":"field","path":"Wide::a_field_with_a_very_long_type","rust":"pub a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Wide::a_field_with_a_very_long_type","text":"This doc comment line is deliberately longer than eighty columns so it shows comments never wrap."}

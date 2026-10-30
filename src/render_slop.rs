@@ -37,6 +37,9 @@ pub(crate) struct RenderInput<'a> {
     pub(crate) analysis_target: AnalysisTarget<'a>,
     /// Every lead of the run; the outline prints those it is named in.
     pub(crate) leads: &'a [Lead],
+    /// How many leads the config's `quiet` entries dropped from this
+    /// outline.
+    pub(crate) quieted: usize,
     pub(crate) stamp: &'a str,
     pub(crate) target_kind: TargetKind,
     /// The crate's folder below the base of the run, `.` for the base.
@@ -185,6 +188,7 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
         },
         dir: (input.shown_dir != ".").then(|| input.shown_dir.clone()),
         root: Some(input.root.clone()),
+        quieted: (input.quieted > 0).then_some(input.quieted),
     });
     let header = serde_json::to_string(&header)?;
     let modules = modules(krate, &order, &spans, listed.len())?;

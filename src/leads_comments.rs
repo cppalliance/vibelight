@@ -1,10 +1,11 @@
 //! The detectors of body comments: a comment whose words its statement
 //! already writes, a comment that names identifiers its next statements do
 //! not write, a comment that ties code to code elsewhere, a comment that
-//! claims an invariant or a cost, and a papercut in a comment or a doc.
-//! The two that compare a comment with its code compare words, never
-//! meaning. This file holds the group's registry and the body comment
-//! detectors; its siblings hold the words they compare and the docs.
+//! claims an invariant or a cost, a comment that calls an error path
+//! impossible, and a papercut in a comment or a doc. The two that compare
+//! a comment with its code compare words, never meaning. This file holds
+//! the group's registry and the body comment detectors; its siblings hold
+//! the words they compare and the docs.
 
 use proc_macro2::LineColumn;
 
@@ -15,6 +16,7 @@ use crate::leads_comments_docs;
 use crate::leads_comments_words::{
     Written, content, holds, looks_like_code, named, prose_line, prose_words, without_code,
 };
+use crate::leads_items::handles_err;
 use crate::model::Loc;
 use crate::model_body::{BodyCommentFact, Owner, Placement};
 use crate::source::SourceFile;
@@ -25,6 +27,7 @@ pub(crate) const IDS: &[&str] = &[
     "comment-name-absent-next-statement",
     "sync-comment",
     "claim-comment",
+    "infallible-comment-in-fallible-body",
     "papercut",
 ];
 
@@ -59,6 +62,17 @@ const CLAIM_MADE: [(&str, &[&str]); 2] = [
 /// The most characters inside the parentheses of a cost such as `O(n)`.
 const COST_CHARS: usize = 12;
 
+/// The words and phrases of a comment that calls its code infallible.
+const INFALLIBLE_PHRASES: [&str; 7] = [
+    "can't fail",
+    "can't happen",
+    "cannot fail",
+    "cannot happen",
+    "infallible",
+    "never fails",
+    "unreachable",
+];
+
 /// The words and phrases of a papercut.
 pub(crate) const PAPERCUT_PHRASES: [&str; 8] = [
     "fixme",
@@ -90,6 +104,8 @@ struct Remark<'a> {
     fingerprint: &'a [String],
     /// The values of its body's string literals, sorted, each once.
     strings: &'a [String],
+    /// Whether its body builds an `Err` or matches an `Err` arm.
+    fallible: bool,
 }
 
 impl Remark<'_> {
@@ -169,6 +185,7 @@ fn remarks<'a>(run: &AnalysisRun<'a>) -> Vec<Remark<'a>> {
                         placement: fact.placement,
                         fingerprint: &fact.fingerprint,
                         strings: &body.facts.strings,
+                        fallible: handles_err(&body.facts),
                     }),
                 }
                 previous = Some(fact);
@@ -209,6 +226,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
             out.push(remark.lead(run, "sync-comment", Mode::DirectSyntax, evidence));
         }
         claims(run, &remark, &prose, &words, out);
+        infallible(run, &remark, &prose, &words, out);
         let papercuts = hits(&words, &PAPERCUT_PHRASES);
         if !papercuts.is_empty() {
             let line = remark.shown_with(&papercuts);
@@ -326,6 +344,48 @@ fn claims(
     });
     let evidence = format!("{} in \"{line}\"", quoted(&found));
     out.push(remark.lead(run, "claim-comment", Mode::DirectSyntax, evidence));
+}
+
+/// `infallible-comment-in-fallible-body`: a comment that holds a phrase of
+/// [`INFALLIBLE_PHRASES`] outside its code spans, in a body that builds an
+/// `Err` or matches an `Err` arm, so that the comment and the error path
+/// disagree. `unreachable` counts as the word, not the macro, and a phrase
+/// of two words only where it ends its clause, since "never fails boot"
+/// says something else.
+fn infallible(
+    run: &AnalysisRun<'_>,
+    remark: &Remark<'_>,
+    prose: &str,
+    words: &[String],
+    out: &mut Vec<Lead>,
+) {
+    if !remark.fallible {
+        return;
+    }
+    let plain = without_code(prose).to_lowercase().replace('\u{2019}', "'");
+    let word = |phrase: &&str| {
+        (plain.match_indices(*phrase)).any(|(at, found)| {
+            let after = plain[at + found.len()..].trim_start();
+            if phrase.contains(' ') {
+                after.chars().next().is_none_or(|c| ".,;:!?)".contains(c))
+            } else {
+                *phrase != "unreachable" || !after.starts_with('!')
+            }
+        })
+    };
+    let found: Vec<&str> = (hits(words, &INFALLIBLE_PHRASES).into_iter())
+        .filter(word)
+        .collect();
+    if found.is_empty() {
+        return;
+    }
+    let line = remark.shown_with(&found);
+    let evidence = format!(
+        "{} in \"{line}\" in a body that builds or matches `Err`",
+        quoted(&found)
+    );
+    let id = "infallible-comment-in-fallible-body";
+    out.push(remark.lead(run, id, Mode::Lexical, evidence));
 }
 
 /// Returns the first cost a text claims, backticks ignored: a capital `O`

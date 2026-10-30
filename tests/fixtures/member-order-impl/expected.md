@@ -9,7 +9,7 @@
 {"k":"surface","path":"Engine","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"Members grouped by impl."}
-{"k":"struct","path":"Engine","rust":"pub struct Engine { speed: u32 }","loc":"src/lib.rs:0","token_hits":4}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { speed: u32 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Engine","text":"A type with methods in two files."}
 {"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Engine::new","sig":"pub fn new() -> Engine","loc":"src/lib.rs:0","body":{"statements":1,"tokens":8}}

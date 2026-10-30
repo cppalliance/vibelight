@@ -268,6 +268,45 @@ fn a_chain_of_three_single_caller_functions_is_one_lead() {
 }
 
 #[test]
+fn a_fallible_function_with_one_caller_whose_error_tests_reach_is_guarded() {
+    let checked = "fn checked(n: u8) -> Result<u8, String> {\n    \
+         if n == 0 { return Err(String::new()); }\n    Ok(n)\n}\n";
+    let tests = "#[cfg(test)]\nmod tests { #[test] fn zero() { let failed = super::checked(0).is_err(); } }\n";
+    let caller = "pub fn run(n: u8) -> u8 { if n == 0 { return 0; } checked(n).unwrap_or(0) }\n";
+    finds(
+        "guarded-error-path",
+        &format!("{checked}{caller}{tests}"),
+        &["checked"],
+        &format!(
+            "{checked}{caller}pub fn again(n: u8) -> u8 {{ checked(n).unwrap_or(1) }}\n{tests}\
+             fn quiet(n: u8) -> Result<u8, String> {{ if n == 0 {{ return Err(String::new()); }} Ok(n) }}\n\
+             pub fn calm(n: u8) -> u8 {{ quiet(n).unwrap_or(0) }}\n\
+             pub fn open(n: u8) -> Result<u8, String> {{ if n == 0 {{ return Err(String::new()); }} Ok(n) }}\n\
+             pub fn wide(n: u8) -> u8 {{ open(n).unwrap_or(0) }}\n\
+             fn passed(n: u8) -> Result<u8, String> {{ if n == 0 {{ return Err(String::new()); }} Ok(n) }}\n\
+             pub fn relay(n: u8) -> Result<u8, String> {{ passed(n) }}\n\
+             fn start_with(n: u8) -> Result<u8, String> {{ if n == 0 {{ return Err(String::new()); }} Ok(n) }}\n\
+             pub fn start(n: u8) -> u8 {{ start_with(n).unwrap_or(0) }}\n\
+             #[cfg(test)]\nmod more {{ #[test] fn t() {{ let _ = super::open(0); let _ = super::passed(0); \
+             let _ = super::start_with(0); }} }}\n"
+        ),
+    );
+    with_leads(
+        &[
+            MANIFEST,
+            ("src/lib.rs", &format!("{checked}{caller}{tests}")),
+        ],
+        |_, leads| {
+            let lead = leads.iter().find(|l| l.id == "guarded-error-path").unwrap();
+            assert_eq!(
+                (lead.mode, lead.limits.as_slice()),
+                (Mode::Lexical, &["generated-code", "macros"][..])
+            );
+        },
+    );
+}
+
+#[test]
 fn a_type_alias_written_once_has_one_observed_alias_use() {
     let alias = "pub type Pair = (u8, u8);\npub fn swap(p: Pair) -> (u8, u8) { (p.1, p.0) }\n";
     finds(

@@ -3,11 +3,15 @@
 //! above it, outside code blocks, headings, and reference definitions, and
 //! the explicit links it writes, each with its destination, and how a
 //! detector matches phrases in it and quotes it. `leads_docs_scan.rs`
-//! reads it.
+//! reads it. A passage, a run of lines up to a blank line, that holds one
+//! of the config's boilerplate texts is left unread by every doc detector.
 
+use std::borrow::Cow;
 use std::ops::Range;
 
+#[cfg(test)]
 pub(crate) use crate::leads_docs_scan::read;
+pub(crate) use crate::leads_docs_scan::read_except;
 
 /// The most characters a quote of prose keeps.
 pub(crate) const QUOTE_CHARS: usize = 160;
@@ -65,6 +69,8 @@ pub(crate) struct Prose<'a> {
     pub(crate) links: Vec<Link>,
     /// The bytes of each code block between its fences.
     pub(crate) blocks: Vec<Range<usize>>,
+    /// The bytes of each boilerplate passage, left unread.
+    pub(crate) ignored: Vec<Range<usize>>,
 }
 
 /// One word of a phrase: the lowercase words that may stand there. A
@@ -155,6 +161,52 @@ impl Prose<'_> {
             self.sentence(sentence)
         )
     }
+
+    /// Returns the doc text without its boilerplate passages.
+    pub(crate) fn kept(&self) -> Cow<'_, str> {
+        without(self.doc, &self.ignored)
+    }
+}
+
+/// Returns the bytes of each passage of a doc text, a run of lines up to a
+/// blank line, that holds one of `texts`, with runs of white space
+/// compared as one space, in order.
+pub(crate) fn boilerplate(doc: &str, texts: &[String]) -> Vec<Range<usize>> {
+    let collapse = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let wanted: Vec<String> = (texts.iter().map(|text| collapse(text)))
+        .filter(|text| !text.is_empty())
+        .collect();
+    let mut passages = Vec::new();
+    let (mut from, mut at): (Option<usize>, usize) = (None, 0);
+    for line in doc.split('\n') {
+        if line.trim().is_empty() {
+            passages.extend(from.take().map(|start| start..at.saturating_sub(1)));
+        } else {
+            from.get_or_insert(at);
+        }
+        at += line.len() + 1;
+    }
+    passages.extend(from.map(|start| start..doc.len()));
+    passages.retain(|passage| {
+        let text = collapse(&doc[passage.clone()]);
+        wanted.iter().any(|wanted| text.contains(wanted.as_str()))
+    });
+    passages
+}
+
+/// Returns a doc text without the bytes of `passages`, which are sorted.
+pub(crate) fn without<'d>(doc: &'d str, passages: &[Range<usize>]) -> Cow<'d, str> {
+    if passages.is_empty() {
+        return Cow::Borrowed(doc);
+    }
+    let mut out = String::new();
+    let mut at = 0;
+    for passage in passages {
+        out.push_str(&doc[at..passage.start]);
+        at = passage.end;
+    }
+    out.push_str(&doc[at..]);
+    Cow::Owned(out)
 }
 
 /// Returns text with its white space collapsed, cut at [`QUOTE_CHARS`].

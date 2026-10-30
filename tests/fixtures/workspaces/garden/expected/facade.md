@@ -18,7 +18,7 @@
 {"k":"use","path":"Meter","rust":"pub use alpha::Meter","loc":"src/lib.rs:0"}
 {"k":"use","path":"Reads","rust":"pub use alpha::Reads","loc":"src/lib.rs:0"}
 {"k":"use","path":"Gauge","rust":"pub use beta::Gauge","loc":"src/lib.rs:0"}
-{"k":"struct","path":"Panel","rust":"pub struct Panel { pub meter: alpha::Meter }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Panel","rust":"pub struct Panel { pub meter: alpha::Meter }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Panel","text":"A panel that reads through alpha's trait."}
 {"k":"field","path":"Panel::meter","rust":"pub meter: alpha::Meter","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Panel::meter","text":"A meter from alpha."}

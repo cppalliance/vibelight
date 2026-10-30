@@ -121,6 +121,41 @@ fn with_no_arguments_the_config_runs_from_a_subfolder_into_its_own_folders() {
 }
 
 #[test]
+fn quiet_entries_drop_leads_count_them_in_each_header_and_note_an_unused_entry() {
+    let (_tmp, repo) = garden(&format!(
+        "{MEMBERS}quiet = [\"one-observed-trait-impl\", \"no-observed-name-use:Meter::*\", \
+         \"papercut\"]\nboilerplate = [\"A meter that reads\"]\n"
+    ));
+    let result = vibelight_in(&repo, &["-o", "out"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    assert_eq!(
+        lines(&result.stderr),
+        [NOTE, "note: quiet entry papercut matches no lead"]
+    );
+    let files = read_plain(&repo.join("out"));
+    let header = |name: &str| {
+        let (_, text) = files.iter().find(|(n, _)| n == name).unwrap();
+        text.lines().nth(1).unwrap().to_owned()
+    };
+    assert!(
+        header("alpha.md").ends_with(",\"quieted\":5}"),
+        "{}",
+        header("alpha.md")
+    );
+    assert!(header("facade.md").ends_with(",\"quieted\":1}"));
+    assert!(!header("beta.md").contains("quieted"));
+    let alpha = &files.iter().find(|(n, _)| n == "alpha.md").unwrap().1;
+    assert!(!alpha.contains("\"id\":\"one-observed-trait-impl\""));
+    assert!(!alpha.contains("\"subjects\":[\"Meter::gauge\"],\"evidence\":\"no hit"));
+    assert!(alpha.contains("\"id\":\"no-observed-field-read\""));
+    let html = |files: &[(String, String)]| -> Vec<(String, String)> {
+        (files.iter().filter(|(n, _)| has_ext(n, "html")).cloned()).collect()
+    };
+    let plain: Vec<(String, String)> = goldens();
+    assert!(html(&files) == html(&plain), "the HTML ignores both keys");
+}
+
+#[test]
 fn a_repository_without_a_config_gets_one_that_chooses_its_crates() {
     let (_tmp, repo) = garden("");
     let result = vibelight_in(&repo.join("crates").join("alpha"), &[]);

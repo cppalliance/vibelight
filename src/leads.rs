@@ -1,8 +1,9 @@
 //! The leads of a run: what the detector groups find in the analysis view,
 //! for an analyst to confirm or extinguish in the source. A lead is never a
 //! finding. It says how its evidence was found and, when it rests on
-//! something the run does not observe, what the run cannot see. More than
-//! [`SUMMARY_FROM`] leads of one id in one module become one summary lead.
+//! something the run does not observe, what the run cannot see. The config's
+//! `quiet` entries drop leads, and then more than [`SUMMARY_FROM`] leads of
+//! one id in one module become one summary lead.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,7 +14,7 @@ use crate::leads_items::{impl_module, parent_module};
 use crate::model::{FileId, Loc, ModId, path_order};
 use crate::{
     leads_body, leads_census, leads_comments, leads_containers, leads_docs, leads_names,
-    leads_shapes,
+    leads_quiet, leads_shapes,
 };
 
 pub(crate) use crate::leads_check::validate;
@@ -243,10 +244,23 @@ pub(crate) fn rests_on_absence(id: &str) -> bool {
     GROUPS.iter().any(|group| group.absent.contains(&id))
 }
 
+/// The leads of a run, and what the config's `quiet` entries dropped.
+#[derive(Debug)]
+pub(crate) struct Found {
+    /// In lead order.
+    pub(crate) leads: Vec<Lead>,
+    /// For each target of the run, how many dropped leads its outline
+    /// would print.
+    pub(crate) quieted: Vec<usize>,
+    /// A note for each `quiet` entry that drops no lead, in config order.
+    pub(crate) notes: Vec<String>,
+}
+
 /// Runs every detector group and returns the run's leads, each with its
-/// lists sorted, more than [`SUMMARY_FROM`] leads of one id in one module
-/// summarized, in lead order.
-pub(crate) fn find(run: &AnalysisRun<'_>) -> Vec<Lead> {
+/// lists sorted, those that a `quiet` entry names dropped, more than
+/// [`SUMMARY_FROM`] leads of one id in one module summarized, in lead
+/// order.
+pub(crate) fn find(run: &AnalysisRun<'_>, quiet: &[String]) -> Found {
     let mut found = Vec::new();
     for group in &GROUPS {
         (group.find)(run, &mut found);
@@ -254,9 +268,32 @@ pub(crate) fn find(run: &AnalysisRun<'_>) -> Vec<Lead> {
     for lead in &mut found {
         lead.settle(run);
     }
+    fold(&mut found);
+    let (quieted, notes) = leads_quiet::apply(&mut found, quiet, run.krates.len());
     let mut leads = summarize(run, found);
     leads.sort_by(|a, b| lead_order(run, a, b));
-    leads
+    Found {
+        leads,
+        quieted,
+        notes,
+    }
+}
+
+/// Drops each `repeated-literal` lead whose every subject is a subject of
+/// one `spelling-table` lead: the literals that a spelling table's
+/// functions share are its spellings, which that lead already names.
+fn fold(found: &mut Vec<Lead>) {
+    let tables: Vec<Vec<Subject>> = (found.iter())
+        .filter(|lead| lead.id == "spelling-table")
+        .map(|lead| lead.subjects.clone())
+        .collect();
+    let spelled = |lead: &Lead| {
+        tables.iter().any(|table| {
+            (lead.subjects.iter())
+                .all(|s| (table.iter()).any(|t| (t.target, &t.path) == (s.target, &s.path)))
+        })
+    };
+    found.retain(|lead| lead.id != "repeated-literal" || !spelled(lead));
 }
 
 /// Collapses each set of more than [`SUMMARY_FROM`] leads that share an id

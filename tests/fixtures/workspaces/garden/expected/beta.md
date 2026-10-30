@@ -10,7 +10,7 @@
 {"k":"use","path":"Gauge","rust":"pub use parts::Gauge","loc":"src/lib.rs:0"}
 {"k":"mod","path":"parts","loc":"src/lib.rs:0","vis":"public","types":2}
 {"k":"doc","path":"parts","text":"The parts of a meter."}
-{"k":"struct","path":"parts::Gauge","rust":"pub struct Gauge","loc":"src/lib.rs:0","reexported_by":["::facade","crate"],"crates":["alpha","facade"],"token_hits":4}
+{"k":"struct","path":"parts::Gauge","rust":"pub struct Gauge","loc":"src/lib.rs:0","reexported_by":["::facade","crate"],"crates":["alpha","facade"]}
 {"k":"doc","path":"parts::Gauge","text":"A gauge."}
-{"k":"struct","path":"parts::Valve","rust":"pub struct Valve","loc":"src/lib.rs:0","crates":["alpha"],"token_hits":1}
+{"k":"struct","path":"parts::Valve","rust":"pub struct Valve","loc":"src/lib.rs:0","crates":["alpha"]}
 {"k":"doc","path":"parts::Valve","text":"A valve."}

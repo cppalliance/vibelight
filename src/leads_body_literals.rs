@@ -9,6 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::ItemId;
 use crate::leads::{Lead, Mode};
+use crate::leads_docs_text::{boilerplate, without};
 use crate::model_body::{Body, BodyKind};
 
 /// The fewest characters of a string literal that `repeated-literal`
@@ -28,8 +29,13 @@ const LITERALS_SHOWN: usize = 4;
 /// The fewest function bodies that one number is in.
 const NUMBER_BODIES: usize = 3;
 
-/// The numbers that `repeated-number` leaves out; a sign is not kept.
-const PLAIN_NUMBERS: [&str; 3] = ["0", "1", "2"];
+/// The magnitude below which `repeated-number` leaves a number out, since
+/// small numbers such as a count of three repeat by chance.
+const NUMBER_FROM: f64 = 10.0;
+
+/// The round numbers that `repeated-number` leaves out, such as a buffer
+/// size or a percent base; a sign is not kept.
+const ROUND_NUMBERS: [&str; 9] = ["16", "32", "64", "100", "128", "256", "512", "1000", "1024"];
 
 /// The fewest doc words, outside code blocks, of a `doc-outweighs-body`
 /// lead, and how many times the body's canonical tokens they exceed.
@@ -181,17 +187,25 @@ fn plain_value(digits: &str) -> &str {
     }
 }
 
-/// `repeated-number`: a number literal other than 0, 1, or 2, whatever its
-/// sign, that [`NUMBER_BODIES`] or more function bodies of one target hold.
-/// A constant's initializer names its number, so it does not count, and
-/// one number in several targets is mostly chance. Numbers that the same
+/// Tells whether `repeated-number` compares a number: one of magnitude
+/// [`NUMBER_FROM`] or more that is none of [`ROUND_NUMBERS`].
+fn telling(value: &str) -> bool {
+    let large = value.parse::<f64>().is_ok_and(|n| n >= NUMBER_FROM);
+    large && !ROUND_NUMBERS.contains(&value)
+}
+
+/// `repeated-number`: a number literal of magnitude [`NUMBER_FROM`] or
+/// more, other than one of [`ROUND_NUMBERS`], whatever its sign, that
+/// [`NUMBER_BODIES`] or more function bodies of one target hold. A
+/// constant's initializer names its number, so it does not count, and one
+/// number in several targets is mostly chance. Numbers that the same
 /// bodies hold make one lead.
 fn repeated_number(run: &AnalysisRun<'_>, bodies: &[(ItemId, &Body)], out: &mut Vec<Lead>) {
     let mut sites: BTreeMap<(usize, &str), Sites> = BTreeMap::new();
     for &(item, body) in bodies.iter().filter(|(_, body)| is_function(body)) {
         for digits in &body.facts.numbers {
             let value = plain_value(digits);
-            if !PLAIN_NUMBERS.contains(&value) {
+            if telling(value) {
                 sites.entry((item.target, value)).or_default().insert(item);
             }
         }
@@ -224,14 +238,15 @@ fn doc_words(doc: &str) -> usize {
 }
 
 /// `doc-outweighs-body`: a function whose doc has [`DOC_WORDS`] or more
-/// words outside code blocks, more than [`DOC_TIMES`] times its body's
-/// canonical tokens.
+/// words outside code blocks and boilerplate passages, more than
+/// [`DOC_TIMES`] times its body's canonical tokens.
 fn doc_outweighs_body(run: &AnalysisRun<'_>, bodies: &[(ItemId, &Body)], out: &mut Vec<Lead>) {
     for &(item, body) in bodies.iter().filter(|(_, body)| is_function(body)) {
         let Some(doc) = run.meta(item).and_then(|meta| meta.raw_doc.as_deref()) else {
             continue;
         };
-        let (words, tokens) = (doc_words(doc), body.facts.fingerprint.tokens);
+        let doc = without(doc, &boilerplate(doc, &run.boilerplate));
+        let (words, tokens) = (doc_words(&doc), body.facts.fingerprint.tokens);
         if words >= DOC_WORDS && words > DOC_TIMES * tokens {
             let evidence = format!("{words} doc words beside {tokens} body tokens");
             out.push(Lead::new("doc-outweighs-body", Mode::DirectSyntax, evidence).item(run, item));

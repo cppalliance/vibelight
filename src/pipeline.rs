@@ -36,6 +36,8 @@ pub(crate) struct Outcome {
     /// How many items the markdown's spelling records name, over every
     /// target: the outside items written more than one way.
     pub(crate) spelled: usize,
+    /// A note for each `quiet` entry of the config that drops no lead.
+    pub(crate) notes: Vec<String>,
 }
 
 /// The HTML document for a target, with the base its source links are
@@ -72,8 +74,10 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     }
     let deps = crate_map(chosen, &targets);
     resolve_run::link(&mut krates, &deps);
-    let (texts, spelled) = analyze(chosen, &targets, &krates, deps, markdown, stamp)?;
-    outcome.spelled = spelled;
+    let analyzed = analyze(chosen, &targets, &krates, deps, plan, stamp)?;
+    let texts = analyzed.texts;
+    outcome.spelled = analyzed.spelled;
+    outcome.notes = analyzed.notes;
     let mut docs: Vec<Built> = Vec::new();
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
         let others = attach::attach(krate);
@@ -140,12 +144,22 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     Ok(outcome)
 }
 
+/// What the analysis of a run yields beside the HTML.
+struct Analyzed {
+    /// Each target's markdown, in target order.
+    texts: Vec<String>,
+    /// How many items the spelling records name.
+    spelled: usize,
+    /// A note for each `quiet` entry that drops no lead.
+    notes: Vec<String>,
+}
+
 /// Builds the run's analysis view from its resolved, unattached crates and
-/// its packages with `deps`, the crate map that resolution used, finds its
-/// leads, and renders each target's markdown from them for the `markdown`
-/// folder, in target order. Returns the markdown texts and how many items
-/// their spelling records name. Debug builds check the facts, the view,
-/// and the leads first.
+/// its packages with `deps`, the crate map that resolution used, and the
+/// plan's boilerplate texts, finds its leads less those the plan's quiet
+/// entries drop, and renders each target's markdown from them for the
+/// plan's markdown folder, in target order. Debug builds check the facts,
+/// the view, and the leads first.
 ///
 /// # Errors
 /// Returns an internal error when a fact, the view, or a lead breaks an
@@ -156,9 +170,10 @@ fn analyze(
     targets: &[(usize, &Target)],
     krates: &[Crate],
     deps: Vec<BTreeMap<String, usize>>,
-    markdown: &Path,
+    plan: &Plan,
     stamp: &str,
-) -> Result<(Vec<String>, usize)> {
+) -> Result<Analyzed> {
+    let markdown = plan.markdown_dir();
     if cfg!(debug_assertions) {
         for krate in krates {
             collect_check::validate_body_facts(krate)?;
@@ -168,13 +183,14 @@ fn analyze(
         }
     }
     let (infos, packages) = analysis::inputs(chosen, targets, krates, deps);
-    let run = analysis::AnalysisRun::build(krates, &infos, &packages);
+    let run = analysis::AnalysisRun::build(krates, &infos, &packages, &plan.boilerplate);
     if cfg!(debug_assertions) {
         run.validate().map_err(|why| {
             anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
         })?;
     }
-    let leads = leads::find(&run);
+    let found = leads::find(&run, &plan.quiet);
+    let leads = found.leads;
     if cfg!(debug_assertions) {
         leads::validate(&leads, &run).map_err(|why| {
             anyhow!("internal error: the leads of the run break an invariant: {why}")
@@ -190,6 +206,7 @@ fn analyze(
                 target: t,
             },
             leads: &leads,
+            quieted: found.quieted[t],
             stamp,
             target_kind: target.kind,
             shown_dir: shown(&chosen.base, &chosen.packages[p].dir),
@@ -203,7 +220,11 @@ fn analyze(
     let spelled = (0..targets.len())
         .map(|t| render_slop_lists::spelled(&run, t).len())
         .sum();
-    Ok((texts, spelled))
+    Ok(Analyzed {
+        texts,
+        spelled,
+        notes: found.notes,
+    })
 }
 
 /// What one target's HTML document is built from.

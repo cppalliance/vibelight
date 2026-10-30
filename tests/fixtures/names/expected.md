@@ -52,16 +52,16 @@
 {"k":"mod","path":"api","loc":"src/api.rs:0","vis":"public","types":1}
 {"k":"doc","path":"api","text":"Re-exports through a glob."}
 {"k":"use","path":"api::*","rust":"pub use self::inner::*","loc":"src/api.rs:0"}
-{"k":"struct","path":"api::Token","rust":"pub struct Token","loc":"src/api.rs:0","named_by":["Catalog","Pairs"],"token_hits":3}
+{"k":"struct","path":"api::Token","rust":"pub struct Token","loc":"src/api.rs:0","named_by":["Catalog","Pairs"]}
 {"k":"doc","path":"api::Token","text":"A unique token type."}
 {"k":"mod","path":"api::inner","loc":"src/api.rs:0","vis":"public","types":2}
-{"k":"struct","path":"api::inner::Handle","rust":"pub struct Handle","loc":"src/api.rs:0","named_by":["Catalog"],"token_hits":1}
+{"k":"struct","path":"api::inner::Handle","rust":"pub struct Handle","loc":"src/api.rs:0","named_by":["Catalog"]}
 {"k":"doc","path":"api::inner::Handle","text":"A handle."}
-{"k":"struct","path":"api::inner::Shared","rust":"pub struct Shared","loc":"src/api.rs:0","token_hits":1}
+{"k":"struct","path":"api::inner::Shared","rust":"pub struct Shared","loc":"src/api.rs:0"}
 {"k":"doc","path":"api::inner::Shared","text":"The other type named Shared."}
 {"k":"mod","path":"model","loc":"src/model.rs:0","vis":"public","types":2}
 {"k":"doc","path":"model","text":"The record types."}
-{"k":"struct","path":"model::Record","rust":"pub struct Record { pub id: u32 }","loc":"src/model.rs:0","named_by":["Catalog"],"reexported_by":["crate"],"token_hits":4}
+{"k":"struct","path":"model::Record","rust":"pub struct Record { pub id: u32 }","loc":"src/model.rs:0","named_by":["Catalog"],"reexported_by":["crate"]}
 {"k":"doc","path":"model::Record","text":"A record."}
-{"k":"struct","path":"model::Shared","rust":"pub struct Shared","loc":"src/model.rs:0","token_hits":1}
+{"k":"struct","path":"model::Shared","rust":"pub struct Shared","loc":"src/model.rs:0"}
 {"k":"doc","path":"model::Shared","text":"One of two types named Shared."}

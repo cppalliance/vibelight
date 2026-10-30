@@ -73,7 +73,6 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
     let path = krate.decl_path(d).join("::");
     let item = ItemRef::Decl(d);
     let (crates, tests) = facts.observed(item);
-    let token_hits = facts.hits(&decl.name).0;
     let named_by = facts.named_by(d);
     let reexported_by = facts.reexported_by(item);
     let rust = shape(decl, &krate.refs);
@@ -97,7 +96,6 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
                 reexported_by,
                 crates,
                 tests,
-                token_hits,
                 comment: comment_text,
                 dangling,
             };
@@ -120,7 +118,6 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             reexported_by,
             crates,
             tests,
-            token_hits,
             comment: comment_text,
             dangling,
         }),
@@ -137,7 +134,6 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             reexported_by,
             crates,
             tests,
-            token_hits,
             comment: comment_text,
         }),
     };

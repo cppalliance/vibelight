@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::ItemRef;
 use crate::leads::{Lead, Mode};
+use crate::leads_comments_words::KEYWORDS;
 use crate::leads_items::{Catalog, FnKind, is_wire};
 use crate::leads_types::{Ty, leaf};
 use crate::leads_words::words;
@@ -111,9 +112,9 @@ fn sites(run: &AnalysisRun<'_>, catalog: &Catalog<'_>) -> Vec<Site> {
     out
 }
 
-/// Adds a site to a lead as a subject: its field, or its function.
-fn add(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, lead: Lead, site: &Site) -> Lead {
-    match site.of {
+/// Adds a role to a lead as a subject: its field, or its function.
+fn add(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, lead: Lead, of: Of) -> Lead {
+    match of {
         Of::Field(f) => catalog.fields[f].add(run, lead),
         Of::Func(f) => lead.item(run, catalog.funcs[f].item),
     }
@@ -156,7 +157,7 @@ fn same_name_many_types(
         let evidence = format!("`{}` holds {}", first.name, shown.join(", "));
         let mut lead = Lead::new("same-name-many-types", Mode::DirectSyntax, evidence);
         for sites in types.values() {
-            lead = add(run, catalog, lead, sites[0]);
+            lead = add(run, catalog, lead, sites[0].of);
         }
         out.push(lead);
     }
@@ -208,7 +209,7 @@ fn same_type_many_role_names(
         );
         let mut lead = Lead::new("same-type-many-role-names", Mode::DirectSyntax, evidence);
         for name in named {
-            lead = add(run, catalog, lead, names[name]);
+            lead = add(run, catalog, lead, names[name].of);
         }
         out.push(lead);
     }
@@ -267,13 +268,14 @@ fn renames(meta: &Meta) -> Vec<String> {
 
 /// Returns the synonyms of one [`SYNONYMS_V1`] set that a role mixes: a
 /// word of its name, and another word of the set in its type or rename
-/// that its name does not use.
+/// that its name does not use. A keyword, such as `type`, is no identifier,
+/// so a name that stands in for it, such as `kind`, mixes nothing with it.
 fn mixed(name: &str, other: &[String]) -> Option<String> {
     let own = words(name);
     SYNONYMS_V1.iter().find_map(|set| {
         let pick = |list: &[String]| -> BTreeSet<String> {
             list.iter()
-                .filter(|w| set.contains(&w.as_str()))
+                .filter(|w| set.contains(&w.as_str()) && !KEYWORDS.contains(&w.as_str()))
                 .cloned()
                 .collect()
         };
@@ -289,17 +291,15 @@ fn mixed(name: &str, other: &[String]) -> Option<String> {
     })
 }
 
-/// `synonym-mix`: one field, parameter, or function whose name uses a
-/// word of one [`SYNONYMS_V1`] set while the names in its type or return
-/// type, or its `serde` rename, use another word of that set, such as
-/// `kind: ArgType`. A name that its type's own name holds, such as
+/// `synonym-mix`: fields, parameters, and functions whose names use a word
+/// of one [`SYNONYMS_V1`] set while the names in their types or return
+/// types, or their `serde` renames, use another word of that set, such as
+/// `name: ArgLabel`. One lead per pair of words in a target names every
+/// role that mixes them. A name that its type's own name holds, such as
 /// `text: BodyText`, mixes nothing.
 fn synonym_mix(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
-    let lead = |found: String, site: String| {
-        let evidence = format!("`{site}` uses {found}, synonyms of set v1");
-        Lead::new("synonym-mix", Mode::DirectSyntax, evidence)
-    };
-    for field in catalog.fields.iter().filter(|f| f.named) {
+    let mut mixes: BTreeMap<(usize, String), Vec<(String, Of)>> = BTreeMap::new();
+    for (f, field) in catalog.fields.iter().enumerate().filter(|(_, f)| f.named) {
         let mut other = type_words(&field.ty);
         let renamed = renames(field.meta);
         other.extend(renamed.iter().flat_map(|name| words(name)));
@@ -308,14 +308,13 @@ fn synonym_mix(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             if let Some(name) = renamed.first() {
                 site = format!("{site}, renamed {name}");
             }
-            out.push(field.add(run, lead(found, site)));
+            let roles = mixes.entry((field.decl.target, found)).or_default();
+            roles.push((site, Of::Field(f)));
         }
     }
-    for func in catalog
-        .funcs
-        .iter()
-        .filter(|f| f.is_own() || f.kind == FnKind::Trait)
-    {
+    let funcs =
+        (catalog.funcs.iter().enumerate()).filter(|(_, f)| f.is_own() || f.kind == FnKind::Trait);
+    for (f, func) in funcs {
         let mut sites: Vec<(String, &str, Vec<String>)> = Vec::new();
         if let Some(ret) = &func.ret {
             let site = format!("fn {} -> {}", func.name, ret.shown());
@@ -332,8 +331,24 @@ fn synonym_mix(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
         }
         for (site, name, other) in sites {
             if let Some(found) = mixed(name, &other) {
-                out.push(lead(found, site).item(run, func.item));
+                let roles = mixes.entry((func.item.target, found)).or_default();
+                roles.push((site, Of::Func(f)));
             }
         }
+    }
+    for ((_, found), roles) in mixes {
+        let mut shown: Vec<String> = Vec::new();
+        for (site, _) in &roles {
+            let site = format!("`{site}`");
+            if !shown.contains(&site) {
+                shown.push(site);
+            }
+        }
+        let evidence = format!("{found}, synonyms of set v1, in {}", shown.join(", "));
+        let mut lead = Lead::new("synonym-mix", Mode::DirectSyntax, evidence);
+        for &(_, of) in &roles {
+            lead = add(run, catalog, lead, of);
+        }
+        out.push(lead);
     }
 }

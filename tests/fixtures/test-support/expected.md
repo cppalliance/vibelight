@@ -19,9 +19,9 @@
 {"k":"doc","path":"Engine","text":"A production engine."}
 {"k":"field","path":"Engine::model","rust":"pub model: Model","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Engine::model","text":"The model it talks to."}
-{"k":"struct","path":"Model","rust":"pub struct Model","loc":"src/lib.rs:0","named_by":["Engine","ScriptedChat"],"token_hits":2}
+{"k":"struct","path":"Model","rust":"pub struct Model","loc":"src/lib.rs:0","named_by":["Engine","ScriptedChat"]}
 {"k":"doc","path":"Model","text":"A production model."}
-{"k":"struct","path":"Recording","rust":"pub struct Recording","loc":"src/lib.rs:0","named_by":["crate","ScriptedChat"],"token_hits":2}
+{"k":"struct","path":"Recording","rust":"pub struct Recording","loc":"src/lib.rs:0","named_by":["crate","ScriptedChat"]}
 {"k":"doc","path":"Recording","text":"Used only by test support."}
 {"k":"struct","path":"ScriptedChat","rust":"pub struct ScriptedChat { pub model: Model, pub recording: Recording }","loc":"src/lib.rs:0","cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
 {"k":"doc","path":"ScriptedChat","text":"A chat that plays back a script, for tests and benches."}
@@ -35,7 +35,7 @@
 {"k":"doc","path":"record","text":"Records into the recording."}
 {"k":"mod","path":"fakes","loc":"src/lib.rs:0","vis":"public","cfgs":["any(test, feature = \"test-support\")"],"test_support":true,"types":1,"functions":{"public":1}}
 {"k":"doc","path":"fakes","text":"Fakes for tests and benches."}
-{"k":"struct","path":"fakes::FakeClock","rust":"pub struct FakeClock","loc":"src/lib.rs:0","test_support":true,"named_by":["fakes"],"token_hits":2}
+{"k":"struct","path":"fakes::FakeClock","rust":"pub struct FakeClock","loc":"src/lib.rs:0","test_support":true,"named_by":["fakes"]}
 {"k":"doc","path":"fakes::FakeClock","text":"A fake clock."}
 {"k":"fn","path":"fakes::clock","sig":"pub fn clock() -> FakeClock","loc":"src/lib.rs:0","test_support":true,"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"fakes::clock","text":"Makes a fake clock."}

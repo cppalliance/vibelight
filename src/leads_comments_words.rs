@@ -62,7 +62,7 @@ const REASONS_V1: [&str; 33] = [
 ];
 
 /// The keywords, which name no identifier.
-const KEYWORDS: [&str; 38] = [
+pub(crate) const KEYWORDS: [&str; 38] = [
     "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern",
     "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub",
     "ref", "return", "self", "Self", "static", "struct", "super", "trait", "true", "type",

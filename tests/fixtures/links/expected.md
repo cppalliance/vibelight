@@ -14,7 +14,7 @@
 {"k":"spelling","path":"std::option::Option","preferred":"Option","spellings":[{"text":"Option","count":1,"locs":["src/parts.rs:13"]},{"text":"std::option::Option","count":2,"locs":["src/lib.rs:27","src/parts.rs:14"]}]}
 {"k":"mod","path":"crate","loc":"src/lib.rs:1","types":2}
 {"k":"doc","path":"crate","text":"Source links."}
-{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6","token_hits":4}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6"}
 {"k":"doc","path":"Engine","text":"A type with an impl in another file."}
 {"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:10"]}
 {"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":"src/lib.rs:12","body":{"statements":0,"tokens":2}}

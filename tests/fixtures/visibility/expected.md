@@ -16,7 +16,7 @@
 {"k":"surface","path":"outer::open","kind":"fn"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
 {"k":"doc","path":"crate","text":"Visibility sections: public, internal, and private."}
-{"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub name: String, pub(crate) size: usize, secret: u8 }","loc":"src/lib.rs:0","token_hits":3}
+{"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub name: String, pub(crate) size: usize, secret: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed","text":"A struct with every section."}
 {"k":"field","path":"Mixed::name","rust":"pub name: String","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed::name","text":"A public field."}
@@ -25,7 +25,7 @@
 {"k":"field","path":"Mixed::secret","rust":"secret: u8","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed::secret","text":"A private field."}
 {"k":"impl","path":"Mixed","rust":"impl Mixed","locs":["src/lib.rs:0"]}
-{"k":"fn","path":"Mixed::new","sig":"pub fn new() -> Mixed","loc":"src/lib.rs:0","token_hits":1,"body":{"statements":1,"tokens":19}}
+{"k":"fn","path":"Mixed::new","sig":"pub fn new() -> Mixed","loc":"src/lib.rs:0","body":{"statements":1,"tokens":19}}
 {"k":"doc","path":"Mixed::new","text":"Makes one."}
 {"k":"fn","path":"Mixed::into_name","sig":"pub fn into_name(self) -> String","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field name"},"ops":["self.name"]}
 {"k":"doc","path":"Mixed::into_name","text":"Takes the name out."}

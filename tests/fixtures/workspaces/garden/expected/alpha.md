@@ -18,7 +18,7 @@
 {"k":"external","path":"gamma::Vendored","uses":1,"named_by":["Meter"]}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
 {"k":"doc","path":"crate","text":"Alpha: a crate that names types of its dependencies."}
-{"k":"struct","path":"Meter","rust":"pub struct Meter { pub gauge: Gauge, pub valve: b::parts::Valve, pub stray: delta::Stray, pub vendored: gamma::Vendored }","loc":"src/lib.rs:0","reexported_by":["::facade"],"crates":["facade"],"token_hits":2}
+{"k":"struct","path":"Meter","rust":"pub struct Meter { pub gauge: Gauge, pub valve: b::parts::Valve, pub stray: delta::Stray, pub vendored: gamma::Vendored }","loc":"src/lib.rs:0","reexported_by":["::facade"],"crates":["facade"]}
 {"k":"doc","path":"Meter","text":"A meter that reads a gauge of beta."}
 {"k":"field","path":"Meter::gauge","rust":"pub gauge: Gauge","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Meter::gauge","text":"Through a use of the re-export at beta's root."}
@@ -28,6 +28,6 @@
 {"k":"doc","path":"Meter::stray","text":"A crate outside the run stays plain."}
 {"k":"field","path":"Meter::vendored","rust":"pub vendored: gamma::Vendored","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Meter::vendored","text":"A crate that no follow glob allows stays plain."}
-{"k":"trait","path":"Reads","rust":"pub trait Reads","loc":"src/lib.rs:0","reexported_by":["::facade"],"crates":["facade"],"token_hits":3}
+{"k":"trait","path":"Reads","rust":"pub trait Reads","loc":"src/lib.rs:0","reexported_by":["::facade"],"crates":["facade"]}
 {"k":"doc","path":"Reads","text":"A trait other crates implement."}
-{"k":"fn","path":"Reads::read","sig":"fn read(&self) -> u32","loc":"src/lib.rs:0","method_name_hits":1,"token_hits":1}
+{"k":"fn","path":"Reads::read","sig":"fn read(&self) -> u32","loc":"src/lib.rs:0"}

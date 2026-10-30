@@ -26,14 +26,14 @@
 {"k":"doc","path":"Level::Top","text":"The top."}
 {"k":"variant","path":"Level::Low","rust":"Low = 0","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Level::Low","text":"The bottom."}
-{"k":"struct","path":"Record","rust":"pub struct Record { #[serde(rename = \"id\")] pub name: String, #[doc(hidden)] pub cache: u8, count: u8 }","loc":"src/lib.rs:0","attrs":["serde(rename_all = \"camelCase\")"],"derives":["serde::Serialize"],"reexported_by":["crate"],"token_hits":4}
+{"k":"struct","path":"Record","rust":"pub struct Record { #[serde(rename = \"id\")] pub name: String, #[doc(hidden)] pub cache: u8, count: u8 }","loc":"src/lib.rs:0","attrs":["serde(rename_all = \"camelCase\")"],"derives":["serde::Serialize"],"reexported_by":["crate"]}
 {"k":"doc","path":"Record","text":"A record with a wire format."}
 {"k":"field","path":"Record::name","rust":"#[serde(rename = \"id\")] pub name: String","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Record::name","text":"The record's name."}
 {"k":"field","path":"Record::cache","rust":"#[doc(hidden)] pub cache: u8","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Record::cache","text":"Kept out of the docs."}
 {"k":"impl","path":"Record","rust":"impl Record","locs":["src/lib.rs:0"]}
-{"k":"fn","path":"Record::name","sig":"pub fn name(&self) -> &str","loc":"src/lib.rs:0","attrs":["must_use","track_caller"],"token_hits":2,"body":{"statements":1,"tokens":6,"single":"field name"},"ops":["self.name"]}
+{"k":"fn","path":"Record::name","sig":"pub fn name(&self) -> &str","loc":"src/lib.rs:0","attrs":["must_use","track_caller"],"body":{"statements":1,"tokens":6,"single":"field name"},"ops":["self.name"]}
 {"k":"doc","path":"Record::name","text":"Reads the name."}
 {"k":"fn","path":"Record::empty","sig":"pub fn empty() -> Record","loc":"src/lib.rs:0","attrs":["must_use = \"a record does nothing until it is stored\""],"body":{"statements":1,"tokens":19}}
 {"k":"doc","path":"Record::empty","text":"Makes an empty record."}

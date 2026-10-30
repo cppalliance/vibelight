@@ -1,8 +1,8 @@
 //! The facts that the records of one target's outline carry: what names
 //! each declaration in its signatures, what re-exports each item, where
-//! other targets and test code are observed to use an item, how often the
-//! census sees its name, who calls a function directly, and what each body
-//! holds. Every list is sorted, each entry once.
+//! other targets and test code are observed to use an item, who calls a
+//! function directly, and what each body holds. Every list is sorted, each
+//! entry once.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -11,13 +11,12 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
 use crate::analysis_uses::UseKind;
-use crate::census::{Context, Form};
+use crate::census::Context;
 use crate::model::{
     Crate, DeclId, ItemKind, MemberKind, ModId, Note, Shape, Sig, Text, VariantFields, path_order,
 };
 use crate::model_body::{BodyFacts, Role, Root, Single};
 use crate::render_slop_catalog::{BodyComment, BodyRecord};
-use crate::typerefs::strip_raw;
 
 /// Returns a list, or `None` when it is empty.
 pub(crate) fn some<T>(list: Vec<T>) -> Option<Vec<T>> {
@@ -211,20 +210,6 @@ impl<'a> Facts<'a> {
             some(crates.into_iter().collect()),
             some(tests.into_iter().collect()),
         )
-    }
-
-    /// Returns how often the scanned sources write a name beyond the run's
-    /// declarations of it, and how many of the hits are method calls.
-    pub(crate) fn hits(&self, name: &str) -> (Option<usize>, Option<usize>) {
-        let name = strip_raw(name);
-        let census = &self.run.census;
-        let found = census.token_hits(&name);
-        let total: usize = found.iter().map(|h| h.count).sum();
-        let methods: usize = (found.iter().filter(|h| h.form == Form::Method))
-            .map(|h| h.count)
-            .sum();
-        let uses = total.saturating_sub(census.declared(&name));
-        ((uses > 0).then_some(uses), (methods > 0).then_some(methods))
     }
 
     /// Returns the bodies of the run whose direct calls resolve to an item

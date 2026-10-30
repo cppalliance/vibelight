@@ -105,6 +105,7 @@ mod leads_names_modules;
 mod leads_names_roles;
 #[cfg(test)]
 mod leads_names_tests;
+mod leads_quiet;
 mod leads_shapes;
 mod leads_shapes_impls;
 mod leads_shapes_params;
@@ -243,6 +244,7 @@ fn run(args: &Args) -> Result<ExitCode> {
         unresolved,
         ambiguous,
         spelled,
+        notes: quiet_notes,
     } = pipeline::outline(&chosen, &plan, &stamp)?;
     let written = folders::write(&files, &plan)?;
     let mut paths: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
@@ -251,6 +253,7 @@ fn run(args: &Args) -> Result<ExitCode> {
         println!("{path}");
     }
     notes.extend(chosen.notes.iter().cloned());
+    notes.extend(quiet_notes);
     if let Some(path) = &written.gitignore {
         notes.push(format!("created {}", shown(path, &cwd)));
     }

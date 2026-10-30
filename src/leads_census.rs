@@ -32,6 +32,7 @@ pub(crate) const IDS: &[&str] = &[
     "no-observed-outside-module-use",
     "no-observed-reexport-use",
     "one-observed-caller",
+    "guarded-error-path",
     "one-observed-alias-use",
     "no-observed-dependency-use",
 ];

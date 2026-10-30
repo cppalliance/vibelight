@@ -43,10 +43,23 @@ pub(crate) struct Config {
     pub(crate) exclude: Vec<String>,
     /// The folder to write into, from `out`, or `.vibelight` beside the file.
     pub(crate) out: PathBuf,
+    /// The texts whose doc passages the doc detectors leave unread.
+    pub(crate) boilerplate: Vec<String>,
+    /// The leads to drop: a lead id, or a lead id, `:`, and a glob of a
+    /// subject's path.
+    pub(crate) quiet: Vec<String>,
 }
 
 /// The keys a config may hold.
-const KEYS: &[&str] = &["workspace", "crates", "follow", "exclude", "out"];
+const KEYS: &[&str] = &[
+    "workspace",
+    "crates",
+    "follow",
+    "exclude",
+    "out",
+    "boilerplate",
+    "quiet",
+];
 
 /// Finds and reads the first `vibelight.toml` in `start` or above it.
 ///
@@ -95,14 +108,14 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         (Some(_), None) => bail!("{name}: `workspace` is true or a directory"),
         (None, Some(value)) => listed(dir, &strings(&name, "crates", value)?),
     };
-    let follow = match table.get("follow") {
-        Some(value) => strings(&name, "follow", value)?,
-        None => Vec::new(),
+    let list = |key: &str| match table.get(key) {
+        Some(value) => strings(&name, key, value),
+        None => Ok(Vec::new()),
     };
-    let exclude = match table.get("exclude") {
-        Some(value) => strings(&name, "exclude", value)?,
-        None => Vec::new(),
-    };
+    let follow = list("follow")?;
+    let exclude = list("exclude")?;
+    let boilerplate = list("boilerplate")?;
+    let quiet = list("quiet")?;
     let out = match table.get("out") {
         Some(value) => {
             let out = value
@@ -118,6 +131,8 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         follow,
         exclude,
         out,
+        boilerplate,
+        quiet,
     })
 }
 
@@ -159,7 +174,8 @@ mod tests {
         let (dir, parsed) = config(
             "workspace = true\nfollow = [\"vendor/*\"]\n\
              exclude = [\"crates/build-*\", \"crates/harness-internal/test-plugin\"]\n\
-             out = \"../outlines\"\n",
+             out = \"../outlines\"\nboilerplate = [\"`cargo test -p build-xtask` enforces\"]\n\
+             quiet = [\"repeated-number\", \"forwarder:detail::*\"]\n",
         );
         let config = parsed.unwrap();
         assert_eq!(config.crates, Crates::Workspace(dir.clone()));
@@ -169,6 +185,8 @@ mod tests {
             ["crates/build-*", "crates/harness-internal/test-plugin"]
         );
         assert_eq!(config.out, dir.parent().unwrap().join("outlines"));
+        assert_eq!(config.boilerplate, ["`cargo test -p build-xtask` enforces"]);
+        assert_eq!(config.quiet, ["repeated-number", "forwarder:detail::*"]);
     }
 
     #[test]
@@ -180,6 +198,8 @@ mod tests {
         assert_eq!(config.follow, Vec::<String>::new());
         assert_eq!(config.exclude, Vec::<String>::new());
         assert_eq!(config.out, dir.join(".vibelight"));
+        assert_eq!(config.boilerplate, Vec::<String>::new());
+        assert_eq!(config.quiet, Vec::<String>::new());
     }
 
     #[test]
@@ -227,6 +247,10 @@ mod tests {
         assert!(error("crates = \"a\"\n").contains("`crates` is a list of strings"));
         assert!(error("exclude = \"crates/*\"\n").contains("`exclude` is a list of strings"));
         assert!(error("exclude = [\"a\", 2]\n").contains("`exclude` is a list of strings"));
+        assert!(error("boilerplate = \"x\"\n").contains("`boilerplate` is a list of strings"));
+        assert!(error("quiet = [\"forwarder\", 1]\n").contains("`quiet` is a list of strings"));
+        assert!(error("[quiet]\nids = []\n").contains("`quiet` is a list of strings"));
+        assert!(error("boilerplates = []\n").contains("unknown key `boilerplates`"));
         assert!(error("out = 1\n").contains("`out` is a directory"));
         assert!(error("workspace = true\ncrates = []\n").contains("not both"));
     }

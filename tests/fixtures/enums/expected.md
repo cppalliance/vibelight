@@ -30,7 +30,7 @@
 {"k":"doc","path":"Event::Started::id","text":"The run identifier."}
 {"k":"variant","path":"Event::Finished","rust":"Finished { identifier: u64, summary: String, duration_in_milliseconds: u128 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Event::Finished","text":"Expands because its one-line form is too wide."}
-{"k":"enum","path":"Level","rust":"pub enum Level { Low, High }","loc":"src/lib.rs:0","token_hits":3}
+{"k":"enum","path":"Level","rust":"pub enum Level { Low, High }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Level","text":"An enum with methods."}
 {"k":"impl","path":"Level","rust":"impl Level","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Level::max","sig":"pub fn max() -> Level","loc":"src/lib.rs:0","body":{"statements":1,"tokens":6}}

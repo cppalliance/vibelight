@@ -218,15 +218,20 @@ pub(crate) struct AnalysisRun<'a> {
     pub(crate) spellings: Vec<Vec<spellings::Entry>>,
     /// The census sources that could not be read or lexed, ascending.
     pub(crate) limits: Vec<SourceId>,
+    /// The texts that mark a doc passage as boilerplate, which the doc
+    /// detectors leave unread.
+    pub(crate) boilerplate: Vec<String>,
 }
 
 impl<'a> AnalysisRun<'a> {
-    /// Builds the view of a run from its resolved, unattached crates and
-    /// what `inputs` gathered for them, and changes none of them.
+    /// Builds the view of a run from its resolved, unattached crates, what
+    /// `inputs` gathered for them, and the config's boilerplate texts, and
+    /// changes none of the crates.
     pub(crate) fn build(
         krates: &'a [Crate],
         targets: &'a [TargetInfo],
         packages: &'a [PackageInfo],
+        boilerplate: &[String],
     ) -> AnalysisRun<'a> {
         let deps = analysis_paths::augmented(targets, packages);
         let cross = analysis_paths::cross(krates, &deps);
@@ -295,6 +300,7 @@ impl<'a> AnalysisRun<'a> {
             surface_items,
             spellings,
             limits,
+            boilerplate: boilerplate.to_vec(),
         };
         run.edges = run.link_bodies();
         for (e, edge) in run.edges.iter().enumerate() {

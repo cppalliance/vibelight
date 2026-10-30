@@ -22,7 +22,7 @@
 {"k":"doc","path":"crate","text":"Special members: the standard traits that become C++ constructors and\ndestructors."}
 {"k":"struct","path":"Derived","rust":"pub struct Derived { pub value: u8 }","loc":"src/lib.rs:0","derives":["Default","serde::Serialize"]}
 {"k":"doc","path":"Derived","text":"The one derivable special member, and a derive from another crate."}
-{"k":"struct","path":"Written","rust":"pub struct Written { pub value: u8 }","loc":"src/lib.rs:0","token_hits":9}
+{"k":"struct","path":"Written","rust":"pub struct Written { pub value: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Written","text":"Every hand-written special member."}
 {"k":"impl","path":"Written","rust":"impl Default for Written","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Written::default","sig":"fn default() -> Self","loc":"src/lib.rs:0","impl":"impl Default for Written","body":{"statements":1,"tokens":8}}
@@ -36,21 +36,21 @@
 {"k":"impl","path":"Written","rust":"impl Written","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Written::new","sig":"pub fn new() -> Self","loc":"src/lib.rs:0","body":{"statements":1,"tokens":8}}
 {"k":"fn","path":"Written::get","sig":"pub fn get(&self) -> u8","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field value"},"ops":["self.value"]}
-{"k":"struct","path":"Name","rust":"pub struct Name(String)","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Name","rust":"pub struct Name(String)","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Name","text":"A name from anything that converts into a String."}
 {"k":"impl","path":"Name","rust":"impl<T: Into<String>> From<T> for Name","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Name::from","sig":"fn from(value: T) -> Self","loc":"src/lib.rs:0","impl":"impl<T: Into<String>> From<T> for Name","body":{"statements":1,"tokens":10,"single":"call Name"},"ops":["value.into"]}
 {"k":"enum","path":"Mode","rust":"pub enum Mode { On, Off }","loc":"src/lib.rs:0","derives":["Default"]}
 {"k":"doc","path":"Mode","text":"An enum with a derived default."}
-{"k":"struct","path":"Handle","rust":"pub struct Handle(u32)","loc":"src/lib.rs:0","derives":["Default"],"token_hits":1}
+{"k":"struct","path":"Handle","rust":"pub struct Handle(u32)","loc":"src/lib.rs:0","derives":["Default"]}
 {"k":"doc","path":"Handle","text":"A tuple struct with a derived and a hand-written member."}
 {"k":"impl","path":"Handle","rust":"impl Drop for Handle","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Handle::drop","sig":"fn drop(&mut self)","loc":"src/lib.rs:0","impl":"impl Drop for Handle","body":{"statements":0,"tokens":2}}
-{"k":"struct","path":"Scheduler","rust":"pub struct Scheduler { jobs: Vec<u32> }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Scheduler","rust":"pub struct Scheduler { jobs: Vec<u32> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Scheduler","text":"A class with a hand-written destructor."}
 {"k":"impl","path":"Scheduler","rust":"impl Drop for Scheduler","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Scheduler::drop","sig":"fn drop(&mut self)","loc":"src/lib.rs:0","impl":"impl Drop for Scheduler","body":{"statements":0,"tokens":2}}
-{"k":"struct","path":"Counter","rust":"pub struct Counter { count: u32 }","loc":"src/lib.rs:0","derives":["Default"],"token_hits":1}
+{"k":"struct","path":"Counter","rust":"pub struct Counter { count: u32 }","loc":"src/lib.rs:0","derives":["Default"]}
 {"k":"doc","path":"Counter","text":"A struct with a private section."}
 {"k":"impl","path":"Counter","rust":"impl Counter","locs":["src/lib.rs:0"]}
-{"k":"fn","path":"Counter::count","sig":"pub fn count(&self) -> u32","loc":"src/lib.rs:0","token_hits":1,"body":{"statements":1,"tokens":5,"single":"field count"},"ops":["self.count"]}
+{"k":"fn","path":"Counter::count","sig":"pub fn count(&self) -> u32","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field count"},"ops":["self.count"]}

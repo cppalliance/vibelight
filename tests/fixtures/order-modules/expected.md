@@ -17,7 +17,7 @@
 {"k":"surface","path":"plan::Step","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"Declarations shown one module at a time."}
-{"k":"struct","path":"Orphan","rust":"pub struct Orphan","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Orphan","rust":"pub struct Orphan","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Orphan","text":"A value nothing uses."}
 {"k":"impl","path":"Box<Orphan>","rust":"impl Clone for Box<Orphan>","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Box<Orphan>::clone","sig":"fn clone(&self) -> Self","loc":"src/lib.rs:0","impl":"impl Clone for Box<Orphan>","body":{"statements":1,"tokens":9,"single":"call Box::new"}}
@@ -31,11 +31,11 @@
 {"k":"doc","path":"engine::start","text":"Starts the engine."}
 {"k":"mod","path":"plan","loc":"src/lib.rs:0","vis":"public","types":3}
 {"k":"doc","path":"plan","text":"Plans runs."}
-{"k":"struct","path":"plan::Plan","rust":"pub struct Plan { pub steps: Vec<Step> }","loc":"src/lib.rs:0","named_by":["engine::Runner"],"token_hits":1}
+{"k":"struct","path":"plan::Plan","rust":"pub struct Plan { pub steps: Vec<Step> }","loc":"src/lib.rs:0","named_by":["engine::Runner"]}
 {"k":"doc","path":"plan::Plan","text":"A plan."}
 {"k":"field","path":"plan::Plan::steps","rust":"pub steps: Vec<Step>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"plan::Plan::steps","text":"Its steps."}
-{"k":"struct","path":"plan::Step","rust":"pub struct Step","loc":"src/lib.rs:0","named_by":["plan::Plan"],"token_hits":1}
+{"k":"struct","path":"plan::Step","rust":"pub struct Step","loc":"src/lib.rs:0","named_by":["plan::Plan"]}
 {"k":"doc","path":"plan::Step","text":"One step."}
 {"k":"struct","path":"plan::FakeStep","rust":"pub struct FakeStep","loc":"src/lib.rs:0","cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
 {"k":"doc","path":"plan::FakeStep","text":"A step for tests and benches."}

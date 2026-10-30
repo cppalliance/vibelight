@@ -9,14 +9,13 @@ use std::collections::BTreeMap;
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::Lead;
-use crate::leads_docs_text::{Prose, read};
-use crate::leads_items::{Catalog, impl_module, impls_of_trait};
+use crate::leads_docs_text::{Prose, boilerplate, read_except};
+use crate::leads_items::{Catalog, impl_module};
 use crate::leads_types::{Ty, item_name, leaf};
 use crate::model::{
     Crate, DeclId, DeclKind, Foreign, ItemKind, Loc, MemberKind, Meta, ModId, Note, RefId, Shape,
     Text, ValueRef, Vis,
 };
-use crate::typerefs::strip_raw;
 use crate::{
     leads_docs_claims, leads_docs_lists, leads_docs_phrases, leads_docs_refs, leads_docs_repeat,
 };
@@ -152,12 +151,24 @@ impl<'a> Docs<'a> {
                 _ => 0,
             };
             let place = (field.decl, field.part(run), field.loc);
-            docs.extend(doc(place, Node::Field(f), module, field.vis, field.meta));
+            docs.extend(doc(
+                run,
+                place,
+                Node::Field(f),
+                (module, field.vis),
+                field.meta,
+            ));
         }
         for (f, func) in catalog.funcs.iter().enumerate() {
             if let (Some(meta), Some(loc)) = (run.meta(func.item), run.loc(func.item)) {
                 let place = (func.item, Vec::new(), loc);
-                docs.extend(doc(place, Node::Func(f), func.module, func.vis, meta));
+                docs.extend(doc(
+                    run,
+                    place,
+                    Node::Func(f),
+                    (func.module, func.vis),
+                    meta,
+                ));
             }
         }
         Docs {
@@ -189,15 +200,15 @@ impl<'a> Docs<'a> {
     }
 }
 
-/// Builds the doc of a node, at its item, subject part, and location,
-/// when it has doc text.
-fn doc(
+/// Builds the doc of a node, at its item, subject part, and location, in
+/// its module and with its visibility, when it has doc text.
+fn doc<'a>(
+    run: &AnalysisRun<'_>,
     (item, part, loc): (ItemId, Vec<String>, Loc),
     node: Node,
-    module: ModId,
-    vis: Vis,
-    meta: &Meta,
-) -> Option<Doc<'_>> {
+    (module, vis): (ModId, Vis),
+    meta: &'a Meta,
+) -> Option<Doc<'a>> {
     Some(Doc {
         item,
         part,
@@ -206,8 +217,13 @@ fn doc(
         module,
         vis,
         notes: &meta.notes,
-        prose: read(meta.raw_doc.as_deref()?),
+        prose: prose(run, meta.raw_doc.as_deref()?),
     })
+}
+
+/// Reads a raw doc text's prose outside its boilerplate passages.
+fn prose<'d>(run: &AnalysisRun<'_>, raw: &'d str) -> Prose<'d> {
+    read_except(raw, boilerplate(raw, &run.boilerplate))
 }
 
 /// Adds the docs of a crate's modules, declarations, variants, and values
@@ -230,7 +246,7 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
                 module: m,
                 vis: module.vis,
                 notes: &module.docs,
-                prose: read(raw),
+                prose: prose(run, raw),
             });
         }
         for (k, value) in module.items.iter().enumerate() {
@@ -240,19 +256,20 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
             ) {
                 let item = at(ItemRef::Value(ValueRef { module: m, item: k }));
                 let place = (item, Vec::new(), value.loc);
-                docs.extend(doc(place, Node::Value, m, value.vis, &value.meta));
+                docs.extend(doc(run, place, Node::Value, (m, value.vis), &value.meta));
             }
         }
     }
     let valued = |kind: &MemberKind| matches!(kind, MemberKind::Const { .. } | MemberKind::Type(_));
     for (d, decl) in krate.decls.iter().enumerate() {
         let place = (at(ItemRef::Decl(d)), Vec::new(), decl.loc);
-        docs.extend(doc(place, Node::Decl(d), decl.module, decl.vis, &decl.meta));
+        let held = (decl.module, decl.vis);
+        docs.extend(doc(run, place, Node::Decl(d), held, &decl.meta));
         if decl.kind == DeclKind::Trait {
             for (k, member) in decl.members.iter().enumerate() {
                 if valued(&member.kind) {
                     let place = (at(ItemRef::Own(d, k)), Vec::new(), member.loc);
-                    docs.extend(doc(place, Node::Value, decl.module, decl.vis, &member.meta));
+                    docs.extend(doc(run, place, Node::Value, held, &member.meta));
                 }
             }
         }
@@ -260,7 +277,8 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
             for (v, variant) in variants.iter().enumerate() {
                 let place = (at(ItemRef::Variant(d, v)), Vec::new(), variant.loc);
                 let node = Node::Variant(d, v);
-                docs.extend(doc(place, node, decl.module, Vis::Public, &variant.meta));
+                let public = (decl.module, Vis::Public);
+                docs.extend(doc(run, place, node, public, &variant.meta));
             }
         }
     }
@@ -273,7 +291,13 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
         for (item, member) in inherent.chain(traited) {
             if valued(&member.kind) {
                 let place = (at(item), Vec::new(), member.loc);
-                docs.extend(doc(place, Node::Value, module, member.vis, &member.meta));
+                docs.extend(doc(
+                    run,
+                    place,
+                    Node::Value,
+                    (module, member.vis),
+                    &member.meta,
+                ));
             }
         }
     }
@@ -298,24 +322,6 @@ pub(crate) fn value_type<'a>(run: &AnalysisRun<'a>, item: ItemId) -> Option<&'a 
             _ => None,
         },
     }
-}
-
-/// Tells whether declaration `d` of target `t` is an error type: a struct,
-/// enum, or union named with `Error`, or one with a `std::error::Error`
-/// impl.
-pub(crate) fn is_error(run: &AnalysisRun<'_>, t: usize, d: DeclId) -> bool {
-    let decl = &run.krates[t].decls[d];
-    let name = strip_raw(&decl.name);
-    let typed = matches!(
-        decl.kind,
-        DeclKind::Struct | DeclKind::Enum | DeclKind::Union
-    );
-    let named = name.ends_with("Error") || name.ends_with("Errors");
-    typed
-        && (named
-            || impls_of_trait(run, t, d, "std::error::Error")
-                .next()
-                .is_some())
 }
 
 /// Shows a field or a type as a reader sees it, such as `names:

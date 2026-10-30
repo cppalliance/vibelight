@@ -7,8 +7,7 @@
 use crate::analysis_items::ItemRef;
 use crate::leads_words::split_param;
 use crate::model::{
-    self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Receiver, Sig, ValueRef, Vis,
-    name_order,
+    self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, Vis, name_order,
 };
 use crate::render_slop::{Doc, Outline};
 use crate::render_slop_catalog::{
@@ -169,7 +168,6 @@ fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
                 attrs: some(meta.attrs.clone()),
                 lints: some(meta.lints.clone()),
                 test_support: place.support(),
-                token_hits: outline.facts.hits(name).0,
                 comment: comment(&meta.notes, meta.trailing.as_ref()),
             };
             let doc = Doc {
@@ -236,16 +234,11 @@ fn param_docs(sig: &Sig, refs: &[model::TypeRef]) -> Option<Vec<ParamDoc>> {
 }
 
 /// Adds a function's record: free, inherent, a trait impl's, or a trait's
-/// own. A trait impl's function takes its name from the trait, so its name
-/// hits say nothing about it and are left out.
+/// own.
 pub(crate) fn push_fn(outline: &mut Outline<'_>, place: &Place<'_>, sig: &Sig) {
     let krate = outline.krate;
     let meta = place.meta;
     let facts = &outline.facts;
-    let (token_hits, method_hits) = match place.impl_header {
-        Some(_) => (None, None),
-        None => facts.hits(&sig.name),
-    };
     let (crates, tests) = facts.observed(place.item);
     let (body, ops, comments) = facts.body(place.item);
     let record = FnRecord {
@@ -260,11 +253,9 @@ pub(crate) fn push_fn(outline: &mut Outline<'_>, place: &Place<'_>, sig: &Sig) {
         test_support: place.support(),
         param_docs: param_docs(sig, &krate.refs),
         direct_callers: facts.direct_callers(place.item),
-        method_name_hits: method_hits.filter(|_| sig.receiver != Receiver::None),
         reexported_by: facts.reexported_by(place.item),
         crates,
         tests,
-        token_hits,
         body,
         ops,
         comments,
@@ -287,11 +278,6 @@ pub(crate) fn push_value(
 ) {
     let meta = place.meta;
     let facts = &outline.facts;
-    let name = place.path.rsplit("::").next().unwrap_or_default();
-    let token_hits = match place.impl_header {
-        Some(_) => None,
-        None => facts.hits(name).0,
-    };
     let (crates, tests) = facts.observed(place.item);
     let (body, _, comments) = facts.body(place.item);
     let record = ValueRecord {
@@ -307,7 +293,6 @@ pub(crate) fn push_value(
         reexported_by: facts.reexported_by(place.item),
         crates,
         tests,
-        token_hits,
         body,
         comments,
         comment: comment(&meta.notes, meta.trailing.as_ref()),

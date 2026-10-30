@@ -27,21 +27,21 @@
 {"k":"doc","path":"crate","text":"Prelude order: a bare name is the prelude's unless the module declares\nit, imports it, or a glob brings it in."}
 {"k":"mod","path":"alpha","loc":"src/lib.rs:0","vis":"public","types":2}
 {"k":"doc","path":"alpha","text":"The first module with a private Result alias."}
-{"k":"struct","path":"alpha::AlphaError","rust":"pub struct AlphaError","loc":"src/lib.rs:0","named_by":["alpha::Result"],"token_hits":1}
+{"k":"struct","path":"alpha::AlphaError","rust":"pub struct AlphaError","loc":"src/lib.rs:0","named_by":["alpha::Result"]}
 {"k":"doc","path":"alpha::AlphaError","text":"Alpha's error."}
-{"k":"alias","path":"alpha::Result","rust":"type Result<T> = std::result::Result<T, AlphaError>","loc":"src/lib.rs:0","token_hits":6}
+{"k":"alias","path":"alpha::Result","rust":"type Result<T> = std::result::Result<T, AlphaError>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"alpha::Result","text":"The results of alpha."}
 {"k":"mod","path":"beta","loc":"src/lib.rs:0","vis":"public","types":2}
 {"k":"doc","path":"beta","text":"The second module with a private Result alias."}
-{"k":"struct","path":"beta::BetaError","rust":"pub struct BetaError","loc":"src/lib.rs:0","named_by":["beta::Result"],"token_hits":1}
+{"k":"struct","path":"beta::BetaError","rust":"pub struct BetaError","loc":"src/lib.rs:0","named_by":["beta::Result"]}
 {"k":"doc","path":"beta::BetaError","text":"Beta's error."}
-{"k":"alias","path":"beta::Result","rust":"type Result<T> = std::result::Result<T, BetaError>","loc":"src/lib.rs:0","token_hits":6}
+{"k":"alias","path":"beta::Result","rust":"type Result<T> = std::result::Result<T, BetaError>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"beta::Result","text":"The results of beta."}
 {"k":"mod","path":"own","loc":"src/lib.rs:0","vis":"public","types":3}
 {"k":"doc","path":"own","text":"A module that declares its own Result and uses it."}
-{"k":"struct","path":"own::OwnError","rust":"pub struct OwnError","loc":"src/lib.rs:0","named_by":["own::Result"],"token_hits":1}
+{"k":"struct","path":"own::OwnError","rust":"pub struct OwnError","loc":"src/lib.rs:0","named_by":["own::Result"]}
 {"k":"doc","path":"own::OwnError","text":"The error of this module."}
-{"k":"alias","path":"own::Result","rust":"pub type Result<T> = std::result::Result<T, OwnError>","loc":"src/lib.rs:0","named_by":["own::Owned","starred::Starred"],"token_hits":6}
+{"k":"alias","path":"own::Result","rust":"pub type Result<T> = std::result::Result<T, OwnError>","loc":"src/lib.rs:0","named_by":["own::Owned","starred::Starred"]}
 {"k":"doc","path":"own::Result","text":"The results of this module."}
 {"k":"struct","path":"own::Owned","rust":"pub struct Owned { pub value: Result<u8> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"own::Owned","text":"A value in this module's Result."}

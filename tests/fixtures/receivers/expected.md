@@ -8,7 +8,7 @@
 {"k":"surface","path":"Node","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":{"public":1}}
 {"k":"doc","path":"crate","text":"Receivers."}
-{"k":"struct","path":"Node","rust":"pub struct Node","loc":"src/lib.rs:0","named_by":["crate"],"token_hits":2}
+{"k":"struct","path":"Node","rust":"pub struct Node","loc":"src/lib.rs:0","named_by":["crate"]}
 {"k":"doc","path":"Node","text":"Every receiver form."}
 {"k":"impl","path":"Node","rust":"impl Node","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Node::shared","sig":"pub fn shared(&self) -> u8","loc":"src/lib.rs:0","body":{"statements":1,"tokens":3}}

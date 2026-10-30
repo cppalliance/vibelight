@@ -22,13 +22,13 @@
 {"k":"doc","path":"crate","text":"Cycles at level 1 and below."}
 {"k":"struct","path":"Root","rust":"pub struct Root { pub ping: net::Ping }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Root","text":"Names the cycle below it."}
-{"k":"struct","path":"Left","rust":"pub struct Left { pub right: Option<Box<Right>> }","loc":"src/lib.rs:0","named_by":["Right"],"token_hits":1}
+{"k":"struct","path":"Left","rust":"pub struct Left { pub right: Option<Box<Right>> }","loc":"src/lib.rs:0","named_by":["Right"]}
 {"k":"doc","path":"Left","text":"Half of a cycle that nothing else names."}
-{"k":"struct","path":"Right","rust":"pub struct Right { pub left: Option<Box<Left>> }","loc":"src/lib.rs:0","named_by":["Left"],"token_hits":1}
+{"k":"struct","path":"Right","rust":"pub struct Right { pub left: Option<Box<Left>> }","loc":"src/lib.rs:0","named_by":["Left"]}
 {"k":"doc","path":"Right","text":"The other half."}
 {"k":"mod","path":"net","loc":"src/lib.rs:0","vis":"public","types":2}
 {"k":"doc","path":"net","text":"A cycle below level 1."}
-{"k":"struct","path":"net::Ping","rust":"pub struct Ping { pub pong: Option<Box<Pong>> }","loc":"src/lib.rs:0","named_by":["net::Pong","Root"],"token_hits":2}
+{"k":"struct","path":"net::Ping","rust":"pub struct Ping { pub pong: Option<Box<Pong>> }","loc":"src/lib.rs:0","named_by":["net::Pong","Root"]}
 {"k":"doc","path":"net::Ping","text":"Names Pong."}
-{"k":"struct","path":"net::Pong","rust":"pub struct Pong { pub ping: Option<Box<Ping>> }","loc":"src/lib.rs:0","named_by":["net::Ping"],"token_hits":1}
+{"k":"struct","path":"net::Pong","rust":"pub struct Pong { pub ping: Option<Box<Ping>> }","loc":"src/lib.rs:0","named_by":["net::Ping"]}
 {"k":"doc","path":"net::Pong","text":"Names Ping back."}

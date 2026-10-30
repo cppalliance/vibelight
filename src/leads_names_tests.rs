@@ -27,13 +27,15 @@ fn a_deprecated_item_or_a_whole_shim_word_is_a_compat_shim() {
 }
 
 #[test]
-fn an_allow_or_an_expect_attribute_is_a_suppression() {
+fn an_allow_or_a_reasonless_expect_is_a_suppression_but_a_justified_expect_is_not() {
     finds(
         "lint-suppression",
-        "#[allow(dead_code)]\nfn unused() {}\n\
-         pub struct S { #[expect(dead_code, reason = \"kept\")] x: u8 }\n",
+        "#[allow(dead_code, reason = \"kept\")]\nfn unused() {}\n\
+         pub struct S { #[expect(dead_code)] x: u8 }\n",
         &["S::x", "unused"],
-        "#[deny(missing_docs)]\npub fn kept() {}\n#[warn(unused)]\npub fn used() {}\n",
+        "#[deny(missing_docs)]\npub fn kept() {}\n#[warn(unused)]\npub fn used() {}\n\
+         #[expect(\n    clippy::must_use_candidate,\n    reason = \"a test may call it only to assert that the source parses\"\n)]\n\
+         pub fn parse_ok() {}\npub struct T { #[expect(dead_code, reason = \"kept\")] y: u8 }\n",
     );
 }
 
@@ -93,23 +95,75 @@ fn one_type_under_three_names_that_share_a_word_is_a_lead() {
 }
 
 #[test]
-fn a_role_named_in_one_synonym_and_typed_in_another_mixes_them() {
+fn roles_named_in_one_synonym_and_typed_in_another_mix_them_in_one_lead_per_pair() {
     finds(
         "synonym-mix",
-        "pub enum ArgType { Text }\npub struct Arg { pub kind: ArgType }\n",
-        &["Arg::kind"],
+        "pub struct NodeId;\npub struct Edge { pub key: NodeId }\npub fn find(key: NodeId) {}\n\
+         pub struct ArgLabel;\npub struct Arg { pub name: ArgLabel }\n",
+        &["Arg::name", "Edge::key, find"],
         "pub enum ArgType { Text }\npub struct Arg { pub ty: ArgType }\n\
          pub struct BodyText;\npub struct Section { pub text: BodyText }\n",
     );
+    with_leads(
+        &[
+            MANIFEST,
+            (
+                "src/lib.rs",
+                "pub struct NodeId;\npub struct Edge { pub key: NodeId }\npub fn find(key: NodeId) {}\n",
+            ),
+        ],
+        |_, leads| {
+            let lead = leads.iter().find(|l| l.id == "synonym-mix").unwrap();
+            assert_eq!(
+                (lead.subjects.len(), lead.evidence.as_str()),
+                (2, "id and key, synonyms of set v1, in `key: NodeId`")
+            );
+        },
+    );
+}
+
+#[test]
+fn a_name_that_stands_in_for_a_keyword_mixes_no_synonym() {
+    let args = "#[derive(serde::Deserialize)]\n#[serde(rename_all = \"lowercase\")]\n\
+         pub enum ArgType { Text }\n\
+         pub struct ArgDecl { kind: ArgType }\n\
+         impl ArgDecl { pub fn kind(&self) -> ArgType { ArgType::Text } }\n\
+         #[derive(serde::Deserialize)]\nstruct ArgDeclWire { #[serde(rename = \"type\")] kind: ArgType }\n\
+         fn default_matches(kind: ArgType) -> bool { true }\n";
+    assert_eq!(lib(args, "synonym-mix"), Vec::<String>::new());
 }
 
 #[test]
 fn a_function_beside_its_inner_twin_is_a_wrapper_family() {
     finds(
         "wrapper-name-family",
-        "pub fn parse() {}\nfn parse_inner() {}\n",
-        &["parse, parse_inner"],
+        "pub fn parse() {}\nfn parse_inner() {}\n\
+         pub fn load() {}\nfn load_inner() {}\npub fn do_load() {}\n",
+        &["do_load, load, load_inner", "parse, parse_inner"],
         "pub fn parse() {}\nmod other { pub fn parse_inner() {} }\n",
+    );
+}
+
+#[test]
+fn a_public_wrapper_over_its_private_implementation_is_no_family() {
+    let prompt = |extra: &str| {
+        format!(
+            "pub struct Prompt;\nimpl Prompt {{\n\
+             pub fn parse(input: &str) -> u8 {{ Self::parse_inner(input) }}\n\
+             fn parse_inner(input: &str) -> u8 {{ Self::parse_body(input.len()) }}\n\
+             fn parse_body(n: usize) -> u8 {{ 1 }}\n\
+             }}\n{extra}"
+        )
+    };
+    assert_eq!(
+        lib(&prompt(""), "wrapper-name-family"),
+        Vec::<String>::new()
+    );
+    let called = prompt("pub fn other() -> u8 { Prompt::parse_body(2) }\n");
+    assert_eq!(
+        lib(&called, "wrapper-name-family"),
+        ["Prompt::parse, Prompt::parse_body"],
+        "a caller outside the family"
     );
 }
 

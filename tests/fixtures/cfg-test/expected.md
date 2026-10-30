@@ -10,7 +10,7 @@
 {"k":"surface","path":"production_only","kind":"fn"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"functions":{"public":1}}
 {"k":"doc","path":"crate","text":"Test-only items are skipped."}
-{"k":"struct","path":"Kept","rust":"pub struct Kept { pub value: u32 }","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Kept","rust":"pub struct Kept { pub value: u32 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Kept","text":"Kept."}
 {"k":"field","path":"Kept::value","rust":"pub value: u32","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Kept::value","text":"A kept field."}

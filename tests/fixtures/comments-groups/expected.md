@@ -32,7 +32,7 @@
 {"k":"use","path":"Value","rust":"pub use store::Value","loc":"src/lib.rs:0","comment":"// The value type."}
 {"k":"use","path":"read","rust":"pub use store::read","loc":"src/lib.rs:0","comment":"// Store operations, for scripts."}
 {"k":"use","path":"write","rust":"pub use store::write","loc":"src/lib.rs:0","comment":"// Writes replace the old value."}
-{"k":"struct","path":"Handle","rust":"pub struct Handle","loc":"src/lib.rs:0","token_hits":6}
+{"k":"struct","path":"Handle","rust":"pub struct Handle","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Handle","text":"A handle."}
 {"k":"impl","path":"Handle","rust":"impl Handle","locs":["src/lib.rs:0","src/lib.rs:0"],"comment":"// Opening.\n// Reading."}
 {"k":"fn","path":"Handle::open","sig":"pub fn open() -> Handle","loc":"src/lib.rs:0","body":{"statements":1,"tokens":3}}
@@ -45,15 +45,15 @@
 {"k":"impl","path":"Handle","rust":"impl traits::Persist for Handle","locs":["src/lib.rs:0"],"comment":"// Persists the handle."}
 {"k":"mod","path":"store","loc":"src/lib.rs:0","vis":"public","types":2,"functions":{"public":2}}
 {"k":"doc","path":"store","text":"Keys and values."}
-{"k":"struct","path":"store::Key","rust":"pub struct Key","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1}
+{"k":"struct","path":"store::Key","rust":"pub struct Key","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"store::Key","text":"A key."}
-{"k":"struct","path":"store::Value","rust":"pub struct Value","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1}
+{"k":"struct","path":"store::Value","rust":"pub struct Value","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"store::Value","text":"A value."}
-{"k":"fn","path":"store::read","sig":"pub fn read()","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"store::read","sig":"pub fn read()","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"store::read","text":"Reads a value."}
-{"k":"fn","path":"store::write","sig":"pub fn write()","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"store::write","sig":"pub fn write()","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"store::write","text":"Writes a value."}
 {"k":"mod","path":"traits","loc":"src/lib.rs:0","vis":"public","types":1}
-{"k":"trait","path":"traits::Persist","rust":"pub trait Persist","loc":"src/lib.rs:0","named_by":["Handle"],"token_hits":1}
+{"k":"trait","path":"traits::Persist","rust":"pub trait Persist","loc":"src/lib.rs:0","named_by":["Handle"]}
 {"k":"doc","path":"traits::Persist","text":"Something that persists."}
 {"k":"fn","path":"traits::Persist::save","sig":"fn save(&self)","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}

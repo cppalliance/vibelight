@@ -162,7 +162,7 @@ fn doc_echo(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>, out: &mut Vec
     if terms.iter().all(|term| vocab.contains(term)) {
         let evidence = format!(
             "every content word of \"{}\" is in its name, signature, or types",
-            quote(doc.prose.doc)
+            quote(&doc.prose.kept())
         );
         out.push(doc.add(run, Lead::new("doc-echo", Mode::DirectSyntax, evidence)));
     }

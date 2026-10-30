@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
-use crate::leads_items::{Catalog, FnKind, Func, impls_of_trait, trait_of};
+use crate::leads_items::{Catalog, FnKind, Func, impls_of_trait, is_seam, trait_of};
 use crate::leads_types::{Tok, Ty, item_name, leaf};
 use crate::model::{FileId, MemberKind, ModId, Shape, VariantFields};
 use crate::model_body::Single;
@@ -271,7 +271,8 @@ fn named(ty: &Ty, own: Option<&String>) -> Option<String> {
 /// `inverse-pair`: `From` impls both ways between two types of the run,
 /// and functions of one module, free or associated without `self`, that
 /// turn one type into another and back. A constructor and a getter of one
-/// type are the common newtype pair and are left out.
+/// type are the common newtype pair and are left out, and so is a pair of
+/// access seams, which open a narrower pair to wider callers.
 fn inverse_pair(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     const ID: &str = "inverse-pair";
     let mut from: BTreeMap<(String, String), (ItemId, usize)> = BTreeMap::new();
@@ -350,6 +351,9 @@ fn inverse_pair(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead
         let Some(back) = back.filter(|_| x < y) else {
             continue;
         };
+        if (there.iter().chain(back)).all(|func| is_seam(run, catalog, func)) {
+            continue;
+        }
         let names = |funcs: &[&Func<'_>]| {
             funcs
                 .iter()

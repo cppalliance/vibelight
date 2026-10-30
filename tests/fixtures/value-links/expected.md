@@ -41,17 +41,17 @@
 {"k":"use","path":"relay::measure","rust":"pub use crate::tools::measure","loc":"src/lib.rs:0"}
 {"k":"mod","path":"tools","loc":"src/lib.rs:0","vis":"public","types":1,"functions":{"public":4}}
 {"k":"doc","path":"tools","text":"Defines the values."}
-{"k":"const","path":"tools::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":2,"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"tools::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"tools::LIMIT","text":"The highest reading."}
-{"k":"static","path":"tools::TOTAL","rust":"pub static TOTAL: u32","value":"0","loc":"src/lib.rs:0","reexported_by":["crate","relay"],"token_hits":2,"body":{"statements":1,"tokens":1}}
+{"k":"static","path":"tools::TOTAL","rust":"pub static TOTAL: u32","value":"0","loc":"src/lib.rs:0","reexported_by":["crate","relay"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"tools::TOTAL","text":"A running total."}
-{"k":"fn","path":"tools::measure","sig":"pub fn measure() -> u32","loc":"src/lib.rs:0","reexported_by":["crate","relay"],"token_hits":2,"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"tools::measure","sig":"pub fn measure() -> u32","loc":"src/lib.rs:0","reexported_by":["crate","relay"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"tools::measure","text":"Reads the gauge, never above [`LIMIT`] and counted in [`TOTAL`]."}
-{"k":"fn","path":"tools::Shape","sig":"pub fn Shape()","loc":"src/lib.rs:0","token_hits":1,"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"tools::Shape","sig":"pub fn Shape()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"tools::Shape","text":"Draws a [`Shape`], which shares its name."}
-{"k":"struct","path":"tools::Shape","rust":"pub struct Shape { pub sides: u8 }","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1}
+{"k":"struct","path":"tools::Shape","rust":"pub struct Shape { pub sides: u8 }","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"tools::Shape","text":"A shape that [`measure`] sizes, also reached as [`crate::relay::measure`]."}
-{"k":"fn","path":"tools::backend","sig":"pub fn backend() -> u8","loc":"src/lib.rs:0","cfgs":["unix"],"reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"tools::backend","sig":"pub fn backend() -> u8","loc":"src/lib.rs:0","cfgs":["unix"],"reexported_by":["crate"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"tools::backend","text":"The Unix backend."}
-{"k":"fn","path":"tools::backend","sig":"pub fn backend() -> u8","loc":"src/lib.rs:0","cfgs":["windows"],"token_hits":1,"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"tools::backend","sig":"pub fn backend() -> u8","loc":"src/lib.rs:0","cfgs":["windows"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"tools::backend","text":"A Windows backend."}

@@ -24,19 +24,19 @@
 {"k":"external","path":"chrono::Utc","uses":2,"named_by":["crate","Run"]}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"functions":{"public":1}}
 {"k":"doc","path":"crate","text":"Facts about each declaration: what it holds, what names it, and which\ntypes share a shape."}
-{"k":"enum","path":"ChatDispatch","rust":"pub enum ChatDispatch { Send(String), Stop }","loc":"src/lib.rs:0","named_by":["Run"],"token_hits":3}
+{"k":"enum","path":"ChatDispatch","rust":"pub enum ChatDispatch { Send(String), Stop }","loc":"src/lib.rs:0","named_by":["Run"]}
 {"k":"doc","path":"ChatDispatch","text":"A chat request."}
 {"k":"variant","path":"ChatDispatch::Send","rust":"Send(String)","loc":"src/lib.rs:0"}
 {"k":"doc","path":"ChatDispatch::Send","text":"Send a message."}
 {"k":"variant","path":"ChatDispatch::Stop","rust":"Stop","loc":"src/lib.rs:0"}
 {"k":"doc","path":"ChatDispatch::Stop","text":"Stop the chat."}
-{"k":"enum","path":"ToolCallDispatch","rust":"pub enum ToolCallDispatch { Send(String), Stop }","loc":"src/lib.rs:0","named_by":["crate"],"token_hits":1}
+{"k":"enum","path":"ToolCallDispatch","rust":"pub enum ToolCallDispatch { Send(String), Stop }","loc":"src/lib.rs:0","named_by":["crate"]}
 {"k":"doc","path":"ToolCallDispatch","text":"A tool call request."}
 {"k":"variant","path":"ToolCallDispatch::Send","rust":"Send(String)","loc":"src/lib.rs:0"}
 {"k":"doc","path":"ToolCallDispatch::Send","text":"Run a tool."}
 {"k":"variant","path":"ToolCallDispatch::Stop","rust":"Stop","loc":"src/lib.rs:0"}
 {"k":"doc","path":"ToolCallDispatch::Stop","text":"Halt."}
-{"k":"struct","path":"Run","rust":"pub struct Run { pub name: String, pub limit: Option<u32>, pub started: chrono::DateTime<chrono::Utc>, chat: ChatDispatch }","loc":"src/lib.rs:0","token_hits":5}
+{"k":"struct","path":"Run","rust":"pub struct Run { pub name: String, pub limit: Option<u32>, pub started: chrono::DateTime<chrono::Utc>, chat: ChatDispatch }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Run","text":"A run of the engine."}
 {"k":"field","path":"Run::name","rust":"pub name: String","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Run::name","text":"The name of the run."}
@@ -47,7 +47,7 @@
 {"k":"impl","path":"Run","rust":"impl Run","locs":["src/lib.rs:0"]}
 {"k":"const","path":"Run::MAX","rust":"pub const MAX: u32","value":"9","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"Run::MAX","text":"The largest run."}
-{"k":"fn","path":"Run::start","sig":"pub fn start(name: String) -> Run","loc":"src/lib.rs:0","direct_callers":["Run::default"],"token_hits":1,"body":{"statements":1,"tokens":26,"nones":1},"ops":["name"]}
+{"k":"fn","path":"Run::start","sig":"pub fn start(name: String) -> Run","loc":"src/lib.rs:0","direct_callers":["Run::default"],"body":{"statements":1,"tokens":26,"nones":1},"ops":["name"]}
 {"k":"doc","path":"Run::start","text":"Starts a run."}
 {"k":"fn","path":"Run::stop","sig":"pub fn stop(&mut self)","loc":"src/lib.rs:0","body":{"statements":1,"tokens":11},"ops":["self.chat [write]"]}
 {"k":"doc","path":"Run::stop","text":"Stops it."}

@@ -106,13 +106,15 @@ The markdown is contextual to the run: its leads and facts count what every targ
 
 ## vibelight.toml
 
-The config has five keys, and every path in it is relative to the folder that holds it, so the run is the same from any folder below it:
+The config has seven keys, and every path in it is relative to the folder that holds it, so the run is the same from any folder below it:
 
 - `workspace = true` outlines every member of the workspace that holds the config's folder. `workspace = "<dir>"` starts the search from that directory instead.
 - `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
 - `follow = ["<glob>", ...]` adds the path dependencies whose folders match.
 - `exclude = ["<glob>", ...]` leaves crates out of the workspace, the `crates` list, and the followed dependencies alike.
 - `out = "<dir>"` is the folder to write into. It defaults to `.vibelight` beside the config.
+- `boilerplate = ["<text>", ...]` marks text that is meant to repeat, such as a sentence every crate doc ends with. Every doc detector leaves unread a doc passage, the lines up to a blank line, that holds one of the texts, with runs of white space compared as one space.
+- `quiet = ["<lead-id>", "<lead-id>:<path-glob>", ...]` drops leads from the markdown. An id alone drops every lead of that id, and a glob after `:`, written with `::` between segments such as `forwarder:detail::*`, drops a lead of that id when it matches the path of one of its subjects below its crate root. The header of each markdown file counts the leads it dropped in `quieted`, and an entry that drops no lead is a `note:` line.
 
 A key vibelight does not know, or a value of the wrong type, is an error that names the key, such as ``unknown key `markdown` ``. Without `workspace` or `crates`, a run that names no crate is a usage error.
 
@@ -151,7 +153,7 @@ A section shows up only when it has something in it. Only the HTML file links ty
 
 The markdown has no sections. After the stamp, every line is one record, in this order:
 
-- **Header:** a `vibelight-outline` record with the schema version, the crate's name, the kind of target (`lib`, `bin`, or `single-file`), the crate's folder below the base of the run, and `root`, the crate's folder from the markdown folder.
+- **Header:** a `vibelight-outline` record with the schema version, the crate's name, the kind of target (`lib`, `bin`, or `single-file`), the crate's folder below the base of the run, `root`, the crate's folder from the markdown folder, and `quieted`, how many leads the config's `quiet` entries dropped from the file, when there are any.
 - **Modules:** a `modules` record with each module's range of lines in the file, so a reader can open one module at a time.
 - **Leads:** one `lead` record per place that looks like slop, with its `id`, its `subjects`, its `evidence`, its `locs`, and a `mode` that says whether the evidence is resolved, direct syntax, or lexical. A lead that rests on something vibelight did not see also lists its `limits`, the blind spots that could make it wrong. More than 5 leads of one id in one module become one summary record with a `module` and a `count` that names every site.
 - **Surface:** for a library, one `surface` record per public path, with its kind and, when the path is a re-export, the item it names.
@@ -161,7 +163,7 @@ The markdown has no sections. After the stamp, every line is one record, in this
 - **The catalog:** every declaration, module by module in path order. A module's own `mod` record comes first, then its `use` records for re-exports, then every other record in source order. The other kinds are `struct`, `enum`, `union`, `trait`, `alias`, `fn`, `const`, `static`, `extern`, `impl`, `macro`, and `unsupported`, plus a `field` or `variant` record for each field or variant with a doc or comment of its own.
 - **Docs:** a `doc` record right after the record it documents, with the same `path`.
 
-Catalog records carry the facts vibelight observes across the run, each left out when there is nothing to say: `named_by`, the declarations and modules whose signatures name a type; `reexported_by`, the modules that re-export it; `crates`, the other targets of the run that use it; `tests`, the kinds of test, bench, example, build, and doc test code that use it; `token_hits`, how often its name is written beyond its declarations; `direct_callers`, the bodies whose direct calls resolve to a function; `method_name_hits`, how often the scanned sources call a method of that name; `body`, counts of a body's statements, tokens, loops, error paths, panics, and macros, with no code; `ops`, the fields and parameters a body uses and the methods it calls on them; and `comments`, the comments inside a body. A missing fact is never proof: vibelight sees no macro expansion, generated code, dynamic dispatch, or code outside the run, and matches method calls by name only. The lead ids, such as `same-shape`, `direct-field-clusters`, `direct-impl-field-split`, and `no-observed-name-use`, are defined in the lead glossary of [`tools/vibelight.md`](tools/vibelight.md).
+Catalog records carry the facts vibelight observes across the run, each left out when there is nothing to say: `named_by`, the declarations and modules whose signatures name a type; `reexported_by`, the modules that re-export it; `crates`, the other targets of the run that use it; `tests`, the kinds of test, bench, example, build, and doc test code that use it; `direct_callers`, the bodies whose direct calls resolve to a function; `body`, counts of a body's statements, tokens, loops, error paths, panics, and macros, with no code; `ops`, the fields and parameters a body uses and the methods it calls on them; and `comments`, the comments inside a body. A missing fact is never proof: vibelight sees no macro expansion, generated code, dynamic dispatch, or code outside the run, and matches method calls by name only. The lead ids, such as `same-shape`, `direct-field-clusters`, `direct-impl-field-split`, and `no-observed-name-use`, are defined in the lead glossary of [`tools/vibelight.md`](tools/vibelight.md).
 
 ### Links to functions, constants, and statics
 
@@ -189,7 +191,7 @@ Here are the first four lines of the outline of a small test crate, then a struc
 ```
 
 ```text
-{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6","token_hits":4}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6"}
 {"k":"doc","path":"Engine","text":"A type with an impl in another file."}
 {"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:10"]}
 {"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":"src/lib.rs:12","body":{"statements":0,"tokens":2}}
@@ -253,7 +255,7 @@ The markdown has a `spelling` record for each of these items, with its preferred
 
 When vibelight meets something it cannot fully handle, it keeps going and prints a warning on stderr, as `warning: <file>:<line>: <message>`, then a count at the end. Warnings cover files that do not parse, module files that cannot be found, constructs it does not support (also marked UNSUPPORTED in the outline), and type names it cannot resolve or that are ambiguous, which stay plain text instead of links. When the markdown has spelling records, one more line, `warning: <count> items written more than one way; see spelling records`, counts the items those records name. In a run of several crates, a warning's path starts from the workspace root (or else the first crate), such as `crates/alpha/src/lib.rs:9`.
 
-A `note:` line is not a warning. Notes say that the run wrote `vibelight.toml` or the folder's `.gitignore`, that it skipped a crate with nothing to outline, that a crate the config lists is also excluded, that an `exclude` glob matches no crate, or that it removed an outline no crate writes any more.
+A `note:` line is not a warning. Notes say that the run wrote `vibelight.toml` or the folder's `.gitignore`, that it skipped a crate with nothing to outline, that a crate the config lists is also excluded, that an `exclude` glob matches no crate, that a `quiet` entry matches no lead, or that it removed an outline no crate writes any more.
 
 - `0`: the files were written, warnings included.
 - `1`: the input cannot be used, for example the path is not a crate, the manifest is workspace-only, a root file cannot be read, `vibelight.toml` has an unknown key, or `SOURCE_DATE_EPOCH` is not a whole number of seconds. The reason is printed on stderr.

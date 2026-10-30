@@ -39,12 +39,12 @@
 {"k":"doc","path":"Span::0","text":"The first byte."}
 {"k":"field","path":"Span::1","rust":"pub usize","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Span::1","text":"One past the last byte."}
-{"k":"struct","path":"Index","rust":"pub struct Index(usize)","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Index","rust":"pub struct Index(usize)","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Index","text":"A tuple struct with methods."}
 {"k":"impl","path":"Index","rust":"impl Index","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Index::get","sig":"pub fn get(&self) -> usize","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field 0"},"ops":["self.0"]}
 {"k":"doc","path":"Index::get","text":"Returns the index."}
-{"k":"struct","path":"Token","rust":"pub struct Token","loc":"src/lib.rs:0","token_hits":3}
+{"k":"struct","path":"Token","rust":"pub struct Token","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Token","text":"A unit struct with a method."}
 {"k":"impl","path":"Token","rust":"impl Token","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Token::new","sig":"pub fn new() -> Token","loc":"src/lib.rs:0","body":{"statements":1,"tokens":3}}

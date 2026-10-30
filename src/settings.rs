@@ -1,7 +1,8 @@
 //! Settles what a run covers and where it writes, from the command line
 //! and `vibelight.toml`, and fixes the options that shape the HTML, which
 //! is for a person browsing the code. The markdown, for a model analyzing
-//! it, has no options.
+//! it, has no options; only the config's boilerplate and quiet entries
+//! tune its leads.
 
 use std::path::{Path, PathBuf};
 
@@ -77,6 +78,11 @@ pub(crate) struct Plan {
     /// True when the folder is vibelight's own rather than one `-o` names,
     /// so the run keeps a `.gitignore` in it.
     pub(crate) owned: bool,
+    /// The config's `boilerplate` texts, whose doc passages the doc
+    /// detectors leave unread.
+    pub(crate) boilerplate: Vec<String>,
+    /// The config's `quiet` entries, whose leads the markdown leaves out.
+    pub(crate) quiet: Vec<String>,
 }
 
 impl Plan {
@@ -94,9 +100,9 @@ impl Plan {
 }
 
 /// Settles a run. Crate paths replace the config's crate choice, and the
-/// config's follow and exclude globs apply either way. The folder is the
-/// one `out` names, then the config's, then `.vibelight` in the current
-/// directory.
+/// config's follow and exclude globs, boilerplate, and quiet entries apply
+/// either way. The folder is the one `out` names, then the config's, then
+/// `.vibelight` in the current directory.
 pub(crate) fn plan(paths: &[PathBuf], out: Option<&Path>, config: Option<&Config>) -> Plan {
     let selection = if paths.is_empty() {
         config.and_then(|config| match &config.crates {
@@ -125,6 +131,8 @@ pub(crate) fn plan(paths: &[PathBuf], out: Option<&Path>, config: Option<&Config
         exclude,
         out,
         owned,
+        boilerplate: config.map(|c| c.boilerplate.clone()).unwrap_or_default(),
+        quiet: config.map(|c| c.quiet.clone()).unwrap_or_default(),
     }
 }
 
@@ -139,6 +147,8 @@ mod tests {
             follow: vec!["**".to_owned()],
             exclude: vec!["crates/build-*".to_owned()],
             out: PathBuf::from("/repo/.vibelight"),
+            boilerplate: vec!["Enforced by xtask.".to_owned()],
+            quiet: vec!["forwarder".to_owned()],
         }
     }
 
@@ -168,6 +178,8 @@ mod tests {
         );
         assert_eq!(plan.out, PathBuf::from("/repo/.vibelight"));
         assert!(plan.owned);
+        assert_eq!(plan.boilerplate, ["Enforced by xtask."]);
+        assert_eq!(plan.quiet, ["forwarder"]);
     }
 
     #[test]
@@ -178,6 +190,7 @@ mod tests {
         assert_eq!(plan.follow, ["**"]);
         assert_eq!(plan.exclude.globs, ["crates/build-*"]);
         assert_eq!(plan.out, PathBuf::from("/repo/.vibelight"));
+        assert_eq!(plan.quiet, ["forwarder"]);
     }
 
     #[test]

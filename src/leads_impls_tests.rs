@@ -54,6 +54,42 @@ fn conversions_both_ways_are_an_inverse_pair_but_a_newtype_is_not() {
     );
 }
 
+/// A wrapper error whose crate-visible conversions `detail` opens as
+/// public functions, each `seam` one call; `seam` is `pub` or `pub(crate)`.
+fn detail(seam: &str) -> String {
+    format!(
+        "pub enum Error {{ Internal }}\npub struct ParseError {{ inner: Box<Error> }}\n\
+         impl ParseError {{\n\
+         pub(crate) fn into_inner(self) -> Error {{ *self.inner }}\n\
+         pub(crate) fn from_inner(inner: Error) -> ParseError {{ ParseError {{ inner: Box::new(inner) }} }}\n\
+         }}\n\
+         pub mod detail {{\n\
+         use super::{{Error, ParseError}};\n\
+         {seam} fn parse_error_into_inner(error: ParseError) -> Error {{ error.into_inner() }}\n\
+         {seam} fn parse_error_from_inner(inner: Error) -> ParseError {{ ParseError::from_inner(inner) }}\n\
+         }}\n"
+    )
+}
+
+#[test]
+fn public_seams_over_crate_visible_conversions_are_no_inverse_pair() {
+    assert_eq!(lib(&detail("pub"), "inverse-pair"), Vec::<String>::new());
+    assert_eq!(
+        lib(&detail("pub(crate)"), "inverse-pair"),
+        ["detail::parse_error_from_inner, detail::parse_error_into_inner"],
+        "conversions as visible as what they call"
+    );
+}
+
+#[test]
+fn a_public_seam_over_a_crate_visible_function_is_no_forwarder() {
+    assert_eq!(lib(&detail("pub"), "forwarder"), Vec::<String>::new());
+    assert_eq!(
+        lib(&detail("pub(crate)"), "forwarder"),
+        ["detail::parse_error_from_inner"]
+    );
+}
+
 #[test]
 fn a_unit_enum_spelled_in_two_places_has_a_spelling_table() {
     let color = "pub enum Color { Red, Green }\n\
@@ -118,10 +154,25 @@ fn a_tuple_of_three_or_of_two_alike_is_a_tuple_return() {
 fn a_mutable_primitive_parameter_is_a_cursor() {
     finds(
         "out-param-cursor",
-        "pub fn advance(pos: &mut usize) {}\n",
-        &["advance"],
+        "pub fn count(total: &mut usize) {}\n",
+        &["count"],
         "pub fn advance(pos: usize) -> usize { pos }\npub fn fill(out: &mut String) {}\n",
     );
+}
+
+#[test]
+fn a_named_cursor_or_one_a_recursive_descent_moves_is_by_design() {
+    let sections = "pub struct Heading { pub level: u8 }\n\
+         pub fn build_sections(headings: &[Heading], pos: &mut usize, parent: u8) -> Vec<u8> {\n\
+         let mut out = Vec::new();\n\
+         while *pos < headings.len() { *pos += 1; out.extend(build_sections(headings, pos, parent + 1)); }\n\
+         out\n\
+         }\n\
+         pub fn skip(byte_offset: &mut u32) {}\n\
+         pub fn depth(level: &mut u8, n: u8) { if n > 0 { depth(level, n - 1) } }\n\
+         pub fn even(seen: &mut u8, n: u8) -> bool { n == 0 || odd(seen, n - 1) }\n\
+         pub fn odd(seen: &mut u8, n: u8) -> bool { n != 0 && even(seen, n - 1) }\n";
+    assert_eq!(lib(sections, "out-param-cursor"), Vec::<String>::new());
 }
 
 #[test]
@@ -158,13 +209,28 @@ fn error_types_that_share_a_variant_are_a_family() {
 }
 
 #[test]
-fn variants_that_all_carry_one_payload_are_uniform() {
+fn three_variants_that_all_carry_one_payload_are_uniform() {
     finds(
         "uniform-payload",
-        "pub enum Event { Start(u64), Stop(u64) }\n",
+        "pub enum Event { Start(u64), Stop(u64), Pause(u64) }\n",
         &["Event"],
-        "pub enum Event { Start(u64), Stop(u32) }\n",
+        "pub enum Event { Start(u64), Stop(u32), Pause(u64) }\npub enum Pair { Start(u64), Stop(u64) }\n",
     );
+}
+
+#[test]
+fn an_error_enum_whose_variants_all_carry_what_failed_is_not_uniform() {
+    let errors = "pub struct PackId(u32);\n\
+         #[derive(Debug, thiserror::Error)]\n\
+         pub(crate) enum PackListError {\n\
+         #[error(\"declared twice\")]\nDuplicate(PackId),\n\
+         #[error(\"reserved\")]\nReserved(PackId),\n\
+         #[error(\"unknown\")]\nUnknown(PackId),\n\
+         }\n\
+         #[derive(Debug)]\npub enum LoadError { Missing(String), Locked(String), Broken(String) }\n\
+         impl std::fmt::Display for LoadError { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) } }\n\
+         impl std::error::Error for LoadError {}\n";
+    assert_eq!(lib(errors, "uniform-payload"), Vec::<String>::new());
 }
 
 #[test]

@@ -105,6 +105,35 @@ fn a_cost_or_an_invariant_that_no_statement_makes_is_a_claim() {
 }
 
 #[test]
+fn a_comment_that_calls_an_error_path_impossible_beside_one_is_a_lead() {
+    let source = "pub fn parse(n: u8) -> Result<u8, String> {\n    \
+         // cannot happen: the caller checks n first\n    \
+         if n == 0 { return Err(String::new()); }\n    Ok(n)\n}\n\
+         pub fn read(r: Result<u8, String>) -> u8 {\n    match r {\n        Ok(n) => n,\n        \
+         // unreachable, since the file was checked\n        Err(_) => 0,\n    }\n}\n";
+    finds(
+        "infallible-comment-in-fallible-body",
+        source,
+        &["parse", "read"],
+        "pub fn parse(n: u8) -> u8 {\n    // cannot happen: the caller checks n first\n    n\n}\n\
+         pub fn read(r: Result<u8, String>) -> u8 {\n    match r {\n        Ok(n) => n,\n        \
+         // `unreachable!` would panic here; unreachable!() is worse\n        Err(_) => 0,\n    }\n}\n\
+         pub fn open(n: u8) -> Result<u8, String> {\n    // the cache is warm by now\n    \
+         if n == 0 { return Err(String::new()); }\n    Ok(n)\n}\n\
+         pub fn serve(n: u8) -> Result<u8, String> {\n    // a fallback that never fails boot on its own\n    \
+         if n == 0 { return Err(String::new()); }\n    Ok(n)\n}\n",
+    );
+    assert_eq!(
+        evidence(source, "infallible-comment-in-fallible-body")[0],
+        (
+            Mode::Lexical,
+            "\"cannot happen\" in \"// cannot happen: the caller checks n first\" in a body that builds or matches `Err`"
+                .to_owned()
+        )
+    );
+}
+
+#[test]
 fn a_papercut_in_a_body_comment_or_a_doc_is_a_lead_but_not_in_code_spans() {
     finds(
         "papercut",

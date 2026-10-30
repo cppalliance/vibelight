@@ -154,8 +154,8 @@ struct Held {
 
 /// `contained-shape`: a struct, union, or named variant payload of at
 /// least [`CONTAINED_FROM`] fields whose every field, by name and type, is
-/// a field of another one in its target. Two structs with the same fields
-/// are `same-shape`'s.
+/// a field of another one in its target, one lead with every one that
+/// holds it. Two structs with the same fields are `same-shape`'s.
 fn contained_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     let mut shapes: Vec<Held> = Vec::new();
     let mut start = 0;
@@ -192,6 +192,7 @@ fn contained_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<L
         else {
             continue;
         };
+        let mut bigs = Vec::new();
         for &o in &index[first] {
             let other = &shapes[o];
             if o == s || other.decl.target != shape.decl.target || !fields.is_subset(&other.fields)
@@ -203,18 +204,24 @@ fn contained_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<L
             if equal && (o < s || (structs && kind(shape.decl) == kind(other.decl))) {
                 continue;
             }
-            let small = owner(shape.decl, shape.variant);
-            let big = owner(other.decl, other.variant);
-            let names: Vec<&str> = fields.iter().map(|(name, _)| name.as_str()).collect();
-            let evidence = format!(
-                "`{}` holds every field of `{}`: {}",
-                owner_name(run, big),
-                owner_name(run, small),
-                names.join(", ")
-            );
-            let lead = Lead::new("contained-shape", Mode::DirectSyntax, evidence);
-            out.push(lead.item(run, small).item(run, big));
+            bigs.push(owner(other.decl, other.variant));
         }
+        if bigs.is_empty() {
+            continue;
+        }
+        let small = owner(shape.decl, shape.variant);
+        let names: Vec<&str> = fields.iter().map(|(name, _)| name.as_str()).collect();
+        let holders: Vec<String> = (bigs.iter())
+            .map(|&big| format!("`{}`", owner_name(run, big)))
+            .collect();
+        let verb = if holders.len() == 1 { "holds" } else { "hold" };
+        let (held, names) = (owner_name(run, small), names.join(", "));
+        let evidence = format!(
+            "{} {verb} every field of `{held}`: {names}",
+            holders.join(", ")
+        );
+        let lead = Lead::new("contained-shape", Mode::DirectSyntax, evidence).item(run, small);
+        out.push(bigs.into_iter().fold(lead, |lead, big| lead.item(run, big)));
     }
 }
 

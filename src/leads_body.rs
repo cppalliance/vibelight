@@ -56,6 +56,10 @@ const ERROR_METHODS: [&str; 7] = [
 /// The functions of a run by item.
 type Funcs<'c, 'a> = BTreeMap<ItemId, &'c Func<'a>>;
 
+/// A chain of `tramp-param`: the function a parameter goes to, the name it
+/// takes there, and the function that one passes it on to.
+type Chain = (ItemId, String, ItemId);
+
 /// Finds the group's leads.
 pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     let catalog = Catalog::new(run);
@@ -140,8 +144,10 @@ fn pure_call<'c, 'a>(
 /// function of the run that passes each parameter on unchanged, once, and
 /// nothing else; or a private method whose body only reads a private field
 /// of its own type through `self`, which each of its callers can read. A
-/// function behind a `cfg`, which picks one platform's code, is left out.
-/// Returns the functions it finds.
+/// function behind a `cfg`, which picks one platform's code, is left out,
+/// and so is an access seam: a function more visible than its callee,
+/// which opens the callee to wider callers. Returns the functions it
+/// finds.
 fn forwarder(
     run: &AnalysisRun<'_>,
     catalog: &Catalog<'_>,
@@ -155,6 +161,10 @@ fn forwarder(
         };
         let evidence = match &facts.single {
             Some(Single::Call(_)) => match pure_call(run, funcs, func.item, b, facts) {
+                Some(to) if func.vis < to.vis => {
+                    found.insert(func.item);
+                    continue;
+                }
                 Some(to) => format!(
                     "one call to `{}` that passes every parameter on unchanged",
                     shown(run, to.item)
@@ -223,7 +233,8 @@ fn passed_once<'c, 'a>(
 /// the function that calls it, such as `parse` or `parse_with` for
 /// `parse`, is a variant of it, which `wrapper-name-family` covers, and a
 /// chain back to the function is a recursion that carries its context;
-/// both are left out.
+/// both are left out. One lead per chain names every function whose
+/// parameter takes it.
 fn tramp_param(
     run: &AnalysisRun<'_>,
     catalog: &Catalog<'_>,
@@ -232,11 +243,11 @@ fn tramp_param(
     out: &mut Vec<Lead>,
 ) {
     let candidate = |f: &&Func<'_>| f.is_own() && plain(run, f) && !forwarders.contains(&f.item);
+    let mut chains: BTreeMap<Chain, Vec<(ItemId, &str)>> = BTreeMap::new();
     for func in catalog.funcs.iter().filter(candidate) {
         let Some((b, facts)) = body(run, func.item) else {
             continue;
         };
-        let mut found = Vec::new();
         for param in facts.params.iter().filter(|p| p.name != "self") {
             let Some((to, becomes)) = passed_once(run, funcs, func.item, b, facts, &param.name)
             else {
@@ -255,17 +266,24 @@ fn tramp_param(
             if last.item == func.item || variant_of(&last.name, &to.name) {
                 continue;
             }
-            found.push(format!(
-                "`{}` only goes to `{}`, which only passes it on to `{}`",
-                param.name,
-                shown(run, to.item),
-                shown(run, last.item)
-            ));
+            let chain = chains.entry((to.item, becomes, last.item)).or_default();
+            chain.push((func.item, param.name.as_str()));
         }
-        if !found.is_empty() {
-            let lead = Lead::new("tramp-param", Mode::DirectSyntax, found.join("; "));
-            out.push(lead.item(run, func.item));
+    }
+    for ((to, _, last), takers) in chains {
+        let names: BTreeSet<String> = takers.iter().map(|(_, name)| format!("`{name}`")).collect();
+        let verb = if names.len() == 1 { "goes" } else { "go" };
+        let evidence = format!(
+            "{} only {verb} to `{}`, which only passes it on to `{}`",
+            names.into_iter().collect::<Vec<_>>().join(", "),
+            shown(run, to),
+            shown(run, last)
+        );
+        let mut lead = Lead::new("tramp-param", Mode::DirectSyntax, evidence);
+        for &(item, _) in &takers {
+            lead = lead.item(run, item);
         }
+        out.push(lead);
     }
 }
 

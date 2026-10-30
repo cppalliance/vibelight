@@ -36,9 +36,9 @@ fn run_leads(files: &[(&str, &str)], dirs: &[&str], id: &str) -> Vec<String> {
     let deps = crate::pipeline::crate_map(&chosen, &listed);
     crate::resolve_run::link(&mut krates, &deps);
     let (targets, packages) = inputs(&chosen, &listed, &krates, deps);
-    let run = AnalysisRun::build(&krates, &targets, &packages);
+    let run = AnalysisRun::build(&krates, &targets, &packages, &[]);
     run.validate().unwrap();
-    let leads = leads::find(&run);
+    let leads = leads::find(&run, &[]).leads;
     leads::validate(&leads, &run).unwrap();
     (leads.iter())
         .filter(|lead| lead.id == id)

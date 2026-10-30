@@ -8,11 +8,31 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
 use crate::leads_items::{Catalog, Field, FnKind, impls_of_trait, is_wire};
-use crate::leads_types::Ty;
+use crate::leads_types::{Ty, leaf};
 use crate::leads_words::words;
-use crate::model::{Shape, VariantFields, Vis};
+use crate::model::{DeclId, Shape, VariantFields, Vis};
 use crate::model_body::Root;
 use crate::{leads_shapes_impls, leads_shapes_params, leads_shapes_traits, leads_shapes_twins};
+
+/// The fewest variants of a `uniform-payload` enum; two variants of one
+/// payload are the common pair of states, such as found and missing.
+const UNIFORM_FROM: usize = 3;
+
+/// The words of a field that holds a text a span measures, beside the
+/// string types that may hold one.
+const TEXT_WORDS: [&str; 4] = ["body", "content", "source", "text"];
+
+/// The words of a string field that holds no source text, such as a
+/// message about it or a name in it.
+const LABEL_WORDS: [&str; 7] = [
+    "description",
+    "label",
+    "message",
+    "msg",
+    "name",
+    "reason",
+    "title",
+];
 
 /// The group's lead ids, in glossary order.
 pub(crate) const IDS: &[&str] = &[
@@ -111,9 +131,24 @@ fn stems(name: &str) -> [String; 2] {
     [lower, single]
 }
 
+/// Tells whether a field holds a text that a span may measure: a field
+/// named with one of [`TEXT_WORDS`], or a `String`, `str`, `Arc<str>`,
+/// `Rc<str>`, or `Cow<str>` field that none of [`LABEL_WORDS`] names.
+fn holds_text(field: &Field<'_>) -> bool {
+    let named = |set: &[&str]| words(&field.name).iter().any(|w| set.contains(&w.as_str()));
+    let ty = field.ty.deref();
+    let shared = ty.generic().is_some_and(|(head, args)| {
+        matches!(leaf(head).as_str(), "Arc" | "Cow" | "Rc")
+            && matches!(args.as_slice(), [only] if only.is_string())
+    });
+    named(&TEXT_WORDS) || ((ty.is_string() || shared) && !named(&LABEL_WORDS))
+}
+
 /// `derived-field`: a span or range field beside a line, column, or offset
-/// field, or a collection field beside a count, length, or `is_` field of
-/// the same stem, in one struct, union, or variant.
+/// field, in one struct, union, or variant that also holds a text the
+/// span measures, since without the text the position cannot be computed;
+/// or a collection field beside a count, length, or `is_` field of the
+/// same stem.
 fn derived_field(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     let mut start = 0;
     while let Some(first) = catalog.fields.get(start) {
@@ -136,7 +171,8 @@ fn derived_field(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lea
         let places: Vec<&Field<'_>> = (fields.iter().copied())
             .filter(|f| has(f, &["line", "column", "offset"]))
             .collect();
-        if !spans.is_empty() && !places.is_empty() {
+        let text = fields.iter().any(|f| holds_text(f));
+        if !spans.is_empty() && !places.is_empty() && text {
             let names = |list: &[&Field<'_>]| {
                 list.iter()
                     .map(|f| format!("`{}`", f.name))
@@ -297,9 +333,22 @@ fn field_and_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Ve
     }
 }
 
+/// Tells whether declaration `d` of target `t` is an error type: it
+/// derives an `Error`, such as `thiserror`'s, or implements
+/// `std::error::Error`.
+fn is_error_type(run: &AnalysisRun<'_>, t: usize, d: DeclId) -> bool {
+    let derived = (run.krates[t].decls[d].written_derives.iter()).any(|name| leaf(name) == "Error");
+    derived
+        || impls_of_trait(run, t, d, "std::error::Error")
+            .next()
+            .is_some()
+}
+
 /// `single-variant-enum`, `option-shaped-enum`, and `uniform-payload`: an
 /// enum of one variant; of one unit variant and one variant of one value;
-/// and of two or more variants that all carry the same payload.
+/// and of [`UNIFORM_FROM`] or more variants that all carry the same
+/// payload, unless it is an error type, whose variants name failures that
+/// carry what failed.
 fn enum_shapes(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     for (t, krate) in run.krates.iter().enumerate() {
         for (d, decl) in krate.decls.iter().enumerate() {
@@ -358,7 +407,7 @@ fn enum_shapes(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             }
             let first = payload(0);
             let carried = !first.is_empty() && (1..variants.len()).all(|v| payload(v) == first);
-            if carried {
+            if carried && variants.len() >= UNIFORM_FROM && !is_error_type(run, t, d) {
                 let evidence = format!("every variant carries `({})`", shown(0));
                 out.push(lead("uniform-payload", evidence));
             }

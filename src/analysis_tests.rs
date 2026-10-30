@@ -63,7 +63,18 @@ fn read(dir: &Path) -> (Vec<Crate>, Vec<TargetInfo>, Vec<PackageInfo>) {
 
 /// Builds and checks the analysis view of a fixture.
 pub(crate) fn run(fixture: &Fixture) -> AnalysisRun<'_> {
-    let run = AnalysisRun::build(&fixture.krates, &fixture.targets, &fixture.packages);
+    run_with(fixture, &[])
+}
+
+/// Builds and checks the analysis view of a fixture whose config marks
+/// `boilerplate` texts.
+pub(crate) fn run_with<'f>(fixture: &'f Fixture, boilerplate: &[String]) -> AnalysisRun<'f> {
+    let run = AnalysisRun::build(
+        &fixture.krates,
+        &fixture.targets,
+        &fixture.packages,
+        boilerplate,
+    );
     run.validate().unwrap();
     run
 }
@@ -371,7 +382,7 @@ fn a_broken_view_fails_validation() {
         ("Cargo.toml", "[package]\nname = \"t\"\n"),
         ("src/lib.rs", TABLE),
     ]);
-    let mut run = AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages);
+    let mut run = AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages, &[]);
     run.validate().unwrap();
     run.edges.reverse();
     assert!(run.validate().unwrap_err().contains("edges"));
@@ -385,7 +396,7 @@ fn a_broken_view_fails_validation() {
         run.validate().unwrap_err().contains("edge"),
         "an edge's use is gone"
     );
-    let mut run = AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages);
+    let mut run = AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages, &[]);
     run.census.declarations.insert("phantom".to_owned(), 1);
     assert!(run.validate().unwrap_err().contains("phantom"));
 }
@@ -396,7 +407,7 @@ fn the_view_is_the_same_wherever_and_however_often_it_is_built() {
     let shown = |fx: &Fixture| {
         format!(
             "{:?}",
-            AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages)
+            AnalysisRun::build(&fx.krates, &fx.targets, &fx.packages, &[])
         )
     };
     assert_eq!(shown(&first), shown(&second));

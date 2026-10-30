@@ -2,7 +2,7 @@
 //! lead, and on a close one where it finds none.
 
 use crate::leads::Mode;
-use crate::leads_tests::{MANIFEST, found, lib, with_leads};
+use crate::leads_tests::{MANIFEST, found, lib, lib_with, with_leads};
 
 /// Asserts what `id` finds in a library and that it finds nothing in a
 /// close one.
@@ -20,8 +20,13 @@ fn an_optional_or_boolean_field_documented_with_a_condition_is_conditional() {
     finds(
         "conditional-field",
         "pub struct Run {\npub kind: u8,\n/// `None` unless `kind` is resumed.\n\
-         pub resumed: Option<u32>,\n/// Empty for a fresh kind.\npub steps: Vec<u8>,\n}\n",
-        &["Run::resumed", "Run::steps"],
+         pub resumed: Option<u32>,\n/// Empty for a fresh kind.\npub steps: Vec<u8>,\n}\n\
+         pub enum Error { Parse {\nspan: Option<u32>,\n/// The line, when a span is known.\nline: Option<u32>,\n\
+         /// The column, when a span is known.\ncolumn: Option<u32>,\n} }\n",
+        &[
+            "Error::Parse::column, Error::Parse::line",
+            "Run::resumed, Run::steps",
+        ],
         "pub struct Run {\npub kind: u8,\n/// `None` when the user gave none.\n\
          pub resumed: Option<u32>,\n/// Set only when `kind` is resumed.\npub name: String,\n\
          /// Empty for a run with no steps, whatever its kind may be.\npub steps: Vec<u8>,\n}\n",
@@ -220,15 +225,69 @@ fn a_collection_doc_that_claims_what_its_type_does_not_keep_is_a_lead() {
 }
 
 #[test]
-fn an_error_documented_as_impossible_is_a_lead() {
+fn a_function_that_calls_its_own_error_impossible_is_a_lead() {
     finds(
         "impossible-error",
-        "pub enum Error {\n/// A state the parser rules out; it cannot occur.\nInternal,\n}\n\
-         /// Parses it.\n///\n/// # Errors\n///\n/// Fails on a broken invariant.\npub fn parse() -> Result<(), Error> { Ok(()) }\n",
-        &["Error::Internal", "parse"],
+        "pub enum Error { Internal }\n\
+         /// Parses it.\n///\n/// # Errors\n///\n/// None; a failure cannot occur here.\n\
+         pub fn parse() -> Result<(), Error> { Ok(()) }\n\
+         pub fn load(n: u8) -> Result<u8, Error> {\n    // the lookup cannot fail; this cannot happen\n    \
+         let x = n.checked_add(1).ok_or(Error::Internal)?;\n    Ok(x)\n}\n",
+        &["load", "parse"],
         "pub enum Error {\n/// The file cannot be read.\nRead,\n}\n\
-         /// It cannot occur.\npub struct Quiet;\n/// Keeps an invariant.\npub fn parse() {}\n",
+         /// It cannot occur.\npub struct Quiet;\n/// Keeps an invariant.\npub fn parse() {}\n\
+         /// Never fails; it cannot occur.\npub fn count() -> u8 { 0 }\n",
     );
+}
+
+#[test]
+fn an_error_type_documented_as_impossible_or_an_invariant_is_no_lead() {
+    let errors = "#[derive(Debug, thiserror::Error)]\npub enum Error {\n\
+         /// An internal parser invariant was violated (a state the surrounding code\n\
+         /// has already guaranteed cannot occur).\n\
+         #[error(\"internal invariant violated: {0}\")]\nInternal(&'static str),\n}\n\
+         /// Parses it.\n///\n/// # Errors\n///\n\
+         /// `Internal` when the parser fails through no fault of the prompt: one of its own\n\
+         /// invariants breaks.\npub fn parse() -> Result<(), Error> { Ok(()) }\n\
+         pub fn check(n: u8) -> Result<u8, Error> {\n    \
+         // cannot happen, the caller checks n\n    if n == 0 { return Err(Error::Internal(\"zero\")); }\n    Ok(n)\n}\n";
+    assert_eq!(lib(errors, "impossible-error"), Vec::<String>::new());
+}
+
+#[test]
+fn a_boilerplate_passage_is_left_unread_by_every_doc_detector() {
+    let rule = "`cargo test -p build-xtask` enforces the product and container boundaries.";
+    let crate_doc = |name: &str| {
+        format!(
+            "/// The {name} module reads its own input.\n///\n/// {rule}\npub mod {name} {{\n\
+             /// Its input, for now.\npub struct Input;\n}}\n"
+        )
+    };
+    let source = format!(
+        "{}{}{}\n/// Reads it, for now.\n///\n/// The lead once\n/// {rule}\npub fn tiny() -> u8 {{ 1 }}\n",
+        crate_doc("alpha"),
+        crate_doc("beta"),
+        crate_doc("gamma")
+    );
+    let ids = |found: &[(&str, String)], id: &str| -> Vec<String> {
+        (found.iter().filter(|(lead, _)| *lead == id))
+            .map(|(_, subjects)| subjects.clone())
+            .collect()
+    };
+    let plain = lib_with(&source, &[]);
+    assert_eq!(
+        ids(&plain, "repeated-doc-text"),
+        ["alpha, beta, gamma, tiny"]
+    );
+    let quiet = lib_with(&source, &["cargo test -p   build-xtask` enforces"]);
+    assert_eq!(ids(&quiet, "repeated-doc-text"), Vec::<String>::new());
+    assert_eq!(
+        ids(&quiet, "papercut"),
+        ids(&plain, "papercut"),
+        "papercuts outside the passage stay"
+    );
+    let all = lib_with(&source, &["for now"]);
+    assert_eq!(ids(&all, "papercut"), Vec::<String>::new());
 }
 
 #[test]

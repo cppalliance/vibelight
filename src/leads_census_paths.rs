@@ -1,6 +1,7 @@
 //! The census detectors of paths: a `pub use` that no observed path
 //! imports through, a private function with one observed caller or a chain
-//! of such functions, and a type alias with one observed use.
+//! of such functions, a fallible function that tests reach beside its one
+//! caller, and a type alias with one observed use.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -8,10 +9,12 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
 use crate::analysis_uses::UseKind;
+use crate::census::Context;
 use crate::leads::{Lead, Mode, Subject};
 use crate::leads_census_scope::{
-    Candidate, Kind, Scope, consumers, elsewhere, limits, module_name,
+    Candidate, Kind, Scope, consumers, elsewhere, hits_in, in_macro, limits, module_name,
 };
+use crate::leads_types::Ty;
 use crate::model::{DeclKind, ItemKind, MemberKind, ModId, Text, Vis};
 use crate::model_body::{BodyId, Role};
 use crate::root::TargetKind;
@@ -36,6 +39,7 @@ pub(crate) fn find(
 ) {
     no_observed_reexport_use(run, scope, out);
     one_observed_caller(run, scope, candidates, out);
+    guarded_error_path(run, scope, candidates, out);
     for c in candidates {
         let open = !c.support && !scope.unseen(run, c);
         if open && c.kind == Kind::Decl(DeclKind::Alias) {
@@ -280,6 +284,101 @@ fn caller_lead(
         lead = lead.item(run, callee);
     }
     lead.limits(&["generated-code", "macros"])
+}
+
+/// Tells whether an item is a function of a module or an impl that returns
+/// a `Result`.
+fn returns_result(run: &AnalysisRun<'_>, item: ItemId) -> bool {
+    let t = item.target;
+    let sig = match item.item {
+        ItemRef::Value(at) => match &run.krates[t].modules[at.module].items[at.item].kind {
+            ItemKind::Fn(sig) => Some(sig),
+            _ => None,
+        },
+        _ => match run.member(t, item.item).map(|member| &member.kind) {
+            Some(MemberKind::Fn(sig)) => Some(sig),
+            _ => None,
+        },
+    };
+    let ret = sig.and_then(|sig| sig.ret.as_ref());
+    ret.is_some_and(|ret| Ty::of(run, t, ret, None).is_result())
+}
+
+/// `guarded-error-path`: a function that is not `pub`, of a module or an
+/// inherent impl, outside test support, that returns a `Result` and builds
+/// an `Err`, whose every observed edge is a direct call from one function
+/// of production code other than its own, and whose name, which the run
+/// declares once and no macro argument writes, production code writes
+/// only at those calls while test code writes it too. The caller returns
+/// no `Result`, so it handles the error rather than passing it on, and is
+/// not the stem of the function's name, as `start` is of `start_with`, a
+/// seam that lets tests pass their own parts. The tests reach the error
+/// path that the one caller may already rule out.
+fn guarded_error_path(
+    run: &AnalysisRun<'_>,
+    scope: &Scope,
+    candidates: &[Candidate<'_>],
+    out: &mut Vec<Lead>,
+) {
+    let support: BTreeSet<ItemId> = (candidates.iter().filter(|c| c.support))
+        .map(|c| c.item)
+        .collect();
+    for c in candidates {
+        let t = c.item.target;
+        let function = match c.kind {
+            Kind::Function => true,
+            Kind::Method | Kind::Associated => matches!(
+                run.member(t, c.item.item).map(|m| &m.kind),
+                Some(MemberKind::Fn(_))
+            ),
+            _ => false,
+        };
+        let open = function && c.vis != Vis::Public && !c.support;
+        let unique = run.census.declared(&c.name) == 1 && !in_macro(run, &c.name);
+        if !open || !unique || scope.unseen(run, c) || !returns_result(run, c.item) {
+            continue;
+        }
+        let builds =
+            (run.body_of(c.item)).is_some_and(|b| run.krates[t].bodies[b].facts.counts.errs > 0);
+        if !builds {
+            continue;
+        }
+        let edges: Vec<(PathKind, usize, BodyId)> = (run.edges_to(c.item))
+            .map(|edge| (edge.kind, edge.target, edge.body))
+            .collect();
+        let bodies: BTreeSet<(usize, BodyId)> = edges.iter().map(|&(_, t, b)| (t, b)).collect();
+        let [(ct, cb)] = bodies.into_iter().collect::<Vec<_>>()[..] else {
+            continue;
+        };
+        let Some(caller) = run.body_items[ct][cb].map(|item| ItemId { target: ct, item }) else {
+            continue;
+        };
+        let direct = (edges.iter()).all(|(kind, ..)| *kind == PathKind::Call(Role::Call));
+        let count = run.census.count(&c.name);
+        let produced = hits_in(&count, Context::Production).saturating_sub(count.declared);
+        let tested = hits_in(&count, Context::Test);
+        let sole = !support.contains(&caller) && produced == edges.len();
+        let stem = run
+            .path(caller)
+            .last()
+            .map(|name| format!("{}_", strip_raw(name)));
+        let seam = stem.is_some_and(|stem| c.name.starts_with(&stem));
+        if !direct || caller == c.item || !sole || tested == 0 || seam {
+            continue;
+        }
+        if returns_result(run, caller) {
+            continue;
+        }
+        let evidence = format!(
+            "`{}` returns a `Result` and builds `Err`; its one observed production caller is `{}`, and test code writes `{}` {tested} times, so the caller may already rule the error out",
+            c.name,
+            run.path(caller).join("::"),
+            c.name
+        );
+        let base = limits(run, c.item, &["generated-code", "macros"]);
+        let lead = Lead::new("guarded-error-path", Mode::Lexical, evidence);
+        out.push(lead.item(run, c.item).limits(&base));
+    }
 }
 
 /// `one-observed-alias-use`: a type alias whose name the scanned sources

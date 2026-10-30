@@ -9,11 +9,13 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_paths::PathKind;
 use crate::leads::{Lead, Mode};
 use crate::leads_items::{Catalog, FnKind, Func, impl_module, parent_module};
 use crate::leads_types::Ty;
 use crate::leads_words::words;
 use crate::model::{DeclKind, ItemKind, Meta, ModId, Receiver, Shape, ValueRef};
+use crate::model_body::Role;
 use crate::prelude::prelude_path;
 use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
@@ -70,6 +72,10 @@ const STD_NAMES: [(&str, &str); 15] = [
 
 /// The suffixes that name a wrapper's inner function.
 const WRAPPER_SUFFIXES: [&str; 4] = ["_body", "_helper", "_impl", "_inner"];
+
+/// The suffixes that name the private implementation behind a public
+/// wrapper, such as `parse` over `parse_inner`.
+const IMPL_SUFFIXES: [&str; 3] = ["_body", "_impl", "_inner"];
 
 /// One named node of the run, as the name detectors read it.
 struct Named<'a> {
@@ -189,12 +195,12 @@ fn word_in(name: &str, set: &[&str]) -> Option<String> {
 }
 
 /// `compat-shim`, `lint-suppression`, and `test-knob`: a node marked
-/// `deprecated` or named with a whole shim word, a node with an `allow` or
-/// `expect` lint attribute, and a node outside test support named with a
-/// whole test word that no segment of its module's path holds, since a
-/// module named for a word makes it the domain's. A trait sets the names
-/// of its impls' members, so their names are not read; a variant's named
-/// field counts as a node.
+/// `deprecated` or named with a whole shim word, a node with an `allow`
+/// lint attribute or an `expect` without a reason, and a node outside test
+/// support named with a whole test word that no segment of its module's
+/// path holds, since a module named for a word makes it the domain's. A
+/// trait sets the names of its impls' members, so their names are not
+/// read; a variant's named field counts as a node.
 fn words_of_nodes(
     run: &AnalysisRun<'_>,
     catalog: &Catalog<'_>,
@@ -216,10 +222,7 @@ fn words_of_nodes(
         if let Some(evidence) = evidence {
             out.push(lead("compat-shim", evidence).item(run, node.item));
         }
-        let lints: Vec<String> = (node.lints.iter())
-            .filter(|lint| lint.starts_with("allow(") || lint.starts_with("expect("))
-            .map(|lint| format!("`#[{lint}]`"))
-            .collect();
+        let lints = suppressions(node.lints);
         if !lints.is_empty() {
             out.push(lead("lint-suppression", lints.join(", ")).item(run, node.item));
         }
@@ -257,14 +260,32 @@ fn words_of_nodes(
         .iter()
         .filter(|f| f.variant.is_some() || !f.named)
     {
-        let lints: Vec<String> = (field.meta.lints.iter())
-            .filter(|lint| lint.starts_with("allow(") || lint.starts_with("expect("))
-            .map(|lint| format!("`#[{lint}]`"))
-            .collect();
+        let lints = suppressions(&field.meta.lints);
         if !lints.is_empty() {
             out.push(field.add(run, lead("lint-suppression", lints.join(", "))));
         }
     }
+}
+
+/// Returns the lint attributes that suppress a lint, as evidence shows
+/// them: each `allow`, and each `expect` without a reason. An `expect`
+/// with a reason states why, and the compiler warns once its lint no
+/// longer fires.
+fn suppressions(lints: &[String]) -> Vec<String> {
+    let justified = |lint: &str| {
+        lint.match_indices("reason").any(|(at, word)| {
+            let rest = lint[at + word.len()..].trim_start();
+            let quoted = rest.strip_prefix('=').map(str::trim_start);
+            (quoted.and_then(|text| text.strip_prefix('"')))
+                .is_some_and(|text| !text.starts_with('"'))
+        })
+    };
+    (lints.iter())
+        .filter(|lint| {
+            lint.starts_with("allow(") || (lint.starts_with("expect(") && !justified(lint))
+        })
+        .map(|lint| format!("`#[{lint}]`"))
+        .collect()
 }
 
 /// Returns the `std` path an item's name shadows: a prelude type or
@@ -322,7 +343,10 @@ fn prelude_name(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
 }
 
 /// `wrapper-name-family`: functions of one module, or methods of one type,
-/// named `x` and `x_inner`, `x_impl`, `x_body`, `x_helper`, or `do_x`.
+/// named `x` and `x_inner`, `x_impl`, `x_body`, `x_helper`, or `do_x`, one
+/// lead per `x` with every sibling. A sibling of [`IMPL_SUFFIXES`] that is
+/// less visible than `x` and that only the family is observed to call is
+/// the private half of a public wrapper, a design, and is left out.
 fn wrapper_name_family(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     let mut scopes: BTreeMap<(usize, bool, usize), BTreeMap<&str, Vec<&Func<'_>>>> =
         BTreeMap::new();
@@ -336,24 +360,63 @@ fn wrapper_name_family(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut V
         names.entry(func.name.as_str()).or_default().push(func);
     }
     for names in scopes.values() {
-        for (&name, wrappers) in names {
+        let mut families: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+        for &name in names.keys() {
             let inner = WRAPPER_SUFFIXES
                 .iter()
                 .find_map(|suffix| name.strip_suffix(suffix));
             let base = inner
                 .or_else(|| name.strip_prefix("do_"))
-                .filter(|base| !base.is_empty());
-            let Some((base, bases)) = base.and_then(|base| names.get_key_value(base)) else {
-                continue;
+                .filter(|base| !base.is_empty() && names.contains_key(base));
+            if let Some(base) = base {
+                families.entry(base).or_default().push(name);
+            }
+        }
+        for (base, siblings) in families {
+            let bases = &names[base];
+            let family: BTreeSet<ItemId> = (bases.iter())
+                .chain(siblings.iter().flat_map(|name| &names[name]))
+                .map(|func| func.item)
+                .collect();
+            let widest = bases.iter().map(|func| func.vis).min();
+            let private_half = |name: &str| {
+                IMPL_SUFFIXES.iter().any(|suffix| name.ends_with(suffix))
+                    && (names[name].iter())
+                        .all(|func| Some(func.vis) > widest && called_within(run, func, &family))
             };
-            let evidence = format!("`{base}` and `{name}`");
+            let open: Vec<&str> = siblings.into_iter().filter(|n| !private_half(n)).collect();
+            if open.is_empty() {
+                continue;
+            }
+            let shown: Vec<String> = open.iter().map(|name| format!("`{name}`")).collect();
+            let evidence = format!("`{base}` and {}", shown.join(", "));
             let mut lead = Lead::new("wrapper-name-family", Mode::DirectSyntax, evidence);
-            for func in bases.iter().chain(wrappers) {
+            for func in bases
+                .iter()
+                .chain(open.iter().flat_map(|name| &names[name]))
+            {
                 lead = lead.item(run, func.item);
             }
             out.push(lead);
         }
     }
+}
+
+/// Tells whether a function has observed callers, every one a direct call
+/// from a body of `family`.
+fn called_within(run: &AnalysisRun<'_>, func: &Func<'_>, family: &BTreeSet<ItemId>) -> bool {
+    let mut edges = run.edges_to(func.item).peekable();
+    edges.peek().is_some()
+        && edges.all(|edge| {
+            let caller = run.body_items[edge.target][edge.body];
+            edge.kind == PathKind::Call(Role::Call)
+                && caller.is_some_and(|item| {
+                    family.contains(&ItemId {
+                        target: edge.target,
+                        item,
+                    })
+                })
+        })
 }
 
 /// `getter-style-mix`: one target has getters named `get_x` beside

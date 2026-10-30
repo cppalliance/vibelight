@@ -14,7 +14,7 @@
 {"k":"surface","path":"Settings","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
 {"k":"doc","path":"crate","text":"cfg and cfg_attr."}
-{"k":"struct","path":"Settings","rust":"pub struct Settings { #[cfg(feature = \"extra\")] pub extra: u32, #[cfg(feature = \"fast\")] #[cfg(unix)] pub both: u8 }","loc":"src/lib.rs:0","derives":["Clone","Debug"],"token_hits":1}
+{"k":"struct","path":"Settings","rust":"pub struct Settings { #[cfg(feature = \"extra\")] pub extra: u32, #[cfg(feature = \"fast\")] #[cfg(unix)] pub both: u8 }","loc":"src/lib.rs:0","derives":["Clone","Debug"]}
 {"k":"doc","path":"Settings","text":"Derives through cfg_attr."}
 {"k":"field","path":"Settings::extra","rust":"#[cfg(feature = \"extra\")] pub extra: u32","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Settings::extra","text":"Only with a feature."}

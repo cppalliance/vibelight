@@ -15,7 +15,7 @@
 {"k":"surface","path":"Keywords","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":{"public":1}}
 {"k":"doc","path":"crate","text":"Raw identifiers."}
-{"k":"struct","path":"Keywords","rust":"pub struct Keywords { pub r#type: u8, pub r#match: u8, kind: u8 }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Keywords","rust":"pub struct Keywords { pub r#type: u8, pub r#match: u8, kind: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Keywords","text":"Raw names in a struct."}
 {"k":"field","path":"Keywords::r#type","rust":"pub r#type: u8","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Keywords::r#type","text":"A raw field."}

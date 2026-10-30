@@ -15,7 +15,7 @@
 {"k":"surface","path":"STATE","kind":"value"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"Constants and statics."}
-{"k":"const","path":"LIMIT","rust":"pub const LIMIT: usize","value":"64","loc":"src/lib.rs:0","token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"LIMIT","rust":"pub const LIMIT: usize","value":"64","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"LIMIT","text":"The default limit."}
 {"k":"const","path":"GREETING","rust":"pub const GREETING: &str","value":"\"a long greeting that will not fit in the outline's eighty column limit\"","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"GREETING","text":"A long value that does not fit."}
@@ -27,10 +27,10 @@
 {"k":"static","path":"STATE","rust":"pub static mut STATE: u8","value":"0","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"STATE","text":"A mutable static."}
 {"k":"const","path":"PRIVATE","rust":"const PRIVATE: u8","value":"1","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
-{"k":"struct","path":"Config","rust":"pub struct Config","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Config","rust":"pub struct Config","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Config","text":"A type with associated constants."}
 {"k":"impl","path":"Config","rust":"impl Config","locs":["src/lib.rs:0"]}
-{"k":"const","path":"Config::VERSION","rust":"pub const VERSION: u32","value":"3","loc":"src/lib.rs:0","token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"Config::VERSION","rust":"pub const VERSION: u32","value":"3","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"Config::VERSION","text":"The version."}
 {"k":"const","path":"Config::DOUBLE","rust":"pub const DOUBLE: u32","loc":"src/lib.rs:0","body":{"statements":1,"tokens":6}}
 {"k":"doc","path":"Config::DOUBLE","text":"A computed value."}

@@ -64,13 +64,13 @@
 {"k":"doc","path":"api::VERSION","text":"The version in use."}
 {"k":"mod","path":"api::v1","loc":"src/lib.rs:0","vis":"public","types":1,"functions":{"public":1}}
 {"k":"doc","path":"api::v1","text":"The first version."}
-{"k":"struct","path":"api::v1::Request","rust":"pub struct Request","loc":"src/lib.rs:0","named_by":["api::v1"],"token_hits":1}
+{"k":"struct","path":"api::v1::Request","rust":"pub struct Request","loc":"src/lib.rs:0","named_by":["api::v1"]}
 {"k":"doc","path":"api::v1::Request","text":"A request."}
 {"k":"fn","path":"api::v1::send","sig":"pub fn send(request: Request) -> u8","loc":"src/lib.rs:0","body":{"statements":2,"tokens":8},"ops":["request"]}
 {"k":"doc","path":"api::v1::send","text":"Sends a request."}
 {"k":"mod","path":"detail","loc":"src/lib.rs:0","vis":"private","types":1,"functions":{"public":1}}
 {"k":"doc","path":"detail","text":"Hidden helpers."}
-{"k":"struct","path":"detail::Handle","rust":"pub struct Handle","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1}
+{"k":"struct","path":"detail::Handle","rust":"pub struct Handle","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"detail::Handle","text":"A handle made public through a re-export."}
 {"k":"fn","path":"detail::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"detail::helper","text":"A helper that stays hidden."}
@@ -87,12 +87,12 @@
 {"k":"mod","path":"values","loc":"src/lib.rs:0","vis":"private","functions":{"public":1}}
 {"k":"doc","path":"values","text":"Values made public through re-exports."}
 {"k":"use","path":"values::deep","rust":"pub use self::inner::deep","loc":"src/lib.rs:0"}
-{"k":"fn","path":"values::build","sig":"pub fn build() -> u8","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"values::build","sig":"pub fn build() -> u8","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"values::build","text":"Builds a value."}
-{"k":"const","path":"values::MAX","rust":"pub const MAX: u8","value":"9","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"values::MAX","rust":"pub const MAX: u8","value":"9","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"values::MAX","text":"The largest value."}
-{"k":"static","path":"values::CURRENT","rust":"pub static CURRENT: u8","value":"0","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"static","path":"values::CURRENT","rust":"pub static CURRENT: u8","value":"0","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"values::CURRENT","text":"The current value."}
 {"k":"mod","path":"values::inner","loc":"src/lib.rs:0","vis":"private","functions":{"public":1}}
-{"k":"fn","path":"values::inner::deep","sig":"pub fn deep()","loc":"src/lib.rs:0","reexported_by":["crate","values"],"token_hits":2,"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"values::inner::deep","sig":"pub fn deep()","loc":"src/lib.rs:0","reexported_by":["crate","values"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"values::inner::deep","text":"A function two re-exports away."}

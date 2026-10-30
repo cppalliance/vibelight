@@ -8,7 +8,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_tests::{fixture, run};
+use crate::analysis_tests::{fixture, run, run_with};
 use crate::leads::{self, Lead, Mode, SUMMARY_FROM, Summary};
 
 /// The manifest of a package named `t`.
@@ -36,7 +36,7 @@ fn shown(run: &AnalysisRun<'_>, lead: &Lead) -> String {
 pub(crate) fn with_leads(files: &[(&str, &str)], check: impl FnOnce(&AnalysisRun<'_>, &[Lead])) {
     let fx = fixture(files);
     let run = run(&fx);
-    let leads = leads::find(&run);
+    let leads = leads::find(&run, &[]).leads;
     leads::validate(&leads, &run).unwrap();
     check(&run, &leads);
 }
@@ -66,6 +66,19 @@ pub(crate) fn found(files: &[(&str, &str)], id: &str) -> Vec<String> {
 /// one `lib.rs`.
 pub(crate) fn lib(source: &str, id: &str) -> Vec<String> {
     found(&[MANIFEST, ("src/lib.rs", source)], id)
+}
+
+/// Returns the ids and shown subjects of the checked leads of a library
+/// made of one `lib.rs`, whose config marks `boilerplate` texts.
+pub(crate) fn lib_with(source: &str, boilerplate: &[&str]) -> Vec<(&'static str, String)> {
+    let fx = fixture(&[MANIFEST, ("src/lib.rs", source)]);
+    let texts: Vec<String> = boilerplate.iter().map(|t| (*t).to_owned()).collect();
+    let run = run_with(&fx, &texts);
+    let leads = leads::find(&run, &[]).leads;
+    leads::validate(&leads, &run).unwrap();
+    (leads.iter())
+        .map(|lead| (lead.id, shown(&run, lead)))
+        .collect()
 }
 
 /// A library that many detectors find something in.
@@ -112,6 +125,36 @@ fn more_than_five_leads_of_one_id_in_one_module_become_one_summary() {
         assert!(rest.clone().all(|l| l.subjects[0].path[0] == "few"));
         assert_eq!(rest.count(), SUMMARY_FROM, "five leads stay leads");
     });
+}
+
+#[test]
+fn quiet_entries_drop_their_leads_before_the_summary_and_count_them() {
+    let fx = fixture(&[MANIFEST, ("src/lib.rs", SAMPLE)]);
+    let run = run(&fx);
+    let all = leads::find(&run, &[]);
+    assert!(all.quieted == [0] && all.notes.is_empty());
+    let quiet = [
+        "option-as-flag".to_owned(),
+        "same-type-params:pa*".to_owned(),
+        "tuple-return:Config::*".to_owned(),
+    ];
+    let found = leads::find(&run, &quiet);
+    leads::validate(&found.leads, &run).unwrap();
+    let ids = |leads: &[Lead], id: &str| leads.iter().filter(|l| l.id == id).count();
+    assert!(ids(&all.leads, "option-as-flag") > 0 && ids(&all.leads, "same-type-params") == 1);
+    assert_eq!(ids(&found.leads, "option-as-flag"), 0);
+    assert_eq!(
+        ids(&found.leads, "same-type-params"),
+        0,
+        "`paint` matches `pa*`"
+    );
+    let dropped = ids(&all.leads, "option-as-flag") + 1;
+    assert_eq!(found.leads.len() + dropped, all.leads.len());
+    assert_eq!(found.quieted, [dropped]);
+    assert_eq!(
+        found.notes,
+        ["quiet entry tuple-return:Config::* matches no lead"]
+    );
 }
 
 #[test]
@@ -171,7 +214,7 @@ fn the_leads_are_the_same_wherever_and_however_often_they_are_found() {
     );
     assert!(first.len() >= 8, "the sample finds leads of several ids");
     with_leads(&files, |run, leads| {
-        assert_eq!(leads, leads::find(run).as_slice());
+        assert_eq!(leads, leads::find(run, &[]).leads.as_slice());
         let twice: Vec<&Lead> = leads.iter().filter(|l| l.target_files.len() > 1).collect();
         assert!(!twice.is_empty(), "a lead across targets prints in both");
     });

@@ -6,12 +6,20 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
+use crate::analysis_items::ItemId;
+use crate::analysis_paths::PathKind;
 use crate::leads::{Lead, Mode};
 use crate::leads_items::{Catalog, FnKind, Func, escapes};
 use crate::leads_types::{Tok, Ty, leaf};
+use crate::leads_words::words;
+use crate::model_body::Role;
 
 /// The most parameters of one function that `param-clump` combines.
 const CLUMP_ARGS: usize = 8;
+
+/// The last words of the name of a `&mut` primitive parameter that moves
+/// through the input on purpose, such as `pos` or `byte_offset`.
+const CURSOR_WORDS: [&str; 7] = ["at", "cursor", "idx", "index", "offset", "pos", "position"];
 
 /// The fewest functions that one clump of parameters is in.
 const CLUMP_FROM: usize = 3;
@@ -166,20 +174,55 @@ fn arg_text(name: Option<&str>, ty: &Ty) -> String {
     format!("`{}: {}`", name.unwrap_or("_"), ty.shown())
 }
 
-/// `out-param-cursor`: a parameter of type `&mut` and a primitive.
+/// `out-param-cursor`: a parameter of type `&mut` and a primitive. One
+/// whose name's last word is one of [`CURSOR_WORDS`] is a cursor by
+/// design, and so is every one of a function that calls itself, directly
+/// or through other functions, along observed call edges, such as a
+/// recursive descent that moves one position.
 fn out_param_cursor(run: &AnalysisRun<'_>, func: &Func<'_>, out: &mut Vec<Lead>) {
+    let cursor = |name: Option<&str>| {
+        let last = name.and_then(|name| words(name).pop());
+        last.is_some_and(|word| CURSOR_WORDS.contains(&word.as_str()))
+    };
     let cursors: Vec<String> = (func.args.iter())
         .filter(|arg| {
             let mutable = matches!(arg.ty.0.as_slice(), [Tok::Code(amp), Tok::Code(m), ..] if amp == "&" && m == "mut");
-            mutable && arg.ty.deref().primitive().is_some()
+            mutable && arg.ty.deref().primitive().is_some() && !cursor(arg.name.as_deref())
         })
         .map(|arg| arg_text(arg.name.as_deref(), &arg.ty))
         .collect();
-    if !cursors.is_empty() {
+    if !cursors.is_empty() && !recurses(run, func.item) {
         let evidence = format!("`&mut` primitive parameters {}", cursors.join(", "));
         let lead = Lead::new("out-param-cursor", Mode::DirectSyntax, evidence);
         out.push(lead.item(run, func.item));
     }
+}
+
+/// Tells whether an item's body reaches the item again through observed
+/// direct calls, at once or through other bodies.
+fn recurses(run: &AnalysisRun<'_>, item: ItemId) -> bool {
+    let mut seen: BTreeSet<ItemId> = BTreeSet::new();
+    let mut next = vec![item];
+    while let Some(at) = next.pop() {
+        let Some(b) = run.body_of(at) else {
+            continue;
+        };
+        for edge in run.edges_from(at.target, b) {
+            let Some(callee) = edge
+                .item
+                .filter(|_| edge.kind == PathKind::Call(Role::Call))
+            else {
+                continue;
+            };
+            if callee == item {
+                return true;
+            }
+            if seen.insert(callee) {
+                next.push(callee);
+            }
+        }
+    }
+    false
 }
 
 /// `same-type-params`: [`SAME_TYPE_FROM`] or more parameters of one

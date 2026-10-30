@@ -26,9 +26,9 @@
 {"k":"use","path":"CrateThing","rust":"pub(crate) use inner::Thing as CrateThing","loc":"src/lib.rs:0"}
 {"k":"mod","path":"inner","loc":"src/lib.rs:0","vis":"private","types":2,"functions":{"public":1}}
 {"k":"doc","path":"inner","text":"Holds the items."}
-{"k":"struct","path":"inner::Thing","rust":"pub struct Thing","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":3}
+{"k":"struct","path":"inner::Thing","rust":"pub struct Thing","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"inner::Thing","text":"A thing."}
-{"k":"struct","path":"inner::Other","rust":"pub struct Other","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":2}
+{"k":"struct","path":"inner::Other","rust":"pub struct Other","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"inner::Other","text":"Another thing."}
-{"k":"fn","path":"inner::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","reexported_by":["crate"],"token_hits":1,"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"inner::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"inner::helper","text":"A helper."}

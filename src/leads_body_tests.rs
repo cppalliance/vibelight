@@ -131,6 +131,23 @@ fn a_parameter_only_passed_on_through_two_functions_is_tramp_data() {
 }
 
 #[test]
+fn functions_that_hand_one_parameter_down_one_chain_are_one_lead() {
+    let source = "pub struct BodyText;\n\
+         impl BodyText { pub fn within(body: &str, part: &str) -> usize { body.len() + part.len() } }\n\
+         fn body_text(body: &str, part: &str) -> usize { BodyText::within(body, part) + 1 }\n\
+         pub fn split_h1(body: &str, n: u8) -> usize { let part = \"h1\"; body_text(body, part) }\n\
+         pub fn list_items(body: &str, n: u8) -> usize { let part = \"li\"; body_text(body, part) }\n";
+    assert_eq!(lib(source, "tramp-param"), ["list_items, split_h1"]);
+    shows(
+        source,
+        "tramp-param",
+        Mode::DirectSyntax,
+        &[],
+        "`body` only goes to `body_text`, which only passes it on to `BodyText::within`",
+    );
+}
+
+#[test]
 fn every_call_of_a_private_function_passing_one_literal_is_a_constant_argument() {
     let pad = "fn pad(text: &str, width: usize) -> String { format!(\"{text:>width$}\") }\n\
          pub fn left(a: &str) -> String { pad(a, 8) }\n";
@@ -195,25 +212,65 @@ fn a_long_string_in_three_bodies_or_two_targets_is_repeated() {
 }
 
 #[test]
-fn a_number_other_than_zero_one_or_two_in_three_bodies_is_repeated() {
-    let three = "pub fn a() -> usize { 1024 }\npub fn b(x: usize) -> usize { x * 1024 + 7 }\n\
-         pub fn c() -> Vec<u8> { vec![7; 1024] }\n";
+fn the_literals_a_spelling_table_shares_are_its_spellings_not_a_repeat() {
+    let spell = |name: &str| {
+        format!(
+            "pub fn {name}(k: Keyword) -> &'static str {{ match k {{ Keyword::Creative => \"creative\", Keyword::NoThinking => \"no-thinking\" }} }}\n"
+        )
+    };
+    let table = format!(
+        "pub enum Keyword {{ Creative, NoThinking }}\n{}{}{}",
+        spell("keyword_name"),
+        spell("keyword_wire"),
+        spell("keyword_label")
+    );
+    assert_eq!(
+        lib(&table, "spelling-table"),
+        ["Keyword, keyword_label, keyword_name, keyword_wire"]
+    );
+    assert_eq!(lib(&table, "repeated-literal"), Vec::<String>::new());
+    let elsewhere = format!("{table}pub fn hint() -> bool {{ \"creative\".is_empty() }}\n");
+    assert_eq!(
+        lib(&elsewhere, "repeated-literal"),
+        ["hint, keyword_label, keyword_name, keyword_wire"],
+        "a body outside the table"
+    );
+}
+
+#[test]
+fn a_number_of_ten_or_more_that_is_not_round_in_three_bodies_is_repeated() {
+    let three = "pub fn a() -> usize { 4096 }\npub fn b(x: usize) -> usize { x * 4096 + 37 }\n\
+         pub fn c() -> Vec<u8> { vec![37; 4096] }\n";
     finds(
         "repeated-number",
         three,
         &["a, b, c"],
         "pub fn a() -> f64 { 2.0 - 1.0 }\npub fn b(x: i64) -> i64 { x * -1 + 2 }\n\
-         pub fn c() -> u8 { 2 }\npub const LIMIT: usize = 1024;\n\
-         pub fn d() -> usize { 1024 }\npub fn e() -> usize { 1024 }\n\
-         pub enum A { X = 7 }\npub enum B { Y = 7 }\npub enum C { Z = 7 }\n",
+         pub fn c() -> u8 { 2 }\npub const LIMIT: usize = 4096;\n\
+         pub fn d() -> usize { 4096 }\npub fn e() -> usize { 4096 }\n\
+         pub enum A { X = 37 }\npub enum B { Y = 37 }\npub enum C { Z = 37 }\n",
     );
     shows(
-        &format!("{three}pub fn d() -> usize {{ 7 }}\n"),
+        &format!("{three}pub fn d() -> usize {{ 37 }}\n"),
         "repeated-number",
         Mode::DirectSyntax,
         &[],
-        "`1024` in 3 bodies",
+        "`4096` in 3 bodies",
     );
+}
+
+#[test]
+fn small_and_round_numbers_are_no_repeat() {
+    let fences = "pub fn closes(line: &str) -> bool { line.len() == 3 }\n\
+         pub fn is_lua(line: &str) -> bool { line.len() > 3 }\n\
+         pub fn level(n: u8) -> u8 { n.min(3) }\n\
+         pub fn buffer() -> Vec<u8> { Vec::with_capacity(1024) }\n\
+         pub fn chunk(n: usize) -> usize { n / 1024 }\n\
+         pub fn page() -> usize { 1024 * 64 }\n\
+         pub fn percent(n: f64) -> f64 { n * 100.0 }\n\
+         pub fn whole(n: f64) -> f64 { n / 100.0 }\n\
+         pub fn share(n: f64) -> f64 { 100.0 - n }\n";
+    assert_eq!(lib(fences, "repeated-number"), Vec::<String>::new());
 }
 
 #[test]

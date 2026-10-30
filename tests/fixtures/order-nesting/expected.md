@@ -31,36 +31,36 @@
 {"k":"doc","path":"Run","text":"The main entry: it reaches the most declarations."}
 {"k":"struct","path":"Fork","rust":"pub struct Fork { pub a_left: Left, pub b_right: Right }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Fork","text":"A diamond root: it reaches three declarations through two branches."}
-{"k":"struct","path":"Host","rust":"pub struct Host { store: Store }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Host","rust":"pub struct Host { store: Store }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Host","text":"A root whose public method prints before its private field, so its\nblock names Job first, yet its field type, Store, still comes first."}
 {"k":"impl","path":"Host","rust":"impl Host","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Host::run","sig":"pub fn run(&self, job: Job)","loc":"src/lib.rs:0","body":{"statements":1,"tokens":7},"ops":["job"]}
 {"k":"doc","path":"Host::run","text":"Runs a job."}
-{"k":"struct","path":"Store","rust":"pub struct Store","loc":"src/lib.rs:0","named_by":["Host"],"token_hits":1}
+{"k":"struct","path":"Store","rust":"pub struct Store","loc":"src/lib.rs:0","named_by":["Host"]}
 {"k":"doc","path":"Store","text":"Named only by Host's field."}
-{"k":"struct","path":"Job","rust":"pub struct Job","loc":"src/lib.rs:0","named_by":["Host"],"token_hits":1}
+{"k":"struct","path":"Job","rust":"pub struct Job","loc":"src/lib.rs:0","named_by":["Host"]}
 {"k":"doc","path":"Job","text":"Named only by Host's method."}
 {"k":"struct","path":"Able","rust":"pub struct Able { pub leaf: Leaf }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Able","text":"A root that ties Report on reach and comes first by path."}
 {"k":"struct","path":"Report","rust":"pub struct Report { pub summary: Summary }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Report","text":"A root that ties Able on reach."}
-{"k":"struct","path":"Config","rust":"pub struct Config { pub limit: u32 }","loc":"src/lib.rs:0","named_by":["Run","Step"],"token_hits":2}
+{"k":"struct","path":"Config","rust":"pub struct Config { pub limit: u32 }","loc":"src/lib.rs:0","named_by":["Run","Step"]}
 {"k":"doc","path":"Config","text":"Named by Run and by Step, so it follows Step's last part, not Run."}
-{"k":"struct","path":"Step","rust":"pub struct Step { pub a_trace: Trace, pub b_log: Log, pub config: Config }","loc":"src/lib.rs:0","named_by":["Run"],"token_hits":1}
+{"k":"struct","path":"Step","rust":"pub struct Step { pub a_trace: Trace, pub b_log: Log, pub config: Config }","loc":"src/lib.rs:0","named_by":["Run"]}
 {"k":"doc","path":"Step","text":"Named by Run; first names Trace, then Log, then Config."}
-{"k":"struct","path":"Log","rust":"pub struct Log","loc":"src/lib.rs:0","named_by":["Step"],"token_hits":1}
+{"k":"struct","path":"Log","rust":"pub struct Log","loc":"src/lib.rs:0","named_by":["Step"]}
 {"k":"doc","path":"Log","text":"Named only by Step."}
-{"k":"struct","path":"Trace","rust":"pub struct Trace","loc":"src/lib.rs:0","named_by":["Step"],"token_hits":1}
+{"k":"struct","path":"Trace","rust":"pub struct Trace","loc":"src/lib.rs:0","named_by":["Step"]}
 {"k":"doc","path":"Trace","text":"Named only by Step, before Log."}
-{"k":"struct","path":"Left","rust":"pub struct Left { pub base: Base }","loc":"src/lib.rs:0","named_by":["Fork"],"token_hits":1}
+{"k":"struct","path":"Left","rust":"pub struct Left { pub base: Base }","loc":"src/lib.rs:0","named_by":["Fork"]}
 {"k":"doc","path":"Left","text":"Named only by Fork."}
-{"k":"struct","path":"Right","rust":"pub struct Right { pub base: Base }","loc":"src/lib.rs:0","named_by":["Fork"],"token_hits":1}
+{"k":"struct","path":"Right","rust":"pub struct Right { pub base: Base }","loc":"src/lib.rs:0","named_by":["Fork"]}
 {"k":"doc","path":"Right","text":"Named only by Fork, after Left."}
-{"k":"struct","path":"Base","rust":"pub struct Base","loc":"src/lib.rs:0","named_by":["Left","Right"],"token_hits":2}
+{"k":"struct","path":"Base","rust":"pub struct Base","loc":"src/lib.rs:0","named_by":["Left","Right"]}
 {"k":"doc","path":"Base","text":"Named by Left and by Right, so it follows Right, the last of them."}
-{"k":"struct","path":"Leaf","rust":"pub struct Leaf","loc":"src/lib.rs:0","named_by":["Able"],"token_hits":1}
+{"k":"struct","path":"Leaf","rust":"pub struct Leaf","loc":"src/lib.rs:0","named_by":["Able"]}
 {"k":"doc","path":"Leaf","text":"Named only by Able."}
-{"k":"struct","path":"Summary","rust":"pub struct Summary","loc":"src/lib.rs:0","named_by":["Report"],"token_hits":1}
+{"k":"struct","path":"Summary","rust":"pub struct Summary","loc":"src/lib.rs:0","named_by":["Report"]}
 {"k":"doc","path":"Summary","text":"Named only by Report."}
 {"k":"struct","path":"Orphan","rust":"pub struct Orphan","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Orphan","text":"Names nothing and nothing names it."}

@@ -3,28 +3,51 @@
 //! visibility, errors called impossible, and claims about a collection's
 //! order, uniqueness, or keys. Each phrase list is versioned.
 
+use std::collections::BTreeMap;
 use std::ops::Range;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemRef;
+use crate::analysis_items::ItemId;
 use crate::leads::{Lead, Mode};
-use crate::leads_docs::{Doc, Docs, Node, is_error, typed};
-use crate::leads_docs_text::{Kind, Phrase, START, identifiers};
+use crate::leads_comments_words::prose_line;
+use crate::leads_docs::{Doc, Docs, Node, typed};
+use crate::leads_docs_text::{Kind, Phrase, Prose, START, identifiers, read_except};
+use crate::leads_items::handles_err;
 use crate::leads_types::{Ty, leaf};
-use crate::model::Vis;
+use crate::model::{Loc, Vis};
+
+/// The fields of one declaration or variant that hang on one sibling,
+/// named by the sibling.
+type Owner = (ItemId, Option<usize>, String);
 
 /// Finds what the words of each doc say about a field's state, history,
 /// visibility, errors, and collection invariants.
 pub(crate) fn find(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>) {
+    let mut conditions: BTreeMap<Owner, Vec<(&Doc<'_>, String)>> = BTreeMap::new();
     for doc in &docs.all {
         history_words(run, doc, out);
         visibility_excuse(run, doc, out);
-        impossible_error(run, docs, doc, out);
         if let Node::Field(f) = doc.node {
-            conditional_field(run, docs, f, doc, out);
+            let field = &docs.catalog.fields[f];
+            if let Some((sibling, evidence)) = conditional_field(docs, f, doc) {
+                let owner = (field.decl, field.variant, sibling);
+                conditions.entry(owner).or_default().push((doc, evidence));
+            }
             container_invariant_claim(run, docs, f, doc, out);
         }
     }
+    for found in conditions.into_values() {
+        let shown: Vec<&str> = found
+            .iter()
+            .map(|(_, evidence)| evidence.as_str())
+            .collect();
+        let mut lead = Lead::new("conditional-field", Mode::DirectSyntax, shown.join("; "));
+        for (doc, _) in &found {
+            lead = doc.add(run, lead);
+        }
+        out.push(lead);
+    }
+    impossible_error(run, docs, out);
 }
 
 /// Version 1 of the history words: phrases that tell an earlier design.
@@ -85,8 +108,10 @@ const EXCUSES: [Phrase; 8] = [
     ],
 ];
 
-/// Version 1 of the phrases that call an error impossible.
-const IMPOSSIBLE: [Phrase; 7] = [
+/// Version 2 of the phrases that call an error impossible. A word such as
+/// `invariant` names the condition an error reports, not its absence, so
+/// it is none of them.
+const IMPOSSIBLE: [Phrase; 6] = [
     &[&["cannot", "can't"], &["occur", "happen"]],
     &[
         &["should", "must", "will"],
@@ -97,7 +122,6 @@ const IMPOSSIBLE: [Phrase; 7] = [
     &[&["should"], &["not"], &["occur", "happen"]],
     &[&["unreachable"]],
     &[&["impossible"]],
-    &[&["invariant", "invariants"]],
 ];
 
 /// Version 1 of the words that give a field's state a condition.
@@ -171,35 +195,56 @@ fn vis_word(vis: Vis) -> &'static str {
     }
 }
 
-/// `impossible-error`: a phrase of [`IMPOSSIBLE`] in the doc of an error
-/// type, of its variant or field, or in a function's `# Errors` section.
-fn impossible_error(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>, out: &mut Vec<Lead>) {
-    let t = doc.item.target;
-    let errors_only = match doc.node {
-        Node::Decl(d) | Node::Variant(d, _) => {
-            if !is_error(run, t, d) {
-                return;
-            }
-            false
+/// `impossible-error`: a function that returns a `Result` and says that
+/// its error cannot occur, by a phrase of [`IMPOSSIBLE`] in its doc's
+/// `# Errors` section, or else in a comment of its body when the body
+/// builds no `Err` and matches no `Err` arm; a comment beside an `Err` is
+/// `infallible-comment-in-fallible-body`'s. The doc of an error type or
+/// variant describes a failure, not a function's contract, and is left
+/// out.
+fn impossible_error(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>) {
+    let mut documented: BTreeMap<usize, &Doc<'_>> = BTreeMap::new();
+    for doc in &docs.all {
+        if let Node::Func(f) = doc.node {
+            documented.entry(f).or_insert(doc);
         }
-        Node::Field(f) => match docs.catalog.fields[f].decl.item {
-            ItemRef::Decl(d) if is_error(run, t, d) => false,
-            _ => return,
-        },
-        Node::Func(_) => true,
-        Node::Module | Node::Value => return,
+    }
+    let first = |prose: &Prose<'_>, errors_only: bool| {
+        (IMPOSSIBLE.iter())
+            .flat_map(|phrase| prose.matches(phrase))
+            .filter(|m| !errors_only || prose.section(m.start) == Some("errors"))
+            .min_by_key(|m| (m.start, m.end))
+            .map(|found| prose.said(found))
     };
-    let found = (IMPOSSIBLE.iter())
-        .flat_map(|phrase| doc.prose.matches(phrase))
-        .filter(|m| !errors_only || doc.prose.section(m.start) == Some("errors"))
-        .min_by_key(|m| (m.start, m.end));
-    if let Some(found) = found {
-        let lead = Lead::new(
-            "impossible-error",
-            Mode::DirectSyntax,
-            doc.prose.said(found),
-        );
-        out.push(doc.add(run, lead));
+    for (f, func) in docs.catalog.funcs.iter().enumerate() {
+        if !func.ret.as_ref().is_some_and(Ty::is_result) {
+            continue;
+        }
+        let lead = |evidence| Lead::new("impossible-error", Mode::DirectSyntax, evidence);
+        if let Some(said) = documented.get(&f).and_then(|doc| first(&doc.prose, true)) {
+            out.push(lead(said).item(run, func.item));
+            continue;
+        }
+        let t = func.item.target;
+        let Some(body) = run.body_of(func.item).map(|b| &run.krates[t].bodies[b]) else {
+            continue;
+        };
+        if handles_err(&body.facts) {
+            continue;
+        }
+        for comment in &body.facts.comments {
+            let lines: Vec<&str> = comment.text.iter().map(|line| prose_line(line)).collect();
+            let text = lines.join(" ");
+            if let Some(said) = first(&read_except(&text, Vec::new()), false) {
+                let at = Loc {
+                    file: body.file,
+                    line: comment.line,
+                };
+                let found = lead(format!("{said} in a body comment"));
+                out.push(found.item(run, func.item).at(t, at));
+                break;
+            }
+        }
     }
 }
 
@@ -208,18 +253,14 @@ fn impossible_error(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>, out: 
 /// field, in a code span or as a word within [`SIBLING_REACH`] tokens of
 /// the phrase, so that the field's state hangs on another field's. A
 /// condition on outside input alone, such as "`None` when the user gave
-/// none", is how an optional value is documented.
-fn conditional_field(
-    run: &AnalysisRun<'_>,
-    docs: &Docs<'_>,
-    f: usize,
-    doc: &Doc<'_>,
-    out: &mut Vec<Lead>,
-) {
+/// none", is how an optional value is documented. Returns the sibling and
+/// the evidence; the fields of one owner that hang on one sibling make one
+/// lead.
+fn conditional_field(docs: &Docs<'_>, f: usize, doc: &Doc<'_>) -> Option<(String, String)> {
     let field = &docs.catalog.fields[f];
     let held = field.ty.deref();
     if held.option().is_none() && !held.is_bool() && !held.is_collection() {
-        return;
+        return None;
     }
     let siblings: Vec<&str> = (docs.catalog.fields_of(field.decl, field.variant))
         .filter(|other| other.named && other.name != field.name)
@@ -245,17 +286,13 @@ fn conditional_field(
         .flat_map(|phrase| prose.matches(phrase))
         .filter_map(|found| Some((sibling(&found)?, found)))
         .min_by_key(|(_, found)| (found.start, found.end));
-    if let Some((name, found)) = found {
-        let evidence = format!(
-            "{}: {}, which names `{name}`",
-            typed(&field.name, &field.ty),
-            prose.said(found)
-        );
-        out.push(doc.add(
-            run,
-            Lead::new("conditional-field", Mode::DirectSyntax, evidence),
-        ));
-    }
+    let (name, found) = found?;
+    let evidence = format!(
+        "{}: {}, which names `{name}`",
+        typed(&field.name, &field.ty),
+        prose.said(found)
+    );
+    Some((name.to_owned(), evidence))
 }
 
 /// `container-invariant-claim`: a collection field whose doc claims an

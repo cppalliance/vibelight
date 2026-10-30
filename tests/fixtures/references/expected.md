@@ -22,7 +22,7 @@
 {"k":"surface","path":"Views","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"functions":{"public":3}}
 {"k":"doc","path":"crate","text":"References, raw pointers, and receivers."}
-{"k":"struct","path":"Views","rust":"pub struct Views<'a, T> { pub shared: &'a T, pub unique: &'a mut T, pub name: &'static str, pub items: &'a [&'a T], pub read: *const T, pub write: *mut T, pub shown: &'a dyn Display, pub check: Box<dyn Fn(&str) -> usize>, pub callback: &'a dyn Fn(&str) -> usize, pub both: &'a (dyn Display + Send), pub wrapped: &'a (dyn Fn(&str) -> usize), pub raw_call: *const dyn Fn() -> bool, pub step: &'a fn(u8) -> u8 }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Views","rust":"pub struct Views<'a, T> { pub shared: &'a T, pub unique: &'a mut T, pub name: &'static str, pub items: &'a [&'a T], pub read: *const T, pub write: *mut T, pub shown: &'a dyn Display, pub check: Box<dyn Fn(&str) -> usize>, pub callback: &'a dyn Fn(&str) -> usize, pub both: &'a (dyn Display + Send), pub wrapped: &'a (dyn Fn(&str) -> usize), pub raw_call: *const dyn Fn() -> bool, pub step: &'a fn(u8) -> u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Views","text":"Borrowed and raw views of one value."}
 {"k":"impl","path":"Views","rust":"impl<'a, T> Views<'a, T>","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Views::get","sig":"pub fn get(&self) -> &T","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field shared"},"ops":["self.shared"]}
@@ -37,10 +37,10 @@
 {"k":"trait","path":"Source","rust":"pub trait Source","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Source","text":"A source of bytes."}
 {"k":"fn","path":"Source::read","sig":"fn read(&mut self, buf: &mut [u8]) -> usize","loc":"src/lib.rs:0"}
-{"k":"fn","path":"Source::name","sig":"fn name(&self) -> &str","loc":"src/lib.rs:0","token_hits":6}
+{"k":"fn","path":"Source::name","sig":"fn name(&self) -> &str","loc":"src/lib.rs:0"}
 {"k":"alias","path":"Table","rust":"pub type Table<'a> = &'a [(&'a str, *const u8)]","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Table","text":"A borrowed table."}
-{"k":"trait","path":"Marker","rust":"pub trait Marker","loc":"src/lib.rs:0","token_hits":2}
+{"k":"trait","path":"Marker","rust":"pub trait Marker","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Marker","text":"Marks a type."}
 {"k":"impl","path":"&T","rust":"impl<T> Marker for &T","locs":["src/lib.rs:0"]}
 {"k":"impl","path":"*const u8","rust":"impl Marker for *const u8","locs":["src/lib.rs:0"]}
@@ -48,7 +48,7 @@
 {"k":"doc","path":"NAME","text":"The default name."}
 {"k":"static","path":"BYTES","rust":"pub static BYTES: &[u8]","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5}}
 {"k":"doc","path":"BYTES","text":"Raw bytes behind a reference."}
-{"k":"fn","path":"first","sig":"pub fn first<'a>(items: &'a [&'a str]) -> Option<&'a str>","loc":"src/lib.rs:0","token_hits":2,"body":{"statements":1,"tokens":11,"single":"method copied"},"ops":["items.first.copied"]}
+{"k":"fn","path":"first","sig":"pub fn first<'a>(items: &'a [&'a str]) -> Option<&'a str>","loc":"src/lib.rs:0","body":{"statements":1,"tokens":11,"single":"method copied"},"ops":["items.first.copied"]}
 {"k":"doc","path":"first","text":"Finds the first item."}
 {"k":"fn","path":"pick","sig":"pub fn pick<'a, T>(choose: impl Fn(&T) -> &'a T, items: &'a [T]) -> Option<&'a T>","loc":"src/lib.rs:0","body":{"statements":1,"tokens":12,"single":"method map"},"ops":["choose","items.first.map"]}
 {"k":"doc","path":"pick","text":"Picks an item with a closure that returns a reference."}

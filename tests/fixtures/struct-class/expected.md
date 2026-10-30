@@ -16,7 +16,7 @@
 {"k":"doc","path":"crate","text":"Struct versus class."}
 {"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub open: u8, closed: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed","text":"Public and private members."}
-{"k":"struct","path":"Cursor","rust":"pub struct Cursor { text: String, pos: usize }","loc":"src/lib.rs:0","token_hits":3}
+{"k":"struct","path":"Cursor","rust":"pub struct Cursor { text: String, pos: usize }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Cursor","text":"Holds the text the lexer is still reading."}
 {"k":"impl","path":"Cursor","rust":"impl Cursor","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Cursor::new","sig":"fn new(text: String) -> Cursor","loc":"src/lib.rs:0","body":{"statements":1,"tokens":9},"ops":["text"]}
@@ -25,7 +25,7 @@
 {"k":"fn","path":"Cursor::into_text","sig":"fn into_text(self) -> String","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5,"single":"field text"},"ops":["self.text"]}
 {"k":"struct","path":"Bare","rust":"pub struct Bare {}","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Bare","text":"No members at all."}
-{"k":"enum","path":"Toggle","rust":"pub enum Toggle { On, Off }","loc":"src/lib.rs:0","token_hits":1}
+{"k":"enum","path":"Toggle","rust":"pub enum Toggle { On, Off }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Toggle","text":"An enum with only private methods."}
 {"k":"impl","path":"Toggle","rust":"impl Toggle","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Toggle::flip","sig":"fn flip(&mut self)","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}

@@ -9,7 +9,7 @@
 {"k":"surface","path":"parts::Part","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
 {"k":"doc","path":"crate","text":"Comments on impls and modules."}
-{"k":"struct","path":"Engine","rust":"pub struct Engine","loc":"src/lib.rs:0","token_hits":7}
+{"k":"struct","path":"Engine","rust":"pub struct Engine","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Engine","text":"The type."}
 {"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:0"],"comment":"// Above the inherent impl."}
 {"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}

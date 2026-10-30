@@ -15,13 +15,14 @@ use crate::root::TargetKind;
 fn outline(lib: &str) -> String {
     let fixture = fixture(&[("src/lib.rs", lib)]);
     let run = run(&fixture);
-    let leads = crate::leads::find(&run);
+    let leads = crate::leads::find(&run, &[]).leads;
     let input = RenderInput {
         analysis_target: AnalysisTarget {
             run: &run,
             target: 0,
         },
         leads: &leads,
+        quieted: 0,
         stamp: "2026-01-01T00:00:00Z",
         target_kind: TargetKind::Lib,
         shown_dir: ".".to_owned(),

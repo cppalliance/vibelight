@@ -21,15 +21,15 @@
 {"k":"surface","path":"Wrapped","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":7,"functions":{"public":1}}
 {"k":"doc","path":"crate","text":"Types that only function bodies name."}
-{"k":"struct","path":"Listed","rust":"pub struct Listed","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Listed","rust":"pub struct Listed","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Listed","text":"Named only inside a free function's body."}
-{"k":"struct","path":"Probe","rust":"pub struct Probe","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Probe","rust":"pub struct Probe","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Probe","text":"Named only inside a method body of another type."}
-{"k":"struct","path":"Lonely","rust":"pub struct Lonely","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Lonely","rust":"pub struct Lonely","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Lonely","text":"Named only inside its own method body, so it stays unconnected."}
-{"k":"struct","path":"Marker","rust":"pub struct Marker","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Marker","rust":"pub struct Marker","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Marker","text":"Named only in a trait's default method body."}
-{"k":"struct","path":"Runner","rust":"pub struct Runner","loc":"src/lib.rs:0","token_hits":1}
+{"k":"struct","path":"Runner","rust":"pub struct Runner","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Runner","text":"Runs things."}
 {"k":"impl","path":"Runner","rust":"impl Runner","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Runner::probe","sig":"pub fn probe(&self)","loc":"src/lib.rs:0","body":{"statements":1,"tokens":7}}
@@ -41,7 +41,7 @@
 {"k":"doc","path":"Lister","text":"Lists things."}
 {"k":"fn","path":"Lister::mark","sig":"fn mark(&self)","loc":"src/lib.rs:0","body":{"statements":1,"tokens":7}}
 {"k":"doc","path":"Lister::mark","text":"Marks."}
-{"k":"struct","path":"Wrapped","rust":"pub struct Wrapped","loc":"src/lib.rs:0","token_hits":2}
+{"k":"struct","path":"Wrapped","rust":"pub struct Wrapped","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Wrapped","text":"Named only inside an impl on a wrapper of itself, so it stays\nunconnected."}
 {"k":"impl","path":"Box<Wrapped>","rust":"impl Default for Box<Wrapped>","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Box<Wrapped>::default","sig":"fn default() -> Self","loc":"src/lib.rs:0","impl":"impl Default for Box<Wrapped>","body":{"statements":1,"tokens":9,"single":"call Box::new"}}

@@ -9,9 +9,9 @@
 {"k":"doc","path":"crate","text":"Origin: defines the values other crates re-export."}
 {"k":"mod","path":"gauge","loc":"src/lib.rs:0","vis":"public","functions":{"public":1}}
 {"k":"doc","path":"gauge","text":"Gauge values."}
-{"k":"const","path":"gauge::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["::front","::relay"],"crates":["front","relay"],"token_hits":3,"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"gauge::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["::front","::relay"],"crates":["front","relay"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"gauge::LIMIT","text":"The highest reading."}
-{"k":"static","path":"gauge::TOTAL","rust":"pub static TOTAL: u32","value":"0","loc":"src/lib.rs:0","reexported_by":["::front","::relay"],"crates":["front","relay"],"token_hits":2,"body":{"statements":1,"tokens":1}}
+{"k":"static","path":"gauge::TOTAL","rust":"pub static TOTAL: u32","value":"0","loc":"src/lib.rs:0","reexported_by":["::front","::relay"],"crates":["front","relay"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"gauge::TOTAL","text":"A running total."}
-{"k":"fn","path":"gauge::measure","sig":"pub fn measure() -> u32","loc":"src/lib.rs:0","direct_callers":["::front::sample","::relay::read"],"reexported_by":["::front","::relay"],"crates":["front","relay"],"token_hits":4,"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"gauge::measure","sig":"pub fn measure() -> u32","loc":"src/lib.rs:0","direct_callers":["::front::sample","::relay::read"],"reexported_by":["::front","::relay"],"crates":["front","relay"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"gauge::measure","text":"Takes one reading."}
