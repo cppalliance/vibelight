@@ -220,8 +220,44 @@ fn the_leads_are_the_same_wherever_and_however_often_they_are_found() {
     });
 }
 
+/// Reads the lines between the glossary's tags: a blank line first and
+/// last, `####` group headings, and one `- **<id>**: <rule>` bullet per id
+/// with exactly a `  - Wrong when: ` and a `  - Verify: ` child, each a
+/// sentence without an em dash or a double dash. Returns the ids in order,
+/// or the first line that breaks the form.
+fn glossary_ids<'t>(body: &[&'t str]) -> Result<Vec<&'t str>, String> {
+    if body.first() != Some(&"") || body.last() != Some(&"") {
+        return Err("the tags have no blank line beside them".to_owned());
+    }
+    let mut entries: Vec<(&str, Vec<&str>)> = Vec::new();
+    for &line in body {
+        if let Some(rest) = line.strip_prefix("- **") {
+            let (id, rule) = rest.split_once("**: ").ok_or(line)?;
+            entries.push((id, vec![rule]));
+        } else if line.starts_with("  - ") {
+            entries.last_mut().ok_or(line)?.1.push(line);
+        } else if !line.is_empty() && !line.starts_with("#### ") {
+            return Err(line.to_owned());
+        }
+    }
+    let sentence =
+        |text: &str| text.ends_with('.') && !text.contains('\u{2014}') && !text.contains("--");
+    for (id, parts) in &entries {
+        let [rule, wrong, verify] = parts.as_slice() else {
+            return Err(format!(
+                "{id} needs one `Wrong when:` and one `Verify:` line"
+            ));
+        };
+        let children = wrong.starts_with("  - Wrong when: ") && verify.starts_with("  - Verify: ");
+        if !children || ![rule, wrong, verify].into_iter().all(|text| sentence(text)) {
+            return Err(format!("{id} is not in the glossary's form"));
+        }
+    }
+    Ok(entries.into_iter().map(|(id, _)| id).collect())
+}
+
 #[test]
-fn the_glossary_in_the_lens_names_every_registered_id_once_in_order() {
+fn the_glossary_in_the_lens_gives_every_registered_id_one_bullet_in_order() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tools")
         .join("vibelight.md");
@@ -239,17 +275,26 @@ fn the_glossary_in_the_lens_names_every_registered_id_once_in_order() {
     assert_eq!(lines[open], "<lead-glossary schema=\"1\">");
     let close = at("</lead-glossary>");
     assert!(at("<slop-lens>") < open && close < at("</slop-lens>"));
-    let entries = &lines[open + 1..close];
-    let ids: Vec<&str> = (entries.iter())
-        .map(|entry| entry.split(':').next().unwrap_or_default())
-        .collect();
-    assert_eq!(ids, leads::ids().collect::<Vec<_>>());
-    for entry in entries {
-        let shaped = entry.contains(". Wrong when ") && entry.contains(". Verify: ");
-        assert!(shaped && entry.ends_with('.'), "{entry}");
-        assert!(
-            !entry.contains('\u{2014}') && !entry.contains("--"),
-            "{entry}"
-        );
+    let body = &lines[open + 1..close];
+    assert_eq!(glossary_ids(body), Ok(leads::ids().collect::<Vec<_>>()));
+    let headings = body.iter().filter(|line| line.starts_with("#### ")).count();
+    assert_eq!(headings, 7, "one heading per detector group");
+    let entry = [
+        "",
+        "#### Shapes",
+        "",
+        "- **option-as-flag**: An `Option<bool>` field.",
+        "  - Wrong when: the callers need three states.",
+        "  - Verify: read the readers.",
+        "",
+    ];
+    assert_eq!(glossary_ids(&entry), Ok(vec!["option-as-flag"]));
+    for dropped in [4, 5] {
+        let mut broken = entry.to_vec();
+        broken.remove(dropped);
+        assert!(glossary_ids(&broken).is_err(), "a missing child fails");
     }
+    let mut dashed = entry.to_vec();
+    dashed[5] = "  - Verify: read the readers -- all of them.";
+    assert!(glossary_ids(&dashed).is_err(), "a double dash fails");
 }
