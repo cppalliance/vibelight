@@ -300,12 +300,6 @@ impl Page<'_> {
     /// whitespace the comment marker and the source comment left at the start
     /// is dropped rather than pushing the first word off that column.
     fn comment_line(&self, out: &mut String, line: &Line) {
-        // A `cfg` line is a condition, not prose, so it keeps its own line
-        // inside the reflowed paragraph.
-        let cfg = matches!(line.spans.first(), Some(Span::Marker(m)) if *m == Marker::CFG.spaced);
-        if cfg {
-            out.push_str("<span class=\"cfg\">");
-        }
         let mut started = false;
         let mut trimmed: Vec<Span> = Vec::new();
         for span in &line.spans {
@@ -332,8 +326,23 @@ impl Page<'_> {
                 }
             }
         }
+        // A `cfg` line is a condition and a `# Errors` line is a heading, so
+        // neither runs into the prose: each keeps its own line inside the
+        // reflowed paragraph.
+        let cfg = matches!(line.spans.first(), Some(Span::Marker(m)) if *m == Marker::CFG.spaced);
+        let heading = matches!(trimmed.first(), Some(Span::Comment(text)) if is_heading(text));
+        let class = if cfg {
+            "cfg"
+        } else if heading {
+            "sec"
+        } else {
+            ""
+        };
+        if !class.is_empty() {
+            let _ = write!(out, "<span class=\"{class}\">");
+        }
         self.ticked(out, &trimmed);
-        if cfg {
+        if !class.is_empty() {
             out.push_str("</span>");
         }
     }
@@ -401,6 +410,14 @@ fn source_link(link: &Link) -> String {
         attr(&link.target),
         escape(&link.text)
     )
+}
+
+/// Tells whether a comment line is a heading such as `# Errors`: one to six
+/// `#` and then a space.
+fn is_heading(text: &str) -> bool {
+    let rest = text.trim_start_matches('#');
+    let hashes = text.len() - rest.len();
+    (1..=6).contains(&hashes) && rest.starts_with(' ')
 }
 
 /// Writes `count` gaps of one class: the empty blocks that stand for the
