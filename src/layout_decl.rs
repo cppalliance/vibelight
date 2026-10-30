@@ -164,18 +164,24 @@ fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
     }
 }
 
-/// Tells whether a struct prints as a class: named fields, at least one
-/// member, and no public member.
+/// Tells whether a struct prints as a class: its body starts with an
+/// `internal:` or a private section, since a class starts private and a
+/// struct starts public. The body starts with its data, the fields, in the
+/// order public, internal, private, or with its other members when it has no
+/// field. A struct with no member has no body and stays a struct.
 fn is_class(decl: &Decl) -> bool {
-    let mut real = decl
-        .members
-        .iter()
-        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
-        .peekable();
+    let first = |fields: bool| {
+        decl.members
+            .iter()
+            .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
+            .filter(|m| matches!(m.kind, MemberKind::Field(_)) == fields)
+            .map(|m| section(m.vis))
+            .min()
+    };
     decl.kind == DeclKind::Struct
-        && matches!(decl.shape, Shape::Named)
-        && real.peek().is_some()
-        && real.all(|m| m.vis != Vis::Public)
+        && first(true)
+            .or_else(|| first(false))
+            .is_some_and(|start| start != section(Vis::Public))
 }
 
 /// Returns a type alias or trait alias as one line.
@@ -296,8 +302,21 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     } else {
         Vis::Public
     };
+    // A class with no public member prints its special members in its own
+    // section, which needs no label. Any other type has a public member, so
+    // they print in the public section, where a trait impl is visible.
+    let has_public = parts
+        .members
+        .iter()
+        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
+        .any(|m| m.vis == Vis::Public);
+    let special = if parts.class && !has_public {
+        default
+    } else {
+        Vis::Public
+    };
     if let Some(entry) = special_entry(parts.special, parts.name, refs) {
-        sections[section(default)][3].push(entry);
+        sections[section(special)][3].push(entry);
     }
     let mut block = Block::default();
     join_sections(data, sections, default, &mut block);

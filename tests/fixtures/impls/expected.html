@@ -82,7 +82,7 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
+<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
 <li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
@@ -114,9 +114,8 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A generic holder.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Holder&lt;'a, T&gt;
+<pre><code><span class="k">class</span> Holder&lt;'a, T&gt;
 {
-<span class="k">private:</span>
     <span class="src">item</span>: T&amp; 'a,
 <span class="gap"></span><span class="k">public:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the held item.</span></div>    <span class="src">item</span>() -&gt; T&amp; 'a
@@ -133,9 +132,8 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A type with split impls and trait impls.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Widget : Display, From&lt;str&amp; 'a&gt;, unsafe Send, !Sync
+<pre><code><span class="k">class</span> Widget : Display, From&lt;str&amp; 'a&gt;, unsafe Send, !Sync
 {
-<span class="k">private:</span>
     <span class="src">id</span>: u32,
 <span class="gap"></span><span class="k">public:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a widget.</span></div>    <span class="k">static</span> <span class="src">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>

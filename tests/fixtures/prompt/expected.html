@@ -93,7 +93,7 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when every member is private and <code>struct</code> when one is public, with the members of all its impls merged in.</li>
+<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
 <li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
@@ -122,7 +122,7 @@ span.src{cursor:default}
 <p><span class="c">A fully parsed prompt file.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
+<span class="k">class</span> Prompt : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
@@ -201,7 +201,7 @@ span.src{cursor:default}
 <p><span class="c">One section of a prompt: a heading, ordered blocks, and children.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
+<span class="k">class</span> Section : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>    <span class="src">name</span>: String,

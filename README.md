@@ -222,10 +222,10 @@ class Cursor
 }
 ```
 
-Since nothing in it is public, it prints as a `class` with no label. A type with a public member prints as a `struct`. The data comes first, a type's fields or an enum's variants, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into three sections, in this order: public, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. The keyword sets the access at the top of the body, private for a `class` and public for a `struct`, and a label prints only where the access changes from the one in effect, as in a C++ header. So a visibility that holds both fields and methods prints its label twice, once for each part:
+Its body starts with a private member, so it prints as a `class`, which starts private, and needs no label. A body that starts with an `internal:` member also prints as a `class`, and keeps its `internal:` label. A body that starts public prints as a `struct`, which starts public. The data comes first, a type's fields or an enum's variants, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into three sections, in this order: public, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. The keyword sets the access at the top of the body, private for a `class` and public for a `struct`, and a label prints only where the access changes from the one in effect, as in a C++ header. So a visibility that holds both fields and methods prints its label twice, once for each part:
 
 ```
-struct Run
+class Run
 {
 internal:
     id: RunId,

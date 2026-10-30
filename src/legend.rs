@@ -6,7 +6,7 @@ use crate::layout::Span;
 
 /// The lines of the HTML legend, in order; backticks mark code.
 const HTML_LINES: &[&str] = &[
-    "A type prints as a C++ declaration: `class` when every member is private and `struct` when one is public, with the members of all its impls merged in.",
+    "A type prints as a C++ declaration: `class` when its body starts with an internal or private member and `struct` when it starts public, with the members of all its impls merged in.",
     "`static` marks a function with no receiver; `() mut` marks one that takes `&mut self`, and a method with no marker takes `&self`.",
     "`: Clone, Debug` is the base list: the standard traits a type derives or implements, by short name.",
     "A type lists its data first, its fields or variants, then its other members. `internal:` opens the `pub(crate)` members, `private:` the rest, and `public:` goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.",
