@@ -43,7 +43,7 @@ span.src{cursor:default}
 .gap{display:block;height:1.45em}
 .gap-box{height:0}
 .toggle:checked~main .gap{height:.725em}
-.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem 0;margin:.45rem 0 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 ";
 
 #[cfg(test)]
