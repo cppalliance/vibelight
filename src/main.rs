@@ -81,6 +81,11 @@ mod leads_census_scope;
 mod leads_census_tests;
 mod leads_census_variants;
 mod leads_check;
+mod leads_containers;
+mod leads_containers_ops;
+mod leads_containers_owners;
+#[cfg(test)]
+mod leads_containers_tests;
 mod leads_docs;
 mod leads_docs_claims;
 mod leads_docs_lists;
