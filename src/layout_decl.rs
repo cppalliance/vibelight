@@ -55,7 +55,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
         _ => None,
     };
     let impls = match members {
-        MembersBy::Impl => impl_groups(krate, decl),
         MembersBy::Name => Vec::new(),
     };
     let body = body(
@@ -245,27 +244,6 @@ pub(crate) struct BodyParts<'b> {
     /// When functions are ordered by impl: each inherent impl's file and the
     /// indexes of the members it adds, in print order.
     pub(crate) impls: &'b [(String, Range<usize>)],
-}
-
-/// The inherent impls that add members to `decl`, sorted by file and line.
-fn impl_groups(krate: &Crate, decl: &Decl) -> Vec<(String, Range<usize>)> {
-    let mut groups: Vec<(&str, u32, Range<usize>)> = decl
-        .impl_locs
-        .iter()
-        .filter(|l| !l.range.is_empty())
-        .map(|l| {
-            (
-                krate.files[l.loc.file].rel.as_str(),
-                l.loc.line,
-                l.range.clone(),
-            )
-        })
-        .collect();
-    groups.sort_by(|a, b| a.0.cmp(b.0).then(a.1.cmp(&b.1)));
-    groups
-        .into_iter()
-        .map(|(file, _, range)| (file.to_owned(), range))
-        .collect()
 }
 
 /// Builds the lines between a type's braces: the public groups, then

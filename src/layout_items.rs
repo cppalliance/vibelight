@@ -8,7 +8,6 @@ use crate::layout::{
 };
 use crate::layout_decl::{BodyParts, body};
 use crate::layout_marker::Marker;
-use crate::layout_rust_items as rust;
 use crate::model::{
     Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
 };
@@ -16,14 +15,11 @@ use crate::settings::Notation;
 
 /// Builds a module's trailing block: the public items, then the internal
 /// and private ones, each section grouped as re-exports, macro marks,
-/// constants, statics, free functions, and extern blocks. The C++ notation
-/// labels the sections `internal:` and `private:`; Rust spells each item's
-/// visibility instead.
+/// constants, statics, free functions, and extern blocks.
 pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Option<Block> {
     let module = &krate.modules[id];
     let entry = |item: &Item, at: ValueRef| match notation {
         Notation::Cpp => item_entry(krate, item, at),
-        Notation::Rust => rust::item_entry(krate, item),
     };
     let mut sections = sections(6);
     let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
@@ -76,7 +72,6 @@ pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Opti
     }
     let word = match notation {
         Notation::Cpp => "using",
-        Notation::Rust => "use",
     };
     for (groups, items) in sections.iter_mut().zip(&foreign) {
         let reexports = std::mem::take(&mut groups[0]);
@@ -85,7 +80,6 @@ pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Opti
         }
         groups[5] = match notation {
             Notation::Cpp => extern_blocks(krate, items),
-            Notation::Rust => rust::extern_blocks(krate, items),
         };
     }
     // The bucket order still groups the module's items by visibility, but no
@@ -184,8 +178,8 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     }
 }
 
-/// Packs sorted re-export entries into one entry, so their `using` or `use`
-/// lines sit together; `word` is the keyword. An entry with a line above
+/// Packs sorted re-export entries into one entry, so their `using` lines
+/// sit together; `word` is the keyword. An entry with a line above
 /// its first `using` line, such as a comment or a `// cfg:` line, keeps a
 /// blank line on each side, so that line never seems to cover its
 /// neighbors.
@@ -313,14 +307,12 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
     entries
 }
 
-/// Builds a docs fence: `//!` lines, then one line per `cfg`, a `// cfg:`
-/// line in the C++ notation and a `#![cfg(...)]` line in Rust.
+/// Builds a docs fence: `//!` lines, then a `// cfg:` line per `cfg`.
 pub(crate) fn docs_block(notes: &[Note], cfgs: &[String], notation: Notation) -> Option<Block> {
     let mut lines = note_lines(notes, 0, Marker::MODULE);
     for cfg in cfgs {
         let spans = match notation {
             Notation::Cpp => vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
-            Notation::Rust => vec![plain(&format!("#![cfg({cfg})]"))],
         };
         lines.push(Line {
             indent: 0,
@@ -357,9 +349,8 @@ pub(crate) struct Implements {
 }
 
 /// Builds the Other impls section: a line for each trait impl, sorted by
-/// trait and then by self type, `implements: Trait for Type;` or, in Rust,
-/// the impl's header with empty braces, and a block for each inherent impl,
-/// sorted by self type.
+/// trait and then by self type, `implements: Trait for Type;`, and a block
+/// for each inherent impl, sorted by self type.
 pub(crate) fn other_impls(
     krate: &Crate,
     ids: &[usize],
@@ -391,7 +382,6 @@ pub(crate) fn other_impls(
         .map(|item| {
             let spans = match notation {
                 Notation::Cpp => implements(item),
-                Notation::Rust => rust::implements(item),
             };
             let mut marks = item.marks.clone();
             if !item.attributes.is_empty() {
@@ -408,9 +398,6 @@ pub(crate) fn other_impls(
     let blocks = inherent
         .into_iter()
         .map(|item| {
-            if notation == Notation::Rust {
-                return (rust::inherent_block(krate, item), item.loc);
-            }
             let mut block = Block {
                 lines: note_lines(&item.notes, 0, Marker::DOC),
                 repeats: Vec::new(),

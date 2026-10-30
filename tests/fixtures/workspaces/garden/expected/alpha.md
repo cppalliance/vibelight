@@ -1,92 +1,33 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.alpha"></a>
-# alpha
-
-```
-//! Alpha: a crate that names types of its dependencies.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [alpha](#mod.alpha)
-  - [Meter](#type.alpha.Meter)
-  - [Reads](#type.alpha.Reads)
-- [External items](#external)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Meter](#type.alpha.Meter)
-- [Reads](#type.alpha.Reads)
-
-<a id="mod.alpha"></a>
-## alpha
-
-<a id="type.alpha.Meter"></a>
-### Meter
-
-Counts: 4 fields
-
-Used by: nothing
-
-```
-/// A meter that reads a gauge of beta.
-pub struct Meter {
-    /// Through a use of the re-export at beta's root.
-    pub gauge: Gauge,
-
-    /// Through beta's module path.
-    pub valve: b::parts::Valve,
-
-    /// A crate outside the run stays plain.
-    pub stray: delta::Stray,
-
-    /// A crate that no follow glob allows stays plain.
-    pub vendored: gamma::Vendored,
-}
-```
-
-<a id="type.alpha.Reads"></a>
-### Reads
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// A trait other crates implement.
-pub trait Reads {
-    fn read(&self) -> u32;
-}
-```
-
-<a id="external"></a>
-## External items
-
-- `b`
-  - `b::Gauge`, 1 use by [Meter](#type.alpha.Meter)
-    - A gauge.
-  - `b::parts::Valve`, 1 use by [Meter](#type.alpha.Meter)
-    - A valve.
-- `delta`
-  - `delta::Stray`, 1 use by [Meter](#type.alpha.Meter)
-- `gamma`
-  - `gamma::Vendored`, 1 use by [Meter](#type.alpha.Meter)
+{"k":"vibelight-outline","schema":1,"crate":"alpha","target":"lib","dir":"crates/alpha"}
+{"k":"modules","items":[{"path":"crate","from":19,"to":33}]}
+{"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Reads","::facade::Panel"],"evidence":"one impl in the run: `impl alpha::Reads for Panel`","locs":[{"file":"src/lib.rs","line":0},{"target":"facade","file":"src/lib.rs","line":0},{"target":"facade","file":"src/lib.rs","line":0}],"limits":["external-impls","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Meter::gauge"],"evidence":"no hit of `gauge` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Meter::stray"],"evidence":"no hit of `stray` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Meter::valve"],"evidence":"no hit of `valve` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Meter::vendored"],"evidence":"no hit of `vendored` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Meter::gauge"],"evidence":"0 struct literals of `Meter` set it, and no `.gauge` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Meter::stray"],"evidence":"0 struct literals of `Meter` set it, and no `.stray` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Meter::valve"],"evidence":"0 struct literals of `Meter` set it, and no `.valve` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Meter::vendored"],"evidence":"0 struct literals of `Meter` set it, and no `.vendored` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Meter","kind":"struct"}
+{"k":"surface","path":"Reads","kind":"trait"}
+{"k":"external","path":"b::Gauge","uses":1,"named_by":["Meter"],"summary":"A gauge."}
+{"k":"external","path":"b::parts::Valve","uses":1,"named_by":["Meter"],"summary":"A valve."}
+{"k":"external","path":"delta::Stray","uses":1,"named_by":["Meter"]}
+{"k":"external","path":"gamma::Vendored","uses":1,"named_by":["Meter"]}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2}
+{"k":"doc","path":"crate","text":"Alpha: a crate that names types of its dependencies."}
+{"k":"struct","path":"Meter","rust":"pub struct Meter { pub gauge: Gauge, pub valve: b::parts::Valve, pub stray: delta::Stray, pub vendored: gamma::Vendored }","loc":{"file":"src/lib.rs","line":0},"reexported_by":["::facade"],"crates":["facade"],"token_hits":2}
+{"k":"doc","path":"Meter","text":"A meter that reads a gauge of beta."}
+{"k":"field","path":"Meter::gauge","rust":"pub gauge: Gauge","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Meter::gauge","text":"Through a use of the re-export at beta's root."}
+{"k":"field","path":"Meter::valve","rust":"pub valve: b::parts::Valve","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Meter::valve","text":"Through beta's module path."}
+{"k":"field","path":"Meter::stray","rust":"pub stray: delta::Stray","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Meter::stray","text":"A crate outside the run stays plain."}
+{"k":"field","path":"Meter::vendored","rust":"pub vendored: gamma::Vendored","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Meter::vendored","text":"A crate that no follow glob allows stays plain."}
+{"k":"trait","path":"Reads","rust":"pub trait Reads","loc":{"file":"src/lib.rs","line":0},"reexported_by":["::facade"],"crates":["facade"],"token_hits":3}
+{"k":"doc","path":"Reads","text":"A trait other crates implement."}
+{"k":"fn","path":"Reads::read","sig":"fn read(&self) -> u32","loc":{"file":"src/lib.rs","line":0},"method_name_hits":1,"token_hits":1}

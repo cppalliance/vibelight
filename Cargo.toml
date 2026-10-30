@@ -4,7 +4,7 @@ version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "BSL-1.0"
-description = "Outlines a Rust crate's declarations and comments: markdown written as Rust for a model analyzing the code, and linked C++-header-style HTML for browsing it"
+description = "Outlines a Rust crate's declarations and comments: JSON Lines markdown of slop leads and one-line Rust signatures for a model analyzing the code, and linked C++-header-style HTML for browsing it"
 repository = "https://github.com/cppalliance/vibelight"
 homepage = "https://github.com/cppalliance/vibelight"
 readme = "README.md"
@@ -30,6 +30,8 @@ path = "tests/it/main.rs"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 proc-macro2 = { version = "1", features = ["span-locations"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 syn = { version = "3", features = ["full", "visit"] }
 toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
 

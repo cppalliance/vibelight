@@ -38,7 +38,7 @@ pub(crate) enum Inline {
         text: String,
         id: String,
     },
-    /// A kill list link: markdown points at the heading, HTML at the mark.
+    /// A kill list link: it points at the mark, under its heading.
     Kill {
         text: String,
         heading: String,
@@ -79,11 +79,6 @@ pub(crate) enum Node {
         class: &'static str,
         items: Vec<Item>,
     },
-    /// A line of text outside any block, such as a facts line.
-    Para {
-        class: &'static str,
-        inlines: Vec<Inline>,
-    },
     /// A horizontal rule that opens a group of declarations.
     Rule,
 }
@@ -114,8 +109,6 @@ pub(crate) struct Document {
 pub(crate) struct Builder<'a> {
     pub(crate) krate: &'a Crate,
     pub(crate) links: Option<&'a LinkBase>,
-    /// The C++ blocks, which ids, order, and naming read.
-    pub(crate) blocks: &'a [Block],
     /// The blocks the document prints for the declarations.
     pub(crate) printed: &'a [Block],
     pub(crate) notation: Notation,
@@ -126,8 +119,6 @@ pub(crate) struct Builder<'a> {
     /// Each mark line: the heading it sits under, its text, and its id.
     pub(crate) marks: Vec<(String, String, String)>,
     pub(crate) heading: String,
-    /// The order, whose namers the facts lines read, when the facts are on.
-    pub(crate) facts: Option<&'a Order>,
 }
 
 /// What a target's documents are built from.
@@ -142,8 +133,6 @@ pub(crate) struct Inputs<'a> {
     pub(crate) printed: &'a [Block],
     pub(crate) spellings: &'a [Entry],
     pub(crate) surface: &'a [crate::surface::Entry],
-    /// Every crate of the run's first doc line for each declaration.
-    pub(crate) docs: &'a [Vec<Option<String>>],
     pub(crate) options: Options,
 }
 
@@ -157,7 +146,6 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         printed,
         spellings,
         surface,
-        docs,
         options,
     } = *inputs;
     let texts = crate::order::block_texts(krate, blocks);
@@ -166,7 +154,6 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
     let mut b = Builder {
         krate,
         links,
-        blocks,
         printed,
         notation: options.notation,
         texts,
@@ -175,7 +162,6 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         nodes: Vec::new(),
         marks: Vec::new(),
         heading: String::new(),
-        facts: options.facts.then_some(order),
     };
     let mut contents = Vec::new();
     if options.legend {
@@ -192,10 +178,6 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
             contents.extend(b.other_impls_section(others));
             contents.push(b.modules_section(&modules));
         }
-        OrderBy::Modules => {
-            contents.extend(b.module_sections(order, &modules));
-            contents.extend(b.other_impls_section(others));
-        }
     }
     if !spellings.is_empty() {
         contents.push(Item {
@@ -209,17 +191,13 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
             items,
         });
     }
-    contents.extend(b.external(docs));
-    contents.extend(b.shapes());
     let (kill_summary, entries) = b.kill_list();
     let kill = match options.kill_list {
         KillList::Full => entries,
-        KillList::Counts => Vec::new(),
     };
     let legend = if options.legend {
         match options.notation {
             Notation::Cpp => crate::legend::html_items(),
-            Notation::Rust => crate::legend::items(),
         }
     } else {
         Vec::new()

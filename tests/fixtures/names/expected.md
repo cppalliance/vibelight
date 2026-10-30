@@ -1,230 +1,64 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.names"></a>
-# names
-
-```
-//! Name resolution.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [names](#mod.names)
-  - [Catalog](#type.names.Catalog)
-  - [Pairs](#type.names.Pairs)
-  - [Twin](#type.names.Twin)
-  - [Twin](#type.names.Twin-2)
-  - [Wrapper](#type.names.Wrapper)
-- [api](#mod.names.api)
-  - [api::Token](#type.names.api.Token)
-- [api::inner](#mod.names.api.inner)
-  - [api::inner::Handle](#type.names.api.inner.Handle)
-  - [api::inner::Shared](#type.names.api.inner.Shared)
-- [model](#mod.names.model)
-  - [model::Record](#type.names.model.Record)
-  - [model::Shared](#type.names.model.Shared)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [api](#mod.names.api)
-- [api::Handle](#type.names.api.inner.Handle)
-- [api::inner](#mod.names.api.inner)
-- [api::inner::Handle](#type.names.api.inner.Handle)
-- [api::inner::Shared](#type.names.api.inner.Shared)
-- [api::Shared](#type.names.api.inner.Shared)
-- [api::Token](#type.names.api.Token)
-- [Catalog](#type.names.Catalog)
-- [Entry](#type.names.model.Record)
-- [model](#mod.names.model)
-- [model::Record](#type.names.model.Record)
-- [model::Shared](#type.names.model.Shared)
-- [Pairs](#type.names.Pairs)
-- [Twin](#type.names.Twin)
-- [Wrapper](#type.names.Wrapper)
-
-<a id="mod.names"></a>
-## names
-
-```
-pub use model::Record as Entry;
-```
-
-<a id="type.names.Catalog"></a>
-### Catalog
-
-Counts: 5 fields
-
-Used by: nothing
-
-```
-/// Uses names resolved every way rule 39 allows.
-pub struct Catalog {
-    /// Through a prefix path.
-    pub first: crate::model::Record,
-
-    /// Through a pub use rename at the root.
-    pub second: Entry,
-
-    /// Through a glob import.
-    pub third: api::Handle,
-
-    /// A unique name across the target.
-    pub fourth: Token,
-
-    /// An ambiguous name stays plain.
-    pub fifth: Shared,
-}
-```
-
-<a id="type.names.Pairs"></a>
-### Pairs
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Escapes in HTML: <, >, and & in types and comments.
-pub type Pairs<'a> = &'a [(Token, Option<Vec<Token>>)];
-```
-
-<a id="type.names.Twin"></a>
-### Twin
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The first of two types named Twin, under different cfgs.
-#[cfg(unix)]
-pub struct Twin;
-```
-
-<a id="type.names.Twin-2"></a>
-### Twin
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The second Twin.
-#[cfg(windows)]
-pub struct Twin;
-```
-
-<a id="type.names.Wrapper"></a>
-### Wrapper
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A generic parameter that shares a type's name stays plain.
-pub struct Wrapper<Record> {
-    pub inner: Record,
-}
-```
-
-<a id="mod.names.api"></a>
-## api
-
-```
-//! Re-exports through a glob.
-```
-
-```
-pub use self::inner::*;
-```
-
-<a id="type.names.api.Token"></a>
-### api::Token
-
-Counts: none
-
-Used by: [Catalog](#type.names.Catalog), [Pairs](#type.names.Pairs)
-
-```
-/// A unique token type.
-pub struct Token;
-```
-
-<a id="mod.names.api.inner"></a>
-## api::inner
-
-<a id="type.names.api.inner.Handle"></a>
-### api::inner::Handle
-
-Counts: none
-
-Used by: [Catalog](#type.names.Catalog)
-
-```
-/// A handle.
-pub struct Handle;
-```
-
-<a id="type.names.api.inner.Shared"></a>
-### api::inner::Shared
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The other type named Shared.
-pub struct Shared;
-```
-
-<a id="mod.names.model"></a>
-## model
-
-```
-//! The record types.
-```
-
-<a id="type.names.model.Record"></a>
-### model::Record
-
-Counts: 1 field
-
-Used by: [Catalog](#type.names.Catalog), [names](#mod.names)
-
-```
-/// A record.
-pub struct Record {
-    pub id: u32,
-}
-```
-
-<a id="type.names.model.Shared"></a>
-### model::Shared
-
-Counts: none
-
-Used by: nothing
-
-```
-/// One of two types named Shared.
-pub struct Shared;
-```
+{"k":"vibelight-outline","schema":1,"crate":"names","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":26,"to":48},{"path":"api","from":49,"to":53},{"path":"api::inner","from":54,"to":58},{"path":"model","from":59,"to":64}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Catalog","Catalog::fifth","Catalog::first","Catalog::fourth","Catalog::second","Catalog::third","Pairs","Twin","Wrapper"],"evidence":"no hit of `Catalog` in the scanned sources beyond its 1 declaration; no hit of `fifth` in the scanned sources beyond its 1 declaration; no hit of `first` in the scanned sources beyond its 1 declaration; no hit of `fourth` in the scanned sources beyond its 1 declaration; no hit of `second` in the scanned sources beyond its 1 declaration; no hit of `third` in the scanned sources beyond its 1 declaration; no hit of `Pairs` in the scanned sources beyond its 1 declaration; no hit of `Twin` in the scanned sources beyond its 2 declarations; no hit of `Wrapper` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":10}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["model::Record::id"],"evidence":"no hit of `id` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/model.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["api::inner::Shared"],"evidence":"1 production hits of `Shared` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/api.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["model::Shared"],"evidence":"1 production hits of `Shared` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/model.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Catalog::fifth","Catalog::first","Catalog::fourth","Catalog::second","Catalog::third","Wrapper::inner"],"evidence":"0 struct literals of `Catalog` set it, and no `.fifth` access or pattern reads it; 0 struct literals of `Catalog` set it, and no `.first` access or pattern reads it; 0 struct literals of `Catalog` set it, and no `.fourth` access or pattern reads it; 0 struct literals of `Catalog` set it, and no `.second` access or pattern reads it; 0 struct literals of `Catalog` set it, and no `.third` access or pattern reads it; 0 struct literals of `Wrapper` set it, and no `.inner` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["model::Record::id"],"evidence":"0 struct literals of `Record` set it, and no `.id` access or pattern reads it","locs":[{"file":"src/model.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"api","kind":"mod"}
+{"k":"surface","path":"api::Handle","kind":"struct","item":"api::inner::Handle"}
+{"k":"surface","path":"api::inner","kind":"mod"}
+{"k":"surface","path":"api::inner::Handle","kind":"struct"}
+{"k":"surface","path":"api::inner::Shared","kind":"struct"}
+{"k":"surface","path":"api::Shared","kind":"struct","item":"api::inner::Shared"}
+{"k":"surface","path":"api::Token","kind":"struct"}
+{"k":"surface","path":"Catalog","kind":"struct"}
+{"k":"surface","path":"Entry","kind":"struct","item":"model::Record"}
+{"k":"surface","path":"model","kind":"mod"}
+{"k":"surface","path":"model::Record","kind":"struct"}
+{"k":"surface","path":"model::Shared","kind":"struct"}
+{"k":"surface","path":"Pairs","kind":"alias"}
+{"k":"surface","path":"Twin","kind":"struct"}
+{"k":"surface","path":"Twin","kind":"struct"}
+{"k":"surface","path":"Wrapper","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":5}
+{"k":"doc","path":"crate","text":"Name resolution."}
+{"k":"use","path":"Entry","rust":"pub use model::Record as Entry","loc":{"file":"src/lib.rs","line":0}}
+{"k":"struct","path":"Catalog","rust":"pub struct Catalog { pub first: crate::model::Record, pub second: Entry, pub third: api::Handle, pub fourth: Token, pub fifth: Shared }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog","text":"Uses names resolved every way rule 39 allows."}
+{"k":"field","path":"Catalog::first","rust":"pub first: crate::model::Record","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog::first","text":"Through a prefix path."}
+{"k":"field","path":"Catalog::second","rust":"pub second: Entry","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog::second","text":"Through a pub use rename at the root."}
+{"k":"field","path":"Catalog::third","rust":"pub third: api::Handle","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog::third","text":"Through a glob import."}
+{"k":"field","path":"Catalog::fourth","rust":"pub fourth: Token","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog::fourth","text":"A unique name across the target."}
+{"k":"field","path":"Catalog::fifth","rust":"pub fifth: Shared","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Catalog::fifth","text":"An ambiguous name stays plain."}
+{"k":"struct","path":"Wrapper","rust":"pub struct Wrapper<Record> { pub inner: Record }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Wrapper","text":"A generic parameter that shares a type's name stays plain."}
+{"k":"alias","path":"Pairs","rust":"pub type Pairs<'a> = &'a [(Token, Option<Vec<Token>>)]","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Pairs","text":"Escapes in HTML: <, >, and & in types and comments."}
+{"k":"struct","path":"Twin","rust":"pub struct Twin","loc":{"file":"src/lib.rs","line":0},"cfgs":["unix"]}
+{"k":"doc","path":"Twin","text":"The first of two types named Twin, under different cfgs."}
+{"k":"struct","path":"Twin","rust":"pub struct Twin","loc":{"file":"src/lib.rs","line":0},"cfgs":["windows"]}
+{"k":"doc","path":"Twin","text":"The second Twin."}
+{"k":"mod","path":"api","loc":{"file":"src/api.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"api","text":"Re-exports through a glob."}
+{"k":"use","path":"api::*","rust":"pub use self::inner::*","loc":{"file":"src/api.rs","line":0}}
+{"k":"struct","path":"api::Token","rust":"pub struct Token","loc":{"file":"src/api.rs","line":0},"named_by":["Catalog","Pairs"],"token_hits":3}
+{"k":"doc","path":"api::Token","text":"A unique token type."}
+{"k":"mod","path":"api::inner","loc":{"file":"src/api.rs","line":0},"vis":"public","types":2}
+{"k":"struct","path":"api::inner::Handle","rust":"pub struct Handle","loc":{"file":"src/api.rs","line":0},"named_by":["Catalog"],"token_hits":1}
+{"k":"doc","path":"api::inner::Handle","text":"A handle."}
+{"k":"struct","path":"api::inner::Shared","rust":"pub struct Shared","loc":{"file":"src/api.rs","line":0},"token_hits":1}
+{"k":"doc","path":"api::inner::Shared","text":"The other type named Shared."}
+{"k":"mod","path":"model","loc":{"file":"src/model.rs","line":0},"vis":"public","types":2}
+{"k":"doc","path":"model","text":"The record types."}
+{"k":"struct","path":"model::Record","rust":"pub struct Record { pub id: u32 }","loc":{"file":"src/model.rs","line":0},"named_by":["Catalog"],"reexported_by":["crate"],"token_hits":4}
+{"k":"doc","path":"model::Record","text":"A record."}
+{"k":"struct","path":"model::Shared","rust":"pub struct Shared","loc":{"file":"src/model.rs","line":0},"token_hits":1}
+{"k":"doc","path":"model::Shared","text":"One of two types named Shared."}

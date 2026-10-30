@@ -1,191 +1,51 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.structs"></a>
-# structs
-
-```
-//! Struct shapes: named, tuple, unit, and generic.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [structs](#mod.structs)
-  - [Buffer](#type.structs.Buffer)
-  - [Empty](#type.structs.Empty)
-  - [Index](#type.structs.Index)
-  - [Marker](#type.structs.Marker)
-  - [Meters](#type.structs.Meters)
-  - [Pair](#type.structs.Pair)
-  - [Point](#type.structs.Point)
-  - [Span](#type.structs.Span)
-  - [Token](#type.structs.Token)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Buffer](#type.structs.Buffer)
-- [Empty](#type.structs.Empty)
-- [Index](#type.structs.Index)
-- [Marker](#type.structs.Marker)
-- [Meters](#type.structs.Meters)
-- [Pair](#type.structs.Pair)
-- [Point](#type.structs.Point)
-- [Span](#type.structs.Span)
-- [Token](#type.structs.Token)
-
-<a id="mod.structs"></a>
-## structs
-
-<a id="type.structs.Buffer"></a>
-### Buffer
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// Generics with a lifetime, a bound, a default, and a const generic.
-pub struct Buffer<'a, T: Clone = u8, const N: usize = 16> {
-    pub data: &'a [T; N],
-
-    len: usize,
-}
-```
-
-<a id="type.structs.Empty"></a>
-### Empty
-
-Counts: none
-
-Used by: nothing
-
-```
-/// An empty braced struct.
-pub struct Empty {}
-```
-
-<a id="type.structs.Index"></a>
-### Index
-
-Counts: 1 field, 1 function
-
-Used by: nothing
-
-```
-/// A tuple struct with methods.
-pub struct Index(usize);
-
-// impl in src/lib.rs
-impl Index {
-    /// Returns the index.
-    pub fn get(&self) -> usize;
-}
-```
-
-<a id="type.structs.Marker"></a>
-### Marker
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A unit struct.
-pub struct Marker;
-```
-
-<a id="type.structs.Meters"></a>
-### Meters
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A tuple struct.
-pub struct Meters(pub f64);
-```
-
-<a id="type.structs.Pair"></a>
-### Pair
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// A tuple struct with two fields, one private.
-pub struct Pair(pub u8, u16);
-```
-
-<a id="type.structs.Point"></a>
-### Point
-
-Counts: 3 fields
-
-Used by: nothing
-
-```
-/// A named struct with public and private fields.
-pub struct Point {
-    /// Horizontal position.
-    pub x: i32,
-
-    /// Vertical position.
-    pub y: i32,
-
-    label: String,
-}
-```
-
-<a id="type.structs.Span"></a>
-### Span
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// A tuple struct whose fields carry comments.
-pub struct Span(
-    /// The first byte.
-    pub usize,
-    /// One past the last byte.
-    pub usize,
-);
-```
-
-<a id="type.structs.Token"></a>
-### Token
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// A unit struct with a method.
-pub struct Token;
-
-// impl in src/lib.rs
-impl Token {
-    /// Makes a token.
-    pub fn new() -> Token;
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"structs","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":18,"to":51}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Buffer","Buffer::data","Empty","Index::get","Marker","Meters","Pair","Point","Point::x","Point::y","Span","Token::new"],"evidence":"no hit of `Buffer` in the scanned sources beyond its 1 declaration; no hit of `data` in the scanned sources beyond its 1 declaration; no hit of `Empty` in the scanned sources beyond its 1 declaration; no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `Marker` in the scanned sources beyond its 1 declaration; no hit of `Meters` in the scanned sources beyond its 1 declaration; no hit of `Pair` in the scanned sources beyond its 1 declaration; no hit of `Point` in the scanned sources beyond its 1 declaration; no hit of `x` in the scanned sources beyond its 1 declaration; no hit of `y` in the scanned sources beyond its 1 declaration; no hit of `Span` in the scanned sources beyond its 1 declaration; no hit of `new` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Index"],"evidence":"1 production hits of `Index` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Buffer::data"],"evidence":"0 struct literals of `Buffer` set it, and no `.data` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Point::x"],"evidence":"0 struct literals of `Point` set it, and no `.x` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Point::y"],"evidence":"0 struct literals of `Point` set it, and no `.y` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Buffer","kind":"struct"}
+{"k":"surface","path":"Empty","kind":"struct"}
+{"k":"surface","path":"Index","kind":"struct"}
+{"k":"surface","path":"Marker","kind":"struct"}
+{"k":"surface","path":"Meters","kind":"struct"}
+{"k":"surface","path":"Pair","kind":"struct"}
+{"k":"surface","path":"Point","kind":"struct"}
+{"k":"surface","path":"Span","kind":"struct"}
+{"k":"surface","path":"Token","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":9}
+{"k":"doc","path":"crate","text":"Struct shapes: named, tuple, unit, and generic."}
+{"k":"struct","path":"Point","rust":"pub struct Point { pub x: i32, pub y: i32, label: String }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Point","text":"A named struct with public and private fields."}
+{"k":"field","path":"Point::x","rust":"pub x: i32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Point::x","text":"Horizontal position."}
+{"k":"field","path":"Point::y","rust":"pub y: i32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Point::y","text":"Vertical position."}
+{"k":"struct","path":"Meters","rust":"pub struct Meters(pub f64)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Meters","text":"A tuple struct."}
+{"k":"struct","path":"Pair","rust":"pub struct Pair(pub u8, u16)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Pair","text":"A tuple struct with two fields, one private."}
+{"k":"struct","path":"Marker","rust":"pub struct Marker","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Marker","text":"A unit struct."}
+{"k":"struct","path":"Buffer","rust":"pub struct Buffer<'a, T: Clone = u8, const N: usize = 16> { pub data: &'a [T; N], len: usize }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Buffer","text":"Generics with a lifetime, a bound, a default, and a const generic."}
+{"k":"struct","path":"Span","rust":"pub struct Span(pub usize, pub usize)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Span","text":"A tuple struct whose fields carry comments."}
+{"k":"field","path":"Span::0","rust":"pub usize","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Span::0","text":"The first byte."}
+{"k":"field","path":"Span::1","rust":"pub usize","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Span::1","text":"One past the last byte."}
+{"k":"struct","path":"Index","rust":"pub struct Index(usize)","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Index","text":"A tuple struct with methods."}
+{"k":"impl","path":"Index","rust":"impl Index","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Index::get","sig":"pub fn get(&self) -> usize","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field 0"},"ops":["self.0"]}
+{"k":"doc","path":"Index::get","text":"Returns the index."}
+{"k":"struct","path":"Token","rust":"pub struct Token","loc":{"file":"src/lib.rs","line":0},"token_hits":3}
+{"k":"doc","path":"Token","text":"A unit struct with a method."}
+{"k":"impl","path":"Token","rust":"impl Token","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Token::new","sig":"pub fn new() -> Token","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":3}}
+{"k":"doc","path":"Token::new","text":"Makes a token."}
+{"k":"struct","path":"Empty","rust":"pub struct Empty {}","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Empty","text":"An empty braced struct."}

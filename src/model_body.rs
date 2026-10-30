@@ -1,11 +1,12 @@
 //! The model of function bodies and the other facts collection keeps for
 //! analysis: what each body belongs to, and what its code and comments hold.
-//! No outline prints these facts.
+//! The markdown prints them as counts, names, and comments, never as code,
+//! and the HTML prints none of them.
 
 use crate::model::{DeclId, FileId, Loc, ModId, RefId, ValueRef};
 
-/// A type name a function body writes. It keeps the type out of
-/// Unconnected (rule 26) and names nothing else.
+/// A type name a function body writes. It keeps the type out of the HTML's
+/// Unconnected types (rule 26) and names nothing else.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct BodyName {
     pub(crate) name: RefId,

@@ -7,6 +7,7 @@ mod config;
 mod exclude;
 mod folders;
 mod goldens;
+mod leads;
 mod links;
 mod stamp;
 mod structure;

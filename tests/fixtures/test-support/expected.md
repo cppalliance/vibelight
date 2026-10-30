@@ -1,154 +1,41 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.test_support"></a>
-# test_support
-
-```
-//! Test-support code beside production code.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [test_support](#mod.test_support)
-  - [Engine](#type.test_support.Engine)
-  - [Model](#type.test_support.Model)
-  - [Recording](#type.test_support.Recording)
-  - [ScriptedChat](#type.test_support.ScriptedChat)
-  - [Live](#type.test_support.Live)
-- [fakes](#mod.test_support.fakes)
-  - [fakes::FakeClock](#type.test_support.fakes.FakeClock)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Engine](#type.test_support.Engine)
-- [fakes](#mod.test_support.fakes) (test support)
-- [fakes::clock()](#mod.test_support.fakes) (test support)
-- [fakes::FakeClock](#type.test_support.fakes.FakeClock) (test support)
-- [Live](#type.test_support.Live)
-- [Model](#type.test_support.Model)
-- [record()](#mod.test_support) (test support)
-- [Recording](#type.test_support.Recording)
-- [ScriptedChat](#type.test_support.ScriptedChat) (test support)
-
-<a id="mod.test_support"></a>
-## test_support
-
-```
-/// Records into the recording.
-#[cfg(any(test, feature = "test-support"))]
-pub fn record(into: &mut Recording);
-```
-
-<a id="type.test_support.Engine"></a>
-### Engine
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A production engine.
-pub struct Engine {
-    /// The model it talks to.
-    pub model: Model,
-}
-```
-
-<a id="type.test_support.Model"></a>
-### Model
-
-Counts: none
-
-Used by: [Engine](#type.test_support.Engine), [ScriptedChat](#type.test_support.ScriptedChat)
-
-```
-/// A production model.
-pub struct Model;
-```
-
-<a id="type.test_support.Recording"></a>
-### Recording
-
-Counts: none
-
-Used by: [ScriptedChat](#type.test_support.ScriptedChat), [test_support](#mod.test_support)
-
-```
-/// Used only by test support.
-pub struct Recording;
-```
-
-<a id="type.test_support.ScriptedChat"></a>
-### ScriptedChat
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// A chat that plays back a script, for tests and benches.
-#[cfg(any(test, feature = "test-support"))]
-pub struct ScriptedChat {
-    /// The model the script stands in for.
-    pub model: Model,
-
-    /// Where it records.
-    pub recording: Recording,
-}
-```
-
-<a id="type.test_support.Live"></a>
-### Live
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Production only.
-#[cfg(not(test))]
-pub struct Live;
-```
-
-<a id="mod.test_support.fakes"></a>
-## fakes
-
-```
-//! Fakes for tests and benches.
-#![cfg(any(test, feature = "test-support"))]
-```
-
-```
-/// Makes a fake clock.
-pub fn clock() -> FakeClock;
-```
-
-<a id="type.test_support.fakes.FakeClock"></a>
-### fakes::FakeClock
-
-Counts: none
-
-Used by: [fakes](#mod.test_support.fakes)
-
-```
-/// A fake clock.
-pub struct FakeClock;
-```
+{"k":"vibelight-outline","schema":1,"crate":"test_support","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":16,"to":35},{"path":"fakes","from":36,"to":41}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine","Engine::model","Live","record","ScriptedChat","ScriptedChat::model","ScriptedChat::recording"],"evidence":"no hit of `Engine` in the scanned sources beyond its 1 declaration; no hit of `model` in the scanned sources beyond its 2 declarations; no hit of `Live` in the scanned sources beyond its 1 declaration; no hit of `record` in the scanned sources beyond its 1 declaration; no hit of `ScriptedChat` in the scanned sources beyond its 1 declaration; no hit of `recording` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":7}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["fakes::clock"],"evidence":"no hit of `clock` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Engine::model"],"evidence":"0 struct literals of `Engine` set it, and no `.model` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Engine","kind":"struct"}
+{"k":"surface","path":"fakes","kind":"mod","test_support":true}
+{"k":"surface","path":"fakes::clock","kind":"fn","test_support":true}
+{"k":"surface","path":"fakes::FakeClock","kind":"struct","test_support":true}
+{"k":"surface","path":"Live","kind":"struct"}
+{"k":"surface","path":"Model","kind":"struct"}
+{"k":"surface","path":"record","kind":"fn","test_support":true}
+{"k":"surface","path":"Recording","kind":"struct"}
+{"k":"surface","path":"ScriptedChat","kind":"struct","test_support":true}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":5,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Test-support code beside production code."}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { pub model: Model }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Engine","text":"A production engine."}
+{"k":"field","path":"Engine::model","rust":"pub model: Model","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Engine::model","text":"The model it talks to."}
+{"k":"struct","path":"Model","rust":"pub struct Model","loc":{"file":"src/lib.rs","line":0},"named_by":["Engine","ScriptedChat"],"token_hits":2}
+{"k":"doc","path":"Model","text":"A production model."}
+{"k":"struct","path":"Recording","rust":"pub struct Recording","loc":{"file":"src/lib.rs","line":0},"named_by":["crate","ScriptedChat"],"token_hits":2}
+{"k":"doc","path":"Recording","text":"Used only by test support."}
+{"k":"struct","path":"ScriptedChat","rust":"pub struct ScriptedChat { pub model: Model, pub recording: Recording }","loc":{"file":"src/lib.rs","line":0},"cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
+{"k":"doc","path":"ScriptedChat","text":"A chat that plays back a script, for tests and benches."}
+{"k":"field","path":"ScriptedChat::model","rust":"pub model: Model","loc":{"file":"src/lib.rs","line":0},"test_support":true}
+{"k":"doc","path":"ScriptedChat::model","text":"The model the script stands in for."}
+{"k":"field","path":"ScriptedChat::recording","rust":"pub recording: Recording","loc":{"file":"src/lib.rs","line":0},"test_support":true}
+{"k":"doc","path":"ScriptedChat::recording","text":"Where it records."}
+{"k":"struct","path":"Live","rust":"pub struct Live","loc":{"file":"src/lib.rs","line":0},"cfgs":["not(test)"]}
+{"k":"doc","path":"Live","text":"Production only."}
+{"k":"fn","path":"record","sig":"pub fn record(into: &mut Recording)","loc":{"file":"src/lib.rs","line":0},"cfgs":["any(test, feature = \"test-support\")"],"test_support":true,"body":{"statements":1,"tokens":7},"ops":["into"]}
+{"k":"doc","path":"record","text":"Records into the recording."}
+{"k":"mod","path":"fakes","loc":{"file":"src/lib.rs","line":0},"vis":"public","cfgs":["any(test, feature = \"test-support\")"],"test_support":true,"types":1,"functions":{"public":1}}
+{"k":"doc","path":"fakes","text":"Fakes for tests and benches."}
+{"k":"struct","path":"fakes::FakeClock","rust":"pub struct FakeClock","loc":{"file":"src/lib.rs","line":0},"test_support":true,"named_by":["fakes"],"token_hits":2}
+{"k":"doc","path":"fakes::FakeClock","text":"A fake clock."}
+{"k":"fn","path":"fakes::clock","sig":"pub fn clock() -> FakeClock","loc":{"file":"src/lib.rs","line":0},"test_support":true,"body":{"statements":1,"tokens":3}}
+{"k":"doc","path":"fakes::clock","text":"Makes a fake clock."}

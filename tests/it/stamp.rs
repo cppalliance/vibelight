@@ -1,5 +1,8 @@
 //! The stamp on the first line: it records when a file's content last
-//! changed, and a run leaves a file whose content is the same untouched.
+//! changed, and a run leaves a file whose content is the same untouched. A
+//! crate's HTML page depends on its own crate alone, but its markdown is
+//! contextual to the run, so a change in one crate can restamp the
+//! markdown of another.
 
 use std::fs;
 use std::path::Path;
@@ -48,27 +51,83 @@ fn a_second_run_at_another_time_rewrites_nothing_and_still_lists_every_file() {
     assert_eq!(first_line(&folder.join("alpha.md")), FIRST_STAMP);
 }
 
+/// Tells, for each outline of the garden, whether a run restamped it.
+fn restamped(folder: &Path) -> Vec<(String, bool)> {
+    let mut out = Vec::new();
+    for stem in ["alpha", "beta", "facade"] {
+        let md = first_line(&folder.join(format!("{stem}.md")));
+        let page = first_line(&folder.join("html").join(format!("{stem}.html")));
+        out.push((format!("{stem}.md"), md == LATER_STAMP));
+        out.push((format!("{stem}.html"), page.contains("2027-01-01")));
+    }
+    out
+}
+
+fn expect(flags: [(&str, bool); 6]) -> Vec<(String, bool)> {
+    flags.map(|(name, set)| (name.to_owned(), set)).to_vec()
+}
+
+/// Runs the garden, edits alpha's source with `edit`, and runs it again
+/// later, returning the folder.
+fn edited(repo: &Path, edit: impl FnOnce(String) -> String) -> std::path::PathBuf {
+    assert!(run_at(repo, crate::support::EPOCH, &[]).status.success());
+    let source = repo.join("crates").join("alpha").join("src").join("lib.rs");
+    let text = fs::read_to_string(&source).expect("the source is readable");
+    let changed = edit(text.clone());
+    assert_ne!(changed, text, "the edit changes the source");
+    fs::write(&source, changed).expect("the source is writable");
+    assert!(run_at(repo, LATER, &[]).status.success());
+    repo.join(".vibelight")
+}
+
 #[test]
 fn a_changed_declaration_restamps_only_its_files() {
     let (_tmp, repo) = garden(MEMBERS);
-    assert!(run_at(&repo, crate::support::EPOCH, &[]).status.success());
-    let source = repo.join("crates").join("alpha").join("src").join("lib.rs");
-    let text = fs::read_to_string(&source).unwrap();
-    fs::write(
-        &source,
-        text.replace("fn read(&self) -> u32;", "fn read(&self) -> u64;"),
-    )
-    .unwrap();
-    assert!(run_at(&repo, LATER, &[]).status.success());
-    let folder = repo.join(".vibelight");
-    assert_eq!(first_line(&folder.join("alpha.md")), LATER_STAMP);
-    assert_eq!(first_line(&folder.join("beta.md")), FIRST_STAMP);
+    let folder = edited(&repo, |text| {
+        text.replace("fn read(&self) -> u32;", "fn read(&self) -> u64;")
+    });
+    assert_eq!(
+        restamped(&folder),
+        expect([
+            ("alpha.md", true),
+            ("alpha.html", true),
+            ("beta.md", false),
+            ("beta.html", false),
+            ("facade.md", false),
+            ("facade.html", false),
+        ])
+    );
     let page = fs::read_to_string(folder.join("html").join("alpha.html")).unwrap();
     assert!(page.starts_with("<!-- Updated 2027-01-01T00:00:00Z -->\n<!DOCTYPE html>\n"));
     assert!(page.contains(
         "<main>\n<p class=\"stamp\">Updated \
          <time datetime=\"2027-01-01T00:00:00Z\">2027-01-01T00:00:00Z</time></p>\n<h1 "
     ));
+}
+
+#[test]
+fn a_changed_doc_restamps_the_markdown_that_quotes_it_and_no_other_page() {
+    let (_tmp, repo) = garden(MEMBERS);
+    let folder = edited(&repo, |text| {
+        text.replace(
+            "/// A meter that reads a gauge of beta.",
+            "/// A meter that reads one gauge.",
+        )
+    });
+    assert_eq!(
+        restamped(&folder),
+        expect([
+            ("alpha.md", true),
+            ("alpha.html", true),
+            ("beta.md", false),
+            ("beta.html", false),
+            ("facade.md", true),
+            ("facade.html", false),
+        ]),
+        "facade's markdown quotes alpha's doc summary; its page is target-local"
+    );
+    let facade = fs::read_to_string(folder.join("facade.md")).unwrap();
+    assert!(facade.contains("\"summary\":\"A meter that reads one gauge.\""));
 }
 
 #[test]

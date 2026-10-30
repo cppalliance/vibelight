@@ -1,101 +1,26 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.cfg_test"></a>
-# cfg_test
-
-```
-//! Test-only items are skipped.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [cfg_test](#mod.cfg_test)
-  - [Kept](#type.cfg_test.Kept)
-  - [Mode](#type.cfg_test.Mode)
-  - [Probe](#type.cfg_test.Probe)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Kept](#type.cfg_test.Kept)
-- [Mode](#type.cfg_test.Mode)
-- [Probe](#type.cfg_test.Probe)
-- [production_only()](#mod.cfg_test)
-
-<a id="mod.cfg_test"></a>
-## cfg_test
-
-```
-#[cfg(not(test))]
-pub fn production_only();
-```
-
-<a id="type.cfg_test.Kept"></a>
-### Kept
-
-Counts: 1 field, 1 function
-
-Used by: nothing
-
-```
-/// Kept.
-pub struct Kept {
-    /// A kept field.
-    pub value: u32,
-}
-
-// impl in src/lib.rs
-impl Kept {
-    /// A kept method.
-    pub fn get(&self) -> u32;
-}
-```
-
-<a id="type.cfg_test.Mode"></a>
-### Mode
-
-Counts: 2 variants
-
-Used by: nothing
-
-```
-/// A kept enum.
-pub enum Mode {
-    On,
-
-    #[cfg(any(test, feature = "debug"))]
-    Debug,
-}
-```
-
-<a id="type.cfg_test.Probe"></a>
-### Probe
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// A test-only trait item stays out.
-pub trait Probe {
-    /// Kept.
-    fn check(&self);
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"cfg_test","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":11,"to":26}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Kept::get","Mode","Mode::Debug","Mode::On","Probe","Probe::check","production_only"],"evidence":"no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `Mode` in the scanned sources beyond its 1 declaration; no hit of `Debug` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `Probe` in the scanned sources beyond its 1 declaration; no hit of `check` in the scanned sources beyond its 1 declaration; no hit of `production_only` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":7}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Mode::Debug"],"evidence":"no observed path builds `Mode::Debug`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Mode::On"],"evidence":"no observed path builds `Mode::On`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Kept","kind":"struct"}
+{"k":"surface","path":"Mode","kind":"enum"}
+{"k":"surface","path":"Probe","kind":"trait"}
+{"k":"surface","path":"production_only","kind":"fn"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":3,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Test-only items are skipped."}
+{"k":"struct","path":"Kept","rust":"pub struct Kept { pub value: u32 }","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Kept","text":"Kept."}
+{"k":"field","path":"Kept::value","rust":"pub value: u32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Kept::value","text":"A kept field."}
+{"k":"enum","path":"Mode","rust":"pub enum Mode { On, #[cfg(any(test, feature = \"debug\"))] Debug }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Mode","text":"A kept enum."}
+{"k":"impl","path":"Kept","rust":"impl Kept","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Kept::get","sig":"pub fn get(&self) -> u32","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field value"},"ops":["self.value"]}
+{"k":"doc","path":"Kept::get","text":"A kept method."}
+{"k":"trait","path":"Probe","rust":"pub trait Probe","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Probe","text":"A test-only trait item stays out."}
+{"k":"fn","path":"Probe::check","sig":"fn check(&self)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Probe::check","text":"Kept."}
+{"k":"fn","path":"production_only","sig":"pub fn production_only()","loc":{"file":"src/lib.rs","line":0},"cfgs":["not(test)"],"body":{"statements":0,"tokens":2}}

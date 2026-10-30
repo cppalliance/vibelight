@@ -1,61 +1,21 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.extern_block"></a>
-# extern_block
-
-```
-//! Extern blocks.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [extern_block](#mod.extern_block)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [abs()](#mod.extern_block)
-- [errno](#mod.extern_block)
-- [exit()](#mod.extern_block)
-- [GetTickCount()](#mod.extern_block)
-
-<a id="mod.extern_block"></a>
-## extern_block
-
-```
-extern "C" {
-    /// The last error.
-    pub static errno: i32;
-
-    /// Absolute value.
-    pub fn abs(x: i32) -> i32;
-
-    /// Exits the process.
-    pub fn exit(code: i32) -> !;
-}
-
-extern "system" {
-    pub fn GetTickCount() -> u32;
-}
-
-extern "C" {
-    fn secret() -> u8;
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"extern_block","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":12,"to":21}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["abs"],"evidence":"no hit of `abs` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["errno"],"evidence":"no hit of `errno` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["exit"],"evidence":"no hit of `exit` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["GetTickCount"],"evidence":"no hit of `GetTickCount` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"abs","kind":"fn"}
+{"k":"surface","path":"errno","kind":"value"}
+{"k":"surface","path":"exit","kind":"fn"}
+{"k":"surface","path":"GetTickCount","kind":"fn"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"crate","text":"Extern blocks."}
+{"k":"extern","path":"abs","rust":"extern \"C\" { pub fn abs(x: i32) -> i32 }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"abs","text":"Absolute value."}
+{"k":"extern","path":"errno","rust":"extern \"C\" { pub static errno: i32 }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"errno","text":"The last error."}
+{"k":"extern","path":"secret","rust":"extern \"C\" { fn secret() -> u8 }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"extern","path":"exit","rust":"extern \"C\" { pub fn exit(code: i32) -> ! }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"exit","text":"Exits the process."}
+{"k":"extern","path":"GetTickCount","rust":"extern \"system\" { pub fn GetTickCount() -> u32 }","loc":{"file":"src/lib.rs","line":0}}

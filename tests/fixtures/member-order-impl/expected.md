@@ -1,81 +1,27 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.member_order_impl"></a>
-# member_order_impl
-
-```
-//! Members grouped by impl.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [member_order_impl](#mod.member_order_impl)
-  - [Engine](#type.member_order_impl.Engine)
-- [more](#mod.member_order_impl.more)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Engine](#type.member_order_impl.Engine)
-
-<a id="mod.member_order_impl"></a>
-## member_order_impl
-
-<a id="type.member_order_impl.Engine"></a>
-### Engine
-
-Counts: 1 field, 5 functions
-
-Used by: nothing
-
-```
-/// A type with methods in two files.
-pub struct Engine {
-    speed: u32,
-}
-
-// impl in src/lib.rs
-impl Engine {
-    /// Makes one.
-    pub fn new() -> Engine;
-
-    /// Starts it.
-    pub fn start(&mut self);
-
-    /// Checks it.
-    fn check(&self) -> bool;
-}
-
-// impl in src/more.rs
-impl crate::Engine {
-    /// Stops it.
-    pub fn stop(&mut self);
-
-    /// Brakes.
-    pub fn brake(&mut self);
-}
-```
-
-<a id="mod.member_order_impl.more"></a>
-## more
-
-```
-//! More methods.
-```
+{"k":"vibelight-outline","schema":1,"crate":"member_order_impl","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":10,"to":25},{"path":"more","from":26,"to":27}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["more"],"evidence":"holds only 1 impls","locs":[{"file":"src/more.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::brake"],"evidence":"no hit of `brake` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/more.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::new"],"evidence":"no hit of `new` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::stop"],"evidence":"no hit of `stop` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/more.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Engine","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":1}
+{"k":"doc","path":"crate","text":"Members grouped by impl."}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { speed: u32 }","loc":{"file":"src/lib.rs","line":0},"token_hits":4}
+{"k":"doc","path":"Engine","text":"A type with methods in two files."}
+{"k":"impl","path":"Engine","rust":"impl Engine","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Engine::new","sig":"pub fn new() -> Engine","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":8}}
+{"k":"doc","path":"Engine::new","text":"Makes one."}
+{"k":"fn","path":"Engine::start","sig":"pub fn start(&mut self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":8},"ops":["self.speed [write]"]}
+{"k":"doc","path":"Engine::start","text":"Starts it."}
+{"k":"fn","path":"Engine::check","sig":"fn check(&self) -> bool","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":7},"ops":["self.speed"]}
+{"k":"doc","path":"Engine::check","text":"Checks it."}
+{"k":"impl","path":"Engine","rust":"impl crate::Engine","locs":[{"file":"src/more.rs","line":0}]}
+{"k":"fn","path":"Engine::stop","sig":"pub fn stop(&mut self)","loc":{"file":"src/more.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Engine::stop","text":"Stops it."}
+{"k":"fn","path":"Engine::brake","sig":"pub fn brake(&mut self)","loc":{"file":"src/more.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Engine::brake","text":"Brakes."}
+{"k":"mod","path":"more","loc":{"file":"src/more.rs","line":0},"vis":"private"}
+{"k":"doc","path":"more","text":"More methods."}

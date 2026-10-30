@@ -29,7 +29,7 @@ pub(crate) struct Special {
 }
 
 /// An attached impl block that adds members or base-list entries, for the
-/// `Source:` line.
+/// HTML's `Source:` line.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ImplLoc {
     /// The `impl` line.

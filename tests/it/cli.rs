@@ -16,7 +16,10 @@ fn a_second_run_gives_identical_bytes() {
     assert!(run(&input, &first).status.success());
     assert!(run(&input, &second).status.success());
     let one = read_run(&first);
-    assert!(one.iter().all(|(_, text)| text.contains("Source: ")));
+    assert!(
+        one.iter()
+            .all(|(_, text)| text.contains("\"url\":\"") || text.contains("Source: "))
+    );
     assert_eq!(one, read_run(&second));
     assert_eq!(
         fs::read(first.join("index.md")).unwrap(),
@@ -52,7 +55,10 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
     fs::write(out.join("structs.md"), "stale").expect("the output is writable");
     assert!(run(&input, &out).status.success());
     let text = fs::read_to_string(out.join("structs.md")).expect("the outline was written");
-    assert!(text.starts_with("*Updated 2026-01-01T00:00:00Z*\n\n<a id=\"crate.structs\"></a>"));
+    assert!(text.starts_with(
+        "*Updated 2026-01-01T00:00:00Z*\n\
+         {\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"structs\",\"target\":\"lib\"}\n"
+    ));
     assert!(out.join("html").join("structs.html").is_file());
     assert!(
         !out.join(".gitignore").exists(),
@@ -88,6 +94,33 @@ fn stdout_lists_the_written_paths_sorted() {
 }
 
 #[test]
+fn both_indexes_report_the_size_of_each_markdown_outline_as_written() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let out = tmp.path().join("out");
+    assert!(run(&fixtures().join("multi"), &out).status.success());
+    let index = fs::read_to_string(out.join("index.md")).expect("the index was written");
+    let page = fs::read_to_string(out.join("html").join("index.html")).expect("a page");
+    for stem in ["multi", "multi-cli"] {
+        let bytes = fs::read(out.join(format!("{stem}.md")))
+            .expect("the outline was written")
+            .len();
+        let kb = bytes.div_ceil(1024);
+        assert!(
+            index.contains(&format!(
+                "- [{stem}.md]({stem}.md): `.`, selected, {kb} KB\n"
+            )),
+            "{index}"
+        );
+        assert!(
+            page.contains(&format!(
+                "<a href=\"{stem}.html\">{stem}</a> <code>.</code>, selected, {kb} KB of markdown"
+            )),
+            "{page}"
+        );
+    }
+}
+
+#[test]
 fn a_custom_lib_path_is_read_from_the_manifest() {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let dir = tmp.path().join("custom");
@@ -105,7 +138,11 @@ fn a_custom_lib_path_is_read_from_the_manifest() {
     let written = outputs(&dir);
     let names: Vec<&str> = written.iter().map(|(n, _)| n.as_str()).collect();
     assert_eq!(names, ["core_x.html", "core_x.md"]);
-    assert!(written[1].1.contains("### Thing"));
+    assert!(
+        written[1]
+            .1
+            .contains("{\"k\":\"struct\",\"path\":\"Thing\",\"rust\":\"pub struct Thing\",")
+    );
 }
 
 #[test]
@@ -182,7 +219,7 @@ fn spellings_add_one_warning_line_only_when_an_item_has_two_spellings() {
     assert_eq!(
         stderr.lines().collect::<Vec<_>>(),
         [
-            "warning: 6 items written more than one way; see Spellings",
+            "warning: 6 items written more than one way; see spelling records",
             "1 warning"
         ]
     );

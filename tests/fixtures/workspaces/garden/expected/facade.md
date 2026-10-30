@@ -1,78 +1,28 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.facade"></a>
-# facade
-
-```
-//! Facade: re-exports the workspace's public types.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [facade](#mod.facade)
-  - [Panel](#type.facade.Panel)
-- [External items](#external)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- Gauge (beta::Gauge)
-- Meter (alpha::Meter)
-- [Panel](#type.facade.Panel)
-- Reads (alpha::Reads)
-- [show()](#mod.facade)
-
-<a id="mod.facade"></a>
-## facade
-
-```
-pub use beta::Gauge;
-pub use alpha::Meter;
-pub use alpha::Reads;
-
-/// Shows any reader.
-pub fn show<T: alpha::Reads>(reader: &T) -> u32;
-```
-
-<a id="type.facade.Panel"></a>
-### Panel
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A panel that reads through alpha's trait.
-pub struct Panel {
-    /// A meter from alpha.
-    pub meter: alpha::Meter,
-}
-
-impl alpha::Reads for Panel {}
-```
-
-<a id="external"></a>
-## External items
-
-- `alpha`
-  - `alpha::Meter`, 1 use by [Panel](#type.facade.Panel)
-    - A meter that reads a gauge of beta.
-  - `alpha::Reads`, 2 uses by [Panel](#type.facade.Panel), [facade](#mod.facade)
-    - A trait other crates implement.
+{"k":"vibelight-outline","schema":1,"crate":"facade","target":"lib","dir":"crates/facade"}
+{"k":"modules","items":[{"path":"crate","from":16,"to":28}]}
+{"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["::alpha::Reads","Panel"],"evidence":"one impl in the run: `impl alpha::Reads for Panel`","locs":[{"target":"alpha","file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-impls","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Panel::meter"],"evidence":"no hit of `meter` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["show"],"evidence":"no hit of `show` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Panel"],"evidence":"1 production hits of `Panel` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Panel::meter"],"evidence":"0 struct literals of `Panel` set it, and no `.meter` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Gauge","kind":"external","item":"beta::Gauge"}
+{"k":"surface","path":"Meter","kind":"external","item":"alpha::Meter"}
+{"k":"surface","path":"Panel","kind":"struct"}
+{"k":"surface","path":"Reads","kind":"external","item":"alpha::Reads"}
+{"k":"surface","path":"show","kind":"fn"}
+{"k":"external","path":"alpha::Meter","uses":1,"named_by":["Panel"],"summary":"A meter that reads a gauge of beta."}
+{"k":"external","path":"alpha::Reads","uses":2,"named_by":["crate","Panel"],"summary":"A trait other crates implement."}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":1,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Facade: re-exports the workspace's public types."}
+{"k":"use","path":"Meter","rust":"pub use alpha::Meter","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"Reads","rust":"pub use alpha::Reads","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"Gauge","rust":"pub use beta::Gauge","loc":{"file":"src/lib.rs","line":0}}
+{"k":"struct","path":"Panel","rust":"pub struct Panel { pub meter: alpha::Meter }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Panel","text":"A panel that reads through alpha's trait."}
+{"k":"field","path":"Panel::meter","rust":"pub meter: alpha::Meter","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Panel::meter","text":"A meter from alpha."}
+{"k":"impl","path":"Panel","rust":"impl alpha::Reads for Panel","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Panel::read","sig":"fn read(&self) -> u32","loc":{"file":"src/lib.rs","line":0},"impl":"impl alpha::Reads for Panel","body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"show","sig":"pub fn show<T: alpha::Reads>(reader: &T) -> u32","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":7,"single":"method read"},"ops":["reader.read"]}
+{"k":"doc","path":"show","text":"Shows any reader."}

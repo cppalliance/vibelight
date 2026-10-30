@@ -223,8 +223,8 @@ fn file_url(file: &AbsPath) -> String {
 }
 
 /// Percent-encodes every byte except the ASCII letters and digits and
-/// `-._~/!$&'*+,;=:@`, which can stand as is in a markdown link destination
-/// and a URL path. Hex digits are uppercase.
+/// `-._~/!$&'*+,;=:@`, which can stand as is in a URL path, an HTML `href`,
+/// and a JSON string. Hex digits are uppercase.
 fn encode(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789ABCDEF";
     let mut out = String::with_capacity(bytes.len());

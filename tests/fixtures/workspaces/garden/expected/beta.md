@@ -1,78 +1,16 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.beta"></a>
-# beta
-
-```
-//! Beta: re-exports a type from one of its modules.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [beta](#mod.beta)
-- [parts](#mod.beta.parts)
-  - [parts::Gauge](#type.beta.parts.Gauge)
-  - [parts::Valve](#type.beta.parts.Valve)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Gauge](#type.beta.parts.Gauge)
-- [parts](#mod.beta.parts)
-- [parts::Gauge](#type.beta.parts.Gauge)
-- [parts::Valve](#type.beta.parts.Valve)
-
-<a id="mod.beta"></a>
-## beta
-
-```
-pub use parts::Gauge;
-```
-
-<a id="mod.beta.parts"></a>
-## parts
-
-```
-//! The parts of a meter.
-```
-
-<a id="type.beta.parts.Gauge"></a>
-### parts::Gauge
-
-Counts: none
-
-Used by: [beta](#mod.beta)
-
-```
-/// A gauge.
-pub struct Gauge;
-```
-
-<a id="type.beta.parts.Valve"></a>
-### parts::Valve
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A valve.
-pub struct Valve;
-```
+{"k":"vibelight-outline","schema":1,"crate":"beta","target":"lib","dir":"crates/beta"}
+{"k":"modules","items":[{"path":"crate","from":8,"to":10},{"path":"parts","from":11,"to":16}]}
+{"k":"surface","path":"Gauge","kind":"struct","item":"parts::Gauge"}
+{"k":"surface","path":"parts","kind":"mod"}
+{"k":"surface","path":"parts::Gauge","kind":"struct"}
+{"k":"surface","path":"parts::Valve","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"crate","text":"Beta: re-exports a type from one of its modules."}
+{"k":"use","path":"Gauge","rust":"pub use parts::Gauge","loc":{"file":"src/lib.rs","line":0}}
+{"k":"mod","path":"parts","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":2}
+{"k":"doc","path":"parts","text":"The parts of a meter."}
+{"k":"struct","path":"parts::Gauge","rust":"pub struct Gauge","loc":{"file":"src/lib.rs","line":0},"reexported_by":["::facade","crate"],"crates":["alpha","facade"],"token_hits":4}
+{"k":"doc","path":"parts::Gauge","text":"A gauge."}
+{"k":"struct","path":"parts::Valve","rust":"pub struct Valve","loc":{"file":"src/lib.rs","line":0},"crates":["alpha"],"token_hits":1}
+{"k":"doc","path":"parts::Valve","text":"A valve."}

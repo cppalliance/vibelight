@@ -36,7 +36,7 @@ pub(crate) struct Written {
 /// Returns an error when a folder cannot be created or a file cannot be
 /// written or removed.
 pub(crate) fn write(files: &[(PathBuf, String)], plan: &Plan) -> Result<Written> {
-    let markdown = plan.markdown().dir;
+    let markdown = plan.markdown_dir().to_path_buf();
     let html = plan.html().dir;
     for dir in [&markdown, &html] {
         fs::create_dir_all(dir)
@@ -95,9 +95,10 @@ fn stale(dir: &Path, ext: &str, kept: &BTreeSet<&Path>) -> Vec<PathBuf> {
 }
 
 /// Tells whether a file starts like an outline: a markdown outline with a
-/// stamp line, a blank line, and a crate anchor, or with the anchor first,
-/// as releases before the stamp wrote it; an HTML page with its stamp
-/// comment and then the doctype.
+/// stamp line and then the outline header record; an HTML page with its
+/// stamp comment and then the doctype. A markdown outline of an older
+/// release counts too, so a stale one is still cleaned up: a stamp line, a
+/// blank line, and a crate anchor, or the anchor first.
 fn is_outline(path: &Path) -> bool {
     let Ok(file) = File::open(path) else {
         return false;
@@ -112,10 +113,14 @@ fn is_outline(path: &Path) -> bool {
         head.push(line.trim_end().to_owned());
     }
     let stamped = stamp::is_line(&head[0]);
-    is_anchor(&head[0])
-        || (stamped && head[1].is_empty() && is_anchor(&head[2]))
+    (stamped && head[0].starts_with('*') && head[1].starts_with(HEADER))
         || (stamped && head[0].starts_with("<!--") && head[1] == "<!DOCTYPE html>")
+        || is_anchor(&head[0])
+        || (stamped && head[1].is_empty() && is_anchor(&head[2]))
 }
+
+/// How the header record on a markdown outline's second line starts.
+const HEADER: &str = "{\"k\":\"vibelight-outline\",";
 
 fn is_anchor(line: &str) -> bool {
     line.starts_with("<a id=\"crate.") && line.ends_with("\"></a>")
@@ -166,5 +171,50 @@ mod tests {
             [dir.join("new.md"), dir.join("old.md")]
         );
         assert_eq!(stale(dir, "html", &kept), [dir.join("old.html")]);
+    }
+
+    #[test]
+    fn new_and_old_outlines_count_and_malformed_unstamped_and_other_files_do_not() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        let header =
+            "{\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"a\",\"target\":\"lib\"}";
+        let cases = [
+            (
+                "new.md",
+                format!("*Updated 2026-01-01T00:00:00Z*\n{header}\n"),
+                true,
+            ),
+            (
+                "old.md",
+                "*Updated 2026-01-01T00:00:00Z*\n\n<a id=\"crate.a\"></a>\n# a\n".to_owned(),
+                true,
+            ),
+            (
+                "oldest.md",
+                "<a id=\"crate.a\"></a>\n# a\n".to_owned(),
+                true,
+            ),
+            (
+                "malformed.md",
+                "*Updated 2026-01-01T00:00:00Z*\n{\"k\":\"lead\"}\n".to_owned(),
+                false,
+            ),
+            ("unstamped.md", format!("{header}\n"), false),
+            ("late.md", format!("*Updated soon*\n\n{header}\n"), false),
+            ("notes.md", "# Notes\n\nKept by hand.\n".to_owned(), false),
+            ("empty.md", String::new(), false),
+        ];
+        for (name, text, outline) in &cases {
+            let path = dir.join(name);
+            fs::write(&path, text).unwrap();
+            assert_eq!(is_outline(&path), *outline, "{name}");
+        }
+        let kept_path = dir.join("new.md");
+        let kept: BTreeSet<&Path> = [kept_path.as_path()].into();
+        assert_eq!(
+            stale(dir, "md", &kept),
+            [dir.join("old.md"), dir.join("oldest.md")]
+        );
     }
 }

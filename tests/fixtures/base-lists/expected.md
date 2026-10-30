@@ -1,501 +1,150 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.base_lists"></a>
-# base_lists
-
-```
-//! Base lists: short names, long paths, wrapping, collisions, and supertraits.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [base_lists](#mod.base_lists)
-  - [Error](#type.base_lists.Error)
-  - [Holder](#type.base_lists.Holder)
-  - [Labeled](#type.base_lists.Labeled)
-  - [Local](#type.base_lists.Local)
-  - [Clone](#type.base_lists.Clone)
-  - [Mixed](#type.base_lists.Mixed)
-  - [Named](#type.base_lists.Named)
-  - [Bits](#type.base_lists.Bits)
-  - [Marker](#type.base_lists.Marker)
-  - [Ordered](#type.base_lists.Ordered)
-  - [Plain](#type.base_lists.Plain)
-  - [Renamed](#type.base_lists.Renamed)
-  - [Run](#type.base_lists.Run)
-  - [RunError](#type.base_lists.RunError)
-  - [Secret](#type.base_lists.Secret)
-  - [Sink](#type.base_lists.Sink)
-  - [Spelled](#type.base_lists.Spelled)
-  - [Wide](#type.base_lists.Wide)
-  - [Wrapped](#type.base_lists.Wrapped)
-- [bare](#mod.base_lists.bare)
-  - [bare::Imported](#type.base_lists.bare.Imported)
-- [custom](#mod.base_lists.custom)
-  - [custom::Homemade](#type.base_lists.custom.Homemade)
-  - [custom::Display](#type.base_lists.custom.Display)
-- [globbed](#mod.base_lists.globbed)
-  - [globbed::Starred](#type.base_lists.globbed.Starred)
-- [other](#mod.base_lists.other)
-  - [other::Foreign](#type.base_lists.other.Foreign)
-- [Spellings](#spellings)
-
-**MACROS:** 1 derive list
-
-<a id="surface"></a>
-## Public surface
-
-- [bare](#mod.base_lists.bare)
-- [bare::Imported](#type.base_lists.bare.Imported)
-- [Bits](#type.base_lists.Bits)
-- [Clone](#type.base_lists.Clone)
-- [custom](#mod.base_lists.custom)
-- [custom::Display](#type.base_lists.custom.Display)
-- [custom::Homemade](#type.base_lists.custom.Homemade)
-- [Error](#type.base_lists.Error)
-- [globbed](#mod.base_lists.globbed)
-- [globbed::Starred](#type.base_lists.globbed.Starred)
-- [Holder](#type.base_lists.Holder)
-- [Labeled](#type.base_lists.Labeled)
-- [Local](#type.base_lists.Local)
-- [Marker](#type.base_lists.Marker)
-- [Mixed](#type.base_lists.Mixed)
-- [Named](#type.base_lists.Named)
-- [Ordered](#type.base_lists.Ordered)
-- [other](#mod.base_lists.other)
-- [other::Foreign](#type.base_lists.other.Foreign)
-- [Plain](#type.base_lists.Plain)
-- [Renamed](#type.base_lists.Renamed)
-- [Run](#type.base_lists.Run)
-- [RunError](#type.base_lists.RunError)
-- [Secret](#type.base_lists.Secret)
-- [Sink](#type.base_lists.Sink)
-- [Spelled](#type.base_lists.Spelled)
-- [Wide](#type.base_lists.Wide)
-- [Wrapped](#type.base_lists.Wrapped)
-
-<a id="mod.base_lists"></a>
-## base_lists
-
-<a id="type.base_lists.Error"></a>
-### Error
-
-Counts: 1 variant
-
-Used by: nothing
-
-```
-/// The crate's own error, whose name collides with std::error::Error.
-#[derive(Debug)]
-pub enum Error {
-    Failed,
-}
-
-impl std::error::Error for Error {}
-impl Named for Error {}
-```
-
-<a id="type.base_lists.Holder"></a>
-### Holder
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// Generics, a where clause, and a trait of this crate.
-pub struct Holder<T>
-where
-    T: Copy,
-{
-    pub value: T,
-}
-
-impl<T: Copy> fmt::Debug for Holder<T> {}
-impl<T> Named for Holder<T> where T: Copy {}
-```
-
-<a id="type.base_lists.Labeled"></a>
-### Labeled
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A standard supertrait and a supertrait of this crate.
-pub trait Labeled: fmt::Display + Named {}
-```
-
-<a id="type.base_lists.Local"></a>
-### Local
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The crate's own Clone, a trait nothing declares, and a renamed standard
-/// trait.
-pub struct Local;
-
-impl Clone for Local {}
-impl Unknown for Local {}
-impl Dbg for Local {}
-```
-
-<a id="type.base_lists.Clone"></a>
-### Clone
-
-Counts: none
-
-Used by: [Local](#type.base_lists.Local)
-
-```
-/// A trait of this crate that shares a prelude name.
-pub trait Clone {}
-```
-
-<a id="type.base_lists.Mixed"></a>
-### Mixed
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A trait of this crate and one of another crate take the comma form.
-pub struct Mixed;
-
-impl fmt::Debug for Mixed {}
-impl Named for Mixed {}
-impl serde::Serialize for Mixed {}
-```
-
-<a id="type.base_lists.Named"></a>
-### Named
-
-Counts: 1 function
-
-Used by: [Error](#type.base_lists.Error), [Holder](#type.base_lists.Holder), [Labeled](#type.base_lists.Labeled), [Mixed](#type.base_lists.Mixed)
-
-```
-/// A trait of this crate.
-pub trait Named {
-    fn name(&self) -> String;
-}
-```
-
-<a id="type.base_lists.Bits"></a>
-### Bits
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// A union with standard derives.
-#[derive(Copy, Debug)]
-pub union Bits {
-    pub int: u32,
-
-    pub float: f32,
-}
-```
-
-<a id="type.base_lists.Marker"></a>
-### Marker
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A unit struct whose list fits on the head line.
-#[derive(Debug, Eq, Hash)]
-pub struct Marker;
-```
-
-<a id="type.base_lists.Ordered"></a>
-### Ordered
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// Standard derives that are not special members, and comparisons with
-/// another type written by hand. The crate's own Clone trait never sits on
-/// the shared line, so the standard Clone keeps its short name.
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Ordered(u8);
-
-impl PartialEq<u8> for Ordered {}
-impl PartialOrd<u8> for Ordered {}
-```
-
-<a id="type.base_lists.Plain"></a>
-### Plain
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Standard supertraits and a lifetime bound.
-pub trait Plain: Send + Sync + 'static {}
-```
-
-<a id="type.base_lists.Renamed"></a>
-### Renamed
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The standard Display through a renaming use.
-pub struct Renamed;
-
-impl D for Renamed {}
-```
-
-<a id="type.base_lists.Run"></a>
-### Run
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// Standard traits only, so the list stays on the head line.
-pub struct Run {
-    pub id: u32,
-}
-
-impl fmt::Debug for Run {}
-impl fmt::Display for Run {}
-```
-
-<a id="type.base_lists.RunError"></a>
-### RunError
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// The crate's Error makes std::error::Error keep its full path.
-pub struct RunError {
-    pub reason: String,
-}
-
-impl fmt::Debug for RunError {}
-impl fmt::Display for RunError {}
-impl std::error::Error for RunError {}
-```
-
-<a id="type.base_lists.Secret"></a>
-### Secret
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A class with a standard trait.
-pub struct Secret {
-    value: u8,
-}
-
-impl fmt::Display for Secret {}
-```
-
-<a id="type.base_lists.Sink"></a>
-### Sink
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Two traits named Write keep their full paths.
-pub struct Sink;
-
-impl fmt::Write for Sink {}
-impl io::Write for Sink {}
-```
-
-<a id="type.base_lists.Spelled"></a>
-### Spelled
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The standard Display written in full, with no use.
-pub struct Spelled;
-
-impl std::fmt::Display for Spelled {}
-```
-
-<a id="type.base_lists.Wide"></a>
-### Wide
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// So many standard traits that the list wraps.
-#[derive(Copy, Debug, Eq, Hash, Ord)]
-pub struct Wide(u64);
-
-impl fmt::Binary for Wide {}
-impl fmt::Display for Wide {}
-impl fmt::LowerExp for Wide {}
-impl fmt::LowerHex for Wide {}
-impl fmt::Octal for Wide {}
-impl fmt::Pointer for Wide {}
-impl fmt::UpperExp for Wide {}
-impl fmt::UpperHex for Wide {}
-```
-
-<a id="type.base_lists.Wrapped"></a>
-### Wrapped
-
-Counts: 1 field
-
-Used by: nothing
-
-**MACRO** derive: From
-
-```
-/// A bare derive of From comes from another crate, so it stays on the mark.
-#[derive(Debug, From)]
-pub struct Wrapped(u8);
-```
-
-<a id="mod.base_lists.bare"></a>
-## bare
-
-```
-//! The standard Display after a use of the trait itself.
-```
-
-<a id="type.base_lists.bare.Imported"></a>
-### bare::Imported
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Display through the use, which is the standard one.
-pub struct Imported;
-
-impl Display for Imported {}
-```
-
-<a id="mod.base_lists.custom"></a>
-## custom
-
-```
-//! A trait of this crate named Display.
-```
-
-<a id="type.base_lists.custom.Homemade"></a>
-### custom::Homemade
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The crate's Display, which prints its path on its own line.
-pub struct Homemade;
-
-impl Display for Homemade {}
-```
-
-<a id="type.base_lists.custom.Display"></a>
-### custom::Display
-
-Counts: none
-
-Used by: [custom::Homemade](#type.base_lists.custom.Homemade)
-
-```
-/// The crate's own Display.
-pub trait Display {}
-```
-
-<a id="mod.base_lists.globbed"></a>
-## globbed
-
-```
-//! A Display that can only come from a glob import.
-```
-
-<a id="type.base_lists.globbed.Starred"></a>
-### globbed::Starred
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A Display from the glob, which prints as written.
-pub struct Starred;
-
-impl Display for Starred {}
-```
-
-<a id="mod.base_lists.other"></a>
-## other
-
-```
-//! Another crate's trait that is also named Display.
-```
-
-<a id="type.base_lists.other.Foreign"></a>
-### other::Foreign
-
-Counts: none
-
-Used by: nothing
-
-```
-/// The other crate's Display, which stays apart from the standard one.
-pub struct Foreign;
-
-impl Display for Foreign {}
-```
-
-<a id="spellings"></a>
-## Spellings
-
-- `std::fmt::Debug` is written 2 ways; prefer `Debug`, which is not used yet:
-  - `Dbg`, once
-  - `fmt::Debug`, 4 times
-- `std::fmt::Display` is written 4 ways; pick one and search for the rest:
-  - `D`, once
-  - `Display`, once
-  - `fmt::Display`, 5 times
-  - `std::fmt::Display`, once
+{"k":"vibelight-outline","schema":1,"crate":"base_lists","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":53,"to":128},{"path":"bare","from":129,"to":133},{"path":"custom","from":134,"to":140},{"path":"globbed","from":141,"to":145},{"path":"other","from":146,"to":150}]}
+{"k":"lead","id":"single-variant-enum","mode":"direct-syntax","subjects":["Error"],"evidence":"one variant, `Failed`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Clone","Local"],"evidence":"one impl in the run: `impl Clone for Local`","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-impls","macros"]}
+{"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["custom::Display","custom::Homemade"],"evidence":"one impl in the run: `impl Display for Homemade`","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-impls","macros"]}
+{"k":"lead","id":"prelude-name","mode":"direct-syntax","subjects":["Clone"],"evidence":"named like `std::clone::Clone`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["bare"],"evidence":"holds only `Imported`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["globbed"],"evidence":"holds only `Starred`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["other"],"evidence":"holds only `Foreign`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bits","Bits::float","Bits::int","Error::Failed","Holder::value","Labeled","Marker","Named::name","Plain","Run::id","RunError::reason","Wrapped"],"evidence":"no hit of `Bits` in the scanned sources beyond its 1 declaration; no hit of `float` in the scanned sources beyond its 1 declaration; no hit of `int` in the scanned sources beyond its 1 declaration; no hit of `Failed` in the scanned sources beyond its 1 declaration; no hit of `value` in the scanned sources beyond its 2 declarations; no hit of `Labeled` in the scanned sources beyond its 1 declaration; no hit of `Marker` in the scanned sources beyond its 1 declaration; no hit of `name` in the scanned sources beyond its 4 declarations; no hit of `Plain` in the scanned sources beyond its 1 declaration; no hit of `id` in the scanned sources beyond its 1 declaration; no hit of `reason` in the scanned sources beyond its 1 declaration; no hit of `Wrapped` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["bare::Imported"],"evidence":"1 production hits of `Imported` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["custom::Homemade"],"evidence":"1 production hits of `Homemade` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Error","Holder","Local","Mixed","Ordered","Renamed","Run","RunError","Secret","Sink","Spelled","Wide"],"evidence":"4 production hits of `Error` outside macros, none a resolved or unique qualified path to it; 2 production hits of `Holder` outside macros, none a resolved or unique qualified path to it; 3 production hits of `Local` outside macros, none a resolved or unique qualified path to it; 3 production hits of `Mixed` outside macros, none a resolved or unique qualified path to it; 2 production hits of `Ordered` outside macros, none a resolved or unique qualified path to it; 1 production hits of `Renamed` outside macros, none a resolved or unique qualified path to it; 2 production hits of `Run` outside macros, none a resolved or unique qualified path to it; 3 production hits of `RunError` outside macros, none a resolved or unique qualified path to it; 1 production hits of `Secret` outside macros, none a resolved or unique qualified path to it; 2 production hits of `Sink` outside macros, none a resolved or unique qualified path to it; 1 production hits of `Spelled` outside macros, none a resolved or unique qualified path to it; 8 production hits of `Wide` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"],"module":"crate","count":12}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["globbed::Starred"],"evidence":"1 production hits of `Starred` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["other::Foreign"],"evidence":"1 production hits of `Foreign` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Error::Failed"],"evidence":"no observed path builds `Error::Failed`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Holder::value"],"evidence":"0 struct literals of `Holder` set it, and no `.value` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Run::id"],"evidence":"0 struct literals of `Run` set it, and no `.id` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["RunError::reason"],"evidence":"0 struct literals of `RunError` set it, and no `.reason` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"bare","kind":"mod"}
+{"k":"surface","path":"bare::Imported","kind":"struct"}
+{"k":"surface","path":"Bits","kind":"union"}
+{"k":"surface","path":"Clone","kind":"trait"}
+{"k":"surface","path":"custom","kind":"mod"}
+{"k":"surface","path":"custom::Display","kind":"trait"}
+{"k":"surface","path":"custom::Homemade","kind":"struct"}
+{"k":"surface","path":"Error","kind":"enum"}
+{"k":"surface","path":"globbed","kind":"mod"}
+{"k":"surface","path":"globbed::Starred","kind":"struct"}
+{"k":"surface","path":"Holder","kind":"struct"}
+{"k":"surface","path":"Labeled","kind":"trait"}
+{"k":"surface","path":"Local","kind":"struct"}
+{"k":"surface","path":"Marker","kind":"struct"}
+{"k":"surface","path":"Mixed","kind":"struct"}
+{"k":"surface","path":"Named","kind":"trait"}
+{"k":"surface","path":"Ordered","kind":"struct"}
+{"k":"surface","path":"other","kind":"mod"}
+{"k":"surface","path":"other::Foreign","kind":"struct"}
+{"k":"surface","path":"Plain","kind":"trait"}
+{"k":"surface","path":"Renamed","kind":"struct"}
+{"k":"surface","path":"Run","kind":"struct"}
+{"k":"surface","path":"RunError","kind":"struct"}
+{"k":"surface","path":"Secret","kind":"struct"}
+{"k":"surface","path":"Sink","kind":"struct"}
+{"k":"surface","path":"Spelled","kind":"struct"}
+{"k":"surface","path":"Wide","kind":"struct"}
+{"k":"surface","path":"Wrapped","kind":"struct"}
+{"k":"external","path":"other_crate::Display","uses":1,"named_by":["other::Foreign"]}
+{"k":"external","path":"serde::Serialize","uses":1,"named_by":["Mixed"]}
+{"k":"spelling","path":"std::fmt::Debug","preferred":"Debug","spellings":[{"text":"Dbg","count":1,"locs":[{"file":"src/lib.rs","line":0}]},{"text":"fmt::Debug","count":4,"locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}]}]}
+{"k":"spelling","path":"std::fmt::Display","spellings":[{"text":"D","count":1,"locs":[{"file":"src/lib.rs","line":0}]},{"text":"fmt::Display","count":5,"locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}]},{"text":"std::fmt::Display","count":1,"locs":[{"file":"src/lib.rs","line":0}]}]}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":19}
+{"k":"doc","path":"crate","text":"Base lists: short names, long paths, wrapping, collisions, and supertraits."}
+{"k":"enum","path":"Error","rust":"pub enum Error { Failed }","loc":{"file":"src/lib.rs","line":0},"derives":["Debug"],"token_hits":4}
+{"k":"doc","path":"Error","text":"The crate's own error, whose name collides with std::error::Error."}
+{"k":"impl","path":"Error","rust":"impl std::error::Error for Error","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Error","rust":"impl Named for Error","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Error::name","sig":"fn name(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Named for Error","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"trait","path":"Named","rust":"pub trait Named","loc":{"file":"src/lib.rs","line":0},"named_by":["Error","Holder","Labeled","Mixed"],"token_hits":4}
+{"k":"doc","path":"Named","text":"A trait of this crate."}
+{"k":"fn","path":"Named::name","sig":"fn name(&self) -> String","loc":{"file":"src/lib.rs","line":0}}
+{"k":"trait","path":"Labeled","rust":"pub trait Labeled: fmt::Display + Named","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Labeled","text":"A standard supertrait and a supertrait of this crate."}
+{"k":"trait","path":"Plain","rust":"pub trait Plain: Send + Sync + 'static","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Plain","text":"Standard supertraits and a lifetime bound."}
+{"k":"struct","path":"Run","rust":"pub struct Run { pub id: u32 }","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Run","text":"Standard traits only, so the list stays on the head line."}
+{"k":"impl","path":"Run","rust":"impl fmt::Debug for Run","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Run","rust":"impl fmt::Display for Run","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"RunError","rust":"pub struct RunError { pub reason: String }","loc":{"file":"src/lib.rs","line":0},"token_hits":3}
+{"k":"doc","path":"RunError","text":"The crate's Error makes std::error::Error keep its full path."}
+{"k":"impl","path":"RunError","rust":"impl fmt::Debug for RunError","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"RunError","rust":"impl fmt::Display for RunError","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"RunError","rust":"impl std::error::Error for RunError","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Mixed","rust":"pub struct Mixed","loc":{"file":"src/lib.rs","line":0},"token_hits":3}
+{"k":"doc","path":"Mixed","text":"A trait of this crate and one of another crate take the comma form."}
+{"k":"impl","path":"Mixed","rust":"impl fmt::Debug for Mixed","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Mixed","rust":"impl Named for Mixed","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Mixed::name","sig":"fn name(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Named for Mixed","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"impl","path":"Mixed","rust":"impl serde::Serialize for Mixed","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Sink","rust":"pub struct Sink","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Sink","text":"Two traits named Write keep their full paths."}
+{"k":"impl","path":"Sink","rust":"impl fmt::Write for Sink","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Sink","rust":"impl io::Write for Sink","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Wide","rust":"pub struct Wide(u64)","loc":{"file":"src/lib.rs","line":0},"derives":["Copy","Debug","Eq","Hash","Ord"],"token_hits":8}
+{"k":"doc","path":"Wide","text":"So many standard traits that the list wraps."}
+{"k":"impl","path":"Wide","rust":"impl fmt::Binary for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::Display for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::LowerExp for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::LowerHex for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::Octal for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::Pointer for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::UpperExp for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Wide","rust":"impl fmt::UpperHex for Wide","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Holder","rust":"pub struct Holder<T> where T: Copy { pub value: T }","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Holder","text":"Generics, a where clause, and a trait of this crate."}
+{"k":"impl","path":"Holder","rust":"impl<T: Copy> fmt::Debug for Holder<T>","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Holder","rust":"impl<T> Named for Holder<T> where T: Copy","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Holder::name","sig":"fn name(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl<T> Named for Holder<T> where T: Copy","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"union","path":"Bits","rust":"pub union Bits { pub int: u32, pub float: f32 }","loc":{"file":"src/lib.rs","line":0},"derives":["Copy","Debug"]}
+{"k":"doc","path":"Bits","text":"A union with standard derives."}
+{"k":"struct","path":"Secret","rust":"pub struct Secret { value: u8 }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Secret","text":"A class with a standard trait."}
+{"k":"impl","path":"Secret","rust":"impl fmt::Display for Secret","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Marker","rust":"pub struct Marker","loc":{"file":"src/lib.rs","line":0},"derives":["Debug","Eq","Hash"]}
+{"k":"doc","path":"Marker","text":"A unit struct whose list fits on the head line."}
+{"k":"trait","path":"Clone","rust":"pub trait Clone","loc":{"file":"src/lib.rs","line":0},"named_by":["Local"],"token_hits":2}
+{"k":"doc","path":"Clone","text":"A trait of this crate that shares a prelude name."}
+{"k":"struct","path":"Local","rust":"pub struct Local","loc":{"file":"src/lib.rs","line":0},"token_hits":3}
+{"k":"doc","path":"Local","text":"The crate's own Clone, a trait nothing declares, and a renamed standard\ntrait."}
+{"k":"impl","path":"Local","rust":"impl Clone for Local","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Local","rust":"impl Unknown for Local","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Local","rust":"impl Dbg for Local","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Wrapped","rust":"pub struct Wrapped(u8)","loc":{"file":"src/lib.rs","line":0},"derives":["Debug","From"]}
+{"k":"doc","path":"Wrapped","text":"A bare derive of From comes from another crate, so it stays on the mark."}
+{"k":"struct","path":"Ordered","rust":"pub struct Ordered(u8)","loc":{"file":"src/lib.rs","line":0},"derives":["Clone","Eq","Ord","PartialEq","PartialOrd"],"token_hits":2}
+{"k":"doc","path":"Ordered","text":"Standard derives that are not special members, and comparisons with\nanother type written by hand. The crate's own Clone trait never sits on\nthe shared line, so the standard Clone keeps its short name."}
+{"k":"impl","path":"Ordered","rust":"impl PartialEq<u8> for Ordered","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Ordered::eq","sig":"fn eq(&self, other: &u8) -> bool","loc":{"file":"src/lib.rs","line":0},"impl":"impl PartialEq<u8> for Ordered","body":{"statements":1,"tokens":9},"ops":["other","self.0"]}
+{"k":"impl","path":"Ordered","rust":"impl PartialOrd<u8> for Ordered","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Ordered::partial_cmp","sig":"fn partial_cmp(&self, other: &u8) -> Option<std::cmp::Ordering>","loc":{"file":"src/lib.rs","line":0},"impl":"impl PartialOrd<u8> for Ordered","body":{"statements":1,"tokens":10,"single":"method partial_cmp"},"ops":["other","self.0.partial_cmp"]}
+{"k":"struct","path":"Spelled","rust":"pub struct Spelled","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Spelled","text":"The standard Display written in full, with no use."}
+{"k":"impl","path":"Spelled","rust":"impl std::fmt::Display for Spelled","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"struct","path":"Renamed","rust":"pub struct Renamed","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Renamed","text":"The standard Display through a renaming use."}
+{"k":"impl","path":"Renamed","rust":"impl D for Renamed","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"mod","path":"bare","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"bare","text":"The standard Display after a use of the trait itself."}
+{"k":"struct","path":"bare::Imported","rust":"pub struct Imported","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"bare::Imported","text":"Display through the use, which is the standard one."}
+{"k":"impl","path":"bare::Imported","rust":"impl Display for Imported","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"mod","path":"custom","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":2}
+{"k":"doc","path":"custom","text":"A trait of this crate named Display."}
+{"k":"trait","path":"custom::Display","rust":"pub trait Display","loc":{"file":"src/lib.rs","line":0},"named_by":["custom::Homemade"],"token_hits":13}
+{"k":"doc","path":"custom::Display","text":"The crate's own Display."}
+{"k":"struct","path":"custom::Homemade","rust":"pub struct Homemade","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"custom::Homemade","text":"The crate's Display, which prints its path on its own line."}
+{"k":"impl","path":"custom::Homemade","rust":"impl Display for Homemade","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"mod","path":"globbed","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"globbed","text":"A Display that can only come from a glob import."}
+{"k":"struct","path":"globbed::Starred","rust":"pub struct Starred","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"globbed::Starred","text":"A Display from the glob, which prints as written."}
+{"k":"impl","path":"globbed::Starred","rust":"impl Display for Starred","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"mod","path":"other","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"other","text":"Another crate's trait that is also named Display."}
+{"k":"struct","path":"other::Foreign","rust":"pub struct Foreign","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"other::Foreign","text":"The other crate's Display, which stays apart from the standard one."}
+{"k":"impl","path":"other::Foreign","rust":"impl Display for Foreign","locs":[{"file":"src/lib.rs","line":0}]}

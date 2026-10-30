@@ -1,134 +1,33 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.struct_class"></a>
-# struct_class
-
-```
-//! Struct versus class.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [struct_class](#mod.struct_class)
-  - [Bare](#type.struct_class.Bare)
-  - [Cursor](#type.struct_class.Cursor)
-  - [Mixed](#type.struct_class.Mixed)
-  - [Toggle](#type.struct_class.Toggle)
-  - [Wrapper](#type.struct_class.Wrapper)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Bare](#type.struct_class.Bare)
-- [Cursor](#type.struct_class.Cursor)
-- [Mixed](#type.struct_class.Mixed)
-- [Toggle](#type.struct_class.Toggle)
-- [Wrapper](#type.struct_class.Wrapper)
-
-<a id="mod.struct_class"></a>
-## struct_class
-
-<a id="type.struct_class.Bare"></a>
-### Bare
-
-Counts: none
-
-Used by: nothing
-
-```
-/// No members at all.
-pub struct Bare {}
-```
-
-<a id="type.struct_class.Cursor"></a>
-### Cursor
-
-Counts: 2 fields, 4 functions
-
-Used by: nothing
-
-```
-/// Holds the text the lexer is still reading.
-pub struct Cursor {
-    text: String,
-
-    pos: usize,
-}
-
-// impl in src/lib.rs
-impl Cursor {
-    fn new(text: String) -> Cursor;
-
-    fn peek(&self) -> Option<char>;
-
-    fn bump(&mut self);
-
-    fn into_text(self) -> String;
-}
-```
-
-<a id="type.struct_class.Mixed"></a>
-### Mixed
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// Public and private members.
-pub struct Mixed {
-    pub open: u8,
-
-    closed: u8,
-}
-```
-
-<a id="type.struct_class.Toggle"></a>
-### Toggle
-
-Counts: 2 variants, 1 function
-
-Used by: nothing
-
-```
-/// An enum with only private methods.
-pub enum Toggle {
-    On,
-
-    Off,
-}
-
-// impl in src/lib.rs
-impl Toggle {
-    fn flip(&mut self);
-}
-```
-
-<a id="type.struct_class.Wrapper"></a>
-### Wrapper
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A tuple struct with only private fields.
-pub struct Wrapper(u8);
-```
+{"k":"vibelight-outline","schema":1,"crate":"struct_class","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":15,"to":33}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bare","Mixed","Mixed::open","Toggle::Off","Toggle::On","Wrapper"],"evidence":"no hit of `Bare` in the scanned sources beyond its 1 declaration; no hit of `Mixed` in the scanned sources beyond its 1 declaration; no hit of `open` in the scanned sources beyond its 1 declaration; no hit of `Off` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `Wrapper` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Toggle"],"evidence":"1 production hits of `Toggle` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Toggle::Off"],"evidence":"no observed path builds `Toggle::Off`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Toggle::On"],"evidence":"no observed path builds `Toggle::On`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Mixed::open"],"evidence":"0 struct literals of `Mixed` set it, and no `.open` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"forwarder","mode":"direct-syntax","subjects":["Cursor::into_text"],"evidence":"a private method that only reads the private field `text`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"surface","path":"Bare","kind":"struct"}
+{"k":"surface","path":"Cursor","kind":"struct"}
+{"k":"surface","path":"Mixed","kind":"struct"}
+{"k":"surface","path":"Toggle","kind":"enum"}
+{"k":"surface","path":"Wrapper","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":5}
+{"k":"doc","path":"crate","text":"Struct versus class."}
+{"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub open: u8, closed: u8 }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Mixed","text":"Public and private members."}
+{"k":"struct","path":"Cursor","rust":"pub struct Cursor { text: String, pos: usize }","loc":{"file":"src/lib.rs","line":0},"token_hits":3}
+{"k":"doc","path":"Cursor","text":"Holds the text the lexer is still reading."}
+{"k":"impl","path":"Cursor","rust":"impl Cursor","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Cursor::new","sig":"fn new(text: String) -> Cursor","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":9},"ops":["text"]}
+{"k":"fn","path":"Cursor::peek","sig":"fn peek(&self) -> Option<char>","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":3,"nones":1}}
+{"k":"fn","path":"Cursor::bump","sig":"fn bump(&mut self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Cursor::into_text","sig":"fn into_text(self) -> String","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field text"},"ops":["self.text"]}
+{"k":"struct","path":"Bare","rust":"pub struct Bare {}","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Bare","text":"No members at all."}
+{"k":"enum","path":"Toggle","rust":"pub enum Toggle { On, Off }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Toggle","text":"An enum with only private methods."}
+{"k":"impl","path":"Toggle","rust":"impl Toggle","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Toggle::flip","sig":"fn flip(&mut self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"struct","path":"Wrapper","rust":"pub struct Wrapper(u8)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Wrapper","text":"A tuple struct with only private fields."}

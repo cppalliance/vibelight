@@ -74,6 +74,15 @@ pub(crate) fn run(input: &Path, out: &Path) -> Output {
 /// Runs the binary into a fresh folder and returns each outline's name and
 /// text without its source links, sorted by name.
 pub(crate) fn outputs(input: &Path) -> Vec<(String, String)> {
+    outputs_with_streams(input).0
+}
+
+/// Runs the binary into a fresh folder and returns each outline's name and
+/// text without its source links, sorted by name, with the run's stdout
+/// and stderr lines.
+pub(crate) fn outputs_with_streams(
+    input: &Path,
+) -> (Vec<(String, String)>, Vec<String>, Vec<String>) {
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let out = tmp.path().join("out");
     let result = run(input, &out);
@@ -82,7 +91,17 @@ pub(crate) fn outputs(input: &Path) -> Vec<(String, String)> {
         "vibelight failed: {}",
         String::from_utf8_lossy(&result.stderr)
     );
-    read_plain(&out)
+    let lines = |bytes: &[u8]| -> Vec<String> {
+        String::from_utf8_lossy(bytes)
+            .lines()
+            .map(str::to_owned)
+            .collect()
+    };
+    (
+        read_plain(&out),
+        lines(&result.stdout),
+        lines(&result.stderr),
+    )
 }
 
 /// Reads the outlines a run wrote into `out`: the markdown files in it,
@@ -103,13 +122,14 @@ pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
 }
 
 /// Like `read_run`, with the source links removed, so runs from different
-/// folders compare equal.
+/// folders compare equal, and with every source line of the markdown made
+/// 0, so a change of layout that moves no declaration changes no golden.
 pub(crate) fn read_plain(out: &Path) -> Vec<(String, String)> {
     read_run(out)
         .into_iter()
         .map(|(name, text)| {
             let plain = if has_ext(&name, "md") {
-                strip_markdown_links(&text)
+                normalize_outline(&text)
             } else {
                 strip_html_links(&text)
             };
@@ -173,30 +193,127 @@ pub(crate) fn rust_files(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// Removes the source links from a markdown outline: each `Source:` line
-/// with its one blank line, and each ` (source: ...)` suffix.
-pub(crate) fn strip_markdown_links(md: &str) -> String {
-    let mut out = String::new();
-    let mut skip_blank = false;
-    for line in md.split_inclusive('\n') {
-        if skip_blank && line == "\n" {
-            skip_blank = false;
-            continue;
-        }
-        skip_blank = false;
-        if line.starts_with("Source: ") {
-            skip_blank = true;
-            continue;
-        }
-        match line.find(" (source: [") {
-            Some(at) => {
-                out.push_str(&line[..at]);
-                out.push('\n');
-            }
-            None => out.push_str(line),
+/// Normalizes a markdown outline for its golden. The stamp line stays, and
+/// on every record line after it each `url` key goes with its value and
+/// each `line` value becomes 0. A key is a string that a real quote opens
+/// and a colon follows, so no text inside a string, such as a doc that
+/// writes `#L6` or `"line":`, is ever touched, and the keys keep their order.
+pub(crate) fn normalize_outline(md: &str) -> String {
+    let mut out = String::with_capacity(md.len());
+    for (n, line) in md.split_inclusive('\n').enumerate() {
+        if n == 0 {
+            out.push_str(line);
+        } else {
+            out.push_str(&normalize_record(line));
         }
     }
     out
+}
+
+/// Returns the index just past the string that opens at `start`.
+fn string_end(bytes: &[u8], start: usize) -> usize {
+    let mut i = start + 1;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\\' => i += 2,
+            b'"' => return i + 1,
+            _ => i += 1,
+        }
+    }
+    bytes.len()
+}
+
+/// Normalizes one compact JSON record, whose text outside its strings is
+/// ASCII.
+fn normalize_record(line: &str) -> String {
+    let bytes = line.as_bytes();
+    let mut out = String::with_capacity(line.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'"' {
+            out.push(char::from(bytes[i]));
+            i += 1;
+            continue;
+        }
+        let end = string_end(bytes, i);
+        let key = bytes.get(end) == Some(&b':');
+        match &line[i..end] {
+            "\"url\"" if key => {
+                i = string_end(bytes, end + 1);
+                if out.ends_with(',') {
+                    out.pop();
+                } else if bytes.get(i) == Some(&b',') {
+                    i += 1;
+                }
+            }
+            "\"line\"" if key => {
+                out.push_str("\"line\":0");
+                i = end + 1;
+                while bytes.get(i).is_some_and(u8::is_ascii_digit) {
+                    i += 1;
+                }
+            }
+            text => {
+                out.push_str(text);
+                i = end;
+            }
+        }
+    }
+    out
+}
+
+#[test]
+fn normalizing_drops_links_and_zeroes_lines_in_every_structural_place() {
+    let stamp = "*Updated 2026-01-01T00:00:00Z*\n";
+    let loc = |line: u32| {
+        format!("{{\"file\":\"src/lib.rs\",\"line\":{line},\"url\":\"../src/lib.rs#L{line}\"}}")
+    };
+    let cases = [
+        (
+            format!("{{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":{}}}\n", loc(12)),
+            "{\"k\":\"fn\",\"path\":\"f\",\"sig\":\"fn f()\",\"loc\":{\"file\":\"src/lib.rs\",\"line\":0}}\n",
+        ),
+        (
+            format!(
+                "{{\"k\":\"lead\",\"id\":\"x\",\"mode\":\"lexical\",\"subjects\":[\"a\"],\"evidence\":\"e\",\"locs\":[{},{}]}}\n",
+                loc(3),
+                loc(40)
+            ),
+            "{\"k\":\"lead\",\"id\":\"x\",\"mode\":\"lexical\",\"subjects\":[\"a\"],\"evidence\":\"e\",\"locs\":[{\"file\":\"src/lib.rs\",\"line\":0},{\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+        ),
+        (
+            format!("{{\"k\":\"impl\",\"path\":\"A\",\"rust\":\"impl A\",\"locs\":[{}]}}\n", loc(7)),
+            "{\"k\":\"impl\",\"path\":\"A\",\"rust\":\"impl A\",\"locs\":[{\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+        ),
+        (
+            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and #L6\",\"line\":9}]}\n"
+                .to_owned(),
+            "{\"k\":\"fn\",\"comments\":[{\"text\":\"// see \\\"line\\\":5 and #L6\",\"line\":0}]}\n",
+        ),
+        (
+            "{\"k\":\"lead\",\"locs\":[{\"target\":\"alpha\",\"file\":\"src/lib.rs\",\"line\":2,\"url\":\"../a/src/lib.rs#L2\"}]}\n"
+                .to_owned(),
+            "{\"k\":\"lead\",\"locs\":[{\"target\":\"alpha\",\"file\":\"src/lib.rs\",\"line\":0}]}\n",
+        ),
+        (
+            "{\"k\":\"mod\",\"path\":\"crate\",\"loc\":{\"file\":\"tool.rs\",\"line\":1,\"url\":\"../tool.rs#L1\"}}\n"
+                .to_owned(),
+            "{\"k\":\"mod\",\"path\":\"crate\",\"loc\":{\"file\":\"tool.rs\",\"line\":0}}\n",
+        ),
+        (
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"url\\\":\\\"x\\\" b\"}\n".to_owned(),
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"a \\\"url\\\":\\\"x\\\" b\"}\n",
+        ),
+        (
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}\n".to_owned(),
+            "{\"k\":\"doc\",\"path\":\"a\",\"text\":\"ü ✓\"}\n",
+        ),
+    ];
+    for (record, want) in cases {
+        let got = normalize_outline(&format!("{stamp}{record}"));
+        assert_eq!(got, format!("{stamp}{want}"));
+    }
+    assert_eq!(normalize_outline(stamp), stamp, "the stamp line stays");
 }
 
 /// Removes the source links from an HTML outline: each `Source:` line and

@@ -1,5 +1,7 @@
-//! Checks source links: their golden, that stripping them for the other
-//! goldens leaves none behind, and that every target resolves.
+//! Checks source links: their golden, that normalizing the other goldens
+//! leaves no link or source line behind, and that every target resolves.
+//! The markdown holds each link in the `url` of a location record, and the
+//! HTML in an `href`.
 
 use std::fs;
 use std::path::Path;
@@ -40,33 +42,41 @@ fn stripping_the_links_leaves_no_source_link_in_either_format() {
                 .success()
         );
         for (_, text) in read_run(&out) {
-            if text.contains("Source: [") || text.contains("class=\"src\" href=") {
+            if text.contains("\"url\":\"") || text.contains("class=\"src\" href=") {
                 linked += 1;
             }
         }
         for (file, text) in read_plain(&out) {
             for leftover in [
-                "Source: [",
-                " (source: [",
+                "\"url\":",
                 "<p class=\"source\">",
                 "class=\"src\" href=",
                 "(source: <a",
             ] {
                 assert!(!text.contains(leftover), "{name}/{file} keeps {leftover}");
             }
+            let lines = text
+                .match_indices("\"line\":")
+                .map(|(at, key)| at + key.len());
+            for at in lines {
+                assert!(
+                    text[at..].starts_with('0'),
+                    "{name}/{file} keeps a source line"
+                );
+            }
         }
     }
     assert!(linked > 50, "only {linked} files had source links");
 }
 
-/// Returns every source link target in an outline, fragment removed:
-/// `[text](target)` links in markdown, and `href` values in HTML, less the
+/// Returns every source link target in an outline, fragment removed: the
+/// `url` of each location in markdown, and `href` values in HTML, less the
 /// links inside the page and to other pages of the run.
 fn targets(file: &str, page: &str) -> Vec<String> {
     let (open, close) = if has_ext(file, "html") {
         ("href=\"", '"')
     } else {
-        ("](", ')')
+        ("\"url\":\"", '"')
     };
     let mut out = Vec::new();
     let mut rest = page;
@@ -111,8 +121,8 @@ fn targets_resolve_from_inside_beside_and_above_the_crate() {
             }
             if file == "links.md" {
                 assert!(
-                    page.contains("[src/lib.rs:6]("),
-                    "link text is relative to the crate"
+                    page.contains("{\"file\":\"src/lib.rs\",\"line\":6,\"url\":\""),
+                    "a location's file is relative to the crate"
                 );
             }
         }

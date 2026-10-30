@@ -1,148 +1,47 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.member_order"></a>
-# member_order
-
-```
-//! Member order inside a block.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [member_order](#mod.member_order)
-  - [Based](#type.member_order.Based)
-  - [Grouped](#type.member_order.Grouped)
-  - [Order](#type.member_order.Order)
-  - [Scrambled](#type.member_order.Scrambled)
-  - [Triple](#type.member_order.Triple)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Based](#type.member_order.Based)
-- [Grouped](#type.member_order.Grouped)
-- [Order](#type.member_order.Order)
-- [Scrambled](#type.member_order.Scrambled)
-- [Triple](#type.member_order.Triple)
-
-<a id="mod.member_order"></a>
-## member_order
-
-<a id="type.member_order.Based"></a>
-### Based
-
-Counts: 1 Default/From/Drop impl
-
-Used by: nothing
-
-```
-/// The base list is sorted.
-pub struct Based;
-
-impl Default for Based {}
-impl std::fmt::Debug for Based {}
-impl Clone for Based {}
-impl AsRef<str> for Based {}
-```
-
-<a id="type.member_order.Grouped"></a>
-### Grouped
-
-Counts: 2 associated items, 2 functions
-
-Used by: nothing
-
-```
-/// Trait items in scrambled order.
-pub trait Grouped {
-    fn member(&self);
-
-    fn build() -> Self;
-
-    const LIMIT: u8;
-
-    type Out;
-}
-```
-
-<a id="type.member_order.Order"></a>
-### Order
-
-Counts: 3 variants
-
-Used by: nothing
-
-```
-/// Variants keep their declared order.
-pub enum Order {
-    Zulu,
-
-    Alpha,
-
-    Mike,
-}
-```
-
-<a id="type.member_order.Scrambled"></a>
-### Scrambled
-
-Counts: 4 fields, 1 associated item, 5 functions
-
-Used by: nothing
-
-```
-/// Members in scrambled order.
-pub struct Scrambled {
-    pub zeta: u8,
-
-    pub alpha: u8,
-
-    beta: u8,
-
-    pub Alpha: u8,
-}
-
-// impl in src/lib.rs
-impl Scrambled {
-    pub fn zed(&self);
-
-    pub const MAX: u8 = 9;
-
-    pub fn make() -> Scrambled;
-
-    fn hidden();
-
-    pub fn apply(&self);
-
-    pub fn Apply(&self);
-}
-```
-
-<a id="type.member_order.Triple"></a>
-### Triple
-
-Counts: 3 fields
-
-Used by: nothing
-
-```
-/// Tuple fields keep their declared order.
-pub struct Triple(pub u8, pub String, pub bool);
-```
+{"k":"vibelight-outline","schema":1,"crate":"member_order","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":17,"to":47}]}
+{"k":"lead","id":"lint-suppression","mode":"direct-syntax","subjects":["Scrambled"],"evidence":"`#[allow(non_snake_case)]`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Grouped","Grouped::build","Grouped::LIMIT","Grouped::member","Grouped::Out","Order","Order::Alpha","Order::Mike","Order::Zulu","Scrambled::Alpha","Scrambled::alpha","Scrambled::Apply","Scrambled::apply","Scrambled::make","Scrambled::MAX","Scrambled::zed","Scrambled::zeta","Triple"],"evidence":"no hit of `Grouped` in the scanned sources beyond its 1 declaration; no hit of `build` in the scanned sources beyond its 1 declaration; no hit of `LIMIT` in the scanned sources beyond its 1 declaration; no hit of `member` in the scanned sources beyond its 1 declaration; no hit of `Out` in the scanned sources beyond its 1 declaration; no hit of `Order` in the scanned sources beyond its 1 declaration; no hit of `Alpha` in the scanned sources beyond its 2 declarations; no hit of `Mike` in the scanned sources beyond its 1 declaration; no hit of `Zulu` in the scanned sources beyond its 1 declaration; no hit of `alpha` in the scanned sources beyond its 1 declaration; no hit of `Apply` in the scanned sources beyond its 1 declaration; no hit of `apply` in the scanned sources beyond its 1 declaration; no hit of `make` in the scanned sources beyond its 1 declaration; no hit of `MAX` in the scanned sources beyond its 1 declaration; no hit of `zed` in the scanned sources beyond its 1 declaration; no hit of `zeta` in the scanned sources beyond its 1 declaration; no hit of `Triple` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":18}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Order::Alpha"],"evidence":"no observed path builds `Order::Alpha`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Order::Mike"],"evidence":"no observed path builds `Order::Mike`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Order::Zulu"],"evidence":"no observed path builds `Order::Zulu`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Scrambled::Alpha"],"evidence":"0 struct literals of `Scrambled` set it, and no `.Alpha` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Scrambled::alpha"],"evidence":"0 struct literals of `Scrambled` set it, and no `.alpha` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Scrambled::zeta"],"evidence":"0 struct literals of `Scrambled` set it, and no `.zeta` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Based","kind":"struct"}
+{"k":"surface","path":"Grouped","kind":"trait"}
+{"k":"surface","path":"Order","kind":"enum"}
+{"k":"surface","path":"Scrambled","kind":"struct"}
+{"k":"surface","path":"Triple","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":5}
+{"k":"doc","path":"crate","text":"Member order inside a block."}
+{"k":"struct","path":"Scrambled","rust":"pub struct Scrambled { pub zeta: u8, pub alpha: u8, beta: u8, pub Alpha: u8 }","loc":{"file":"src/lib.rs","line":0},"lints":["allow(non_snake_case)"],"token_hits":2}
+{"k":"doc","path":"Scrambled","text":"Members in scrambled order."}
+{"k":"impl","path":"Scrambled","rust":"impl Scrambled","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Scrambled::zed","sig":"pub fn zed(&self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"const","path":"Scrambled::MAX","rust":"pub const MAX: u8","value":"9","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1}}
+{"k":"fn","path":"Scrambled::make","sig":"pub fn make() -> Scrambled","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":3,"panics":1,"macros":["todo"]}}
+{"k":"fn","path":"Scrambled::hidden","sig":"fn hidden()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Scrambled::apply","sig":"pub fn apply(&self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Scrambled::Apply","sig":"pub fn Apply(&self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"trait","path":"Grouped","rust":"pub trait Grouped","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Grouped","text":"Trait items in scrambled order."}
+{"k":"fn","path":"Grouped::member","sig":"fn member(&self)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"fn","path":"Grouped::build","sig":"fn build() -> Self","loc":{"file":"src/lib.rs","line":0}}
+{"k":"const","path":"Grouped::LIMIT","rust":"const LIMIT: u8","loc":{"file":"src/lib.rs","line":0}}
+{"k":"alias","path":"Grouped::Out","rust":"type Out","loc":{"file":"src/lib.rs","line":0}}
+{"k":"enum","path":"Order","rust":"pub enum Order { Zulu, Alpha, Mike }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Order","text":"Variants keep their declared order."}
+{"k":"struct","path":"Triple","rust":"pub struct Triple(pub u8, pub String, pub bool)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Triple","text":"Tuple fields keep their declared order."}
+{"k":"struct","path":"Based","rust":"pub struct Based","loc":{"file":"src/lib.rs","line":0},"token_hits":8}
+{"k":"doc","path":"Based","text":"The base list is sorted."}
+{"k":"impl","path":"Based","rust":"impl Default for Based","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Based::default","sig":"fn default() -> Based","loc":{"file":"src/lib.rs","line":0},"impl":"impl Default for Based","body":{"statements":1,"tokens":3}}
+{"k":"impl","path":"Based","rust":"impl std::fmt::Debug for Based","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Based::fmt","sig":"fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result","loc":{"file":"src/lib.rs","line":0},"impl":"impl std::fmt::Debug for Based","body":{"statements":1,"tokens":7,"single":"call Ok"}}
+{"k":"impl","path":"Based","rust":"impl Clone for Based","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Based::clone","sig":"fn clone(&self) -> Based","loc":{"file":"src/lib.rs","line":0},"impl":"impl Clone for Based","body":{"statements":1,"tokens":3}}
+{"k":"impl","path":"Based","rust":"impl AsRef<str> for Based","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Based::as_ref","sig":"fn as_ref(&self) -> &str","loc":{"file":"src/lib.rs","line":0},"impl":"impl AsRef<str> for Based","body":{"statements":1,"tokens":3}}

@@ -1,150 +1,35 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.links"></a>
-# links
-
-```
-//! Source links.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [links](#mod.links)
-  - [Dial](#type.links.Dial)
-  - [Engine](#type.links.Engine)
-- [parts](#mod.links.parts)
-  - [parts::Gauge](#type.links.parts.Gauge)
-  - [parts::Part](#type.links.parts.Part)
-- [Other impls](#impls)
-- [Spellings](#spellings)
-
-**MACROS:** 1 definition
-
-<a id="surface"></a>
-## Public surface
-
-- [Dial](#type.links.Dial)
-- [Engine](#type.links.Engine)
-
-<a id="mod.links"></a>
-## links
-
-Source: [src/lib.rs](../src/lib.rs)
-
-```
-// MACRO macro_rules! noop
-```
-
-**MACRO** macro_rules! noop (source: [src/lib.rs:15](../src/lib.rs#L15))
-
-<a id="type.links.Dial"></a>
-### Dial
-
-Source: [src/lib.rs:26](../src/lib.rs#L26)
-
-Counts: 1 field (1 Option)
-
-Used by: nothing
-
-```
-/// A dial with an optional limit.
-pub struct Dial {
-    pub limit: std::option::Option<u32>,
-}
-```
-
-<a id="type.links.Engine"></a>
-### Engine
-
-Source: [src/lib.rs:6](../src/lib.rs#L6), impl [src/lib.rs:10](../src/lib.rs#L10) (start), [src/parts.rs:3](../src/parts.rs#L3) (stop)
-
-Counts: 1 field, 2 functions
-
-Used by: nothing
-
-```
-/// A type with an impl in another file.
-pub struct Engine {
-    pub speed: u32,
-}
-
-// impl in src/lib.rs
-impl Engine {
-    /// Starts the engine.
-    pub fn start(&self);
-}
-
-// impl in src/parts.rs
-impl crate::Engine {
-    /// Stops the engine.
-    pub fn stop(&self);
-}
-```
-
-<a id="mod.links.parts"></a>
-## parts
-
-Source: [src/parts.rs](../src/parts.rs)
-
-```
-//! Parts of the engine.
-```
-
-<a id="type.links.parts.Gauge"></a>
-### parts::Gauge
-
-Source: [src/parts.rs:12](../src/parts.rs#L12)
-
-Counts: 2 fields (2 Option)
-
-Used by: nothing
-
-```
-/// A gauge that writes one standard type two ways.
-pub struct Gauge {
-    pub reading: Option<u32>,
-
-    pub spare: std::option::Option<u32>,
-}
-```
-
-<a id="type.links.parts.Part"></a>
-### parts::Part
-
-Source: [src/parts.rs:9](../src/parts.rs#L9)
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A part.
-pub struct Part;
-```
-
-<a id="impls"></a>
-## Other impls
-
-- `impl Clone for Box<Engine> {}` (source: [src/lib.rs:19](../src/lib.rs#L19))
-
-<a id="spellings"></a>
-## Spellings
-
-- `std::option::Option` is written 2 ways; prefer `Option`:
-  - `Option`, once
-  - `std::option::Option`, 2 times (source: [src/lib.rs:27](../src/lib.rs#L27), [src/parts.rs:14](../src/parts.rs#L14))
+{"k":"vibelight-outline","schema":1,"crate":"links","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":15,"to":29},{"path":"parts","from":30,"to":35}]}
+{"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":[{"file":"src/parts.rs","line":12,"url":"../src/parts.rs#L12"}],"limits":["macros"]}
+{"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Part"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":[{"file":"src/parts.rs","line":9,"url":"../src/parts.rs#L9"}],"limits":["macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Dial"],"evidence":"no hit of `Dial` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":26,"url":"../src/lib.rs#L26"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Dial::limit"],"evidence":"no hit of `limit` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":27,"url":"../src/lib.rs#L27"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":12,"url":"../src/lib.rs#L12"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::stop"],"evidence":"no hit of `stop` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/parts.rs","line":5,"url":"../src/parts.rs#L5"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Dial::limit"],"evidence":"0 struct literals of `Dial` set it, and no `.limit` access or pattern reads it","locs":[{"file":"src/lib.rs","line":27,"url":"../src/lib.rs#L27"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Engine::speed"],"evidence":"1 struct literals of `Engine` set it, and no `.speed` access or pattern reads it","locs":[{"file":"src/lib.rs","line":7,"url":"../src/lib.rs#L7"}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Dial","kind":"struct"}
+{"k":"surface","path":"Engine","kind":"struct"}
+{"k":"spelling","path":"std::option::Option","preferred":"Option","spellings":[{"text":"Option","count":1,"locs":[{"file":"src/parts.rs","line":13,"url":"../src/parts.rs#L13"}]},{"text":"std::option::Option","count":2,"locs":[{"file":"src/lib.rs","line":27,"url":"../src/lib.rs#L27"},{"file":"src/parts.rs","line":14,"url":"../src/parts.rs#L14"}]}]}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":1,"url":"../src/lib.rs#L1"},"types":2}
+{"k":"doc","path":"crate","text":"Source links."}
+{"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":{"file":"src/lib.rs","line":6,"url":"../src/lib.rs#L6"},"token_hits":4}
+{"k":"doc","path":"Engine","text":"A type with an impl in another file."}
+{"k":"impl","path":"Engine","rust":"impl Engine","locs":[{"file":"src/lib.rs","line":10,"url":"../src/lib.rs#L10"}]}
+{"k":"fn","path":"Engine::start","sig":"pub fn start(&self)","loc":{"file":"src/lib.rs","line":12,"url":"../src/lib.rs#L12"},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Engine::start","text":"Starts the engine."}
+{"k":"macro","path":"noop","rust":"macro_rules! noop","loc":{"file":"src/lib.rs","line":15,"url":"../src/lib.rs#L15"}}
+{"k":"impl","path":"Box<Engine>","rust":"impl Clone for Box<Engine>","locs":[{"file":"src/lib.rs","line":19,"url":"../src/lib.rs#L19"}]}
+{"k":"fn","path":"Box<Engine>::clone","sig":"fn clone(&self) -> Self","loc":{"file":"src/lib.rs","line":20,"url":"../src/lib.rs#L20"},"impl":"impl Clone for Box<Engine>","body":{"statements":1,"tokens":14,"single":"call Box::new"}}
+{"k":"struct","path":"Dial","rust":"pub struct Dial { pub limit: std::option::Option<u32> }","loc":{"file":"src/lib.rs","line":26,"url":"../src/lib.rs#L26"}}
+{"k":"doc","path":"Dial","text":"A dial with an optional limit."}
+{"k":"impl","path":"Engine","rust":"impl crate::Engine","locs":[{"file":"src/parts.rs","line":3,"url":"../src/parts.rs#L3"}]}
+{"k":"fn","path":"Engine::stop","sig":"pub fn stop(&self)","loc":{"file":"src/parts.rs","line":5,"url":"../src/parts.rs#L5"},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Engine::stop","text":"Stops the engine."}
+{"k":"mod","path":"parts","loc":{"file":"src/parts.rs","line":1,"url":"../src/parts.rs#L1"},"vis":"private","types":2}
+{"k":"doc","path":"parts","text":"Parts of the engine."}
+{"k":"struct","path":"parts::Part","rust":"pub struct Part","loc":{"file":"src/parts.rs","line":9,"url":"../src/parts.rs#L9"}}
+{"k":"doc","path":"parts::Part","text":"A part."}
+{"k":"struct","path":"parts::Gauge","rust":"pub struct Gauge { pub reading: Option<u32>, pub spare: std::option::Option<u32> }","loc":{"file":"src/parts.rs","line":12,"url":"../src/parts.rs#L12"}}
+{"k":"doc","path":"parts::Gauge","text":"A gauge that writes one standard type two ways."}

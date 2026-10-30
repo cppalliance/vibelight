@@ -1,5 +1,6 @@
-//! Checks that every link inside each target's two files lands on an
-//! anchor, and that ids never repeat.
+//! Checks that every link inside each target's HTML page lands on an
+//! anchor, that ids never repeat, and that the markdown, which is records
+//! rather than a page, holds no anchor and no in-page link.
 
 use std::collections::BTreeSet;
 
@@ -81,30 +82,12 @@ fn ids_and_links_are_read_only_from_tags() {
 
 #[test]
 fn ids_are_unique_and_every_link_lands() {
-    for (target, md, html) in pairs() {
+    for (target, _, html) in pairs() {
         let found = ids(&html);
         let defined: BTreeSet<&str> = found.iter().copied().collect();
         assert_eq!(defined.len(), found.len(), "{target}: an id repeats");
         for id in link_targets(&html) {
             assert!(defined.contains(id), "{target}: HTML link to missing #{id}");
-        }
-        let anchors: BTreeSet<&str> = md
-            .lines()
-            .filter_map(|l| {
-                l.strip_prefix("<a id=\"")
-                    .and_then(|r| r.strip_suffix("\"></a>"))
-            })
-            .collect();
-        let mut rest = md.as_str();
-        while let Some(at) = rest.find("](#") {
-            let after = &rest[at + 3..];
-            let end = after.find(')').expect("a markdown link closes");
-            assert!(
-                anchors.contains(&after[..end]),
-                "{target}: markdown link to missing #{}",
-                &after[..end]
-            );
-            rest = &after[end..];
         }
     }
 }
@@ -132,16 +115,18 @@ fn every_link_to_a_function_constant_or_static_lands_on_an_id() {
 }
 
 #[test]
-fn only_the_html_file_holds_ids_for_functions_constants_and_statics() {
+fn only_the_html_file_holds_ids_and_in_page_links() {
     let mut defined = 0;
     for (target, md, html) in pairs() {
+        for line in md.lines().skip(1) {
+            assert!(
+                line.starts_with("{\"k\":\"") && line.ends_with('}'),
+                "{target}: a markdown line is no record: {line}"
+            );
+        }
         assert!(
-            !md.contains("id=\"fn.") && !md.contains("id=\"const.") && !md.contains("id=\"static."),
-            "{target}: the markdown holds a value anchor"
-        );
-        assert!(
-            !md.contains("](#fn.") && !md.contains("](#const.") && !md.contains("](#static."),
-            "{target}: the markdown links to a value"
+            !md.contains("<a id=") && !md.contains("](#"),
+            "{target}: the markdown holds an anchor or an in-page link"
         );
         defined += ids(&html).into_iter().filter(|id| is_value_id(id)).count();
     }
@@ -149,24 +134,6 @@ fn only_the_html_file_holds_ids_for_functions_constants_and_statics() {
         defined >= 10,
         "the fixtures define only {defined} value ids"
     );
-}
-
-#[test]
-fn markdown_never_puts_a_link_inside_a_fence() {
-    for (target, md, _) in pairs() {
-        let mut fence: Option<&str> = None;
-        for line in md.lines() {
-            match fence {
-                Some(marks) if line == marks => fence = None,
-                Some(_) => assert!(
-                    !line.contains("](#"),
-                    "{target}: link inside a fence: {line}"
-                ),
-                None if line.len() >= 3 && line.chars().all(|c| c == '`') => fence = Some(line),
-                None => {}
-            }
-        }
-    }
 }
 
 #[test]

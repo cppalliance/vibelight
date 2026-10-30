@@ -1,126 +1,36 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.traits"></a>
-# traits
-
-```
-//! Traits.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [traits](#mod.traits)
-  - [Convert](#type.traits.Convert)
-  - [Lender](#type.traits.Lender)
-  - [Observer](#type.traits.Observer)
-  - [Zeroable](#type.traits.Zeroable)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Convert](#type.traits.Convert)
-- [Lender](#type.traits.Lender)
-- [Observer](#type.traits.Observer)
-- [Zeroable](#type.traits.Zeroable)
-
-<a id="mod.traits"></a>
-## traits
-
-<a id="type.traits.Convert"></a>
-### Convert
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// A generic trait with a where clause.
-pub trait Convert<T>
-where
-    T: Clone,
-{
-    /// Converts a value.
-    fn convert(&self, value: T) -> T;
-}
-```
-
-<a id="type.traits.Lender"></a>
-### Lender
-
-Counts: 1 associated item, 1 function
-
-Used by: nothing
-
-```
-/// A trait with a generic associated type.
-pub trait Lender {
-    /// The borrowed item.
-    type Loan<'a> where Self: 'a;
-
-    /// Lends an item.
-    fn lend(&mut self) -> Self::Loan<'_>;
-}
-```
-
-<a id="type.traits.Observer"></a>
-### Observer
-
-Counts: 2 associated items, 4 functions
-
-Used by: nothing
-
-```
-/// Watches a run.
-pub trait Observer: Send + Sync {
-    /// The item type.
-    type Item: Clone;
-
-    /// The most items kept.
-    const LIMIT: usize = 64;
-
-    /// Records one event.
-    fn record(&self, event: &str);
-
-    /// Clears the buffer.
-    fn flush(&mut self);
-
-    /// Ends the run.
-    fn finish(self) -> u32
-    where
-        Self: Sized;
-
-    /// Makes a default observer.
-    fn make() -> Self
-    where
-        Self: Sized;
-}
-```
-
-<a id="type.traits.Zeroable"></a>
-### Zeroable
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A marker that is unsafe to implement.
-pub unsafe trait Zeroable {}
-```
+{"k":"vibelight-outline","schema":1,"crate":"traits","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":9,"to":36}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Convert","Convert::convert","Lender","Lender::lend","Observer","Observer::finish","Observer::flush","Observer::Item","Observer::LIMIT","Observer::make","Observer::record","Zeroable"],"evidence":"no hit of `Convert` in the scanned sources beyond its 1 declaration; no hit of `convert` in the scanned sources beyond its 1 declaration; no hit of `Lender` in the scanned sources beyond its 1 declaration; no hit of `lend` in the scanned sources beyond its 1 declaration; no hit of `Observer` in the scanned sources beyond its 1 declaration; no hit of `finish` in the scanned sources beyond its 1 declaration; no hit of `flush` in the scanned sources beyond its 1 declaration; no hit of `Item` in the scanned sources beyond its 1 declaration; no hit of `LIMIT` in the scanned sources beyond its 1 declaration; no hit of `make` in the scanned sources beyond its 1 declaration; no hit of `record` in the scanned sources beyond its 1 declaration; no hit of `Zeroable` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
+{"k":"surface","path":"Convert","kind":"trait"}
+{"k":"surface","path":"Lender","kind":"trait"}
+{"k":"surface","path":"Observer","kind":"trait"}
+{"k":"surface","path":"Zeroable","kind":"trait"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":4}
+{"k":"doc","path":"crate","text":"Traits."}
+{"k":"trait","path":"Observer","rust":"pub trait Observer: Send + Sync","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Observer","text":"Watches a run."}
+{"k":"alias","path":"Observer::Item","rust":"type Item: Clone","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Observer::Item","text":"The item type."}
+{"k":"const","path":"Observer::LIMIT","rust":"const LIMIT: usize","value":"64","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"Observer::LIMIT","text":"The most items kept."}
+{"k":"fn","path":"Observer::record","sig":"fn record(&self, event: &str)","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Observer::record","text":"Records one event."}
+{"k":"fn","path":"Observer::flush","sig":"fn flush(&mut self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Observer::flush","text":"Clears the buffer."}
+{"k":"fn","path":"Observer::finish","sig":"fn finish(self) -> u32 where Self: Sized","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Observer::finish","text":"Ends the run."}
+{"k":"fn","path":"Observer::make","sig":"fn make() -> Self where Self: Sized","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Observer::make","text":"Makes a default observer."}
+{"k":"trait","path":"Zeroable","rust":"pub unsafe trait Zeroable","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Zeroable","text":"A marker that is unsafe to implement."}
+{"k":"trait","path":"Convert","rust":"pub trait Convert<T> where T: Clone","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Convert","text":"A generic trait with a where clause."}
+{"k":"fn","path":"Convert::convert","sig":"fn convert(&self, value: T) -> T","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Convert::convert","text":"Converts a value."}
+{"k":"trait","path":"Lender","rust":"pub trait Lender","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Lender","text":"A trait with a generic associated type."}
+{"k":"alias","path":"Lender::Loan","rust":"type Loan<'a> where Self: 'a","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Lender::Loan","text":"The borrowed item."}
+{"k":"fn","path":"Lender::lend","sig":"fn lend(&mut self) -> Self::Loan<'_>","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Lender::lend","text":"Lends an item."}

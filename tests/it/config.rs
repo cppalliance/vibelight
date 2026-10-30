@@ -90,7 +90,9 @@ fn with_no_arguments_the_config_runs_from_a_subfolder_into_its_own_folders() {
         "the run is the goldens plus links"
     );
     let alpha_md = &files[1].1;
-    assert!(alpha_md.contains("\nSource: [src/lib.rs:6](../crates/alpha/src/lib.rs#L6)"));
+    assert!(alpha_md.contains(
+        "{\"file\":\"src/lib.rs\",\"line\":6,\"url\":\"../crates/alpha/src/lib.rs#L6\"}"
+    ));
     let alpha_page = &files[0].1;
     assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L6\""));
     assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L18\""));

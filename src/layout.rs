@@ -43,7 +43,7 @@ pub(crate) struct Line {
     pub(crate) trailing: Option<String>,
 }
 
-/// A mark inside a block, which markdown repeats as a bold line under it.
+/// A mark inside a block, which the HTML repeats as a bold line under it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Repeat {
     pub(crate) label: &'static str,
@@ -166,9 +166,9 @@ pub(crate) fn note_lines(notes: &[Note], indent: usize, marker: Marker) -> Vec<L
 }
 
 /// Returns one ordinary comment line, its `//` kept in a marker span so the
-/// HTML can drop it while the markdown prints it. The line's own leading
-/// spaces stay in its text, and its indent alone is the layout indent, so
-/// the markdown prints exactly what the source shows.
+/// HTML can drop it. The line's own leading spaces stay in its text, and
+/// its indent alone is the layout indent, so the line keeps the shape the
+/// source gives it.
 fn plain_marker_line(line: &str, indent: usize) -> Line {
     let trimmed = line.trim_start();
     let lead = &line[..line.len() - trimmed.len()];

@@ -1,6 +1,7 @@
 //! Outlines the crates of a run in two phases: every crate is read and
-//! resolved against one fixed crate map, then each crate's documents are
-//! built and rendered in memory, ready to write.
+//! resolved against one fixed crate map, then each target's markdown is
+//! rendered from the run's analysis view and each crate's HTML document is
+//! built and rendered, all in memory, ready to write.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -12,14 +13,15 @@ use crate::inputs::{self, Chosen};
 use crate::layout::Block;
 use crate::model::{Crate, Loc, Warning};
 use crate::render_html::Anchors;
+use crate::render_slop::{AnalysisTarget, RenderInput};
 use crate::root::Target;
 use crate::settings::{Notation, Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    analysis, attach, collect, collect_check, document, document_external, index, layout_decl,
-    layout_rust_decl, leads, modtree, order, render_html, render_md, resolve, resolve_run,
-    spellings, surface, test_support,
+    analysis, attach, collect, collect_check, document, index, layout_decl, leads, modtree, order,
+    render_html, render_slop, render_slop_lists, resolve, resolve_run, spellings, surface,
+    test_support,
 };
 
 /// What a run would write and what it reports.
@@ -31,29 +33,29 @@ pub(crate) struct Outcome {
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
     pub(crate) ambiguous: usize,
-    /// How many items are written more than one way, over every target.
+    /// How many items the markdown's spelling records name, over every
+    /// target: the outside items written more than one way.
     pub(crate) spelled: usize,
 }
 
-/// One format's document for a target, with the base its source links
-/// are measured from.
+/// The HTML document for a target, with the base its source links are
+/// measured from.
 struct Built {
     doc: Document,
     base: LinkBase,
 }
 
 /// Outlines every target of the chosen crates in memory: a markdown file
-/// for analysis and an HTML file for browsing, each in its own folder with
-/// its own options. No output depends on the order the crates are
-/// processed in: targets are handled in output stem order, and each crate
-/// resolves against the same map. Every outline carries `stamp` on its
-/// first line.
+/// for analysis and an HTML file for browsing, each in its own folder. No
+/// output depends on the order the crates are processed in: targets are
+/// handled in output stem order, and each crate resolves against the same
+/// map. Every outline carries `stamp` on its first line.
 ///
 /// # Errors
 /// Returns an error when two targets would write the same file or a crate
 /// cannot be read.
 pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outcome> {
-    let markdown = plan.markdown();
+    let markdown = plan.markdown_dir();
     let html = plan.html();
     let targets = targets(chosen)?;
     let mut outcome = Outcome::default();
@@ -70,14 +72,13 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     }
     let deps = crate_map(chosen, &targets);
     resolve_run::link(&mut krates, &deps);
-    analyze(chosen, &targets, &krates, deps)?;
-    let first_docs = document_external::first_docs(&krates);
-    let mut docs: Vec<(Built, Built)> = Vec::new();
+    let (texts, spelled) = analyze(chosen, &targets, &krates, deps, markdown, stamp)?;
+    outcome.spelled = spelled;
+    let mut docs: Vec<Built> = Vec::new();
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
         let others = attach::attach(krate);
         let krate: &Crate = krate;
         let spellings = spellings::find(krate);
-        outcome.spelled += spellings.len();
         let surface = if target.lib {
             surface::walk(krate)
         } else {
@@ -88,30 +89,28 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
             others: &others,
             spellings: &spellings,
             surface: &surface,
-            docs: &first_docs,
             crate_dir: &chosen.packages[p].input.dir,
         };
-        docs.push((parts.build(&markdown)?, parts.build(&html)?));
+        docs.push(parts.build(&html)?);
     }
     let run: Vec<Anchors> = targets
         .iter()
         .zip(&docs)
-        .map(|(&(_, target), (_, page))| Anchors {
+        .map(|(&(_, target), page)| Anchors {
             file: format!("{}.html", target.stem),
             ids: page.doc.decl_ids.clone(),
             values: page.doc.value_ids.clone(),
         })
         .collect();
     let mut entries = Vec::new();
-    for ((&(p, target), (md, page)), krate) in targets.iter().zip(&docs).zip(&krates) {
-        let text = render_md::render(&md.doc, stamp);
+    for (((&(p, target), page), krate), text) in targets.iter().zip(&docs).zip(&krates).zip(texts) {
         entries.push(index::Entry {
             stem: target.stem.clone(),
             dir: shown(&chosen.base, &chosen.packages[p].dir),
             followed: chosen.packages[p].followed,
             bytes: text.len(),
         });
-        let path = markdown.dir.join(format!("{}.md", target.stem));
+        let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
         let member_link: &dyn Fn(Loc) -> String =
             &|loc| page.base.target(&krate.files[loc.file].rel, Some(loc.line));
@@ -133,7 +132,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     }
     outcome
         .files
-        .push((markdown.dir.join(index::FILE), index::render(&entries)));
+        .push((markdown.join(index::FILE), index::render(&entries)));
     outcome.files.push((
         html.dir.join("index.html"),
         index::render_html(&entries, stamp),
@@ -141,44 +140,82 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     Ok(outcome)
 }
 
-/// Checks the analysis facts of the run's resolved, unattached crates and
-/// of its packages, builds the run's analysis view from them with `deps`,
-/// the crate map that resolution used, and finds its leads, checking the
-/// view and the leads too.
+/// Builds the run's analysis view from its resolved, unattached crates and
+/// its packages with `deps`, the crate map that resolution used, finds its
+/// leads, and renders each target's markdown from them for the `markdown`
+/// folder, in target order. Returns the markdown texts and how many items
+/// their spelling records name. Debug builds check the facts, the view,
+/// and the leads first.
 ///
 /// # Errors
 /// Returns an internal error when a fact, the view, or a lead breaks an
-/// invariant.
+/// invariant, or a record cannot be written; and an error when a crate's
+/// folder or the markdown folder cannot be resolved.
 fn analyze(
     chosen: &Chosen,
     targets: &[(usize, &Target)],
     krates: &[Crate],
     deps: Vec<BTreeMap<String, usize>>,
-) -> Result<()> {
-    for krate in krates {
-        collect_check::validate_body_facts(krate)?;
-    }
-    for package in &chosen.packages {
-        collect_check::validate_package_facts(package)?;
+    markdown: &Path,
+    stamp: &str,
+) -> Result<(Vec<String>, usize)> {
+    if cfg!(debug_assertions) {
+        for krate in krates {
+            collect_check::validate_body_facts(krate)?;
+        }
+        for package in &chosen.packages {
+            collect_check::validate_package_facts(package)?;
+        }
     }
     let (infos, packages) = analysis::inputs(chosen, targets, krates, deps);
     let run = analysis::AnalysisRun::build(krates, &infos, &packages);
-    run.validate().map_err(|why| {
-        anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
-    })?;
+    if cfg!(debug_assertions) {
+        run.validate().map_err(|why| {
+            anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
+        })?;
+    }
     let leads = leads::find(&run);
-    leads::validate(&leads, &run)
-        .map_err(|why| anyhow!("internal error: the leads of the run break an invariant: {why}"))
+    if cfg!(debug_assertions) {
+        leads::validate(&leads, &run).map_err(|why| {
+            anyhow!("internal error: the leads of the run break an invariant: {why}")
+        })?;
+    }
+    let link_bases = targets
+        .iter()
+        .map(|&(p, _)| LinkBase::new(&chosen.packages[p].input.dir, markdown))
+        .collect::<std::io::Result<Vec<LinkBase>>>()
+        .context("cannot resolve the crate and output directories")?;
+    let mut texts = Vec::new();
+    for (t, &(p, target)) in targets.iter().enumerate() {
+        let input = RenderInput {
+            analysis_target: AnalysisTarget {
+                run: &run,
+                target: t,
+            },
+            leads: &leads,
+            stamp,
+            target_kind: target.kind,
+            shown_dir: shown(&chosen.base, &chosen.packages[p].dir),
+            link_bases: &link_bases,
+        };
+        texts.push(
+            render_slop::render(&input)
+                .context("internal error: a markdown record cannot be written")?,
+        );
+    }
+    let spelled = (0..targets.len())
+        .map(|t| render_slop_lists::spelled(&run, t).len())
+        .sum();
+    Ok((texts, spelled))
 }
 
-/// What one target's documents are built from, whatever the format.
+/// What one target's HTML document is built from.
 struct Parts<'a> {
     krate: &'a Crate,
     /// The impls left for the Other impls section.
     others: &'a [usize],
     spellings: &'a [Entry],
     surface: &'a [crate::surface::Entry],
-    docs: &'a [Vec<Option<String>>],
     crate_dir: &'a Path,
 }
 
@@ -191,15 +228,8 @@ impl Parts<'_> {
             .clone()
             .map(|d| layout_decl::decl_block(self.krate, d, output.options.members))
             .collect();
-        let rust: Vec<Block>;
         let printed = match output.options.notation {
             Notation::Cpp => &blocks,
-            Notation::Rust => {
-                rust = decls
-                    .map(|d| layout_rust_decl::decl_block(self.krate, d))
-                    .collect();
-                &rust
-            }
         };
         let order = order::order(self.krate, &blocks);
         let base = LinkBase::new(self.crate_dir, &output.dir)
@@ -212,7 +242,6 @@ impl Parts<'_> {
             printed,
             spellings: self.spellings,
             surface: self.surface,
-            docs: self.docs,
             options: output.options,
         };
         let doc = document::build(&inputs, Some(&base));

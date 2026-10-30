@@ -37,12 +37,9 @@ mod collect_use_group;
 mod comments;
 mod config;
 mod document;
-mod document_external;
-mod document_facts;
 mod document_kill;
 mod document_modules;
 mod document_sections;
-mod document_shapes;
 mod document_spellings;
 mod document_surface;
 mod document_values;
@@ -59,9 +56,6 @@ mod layout_head;
 mod layout_items;
 mod layout_marker;
 mod layout_members;
-mod layout_rust;
-mod layout_rust_decl;
-mod layout_rust_items;
 mod layout_special;
 mod leads;
 mod leads_body;
@@ -137,8 +131,20 @@ mod order_graph;
 mod pipeline;
 mod prelude;
 mod render_html;
-mod render_md;
 mod render_prose;
+mod render_slop;
+mod render_slop_catalog;
+#[cfg(test)]
+mod render_slop_check;
+mod render_slop_decl;
+mod render_slop_facts;
+mod render_slop_items;
+mod render_slop_lists;
+mod render_slop_schema;
+#[cfg(test)]
+mod render_slop_tests;
+mod render_slop_text;
+mod render_slop_wire;
 mod render_spans;
 mod render_style;
 mod render_values;
@@ -269,7 +275,7 @@ fn run(args: &Args) -> Result<ExitCode> {
     }
     if spelled > 0 {
         eprintln!(
-            "warning: {spelled} item{} written more than one way; see Spellings",
+            "warning: {spelled} item{} written more than one way; see spelling records",
             plural(spelled)
         );
     }

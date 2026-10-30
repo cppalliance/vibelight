@@ -1,5 +1,6 @@
-//! The text that opens a comment line: the markdown prints it, and the HTML
-//! drops it, so a comment reads as prose in the page.
+//! The text that opens a comment line in a block: the HTML drops it, so a
+//! comment reads as prose in the page, and keeps it in the text that orders
+//! the blocks.
 
 /// The text that opens each line of a comment, in the two forms a line's
 /// own text can call for.
@@ -13,7 +14,7 @@ pub(crate) struct Marker {
 }
 
 impl Marker {
-    /// A markdown doc comment, `///`.
+    /// A doc comment, `///`.
     pub(crate) const DOC: Marker = Marker {
         spaced: "/// ",
         bare: "///",

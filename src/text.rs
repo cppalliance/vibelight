@@ -75,15 +75,25 @@ impl Text {
 
     /// Returns the text as printed, with type names as written.
     pub(crate) fn visible(&self, refs: &[TypeRef]) -> String {
-        let mut out = String::new();
-        for seg in &self.0 {
-            match seg {
-                Seg::Plain(text) => out.push_str(text),
-                Seg::Ref(id) => out.push_str(&refs[*id].text),
-            }
-        }
-        out
+        joined(&self.0, refs)
     }
+
+    /// Returns the text as Rust spells it, with type names as written.
+    pub(crate) fn rust_visible(&self, refs: &[TypeRef]) -> String {
+        joined(self.rust(), refs)
+    }
+}
+
+/// Joins segments, each type name as written.
+fn joined(segs: &[Seg], refs: &[TypeRef]) -> String {
+    let mut out = String::new();
+    for seg in segs {
+        match seg {
+            Seg::Plain(text) => out.push_str(text),
+            Seg::Ref(id) => out.push_str(&refs[*id].text),
+        }
+    }
+    out
 }
 
 /// Appends plain characters to a list, merging with a plain run at its end.

@@ -1,12 +1,14 @@
 //! The config's exclude globs: they take crates out of whatever the config
 //! selects, an excluded crate is never read and writes nothing, the globs
 //! are measured from the config's folder, and a glob that matches no crate
-//! is a note, so a typo cannot go unseen.
+//! is a note, so a typo cannot go unseen. The markdown is contextual to the
+//! run, so leaving a crate out changes the leads and facts of the crates
+//! it used, while each kept crate's HTML stays the same.
 
 use std::fs;
 
 use crate::config::{MEMBERS, NOTE, garden, goldens, lines, names, vibelight_in};
-use crate::support::{read_plain, read_run};
+use crate::support::{has_ext, read_plain, read_run};
 
 /// The garden's goldens, less the files of the crates named.
 fn goldens_without(stems: &[&str]) -> Vec<(String, String)> {
@@ -20,8 +22,25 @@ fn goldens_without(stems: &[&str]) -> Vec<(String, String)> {
         .collect()
 }
 
+/// The HTML pages among a run's files.
+fn pages(files: Vec<(String, String)>) -> Vec<(String, String)> {
+    files
+        .into_iter()
+        .filter(|(name, _)| has_ext(name, "html"))
+        .collect()
+}
+
+/// Returns the text of one file of a run.
+fn text<'f>(files: &'f [(String, String)], name: &str) -> &'f str {
+    &files
+        .iter()
+        .find(|(file, _)| file == name)
+        .unwrap_or_else(|| panic!("{name} is written"))
+        .1
+}
+
 #[test]
-fn a_workspace_run_without_one_member_changes_no_other_file() {
+fn a_workspace_run_without_one_member_changes_no_other_page_and_only_its_leads() {
     let (_tmp, repo) = garden("workspace = true\nexclude = [\"crates/facade\"]\n");
     let result = vibelight_in(&repo, &["-o", "less"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
@@ -32,17 +51,37 @@ fn a_workspace_run_without_one_member_changes_no_other_file() {
         names(&less),
         ["alpha.html", "alpha.md", "beta.html", "beta.md"]
     );
-    assert!(less == goldens_without(&["facade"]), "a kept file changed");
+    assert!(
+        pages(less.clone()) == pages(goldens_without(&["facade"])),
+        "a kept page changed"
+    );
     fs::write(repo.join("vibelight.toml"), MEMBERS).unwrap();
     let all = vibelight_in(&repo, &["-o", "all"]);
     assert!(all.status.success(), "{:?}", lines(&all.stderr));
     let all = read_plain(&repo.join("all"));
     assert_eq!(all.len(), 6);
     let kept: Vec<(String, String)> = all
-        .into_iter()
+        .iter()
         .filter(|(name, _)| !name.starts_with("facade."))
+        .cloned()
         .collect();
-    assert!(kept == less, "the exclude changed a file it kept");
+    assert!(
+        pages(kept) == pages(less.clone()),
+        "the exclude changed a page it kept"
+    );
+    let cross = "{\"k\":\"lead\",\"id\":\"one-observed-trait-impl\",\"mode\":\"resolved\",\
+                 \"subjects\":[\"Reads\",\"::facade::Panel\"],";
+    let with = text(&all, "alpha.md");
+    assert!(with.contains(cross), "{with}");
+    assert!(with.contains("\"reexported_by\":[\"::facade\"],\"crates\":[\"facade\"]"));
+    let without = text(&less, "alpha.md");
+    assert!(!without.contains("facade"), "{without}");
+    assert!(
+        without.contains("\"subjects\":[\"Meter\",\"Meter::gauge\",\"Meter::stray\","),
+        "without facade, nothing names Meter: {without}"
+    );
+    assert!(text(&all, "beta.md").contains("\"crates\":[\"alpha\",\"facade\"]"));
+    assert!(text(&less, "beta.md").contains("\"crates\":[\"alpha\"]"));
 }
 
 #[test]

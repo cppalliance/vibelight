@@ -1,246 +1,97 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.surface"></a>
-# surface
-
-```
-//! The public surface of a library.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [surface](#mod.surface)
-  - [Fake](#type.surface.Fake)
-  - [Internal](#type.surface.Internal)
-- [api](#mod.surface.api)
-- [api::v1](#mod.surface.api.v1)
-  - [api::v1::Request](#type.surface.api.v1.Request)
-- [detail](#mod.surface.detail)
-  - [detail::Handle](#type.surface.detail.Handle)
-- [detail::tools](#mod.surface.detail.tools)
-  - [detail::tools::Tool](#type.surface.detail.tools.Tool)
-- [prelude](#mod.surface.prelude)
-  - [prelude::Marker](#type.surface.prelude.Marker)
-- [values](#mod.surface.values)
-- [values::inner](#mod.surface.values.inner)
-
-**MACROS:** 1 definition
-
-<a id="surface"></a>
-## Public surface
-
-- [api](#mod.surface.api)
-- [api::v1](#mod.surface.api.v1)
-- [api::v1::Request](#type.surface.api.v1.Request)
-- [api::v1::send()](#mod.surface.api.v1)
-- [api::VERSION](#mod.surface.api)
-- BTreeMap (std::collections::BTreeMap)
-- [build()](#mod.surface.values)
-- [CALLS](#mod.surface)
-- [CURRENT](#mod.surface.values)
-- [deep()](#mod.surface.values.inner)
-- [Fake](#type.surface.Fake) (test support)
-- [Handle](#type.surface.detail.Handle)
-- [hello!](#mod.surface)
-- [kit](#mod.surface.detail.tools)
-- [kit::Tool](#type.surface.detail.tools.Tool)
-- [mark()](#mod.surface.prelude)
-- [Marker](#type.surface.prelude.Marker)
-- [MAX](#mod.surface.values)
-- [start()](#mod.surface)
-
-<a id="mod.surface"></a>
-## surface
-
-```
-pub use prelude::*;
-pub use std::collections::BTreeMap;
-pub use values::build;
-pub use values::CURRENT;
-pub use values::deep;
-pub use detail::Handle;
-pub use detail::tools as kit;
-pub use values::MAX;
-
-/// Says hello.
-// MACRO macro_rules! hello
-
-/// The number of calls so far.
-pub static CALLS: u8 = 0;
-
-/// Starts the library.
-pub fn start();
-```
-
-**MACRO** macro_rules! hello
-
-<a id="type.surface.Fake"></a>
-### Fake
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A fake for tests and benches.
-#[cfg(any(test, feature = "test-support"))]
-pub struct Fake;
-```
-
-<a id="type.surface.Internal"></a>
-### Internal
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A crate-only type.
-pub(crate) struct Internal;
-```
-
-<a id="mod.surface.api"></a>
-## api
-
-```
-//! The public API.
-```
-
-```
-/// The version in use.
-pub const VERSION: u8 = 1;
-```
-
-<a id="mod.surface.api.v1"></a>
-## api::v1
-
-```
-//! The first version.
-```
-
-```
-/// Sends a request.
-pub fn send(request: Request) -> u8;
-```
-
-<a id="type.surface.api.v1.Request"></a>
-### api::v1::Request
-
-Counts: none
-
-Used by: [api::v1](#mod.surface.api.v1)
-
-```
-/// A request.
-pub struct Request;
-```
-
-<a id="mod.surface.detail"></a>
-## detail
-
-```
-//! Hidden helpers.
-```
-
-```
-/// A helper that stays hidden.
-pub fn helper();
-```
-
-<a id="type.surface.detail.Handle"></a>
-### detail::Handle
-
-Counts: none
-
-Used by: [surface](#mod.surface)
-
-```
-/// A handle made public through a re-export.
-pub struct Handle;
-```
-
-<a id="mod.surface.detail.tools"></a>
-## detail::tools
-
-```
-//! Tools reached only through a re-export.
-```
-
-<a id="type.surface.detail.tools.Tool"></a>
-### detail::tools::Tool
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A tool.
-pub struct Tool;
-```
-
-<a id="mod.surface.prelude"></a>
-## prelude
-
-```
-//! Names a glob brings in.
-```
-
-```
-/// A function a glob re-exports.
-pub fn mark();
-```
-
-<a id="type.surface.prelude.Marker"></a>
-### prelude::Marker
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A marker a glob re-exports.
-pub struct Marker;
-```
-
-<a id="mod.surface.values"></a>
-## values
-
-```
-//! Values made public through re-exports.
-```
-
-```
-pub use self::inner::deep;
-
-/// The largest value.
-pub const MAX: u8 = 9;
-
-/// The current value.
-pub static CURRENT: u8 = 0;
-
-/// Builds a value.
-pub fn build() -> u8;
-```
-
-<a id="mod.surface.values.inner"></a>
-## values::inner
-
-```
-/// A function two re-exports away.
-pub fn deep();
-```
+{"k":"vibelight-outline","schema":1,"crate":"surface","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":40,"to":59},{"path":"api","from":60,"to":63},{"path":"api::v1","from":64,"to":69},{"path":"detail","from":70,"to":75},{"path":"detail::tools","from":76,"to":79},{"path":"prelude","from":80,"to":85},{"path":"values","from":86,"to":94},{"path":"values::inner","from":95,"to":97}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["detail::tools"],"evidence":"holds only `Tool`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["values::inner"],"evidence":"holds only `deep`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["detail::helper"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":[{"file":"src/lib.rs","line":0}],"limits":["macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["api::v1::send"],"evidence":"no hit of `send` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["api::VERSION"],"evidence":"no hit of `VERSION` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["CALLS"],"evidence":"no hit of `CALLS` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["detail::tools::Tool"],"evidence":"no hit of `Tool` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Fake"],"evidence":"no hit of `Fake` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["prelude::mark"],"evidence":"no hit of `mark` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["prelude::Marker"],"evidence":"no hit of `Marker` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["detail::Handle"],"evidence":"1 observed uses, all inside `surface`; no other target of the run writes `Handle`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["values::build"],"evidence":"1 observed uses, all inside `surface`; no other target of the run writes `build`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["values::CURRENT"],"evidence":"1 observed uses, all inside `surface`; no other target of the run writes `CURRENT`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["values::inner::deep"],"evidence":"1 observed uses, all inside `surface`; no other target of the run writes `deep`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["values::MAX"],"evidence":"1 observed uses, all inside `surface`; no other target of the run writes `MAX`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["BTreeMap","build","CURRENT","deep","Handle","kit","MAX"],"evidence":"`pub use std::collections::BTreeMap`, but no observed path imports `BTreeMap` through `surface`; `pub use values::build`, but no observed path imports `build` through `surface`; `pub use values::CURRENT`, but no observed path imports `CURRENT` through `surface`; `pub use values::deep`, but no observed path imports `deep` through `surface`; `pub use detail::Handle`, but no observed path imports `Handle` through `surface`; `pub use kit = detail::tools`, but no observed path imports `kit` through `surface`; `pub use values::MAX`, but no observed path imports `MAX` through `surface`","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"],"module":"crate","count":7}
+{"k":"surface","path":"api","kind":"mod"}
+{"k":"surface","path":"api::v1","kind":"mod"}
+{"k":"surface","path":"api::v1::Request","kind":"struct"}
+{"k":"surface","path":"api::v1::send","kind":"fn"}
+{"k":"surface","path":"api::VERSION","kind":"value"}
+{"k":"surface","path":"BTreeMap","kind":"external","item":"std::collections::BTreeMap"}
+{"k":"surface","path":"build","kind":"fn","item":"values::build"}
+{"k":"surface","path":"CALLS","kind":"value"}
+{"k":"surface","path":"CURRENT","kind":"value","item":"values::CURRENT"}
+{"k":"surface","path":"deep","kind":"fn","item":"values::inner::deep"}
+{"k":"surface","path":"Fake","kind":"struct","test_support":true}
+{"k":"surface","path":"Handle","kind":"struct","item":"detail::Handle"}
+{"k":"surface","path":"hello","kind":"macro"}
+{"k":"surface","path":"kit","kind":"mod","item":"detail::tools"}
+{"k":"surface","path":"kit::Tool","kind":"struct","item":"detail::tools::Tool"}
+{"k":"surface","path":"mark","kind":"fn","item":"prelude::mark"}
+{"k":"surface","path":"Marker","kind":"struct","item":"prelude::Marker"}
+{"k":"surface","path":"MAX","kind":"value","item":"values::MAX"}
+{"k":"surface","path":"start","kind":"fn"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"The public surface of a library."}
+{"k":"use","path":"Handle","rust":"pub use detail::Handle","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"kit","rust":"pub use detail::tools as kit","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"*","rust":"pub use prelude::*","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"BTreeMap","rust":"pub use std::collections::BTreeMap","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"CURRENT","rust":"pub use values::CURRENT","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"MAX","rust":"pub use values::MAX","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"build","rust":"pub use values::build","loc":{"file":"src/lib.rs","line":0}}
+{"k":"use","path":"deep","rust":"pub use values::deep","loc":{"file":"src/lib.rs","line":0}}
+{"k":"macro","path":"hello","rust":"macro_rules! hello","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"hello","text":"Says hello."}
+{"k":"static","path":"CALLS","rust":"pub static CALLS: u8","value":"0","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"CALLS","text":"The number of calls so far."}
+{"k":"fn","path":"start","sig":"pub fn start()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"start","text":"Starts the library."}
+{"k":"struct","path":"Internal","rust":"pub(crate) struct Internal","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Internal","text":"A crate-only type."}
+{"k":"struct","path":"Fake","rust":"pub struct Fake","loc":{"file":"src/lib.rs","line":0},"cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
+{"k":"doc","path":"Fake","text":"A fake for tests and benches."}
+{"k":"mod","path":"api","loc":{"file":"src/lib.rs","line":0},"vis":"public"}
+{"k":"doc","path":"api","text":"The public API."}
+{"k":"const","path":"api::VERSION","rust":"pub const VERSION: u8","value":"1","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"api::VERSION","text":"The version in use."}
+{"k":"mod","path":"api::v1","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1,"functions":{"public":1}}
+{"k":"doc","path":"api::v1","text":"The first version."}
+{"k":"struct","path":"api::v1::Request","rust":"pub struct Request","loc":{"file":"src/lib.rs","line":0},"named_by":["api::v1"],"token_hits":1}
+{"k":"doc","path":"api::v1::Request","text":"A request."}
+{"k":"fn","path":"api::v1::send","sig":"pub fn send(request: Request) -> u8","loc":{"file":"src/lib.rs","line":0},"body":{"statements":2,"tokens":8},"ops":["request"]}
+{"k":"doc","path":"api::v1::send","text":"Sends a request."}
+{"k":"mod","path":"detail","loc":{"file":"src/lib.rs","line":0},"vis":"private","types":1,"functions":{"public":1}}
+{"k":"doc","path":"detail","text":"Hidden helpers."}
+{"k":"struct","path":"detail::Handle","rust":"pub struct Handle","loc":{"file":"src/lib.rs","line":0},"reexported_by":["crate"],"token_hits":1}
+{"k":"doc","path":"detail::Handle","text":"A handle made public through a re-export."}
+{"k":"fn","path":"detail::helper","sig":"pub fn helper()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"detail::helper","text":"A helper that stays hidden."}
+{"k":"mod","path":"detail::tools","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"detail::tools","text":"Tools reached only through a re-export."}
+{"k":"struct","path":"detail::tools::Tool","rust":"pub struct Tool","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"detail::tools::Tool","text":"A tool."}
+{"k":"mod","path":"prelude","loc":{"file":"src/lib.rs","line":0},"vis":"private","types":1,"functions":{"public":1}}
+{"k":"doc","path":"prelude","text":"Names a glob brings in."}
+{"k":"struct","path":"prelude::Marker","rust":"pub struct Marker","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"prelude::Marker","text":"A marker a glob re-exports."}
+{"k":"fn","path":"prelude::mark","sig":"pub fn mark()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"prelude::mark","text":"A function a glob re-exports."}
+{"k":"mod","path":"values","loc":{"file":"src/lib.rs","line":0},"vis":"private","functions":{"public":1}}
+{"k":"doc","path":"values","text":"Values made public through re-exports."}
+{"k":"use","path":"values::deep","rust":"pub use self::inner::deep","loc":{"file":"src/lib.rs","line":0}}
+{"k":"fn","path":"values::build","sig":"pub fn build() -> u8","loc":{"file":"src/lib.rs","line":0},"reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":3}}
+{"k":"doc","path":"values::build","text":"Builds a value."}
+{"k":"const","path":"values::MAX","rust":"pub const MAX: u8","value":"9","loc":{"file":"src/lib.rs","line":0},"reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"values::MAX","text":"The largest value."}
+{"k":"static","path":"values::CURRENT","rust":"pub static CURRENT: u8","value":"0","loc":{"file":"src/lib.rs","line":0},"reexported_by":["crate"],"token_hits":1,"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"values::CURRENT","text":"The current value."}
+{"k":"mod","path":"values::inner","loc":{"file":"src/lib.rs","line":0},"vis":"private","functions":{"public":1}}
+{"k":"fn","path":"values::inner::deep","sig":"pub fn deep()","loc":{"file":"src/lib.rs","line":0},"reexported_by":["crate","values"],"token_hits":2,"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"values::inner::deep","text":"A function two re-exports away."}

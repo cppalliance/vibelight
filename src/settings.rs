@@ -1,7 +1,7 @@
 //! Settles what a run covers and where it writes, from the command line
-//! and `vibelight.toml`, and fixes the options that shape each format: the
-//! markdown is for a model analyzing the code, and the HTML is for a person
-//! browsing it.
+//! and `vibelight.toml`, and fixes the options that shape the HTML, which
+//! is for a person browsing the code. The markdown, for a model analyzing
+//! it, has no options.
 
 use std::path::{Path, PathBuf};
 
@@ -14,8 +14,6 @@ use crate::inputs::Selection;
 pub(crate) enum MembersBy {
     /// By name, whatever impl holds them.
     Name,
-    /// By inherent impl, in source order, so the output follows the files.
-    Impl,
 }
 
 /// How a file orders its declarations.
@@ -23,8 +21,6 @@ pub(crate) enum MembersBy {
 pub(crate) enum OrderBy {
     /// In groups of types, each named for a module, then a Modules section.
     Groups,
-    /// In one section per module, the types of each in dependency order.
-    Modules,
 }
 
 /// How much of the macro kill list a file shows.
@@ -32,8 +28,6 @@ pub(crate) enum OrderBy {
 pub(crate) enum KillList {
     /// Every entry, after the counts.
     Full,
-    /// Only the counts.
-    Counts,
 }
 
 /// How a file spells its declarations.
@@ -41,45 +35,29 @@ pub(crate) enum KillList {
 pub(crate) enum Notation {
     /// As a C++ header, for a person who reads C++.
     Cpp,
-    /// As Rust with the bodies left out, for a model.
-    Rust,
 }
 
-/// The settings that shape the files of one format.
+/// The settings that shape the HTML files.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Options {
     pub(crate) notation: Notation,
     pub(crate) kill_list: KillList,
-    /// The `Counts:`, `Used by:`, and `Fields:` lines and the External
-    /// items and Same shapes sections.
-    pub(crate) facts: bool,
     pub(crate) order: OrderBy,
     pub(crate) members: MembersBy,
     /// The Legend section, which explains the notation.
     pub(crate) legend: bool,
 }
 
-/// The markdown holds everything a model can find slop with.
-pub(crate) const MARKDOWN: Options = Options {
-    notation: Notation::Rust,
-    kill_list: KillList::Counts,
-    facts: true,
-    order: OrderBy::Modules,
-    members: MembersBy::Impl,
-    legend: true,
-};
-
 /// The HTML holds what a person browses: the declarations, linked.
 pub(crate) const HTML: Options = Options {
     notation: Notation::Cpp,
     kill_list: KillList::Full,
-    facts: false,
     order: OrderBy::Groups,
     members: MembersBy::Name,
     legend: true,
 };
 
-/// Where one format is written, and the options that shape it.
+/// Where the HTML is written, and the options that shape it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Output {
     pub(crate) dir: PathBuf,
@@ -102,11 +80,9 @@ pub(crate) struct Plan {
 }
 
 impl Plan {
-    pub(crate) fn markdown(&self) -> Output {
-        Output {
-            dir: self.out.clone(),
-            options: MARKDOWN,
-        }
+    /// The folder of the markdown outlines and the index.
+    pub(crate) fn markdown_dir(&self) -> &Path {
+        &self.out
     }
 
     pub(crate) fn html(&self) -> Output {
@@ -209,7 +185,7 @@ mod tests {
         let plan = plan(&[], Some(Path::new("elsewhere")), Some(&config()));
         assert_eq!(plan.out, PathBuf::from("elsewhere"));
         assert!(!plan.owned);
-        assert_eq!(plan.markdown().options, MARKDOWN);
+        assert_eq!(plan.markdown_dir(), Path::new("elsewhere"));
         assert_eq!(plan.html().options, HTML);
     }
 }

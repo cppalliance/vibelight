@@ -1,77 +1,19 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.unions"></a>
-# unions
-
-```
-//! Unions.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [unions](#mod.unions)
-  - [Bits](#type.unions.Bits)
-  - [Hidden](#type.unions.Hidden)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Bits](#type.unions.Bits)
-- [Hidden](#type.unions.Hidden)
-
-<a id="mod.unions"></a>
-## unions
-
-<a id="type.unions.Bits"></a>
-### Bits
-
-Counts: 3 fields
-
-Used by: nothing
-
-```
-/// Raw bits viewed two ways.
-#[repr(C)]
-pub union Bits {
-    /// As an integer.
-    pub int: u32,
-
-    /// As a float.
-    pub float: f32,
-
-    raw: [u8; 4],
-}
-```
-
-<a id="type.unions.Hidden"></a>
-### Hidden
-
-Counts: 2 fields
-
-Used by: nothing
-
-```
-/// A union with only private fields.
-pub union Hidden {
-    b: i8,
-
-    a: u8,
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"unions","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":10,"to":19}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bits"],"evidence":"no hit of `Bits` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bits::float"],"evidence":"no hit of `float` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bits::int"],"evidence":"no hit of `int` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Hidden"],"evidence":"no hit of `Hidden` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Bits","kind":"union"}
+{"k":"surface","path":"Hidden","kind":"union"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2}
+{"k":"doc","path":"crate","text":"Unions."}
+{"k":"union","path":"Bits","rust":"pub union Bits { pub int: u32, pub float: f32, raw: [u8; 4] }","loc":{"file":"src/lib.rs","line":0},"attrs":["repr(C)"]}
+{"k":"doc","path":"Bits","text":"Raw bits viewed two ways."}
+{"k":"field","path":"Bits::int","rust":"pub int: u32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Bits::int","text":"As an integer."}
+{"k":"field","path":"Bits::float","rust":"pub float: f32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Bits::float","text":"As a float."}
+{"k":"union","path":"Hidden","rust":"pub union Hidden { b: i8, a: u8 }","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Hidden","text":"A union with only private fields."}

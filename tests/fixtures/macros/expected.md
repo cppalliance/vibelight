@@ -1,112 +1,27 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.macros"></a>
-# macros
-
-```
-//! Macros of every kind.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [macros](#mod.macros)
-  - [Event](#type.macros.Event)
-  - [Started](#type.macros.Started)
-
-**MACROS:** 1 definition, 4 invocations, 3 attribute lists
-
-<a id="surface"></a>
-## Public surface
-
-- [Event](#type.macros.Event)
-- [main()](#mod.macros)
-- [NAME](#mod.macros)
-- [Started](#type.macros.Started)
-
-<a id="mod.macros"></a>
-## macros
-
-```
-// MACRO events!
-
-/// Defines the events.
-// MACRO macro_rules! events
-
-// MACRO lifecycle_constants!
-
-/// A value with a macro.
-// MACRO stringify!
-pub const NAME: &str;
-
-/// The entry point.
-// MACRO attribute: tokio::main
-pub async fn main();
-```
-
-**MACRO** events!
-
-**MACRO** macro_rules! events
-
-**MACRO** lifecycle_constants!
-
-**MACRO** stringify!
-
-**MACRO** attribute: tokio::main
-
-<a id="type.macros.Event"></a>
-### Event
-
-Counts: 1 field, 1 function
-
-Used by: nothing
-
-**MACRO** attribute: serde_like::tag
-
-```
-/// A type with derives and an attribute macro.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Event {
-    #[serde(rename = "n")]
-    pub name: String,
-
-    // MACRO forward_methods!
-}
-
-// impl in src/lib.rs
-impl Event {
-    /// Has an attribute macro.
-    // MACRO attribute: tracing::instrument
-    pub fn emit(&self);
-}
-```
-
-**MACRO** forward_methods!
-
-**MACRO** attribute: tracing::instrument
-
-<a id="type.macros.Started"></a>
-### Started
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Named by the module-level invocations.
-pub struct Started;
-```
+{"k":"vibelight-outline","schema":1,"crate":"macros","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":9,"to":27}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["NAME"],"evidence":"no hit of `NAME` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Event","kind":"struct"}
+{"k":"surface","path":"main","kind":"fn"}
+{"k":"surface","path":"NAME","kind":"value"}
+{"k":"surface","path":"Started","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Macros of every kind."}
+{"k":"macro","path":"events","rust":"macro_rules! events","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"events","text":"Defines the events."}
+{"k":"macro","path":"crate","rust":"events!","loc":{"file":"src/lib.rs","line":0}}
+{"k":"struct","path":"Event","rust":"pub struct Event { #[serde(rename = \"n\")] pub name: String }","loc":{"file":"src/lib.rs","line":0},"derives":["Clone","Debug","PartialEq"],"attributes":["serde_like::tag"],"token_hits":1}
+{"k":"doc","path":"Event","text":"A type with derives and an attribute macro."}
+{"k":"struct","path":"Started","rust":"pub struct Started","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Started","text":"Named by the module-level invocations."}
+{"k":"impl","path":"Event","rust":"impl Event","locs":[{"file":"src/lib.rs","line":0}],"macros":["forward_methods!"]}
+{"k":"macro","path":"Event","rust":"forward_methods!","loc":{"file":"src/lib.rs","line":0}}
+{"k":"fn","path":"Event::emit","sig":"pub fn emit(&self)","loc":{"file":"src/lib.rs","line":0},"attributes":["tracing::instrument"],"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Event::emit","text":"Has an attribute macro."}
+{"k":"macro","path":"crate","rust":"lifecycle_constants!","loc":{"file":"src/lib.rs","line":0}}
+{"k":"fn","path":"main","sig":"pub async fn main()","loc":{"file":"src/lib.rs","line":0},"attributes":["tokio::main"],"token_hits":1,"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"main","text":"The entry point."}
+{"k":"const","path":"NAME","rust":"pub const NAME: &str","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1,"macros":["stringify"]}}
+{"k":"doc","path":"NAME","text":"A value with a macro."}
+{"k":"macro","path":"crate","rust":"stringify!","loc":{"file":"src/lib.rs","line":0}}

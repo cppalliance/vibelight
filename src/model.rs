@@ -120,7 +120,7 @@ pub(crate) struct Member {
     pub(crate) meta: Meta,
     pub(crate) loc: Loc,
     /// For a method of an inherent impl, the fields its body reaches
-    /// through `self`, sorted, each once, for the `Fields:` list.
+    /// through `self`, sorted, each once, which the detectors group.
     pub(crate) self_fields: Vec<String>,
 }
 

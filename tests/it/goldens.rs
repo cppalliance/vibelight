@@ -1,20 +1,56 @@
-//! Compares every fixture's outlines with its hand-written goldens. The
-//! goldens hold no source links, since a link depends on where the output
-//! is written, so the outlines are compared with their links removed; the
-//! `links` fixture checks the links themselves.
+//! Compares every fixture's outlines with its hand-written goldens. A
+//! golden holds no link or source line, since those depend on where the
+//! output is written and how the source is laid out, so the outlines are
+//! compared once normalized; the `links` fixture checks the links
+//! themselves. Each run also lists its files on stdout, sorted, and says
+//! nothing on stderr, but for the fixtures built to warn.
 
 use std::fs;
 
-use crate::support::{fixtures, has_ext, input_of, outputs};
+use crate::support::{fixtures, has_ext, input_of, outputs_with_streams};
+
+/// The fixtures whose runs warn on stderr on purpose and whose own tests in
+/// `cli.rs` check every line of it.
+const WARNS: [&str; 2] = ["spellings", "unparsable"];
+
+/// The other fixtures whose runs warn on purpose, with every line of it.
+const WARNINGS: [(&str, &[&str]); 2] = [
+    (
+        "base-lists",
+        &[
+            "warning: 1 type names unresolved, 0 ambiguous; they stay plain",
+            "warning: 2 items written more than one way; see spelling records",
+            "2 warnings",
+        ],
+    ),
+    (
+        "names",
+        &[
+            "warning: 0 type names unresolved, 1 ambiguous; they stay plain",
+            "1 warning",
+        ],
+    ),
+];
 
 /// Runs one fixture and compares each markdown and HTML file with its
 /// golden, byte for byte; an output without a golden fails.
 fn check(name: &str) {
     let dir = fixtures().join(name);
-    let written = outputs(&input_of(&dir));
+    let (written, stdout, stderr) = outputs_with_streams(&input_of(&dir));
     let markdown: Vec<&(String, String)> =
         written.iter().filter(|(n, _)| has_ext(n, "md")).collect();
     assert!(!markdown.is_empty(), "{name} wrote no markdown file");
+    let mut sorted = stdout.clone();
+    sorted.sort();
+    assert_eq!(stdout, sorted, "{name}: stdout is not sorted");
+    assert_eq!(stdout.len(), written.len() + 2, "{name}: {stdout:?}");
+    if !WARNS.contains(&name) {
+        let expected = WARNINGS
+            .iter()
+            .find(|(fixture, _)| *fixture == name)
+            .map_or(&[][..], |(_, lines)| *lines);
+        assert_eq!(stderr, expected, "{name}: stderr");
+    }
     let single = markdown.len() == 1;
     for (file, text) in &written {
         let (stem, ext) = file

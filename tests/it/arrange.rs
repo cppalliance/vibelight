@@ -1,9 +1,9 @@
 //! Rearranges fixtures in ways the determinism rule says cannot change the
 //! output, and checks every file stays byte for byte the same, source
-//! links aside. The markdown groups each type's functions by the impl that
-//! adds them, in source order, so only a rearrangement that keeps every
-//! impl where it is leaves the markdown unchanged; the HTML stays the same
-//! under all of them.
+//! links and lines aside. The markdown lists its records by module and by
+//! file and line, so only a rearrangement that keeps every item in its file
+//! and order, such as reversed attributes or a narrower rustfmt, leaves the
+//! markdown unchanged; the HTML stays the same under all of them.
 
 use std::fs;
 use std::path::Path;
@@ -20,9 +20,9 @@ const SKIP: &[&str] = &["unparsable"];
 /// The files a rearrangement must leave the same.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Same {
-    /// The HTML pages, for a rearrangement that moves impls.
+    /// The HTML pages, for a rearrangement that moves items.
     Pages,
-    /// Every file, for one that keeps each impl in its place.
+    /// Every file, for one that keeps each item in its file and order.
     All,
 }
 

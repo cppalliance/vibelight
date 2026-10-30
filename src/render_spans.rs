@@ -32,9 +32,9 @@ impl Page<'_> {
 
     /// Writes a line's spans, turning each matched pair of backticks in a
     /// comment into a code span. A run of ticks opens one only when none is
-    /// open, and closes it only when its length equals the open run's, the
-    /// same longest-run rule the markdown renderer applies. A line with no
-    /// comment spans takes the plain path.
+    /// open, and closes it only when its length equals the open run's, as a
+    /// code span in a doc comment does. A line with no comment spans takes
+    /// the plain path.
     pub(crate) fn ticked(&self, out: &mut String, spans: &[Span]) {
         if !spans
             .iter()

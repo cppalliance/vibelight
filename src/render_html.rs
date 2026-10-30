@@ -130,11 +130,6 @@ pub(crate) fn render(
             }
             Node::Rule => out.push_str("<hr>\n"),
             Node::List { class, items } => page.list(&mut out, items, class),
-            Node::Para { class, inlines } => {
-                let _ = write!(out, "<p class=\"{class}\">");
-                page.inlines(&mut out, inlines);
-                out.push_str("</p>\n");
-            }
         }
     }
     out.push_str("</main>\n</body>\n</html>\n");

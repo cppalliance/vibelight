@@ -1,190 +1,50 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.references"></a>
-# references
-
-```
-//! References, raw pointers, and receivers.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [references](#mod.references)
-  - [Marker](#type.references.Marker)
-  - [Source](#type.references.Source)
-  - [Table](#type.references.Table)
-  - [Views](#type.references.Views)
-- [Other impls](#impls)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [apply()](#mod.references)
-- [BYTES](#mod.references)
-- [first()](#mod.references)
-- [Marker](#type.references.Marker)
-- [NAME](#mod.references)
-- [pick()](#mod.references)
-- [Source](#type.references.Source)
-- [Table](#type.references.Table)
-- [Views](#type.references.Views)
-
-<a id="mod.references"></a>
-## references
-
-```
-/// The default name.
-pub const NAME: &str = "views";
-
-/// Raw bytes behind a reference.
-pub static BYTES: &[u8] = &[1, 2];
-
-/// Applies a function to a string.
-pub fn apply<F>(text: &mut String, f: F) -> usize
-where
-    F: Fn(&mut String) -> usize;
-
-/// Finds the first item.
-pub fn first<'a>(items: &'a [&'a str]) -> Option<&'a str>;
-
-/// Picks an item with a closure that returns a reference.
-pub fn pick<'a, T>(choose: impl Fn(&T) -> &'a T, items: &'a [T]) -> Option<&'a T>;
-```
-
-<a id="type.references.Marker"></a>
-### Marker
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Marks a type.
-pub trait Marker {}
-```
-
-<a id="type.references.Source"></a>
-### Source
-
-Counts: 2 functions
-
-Used by: nothing
-
-```
-/// A source of bytes.
-pub trait Source {
-    fn read(&mut self, buf: &mut [u8]) -> usize;
-
-    fn name(&self) -> &str;
-}
-```
-
-<a id="type.references.Table"></a>
-### Table
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A borrowed table.
-pub type Table<'a> = &'a [(&'a str, *const u8)];
-```
-
-<a id="type.references.Views"></a>
-### Views
-
-Counts: 13 fields, 9 functions
-
-Used by: nothing
-
-Fields:
-
-- `shared`: get
-- `unique`: set
-- `name`: into_name, rename, same
-- `items`: none
-- `read`: none
-- `write`: none
-- `shown`: none
-- `check`: none
-- `callback`: none
-- `both`: none
-- `wrapped`: none
-- `raw_call`: none
-- `step`: none
-
-```
-/// Borrowed and raw views of one value.
-pub struct Views<'a, T> {
-    pub shared: &'a T,
-
-    pub unique: &'a mut T,
-
-    pub name: &'static str,
-
-    pub items: &'a [&'a T],
-
-    pub read: *const T,
-
-    pub write: *mut T,
-
-    pub shown: &'a dyn Display,
-
-    pub check: Box<dyn Fn(&str) -> usize>,
-
-    pub callback: &'a dyn Fn(&str) -> usize,
-
-    pub both: &'a (dyn Display + Send),
-
-    pub wrapped: &'a (dyn Fn(&str) -> usize),
-
-    pub raw_call: *const dyn Fn() -> bool,
-
-    pub step: &'a fn(u8) -> u8,
-}
-
-// impl in src/lib.rs
-impl<'a, T> Views<'a, T> {
-    pub fn get(&self) -> &T;
-
-    pub fn set(&mut self, value: T);
-
-    pub fn into_name(self) -> &'static str;
-
-    pub fn rename(mut self, name: &'static str) -> Self;
-
-    pub fn same(self: &Self, other: &Self) -> bool;
-
-    pub fn clear(self: &mut Self);
-
-    pub fn poll(self: Pin<&mut Self>);
-
-    pub fn render(&self, out: &mut impl Write, items: &[Box<dyn Display>]);
-
-    pub fn lookup(&mut self, keys: &Vec<&'a str>, table: &std::collections::BTreeMap<String, &'a mut T>) -> Option<&'a mut T>;
-}
-```
-
-<a id="impls"></a>
-## Other impls
-
-- `impl<T> Marker for &T {}`
-- `impl Marker for *const u8 {}`
+{"k":"vibelight-outline","schema":1,"crate":"references","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":17,"to":50}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["apply","BYTES","NAME","pick","Source","Source::read","Table","Views::both","Views::callback","Views::check","Views::clear","Views::get","Views::into_name","Views::lookup","Views::poll","Views::raw_call","Views::read","Views::rename","Views::render","Views::same","Views::set","Views::shown","Views::step","Views::wrapped","Views::write"],"evidence":"no hit of `apply` in the scanned sources beyond its 1 declaration; no hit of `BYTES` in the scanned sources beyond its 1 declaration; no hit of `NAME` in the scanned sources beyond its 1 declaration; no hit of `pick` in the scanned sources beyond its 1 declaration; no hit of `Source` in the scanned sources beyond its 1 declaration; no hit of `read` in the scanned sources beyond its 2 declarations; no hit of `Table` in the scanned sources beyond its 1 declaration; no hit of `both` in the scanned sources beyond its 1 declaration; no hit of `callback` in the scanned sources beyond its 1 declaration; no hit of `check` in the scanned sources beyond its 1 declaration; no hit of `clear` in the scanned sources beyond its 1 declaration; no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `into_name` in the scanned sources beyond its 1 declaration; no hit of `lookup` in the scanned sources beyond its 1 declaration; no hit of `poll` in the scanned sources beyond its 1 declaration; no hit of `raw_call` in the scanned sources beyond its 1 declaration; no hit of `rename` in the scanned sources beyond its 1 declaration; no hit of `render` in the scanned sources beyond its 1 declaration; no hit of `same` in the scanned sources beyond its 1 declaration; no hit of `set` in the scanned sources beyond its 1 declaration; no hit of `shown` in the scanned sources beyond its 1 declaration; no hit of `step` in the scanned sources beyond its 1 declaration; no hit of `wrapped` in the scanned sources beyond its 1 declaration; no hit of `write` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":25}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["first"],"evidence":"2 production hits of `first` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Views"],"evidence":"1 production hits of `Views` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Views::both","Views::callback","Views::check","Views::items","Views::raw_call","Views::read","Views::shown","Views::step","Views::wrapped","Views::write"],"evidence":"0 struct literals of `Views` set it, and no `.both` access or pattern reads it; 0 struct literals of `Views` set it, and no `.callback` access or pattern reads it; 0 struct literals of `Views` set it, and no `.check` access or pattern reads it; 0 struct literals of `Views` set it, and no `.items` access or pattern reads it; 0 struct literals of `Views` set it, and no `.raw_call` access or pattern reads it; 0 struct literals of `Views` set it, and no `.read` access or pattern reads it; 0 struct literals of `Views` set it, and no `.shown` access or pattern reads it; 0 struct literals of `Views` set it, and no `.step` access or pattern reads it; 0 struct literals of `Views` set it, and no `.wrapped` access or pattern reads it; 0 struct literals of `Views` set it, and no `.write` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":10}
+{"k":"surface","path":"apply","kind":"fn"}
+{"k":"surface","path":"BYTES","kind":"value"}
+{"k":"surface","path":"first","kind":"fn"}
+{"k":"surface","path":"Marker","kind":"trait"}
+{"k":"surface","path":"NAME","kind":"value"}
+{"k":"surface","path":"pick","kind":"fn"}
+{"k":"surface","path":"Source","kind":"trait"}
+{"k":"surface","path":"Table","kind":"alias"}
+{"k":"surface","path":"Views","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":4,"functions":{"public":3}}
+{"k":"doc","path":"crate","text":"References, raw pointers, and receivers."}
+{"k":"struct","path":"Views","rust":"pub struct Views<'a, T> { pub shared: &'a T, pub unique: &'a mut T, pub name: &'static str, pub items: &'a [&'a T], pub read: *const T, pub write: *mut T, pub shown: &'a dyn Display, pub check: Box<dyn Fn(&str) -> usize>, pub callback: &'a dyn Fn(&str) -> usize, pub both: &'a (dyn Display + Send), pub wrapped: &'a (dyn Fn(&str) -> usize), pub raw_call: *const dyn Fn() -> bool, pub step: &'a fn(u8) -> u8 }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Views","text":"Borrowed and raw views of one value."}
+{"k":"impl","path":"Views","rust":"impl<'a, T> Views<'a, T>","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Views::get","sig":"pub fn get(&self) -> &T","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field shared"},"ops":["self.shared"]}
+{"k":"fn","path":"Views::set","sig":"pub fn set(&mut self, value: T)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":9},"ops":["self.unique [write]","value"]}
+{"k":"fn","path":"Views::into_name","sig":"pub fn into_name(self) -> &'static str","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field name"},"ops":["self.name"]}
+{"k":"fn","path":"Views::rename","sig":"pub fn rename(mut self, name: &'static str) -> Self","loc":{"file":"src/lib.rs","line":0},"body":{"statements":2,"tokens":9},"ops":["name","self.name [write]"]}
+{"k":"fn","path":"Views::same","sig":"pub fn same(self: &Self, other: &Self) -> bool","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":10},"ops":["other","self.name"]}
+{"k":"fn","path":"Views::clear","sig":"pub fn clear(self: &mut Self)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Views::poll","sig":"pub fn poll(self: Pin<&mut Self>)","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Views::render","sig":"pub fn render(&self, out: &mut impl Write, items: &[Box<dyn Display>])","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"Views::lookup","sig":"pub fn lookup(&mut self, keys: &Vec<&'a str>, table: &std::collections::BTreeMap<String, &'a mut T>) -> Option<&'a mut T>","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":3,"nones":1}}
+{"k":"trait","path":"Source","rust":"pub trait Source","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Source","text":"A source of bytes."}
+{"k":"fn","path":"Source::read","sig":"fn read(&mut self, buf: &mut [u8]) -> usize","loc":{"file":"src/lib.rs","line":0}}
+{"k":"fn","path":"Source::name","sig":"fn name(&self) -> &str","loc":{"file":"src/lib.rs","line":0},"token_hits":6}
+{"k":"alias","path":"Table","rust":"pub type Table<'a> = &'a [(&'a str, *const u8)]","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Table","text":"A borrowed table."}
+{"k":"trait","path":"Marker","rust":"pub trait Marker","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Marker","text":"Marks a type."}
+{"k":"impl","path":"&T","rust":"impl<T> Marker for &T","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"*const u8","rust":"impl Marker for *const u8","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"const","path":"NAME","rust":"pub const NAME: &str","value":"\"views\"","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":1}}
+{"k":"doc","path":"NAME","text":"The default name."}
+{"k":"static","path":"BYTES","rust":"pub static BYTES: &[u8]","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5}}
+{"k":"doc","path":"BYTES","text":"Raw bytes behind a reference."}
+{"k":"fn","path":"first","sig":"pub fn first<'a>(items: &'a [&'a str]) -> Option<&'a str>","loc":{"file":"src/lib.rs","line":0},"token_hits":2,"body":{"statements":1,"tokens":11,"single":"method copied"},"ops":["items.first.copied"]}
+{"k":"doc","path":"first","text":"Finds the first item."}
+{"k":"fn","path":"pick","sig":"pub fn pick<'a, T>(choose: impl Fn(&T) -> &'a T, items: &'a [T]) -> Option<&'a T>","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":12,"single":"method map"},"ops":["choose","items.first.map"]}
+{"k":"doc","path":"pick","text":"Picks an item with a closure that returns a reference."}
+{"k":"fn","path":"apply","sig":"pub fn apply<F>(text: &mut String, f: F) -> usize where F: Fn(&mut String) -> usize","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":6,"single":"call f"},"ops":["text"]}
+{"k":"doc","path":"apply","text":"Applies a function to a string."}

@@ -1,112 +1,41 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.attributes"></a>
-# attributes
-
-```
-//! Attributes that shape an API or its wire format.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [attributes](#mod.attributes)
-  - [Record](#type.attributes.Record)
-  - [Level](#type.attributes.Level)
-
-**MACROS:** 1 derive list
-
-<a id="surface"></a>
-## Public surface
-
-- [helper()](#mod.attributes)
-- [Level](#type.attributes.Level)
-- [Record](#type.attributes.Record)
-- [Row](#type.attributes.Record)
-
-<a id="mod.attributes"></a>
-## attributes
-
-```
-#[doc(hidden)]
-pub use Record as Row;
-
-/// A hidden helper.
-#[deprecated]
-#[doc(hidden)]
-pub fn helper();
-```
-
-<a id="type.attributes.Record"></a>
-### Record
-
-Counts: 3 fields, 2 functions
-
-Used by: [attributes](#mod.attributes)
-
-**MACRO** derive: serde::Serialize
-
-```
-/// A record with a wire format.
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Record {
-    /// The record's name.
-    #[serde(rename = "id")]
-    pub name: String,
-
-    /// Kept out of the docs.
-    #[doc(hidden)]
-    pub cache: u8,
-
-    count: u8,
-}
-
-// impl in src/lib.rs
-impl Record {
-    /// Reads the name.
-    #[must_use]
-    #[track_caller]
-    pub fn name(&self) -> &str;
-
-    /// Makes an empty record.
-    #[must_use = "a record does nothing until it is stored"]
-    pub fn empty() -> Record;
-}
-```
-
-<a id="type.attributes.Level"></a>
-### Level
-
-Counts: 2 variants
-
-Used by: nothing
-
-```
-/// A level.
-#[derive(Clone, Copy)]
-#[non_exhaustive]
-#[repr(u8)]
-pub enum Level {
-    /// The top.
-    #[deprecated(since = "1.2", note = "use High")]
-    Top = 2,
-
-    /// The bottom.
-    Low = 0,
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"attributes","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":20,"to":41}]}
+{"k":"lead","id":"field-and-accessor","mode":"direct-syntax","subjects":["Record::name"],"evidence":"`pub name` and `fn name`","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"compat-shim","mode":"direct-syntax","subjects":["helper"],"evidence":"`#[deprecated]`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"compat-shim","mode":"direct-syntax","subjects":["Level::Top"],"evidence":"`#[deprecated(since = \"1.2\", note = \"use High\")]`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"lint-suppression","mode":"direct-syntax","subjects":["Record::count"],"evidence":"`#[allow(dead_code)]`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["helper"],"evidence":"no hit of `helper` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Level"],"evidence":"no hit of `Level` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Level::Low"],"evidence":"no hit of `Low` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Level::Top"],"evidence":"no hit of `Top` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Record::empty"],"evidence":"no hit of `empty` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Level::Low"],"evidence":"no observed path builds `Level::Low`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Level::Top"],"evidence":"no observed path builds `Level::Top`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"helper","kind":"fn"}
+{"k":"surface","path":"Level","kind":"enum"}
+{"k":"surface","path":"Record","kind":"struct"}
+{"k":"surface","path":"Row","kind":"struct","item":"Record"}
+{"k":"wire-keys","path":"Record","keys":["cache","count","id"],"loc":{"file":"src/lib.rs","line":0}}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Attributes that shape an API or its wire format."}
+{"k":"use","path":"Row","rust":"pub use Record as Row","loc":{"file":"src/lib.rs","line":0}}
+{"k":"enum","path":"Level","rust":"pub enum Level { #[deprecated(since = \"1.2\", note = \"use High\")] Top = 2, Low = 0 }","loc":{"file":"src/lib.rs","line":0},"attrs":["non_exhaustive","repr(u8)"],"derives":["Clone","Copy"]}
+{"k":"doc","path":"Level","text":"A level."}
+{"k":"variant","path":"Level::Top","rust":"#[deprecated(since = \"1.2\", note = \"use High\")] Top = 2","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Level::Top","text":"The top."}
+{"k":"variant","path":"Level::Low","rust":"Low = 0","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Level::Low","text":"The bottom."}
+{"k":"struct","path":"Record","rust":"pub struct Record { #[serde(rename = \"id\")] pub name: String, #[doc(hidden)] pub cache: u8, count: u8 }","loc":{"file":"src/lib.rs","line":0},"attrs":["serde(rename_all = \"camelCase\")"],"derives":["serde::Serialize"],"reexported_by":["crate"],"token_hits":4}
+{"k":"doc","path":"Record","text":"A record with a wire format."}
+{"k":"field","path":"Record::name","rust":"#[serde(rename = \"id\")] pub name: String","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Record::name","text":"The record's name."}
+{"k":"field","path":"Record::cache","rust":"#[doc(hidden)] pub cache: u8","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Record::cache","text":"Kept out of the docs."}
+{"k":"impl","path":"Record","rust":"impl Record","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Record::name","sig":"pub fn name(&self) -> &str","loc":{"file":"src/lib.rs","line":0},"attrs":["must_use","track_caller"],"token_hits":2,"body":{"statements":1,"tokens":6,"single":"field name"},"ops":["self.name"]}
+{"k":"doc","path":"Record::name","text":"Reads the name."}
+{"k":"fn","path":"Record::empty","sig":"pub fn empty() -> Record","loc":{"file":"src/lib.rs","line":0},"attrs":["must_use = \"a record does nothing until it is stored\""],"body":{"statements":1,"tokens":19}}
+{"k":"doc","path":"Record::empty","text":"Makes an empty record."}
+{"k":"fn","path":"helper","sig":"pub fn helper()","loc":{"file":"src/lib.rs","line":0},"attrs":["deprecated","doc(hidden)"],"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"helper","text":"A hidden helper."}

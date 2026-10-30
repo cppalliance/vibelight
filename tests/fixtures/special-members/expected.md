@@ -1,179 +1,56 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.special_members"></a>
-# special_members
-
-```
-//! Special members: the standard traits that become C++ constructors and
-//! destructors.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [special_members](#mod.special_members)
-  - [Counter](#type.special_members.Counter)
-  - [Derived](#type.special_members.Derived)
-  - [Handle](#type.special_members.Handle)
-  - [Mode](#type.special_members.Mode)
-  - [Name](#type.special_members.Name)
-  - [Scheduler](#type.special_members.Scheduler)
-  - [Written](#type.special_members.Written)
-
-**MACROS:** 1 derive list
-
-<a id="surface"></a>
-## Public surface
-
-- [Counter](#type.special_members.Counter)
-- [Derived](#type.special_members.Derived)
-- [Handle](#type.special_members.Handle)
-- [Mode](#type.special_members.Mode)
-- [Name](#type.special_members.Name)
-- [Scheduler](#type.special_members.Scheduler)
-- [Written](#type.special_members.Written)
-
-<a id="mod.special_members"></a>
-## special_members
-
-<a id="type.special_members.Counter"></a>
-### Counter
-
-Counts: 1 field, 1 Default/From/Drop impl, 1 function
-
-Used by: nothing
-
-```
-/// A struct with a private section.
-#[derive(Default)]
-pub struct Counter {
-    count: u32,
-}
-
-// impl in src/lib.rs
-impl Counter {
-    pub fn count(&self) -> u32;
-}
-```
-
-<a id="type.special_members.Derived"></a>
-### Derived
-
-Counts: 1 field, 1 Default/From/Drop impl
-
-Used by: nothing
-
-**MACRO** derive: serde::Serialize
-
-```
-/// The one derivable special member, and a derive from another crate.
-#[derive(Default, serde::Serialize)]
-pub struct Derived {
-    pub value: u8,
-}
-```
-
-<a id="type.special_members.Handle"></a>
-### Handle
-
-Counts: 1 field, 2 Default/From/Drop impls
-
-Used by: nothing
-
-```
-/// A tuple struct with a derived and a hand-written member.
-#[derive(Default)]
-pub struct Handle(u32);
-
-impl Drop for Handle {}
-```
-
-<a id="type.special_members.Mode"></a>
-### Mode
-
-Counts: 2 variants, 1 Default/From/Drop impl
-
-Used by: nothing
-
-```
-/// An enum with a derived default.
-#[derive(Default)]
-pub enum Mode {
-    On,
-
-    Off,
-}
-```
-
-<a id="type.special_members.Name"></a>
-### Name
-
-Counts: 1 field
-
-Used by: nothing
-
-```
-/// A name from anything that converts into a String.
-pub struct Name(String);
-
-impl<T: Into<String>> From<T> for Name {}
-```
-
-<a id="type.special_members.Scheduler"></a>
-### Scheduler
-
-Counts: 1 field, 1 Default/From/Drop impl
-
-Used by: nothing
-
-```
-/// A class with a hand-written destructor.
-pub struct Scheduler {
-    jobs: Vec<u32>,
-}
-
-impl Drop for Scheduler {}
-```
-
-<a id="type.special_members.Written"></a>
-### Written
-
-Counts: 1 field, 4 Default/From/Drop impls, 2 functions
-
-Used by: nothing
-
-```
-/// Every hand-written special member.
-pub struct Written {
-    pub value: u8,
-}
-
-// impl in src/lib.rs
-impl Written {
-    pub fn new() -> Self;
-
-    pub fn get(&self) -> u8;
-}
-
-impl Default for Written {}
-
-/// Converts from a byte.
-impl From<u8> for Written {}
-
-impl From<&str> for Written {}
-impl Drop for Written {}
-```
+{"k":"vibelight-outline","schema":1,"crate":"special_members","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":21,"to":56}]}
+{"k":"lead","id":"redundant-constructor","mode":"direct-syntax","subjects":["Written","Written::new"],"evidence":"`new()` beside a written Default, and neither calls the other","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Derived","Mode","Mode::Off","Mode::On","Written::get","Written::new"],"evidence":"no hit of `Derived` in the scanned sources beyond its 1 declaration; no hit of `Mode` in the scanned sources beyond its 1 declaration; no hit of `Off` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `new` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Counter"],"evidence":"1 production hits of `Counter` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Handle"],"evidence":"1 production hits of `Handle` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Scheduler"],"evidence":"1 production hits of `Scheduler` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Mode::Off"],"evidence":"no observed path builds `Mode::Off`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Mode::On"],"evidence":"no observed path builds `Mode::On`; 0 patterns or comparisons match it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["Name"],"evidence":"2 observed uses, all inside `special_members`; no other target of the run writes `Name`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["Written"],"evidence":"8 observed uses, all inside `special_members`; no other target of the run writes `Written`","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"surface","path":"Counter","kind":"struct"}
+{"k":"surface","path":"Derived","kind":"struct"}
+{"k":"surface","path":"Handle","kind":"struct"}
+{"k":"surface","path":"Mode","kind":"enum"}
+{"k":"surface","path":"Name","kind":"struct"}
+{"k":"surface","path":"Scheduler","kind":"struct"}
+{"k":"surface","path":"Written","kind":"struct"}
+{"k":"wire-keys","path":"Derived","keys":["value"],"loc":{"file":"src/lib.rs","line":0}}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":7}
+{"k":"doc","path":"crate","text":"Special members: the standard traits that become C++ constructors and\ndestructors."}
+{"k":"struct","path":"Derived","rust":"pub struct Derived { pub value: u8 }","loc":{"file":"src/lib.rs","line":0},"derives":["Default","serde::Serialize"]}
+{"k":"doc","path":"Derived","text":"The one derivable special member, and a derive from another crate."}
+{"k":"struct","path":"Written","rust":"pub struct Written { pub value: u8 }","loc":{"file":"src/lib.rs","line":0},"token_hits":9}
+{"k":"doc","path":"Written","text":"Every hand-written special member."}
+{"k":"impl","path":"Written","rust":"impl Default for Written","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Written::default","sig":"fn default() -> Self","loc":{"file":"src/lib.rs","line":0},"impl":"impl Default for Written","body":{"statements":1,"tokens":8}}
+{"k":"impl","path":"Written","rust":"impl From<u8> for Written","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"doc","path":"Written","text":"Converts from a byte."}
+{"k":"fn","path":"Written::from","sig":"fn from(value: u8) -> Self","loc":{"file":"src/lib.rs","line":0},"impl":"impl From<u8> for Written","body":{"statements":1,"tokens":6},"ops":["value"]}
+{"k":"impl","path":"Written","rust":"impl From<&str> for Written","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Written::from","sig":"fn from(text: &str) -> Self","loc":{"file":"src/lib.rs","line":0},"impl":"impl From<&str> for Written","body":{"statements":1,"tokens":14},"ops":["text.len"]}
+{"k":"impl","path":"Written","rust":"impl Drop for Written","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Written::drop","sig":"fn drop(&mut self)","loc":{"file":"src/lib.rs","line":0},"impl":"impl Drop for Written","body":{"statements":0,"tokens":2}}
+{"k":"impl","path":"Written","rust":"impl Written","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Written::new","sig":"pub fn new() -> Self","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":8}}
+{"k":"fn","path":"Written::get","sig":"pub fn get(&self) -> u8","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field value"},"ops":["self.value"]}
+{"k":"struct","path":"Name","rust":"pub struct Name(String)","loc":{"file":"src/lib.rs","line":0},"token_hits":2}
+{"k":"doc","path":"Name","text":"A name from anything that converts into a String."}
+{"k":"impl","path":"Name","rust":"impl<T: Into<String>> From<T> for Name","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Name::from","sig":"fn from(value: T) -> Self","loc":{"file":"src/lib.rs","line":0},"impl":"impl<T: Into<String>> From<T> for Name","body":{"statements":1,"tokens":10,"single":"call Name"},"ops":["value.into"]}
+{"k":"enum","path":"Mode","rust":"pub enum Mode { On, Off }","loc":{"file":"src/lib.rs","line":0},"derives":["Default"]}
+{"k":"doc","path":"Mode","text":"An enum with a derived default."}
+{"k":"struct","path":"Handle","rust":"pub struct Handle(u32)","loc":{"file":"src/lib.rs","line":0},"derives":["Default"],"token_hits":1}
+{"k":"doc","path":"Handle","text":"A tuple struct with a derived and a hand-written member."}
+{"k":"impl","path":"Handle","rust":"impl Drop for Handle","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Handle::drop","sig":"fn drop(&mut self)","loc":{"file":"src/lib.rs","line":0},"impl":"impl Drop for Handle","body":{"statements":0,"tokens":2}}
+{"k":"struct","path":"Scheduler","rust":"pub struct Scheduler { jobs: Vec<u32> }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Scheduler","text":"A class with a hand-written destructor."}
+{"k":"impl","path":"Scheduler","rust":"impl Drop for Scheduler","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Scheduler::drop","sig":"fn drop(&mut self)","loc":{"file":"src/lib.rs","line":0},"impl":"impl Drop for Scheduler","body":{"statements":0,"tokens":2}}
+{"k":"struct","path":"Counter","rust":"pub struct Counter { count: u32 }","loc":{"file":"src/lib.rs","line":0},"derives":["Default"],"token_hits":1}
+{"k":"doc","path":"Counter","text":"A struct with a private section."}
+{"k":"impl","path":"Counter","rust":"impl Counter","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Counter::count","sig":"pub fn count(&self) -> u32","loc":{"file":"src/lib.rs","line":0},"token_hits":1,"body":{"statements":1,"tokens":5,"single":"field count"},"ops":["self.count"]}

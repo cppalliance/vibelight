@@ -1,93 +1,30 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.raw_idents"></a>
-# raw_idents
-
-```
-//! Raw identifiers.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [raw_idents](#mod.raw_idents)
-  - [Keywords](#type.raw_idents.Keywords)
-- [r#impl](#mod.raw_idents.impl)
-  - [r#impl::Inner](#type.raw_idents.impl.Inner)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [r#fn()](#mod.raw_idents)
-- [r#impl](#mod.raw_idents.impl)
-- [r#impl::Inner](#type.raw_idents.impl.Inner)
-- [Keywords](#type.raw_idents.Keywords)
-
-<a id="mod.raw_idents"></a>
-## raw_idents
-
-```
-pub fn r#fn();
-```
-
-<a id="type.raw_idents.Keywords"></a>
-### Keywords
-
-Counts: 3 fields, 2 functions
-
-Used by: nothing
-
-```
-/// Raw names in a struct.
-pub struct Keywords {
-    /// A raw field.
-    pub r#type: u8,
-
-    pub r#match: u8,
-
-    kind: u8,
-}
-
-// impl in src/lib.rs
-impl Keywords {
-    /// A raw method.
-    pub fn r#as(&self) -> u8;
-
-    pub fn r#async();
-}
-```
-
-<a id="mod.raw_idents.impl"></a>
-## r#impl
-
-```
-//! A module with a raw name.
-```
-
-<a id="type.raw_idents.impl.Inner"></a>
-### r#impl::Inner
-
-Counts: none
-
-Used by: nothing
-
-```
-/// Lives in a raw module.
-pub struct Inner;
-```
+{"k":"vibelight-outline","schema":1,"crate":"raw_idents","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":16,"to":26},{"path":"r#impl","from":27,"to":30}]}
+{"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["r#impl"],"evidence":"holds only `Inner`","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["r#fn"],"evidence":"no hit of `fn` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["r#impl::Inner"],"evidence":"no hit of `Inner` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Keywords::r#as"],"evidence":"no hit of `as` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Keywords::r#async"],"evidence":"no hit of `async` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Keywords::r#match"],"evidence":"no hit of `match` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Keywords"],"evidence":"1 production hits of `Keywords` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Keywords::r#match"],"evidence":"0 struct literals of `Keywords` set it, and no `.match` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"r#fn","kind":"fn"}
+{"k":"surface","path":"r#impl","kind":"mod"}
+{"k":"surface","path":"r#impl::Inner","kind":"struct"}
+{"k":"surface","path":"Keywords","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":1,"functions":{"public":1}}
+{"k":"doc","path":"crate","text":"Raw identifiers."}
+{"k":"struct","path":"Keywords","rust":"pub struct Keywords { pub r#type: u8, pub r#match: u8, kind: u8 }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Keywords","text":"Raw names in a struct."}
+{"k":"field","path":"Keywords::r#type","rust":"pub r#type: u8","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Keywords::r#type","text":"A raw field."}
+{"k":"impl","path":"Keywords","rust":"impl Keywords","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Keywords::r#as","sig":"pub fn r#as(&self) -> u8","loc":{"file":"src/lib.rs","line":0},"body":{"statements":1,"tokens":5,"single":"field type"},"ops":["self.type"]}
+{"k":"doc","path":"Keywords::r#as","text":"A raw method."}
+{"k":"fn","path":"Keywords::r#async","sig":"pub fn r#async()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"r#fn","sig":"pub fn r#fn()","loc":{"file":"src/lib.rs","line":0},"body":{"statements":0,"tokens":2}}
+{"k":"mod","path":"r#impl","loc":{"file":"src/lib.rs","line":0},"vis":"public","types":1}
+{"k":"doc","path":"r#impl","text":"A module with a raw name."}
+{"k":"struct","path":"r#impl::Inner","rust":"pub struct Inner","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"r#impl::Inner","text":"Lives in a raw module."}

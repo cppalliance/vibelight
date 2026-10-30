@@ -1,135 +1,49 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.impls"></a>
-# impls
-
-```
-//! Impl blocks of every kind.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [impls](#mod.impls)
-  - [Describe](#type.impls.Describe)
-  - [Holder](#type.impls.Holder)
-  - [Render](#type.impls.Render)
-  - [Widget](#type.impls.Widget)
-- [Other impls](#impls)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Describe](#type.impls.Describe)
-- [Holder](#type.impls.Holder)
-- [Render](#type.impls.Render)
-- [Widget](#type.impls.Widget)
-
-<a id="mod.impls"></a>
-## impls
-
-<a id="type.impls.Describe"></a>
-### Describe
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// Describes itself.
-pub trait Describe {
-    /// Returns a description.
-    fn describe(&self) -> String;
-}
-```
-
-<a id="type.impls.Holder"></a>
-### Holder
-
-Counts: 1 field, 1 function
-
-Used by: nothing
-
-```
-/// A generic holder.
-pub struct Holder<'a, T> {
-    item: &'a T,
-}
-
-// impl in src/lib.rs
-impl<'a, T> Holder<'a, T> {
-    /// Returns the held item.
-    pub fn item(&self) -> &'a T;
-}
-```
-
-<a id="type.impls.Render"></a>
-### Render
-
-Counts: 1 function
-
-Used by: nothing
-
-```
-/// Renders itself.
-pub trait Render {
-    /// Renders to a string.
-    fn render(&self) -> String;
-}
-```
-
-<a id="type.impls.Widget"></a>
-### Widget
-
-Counts: 1 field, 2 functions
-
-Used by: nothing
-
-```
-/// A type with split impls and trait impls.
-pub struct Widget {
-    id: u32,
-}
-
-// impl in src/lib.rs
-impl Widget {
-    /// Makes a widget.
-    pub fn new(id: u32) -> Widget;
-}
-
-// impl in src/lib.rs
-impl Widget {
-    /// Returns the identifier.
-    pub fn id(&self) -> u32;
-}
-
-impl fmt::Display for Widget {}
-unsafe impl Send for Widget {}
-impl !Sync for Widget {}
-impl<'a> From<&'a str> for Widget {}
-```
-
-<a id="impls"></a>
-## Other impls
-
-- `impl<T: fmt::Debug> Describe for T {}`
-- `impl Render for (u8, u8) {}`
-- `impl Render for [Widget] {}`
-- `impl Render for Box<Widget> {}`
-- `impl Render for &Widget {}`
+{"k":"vibelight-outline","schema":1,"crate":"impls","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":12,"to":49}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Describe::describe"],"evidence":"no hit of `describe` in the scanned sources beyond its 2 declarations","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Render::render"],"evidence":"no hit of `render` in the scanned sources beyond its 5 declarations","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Holder"],"evidence":"1 production hits of `Holder` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Widget::new"],"evidence":"4 production hits of `new` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"surface","path":"Describe","kind":"trait"}
+{"k":"surface","path":"Holder","kind":"struct"}
+{"k":"surface","path":"Render","kind":"trait"}
+{"k":"surface","path":"Widget","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":4}
+{"k":"doc","path":"crate","text":"Impl blocks of every kind."}
+{"k":"struct","path":"Widget","rust":"pub struct Widget { id: u32 }","loc":{"file":"src/lib.rs","line":0},"token_hits":13}
+{"k":"doc","path":"Widget","text":"A type with split impls and trait impls."}
+{"k":"impl","path":"Widget","rust":"impl Widget","locs":[{"file":"src/lib.rs","line":0},{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Widget::new","sig":"pub fn new(id: u32) -> Widget","loc":{"file":"src/lib.rs","line":0},"token_hits":4,"body":{"statements":1,"tokens":6},"ops":["id"]}
+{"k":"doc","path":"Widget::new","text":"Makes a widget."}
+{"k":"impl","path":"Widget","rust":"impl fmt::Display for Widget","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Widget::fmt","sig":"fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result","loc":{"file":"src/lib.rs","line":0},"impl":"impl fmt::Display for Widget","body":{"statements":1,"tokens":3,"macros":["write"]}}
+{"k":"impl","path":"Widget","rust":"unsafe impl Send for Widget","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"impl","path":"Widget","rust":"impl !Sync for Widget","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Widget::id","sig":"pub fn id(&self) -> u32","loc":{"file":"src/lib.rs","line":0},"token_hits":5,"body":{"statements":1,"tokens":5,"single":"field id"},"ops":["self.id"]}
+{"k":"doc","path":"Widget::id","text":"Returns the identifier."}
+{"k":"impl","path":"Widget","rust":"impl<'a> From<&'a str> for Widget","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Widget::from","sig":"fn from(_: &'a str) -> Widget","loc":{"file":"src/lib.rs","line":0},"impl":"impl<'a> From<&'a str> for Widget","body":{"statements":1,"tokens":8}}
+{"k":"struct","path":"Holder","rust":"pub struct Holder<'a, T> { item: &'a T }","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Holder","text":"A generic holder."}
+{"k":"impl","path":"Holder","rust":"impl<'a, T> Holder<'a, T>","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Holder::item","sig":"pub fn item(&self) -> &'a T","loc":{"file":"src/lib.rs","line":0},"token_hits":1,"body":{"statements":1,"tokens":5,"single":"field item"},"ops":["self.item"]}
+{"k":"doc","path":"Holder::item","text":"Returns the held item."}
+{"k":"trait","path":"Describe","rust":"pub trait Describe","loc":{"file":"src/lib.rs","line":0},"token_hits":1}
+{"k":"doc","path":"Describe","text":"Describes itself."}
+{"k":"fn","path":"Describe::describe","sig":"fn describe(&self) -> String","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Describe::describe","text":"Returns a description."}
+{"k":"impl","path":"T","rust":"impl<T: fmt::Debug> Describe for T","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"T::describe","sig":"fn describe(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl<T: fmt::Debug> Describe for T","body":{"statements":1,"tokens":3,"macros":["format"]}}
+{"k":"trait","path":"Render","rust":"pub trait Render","loc":{"file":"src/lib.rs","line":0},"token_hits":4}
+{"k":"doc","path":"Render","text":"Renders itself."}
+{"k":"fn","path":"Render::render","sig":"fn render(&self) -> String","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Render::render","text":"Renders to a string."}
+{"k":"impl","path":"&Widget","rust":"impl Render for &Widget","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"&Widget::render","sig":"fn render(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Render for &Widget","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"impl","path":"Box<Widget>","rust":"impl Render for Box<Widget>","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Box<Widget>::render","sig":"fn render(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Render for Box<Widget>","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"impl","path":"(u8, u8)","rust":"impl Render for (u8, u8)","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"(u8, u8)::render","sig":"fn render(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Render for (u8, u8)","body":{"statements":1,"tokens":8,"single":"call String::new"}}
+{"k":"impl","path":"[Widget]","rust":"impl Render for [Widget]","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"[Widget]::render","sig":"fn render(&self) -> String","loc":{"file":"src/lib.rs","line":0},"impl":"impl Render for [Widget]","body":{"statements":1,"tokens":8,"single":"call String::new"}}

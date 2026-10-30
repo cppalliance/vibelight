@@ -91,23 +91,33 @@ fn follow_globs_pull_in_only_the_matching_path_dependencies() {
     fs::write(repo.join("vibelight.toml"), "follow = [\"crates/b*\"]\n").unwrap();
     let result = vibelight_in(&repo, &["crates/alpha", "-o", "out"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
-    let expected: Vec<(String, String)> = goldens("garden")
+    let pages = |files: Vec<(String, String)>| -> Vec<(String, String)> {
+        files
+            .into_iter()
+            .filter(|(name, _)| has_ext(name, "html"))
+            .collect()
+    };
+    let written = read_plain(&repo.join("out"));
+    let names: Vec<&str> = written.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(names, ["alpha.html", "alpha.md", "beta.html", "beta.md"]);
+    let expected: Vec<(String, String)> = pages(goldens("garden"))
         .into_iter()
         .filter(|(name, _)| name.starts_with("alpha.") || name.starts_with("beta."))
         .collect();
     assert!(
-        read_plain(&repo.join("out")) == expected,
-        "alpha and beta only, and the same files as in the larger run"
+        pages(written) == expected,
+        "alpha and beta only, and the same pages as in the larger run; the markdown is \
+         contextual to the run"
     );
 }
 
 /// Returns each link target in an outline: `href` values in HTML, and the
-/// targets of `[text](target)` links in markdown.
+/// `url` of each location in markdown.
 fn hrefs(file: &str, page: &str) -> Vec<String> {
     let (open, close) = if has_ext(file, "html") {
         ("href=\"", '"')
     } else {
-        ("](", ')')
+        ("\"url\":\"", '"')
     };
     let mut out = Vec::new();
     let mut rest = page;
@@ -286,25 +296,25 @@ fn two_crates_that_would_write_one_file_name_are_an_error() {
 }
 
 #[test]
-fn external_items_show_the_doc_line_of_an_item_from_another_crate_of_the_run() {
+fn external_records_show_the_doc_summary_of_an_item_from_another_crate_of_the_run() {
     let (_tmp, repo) = copy("garden");
     assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
     let facade = fs::read_to_string(repo.join("out").join("facade.md")).unwrap();
     assert!(
         facade.contains(
-            "## External items\n\n\
-             - `alpha`\n  \
-             - `alpha::Meter`, 1 use by [Panel](#type.facade.Panel)\n    \
-             - A meter that reads a gauge of beta.\n  \
-             - `alpha::Reads`, 2 uses by [Panel](#type.facade.Panel), [facade](#mod.facade)\n    \
-             - A trait other crates implement.\n"
+            "{\"k\":\"external\",\"path\":\"alpha::Meter\",\"uses\":1,\"named_by\":[\"Panel\"],\
+             \"summary\":\"A meter that reads a gauge of beta.\"}\n\
+             {\"k\":\"external\",\"path\":\"alpha::Reads\",\"uses\":2,\
+             \"named_by\":[\"crate\",\"Panel\"],\"summary\":\"A trait other crates implement.\"}\n"
         ),
         "{facade}"
     );
     let alpha = fs::read_to_string(repo.join("out").join("alpha.md")).unwrap();
     assert!(
-        alpha.contains("- `delta::Stray`, 1 use by [Meter](#type.alpha.Meter)\n- `gamma`"),
-        "a crate outside the run has no doc line:\n{alpha}"
+        alpha.contains(
+            "{\"k\":\"external\",\"path\":\"delta::Stray\",\"uses\":1,\"named_by\":[\"Meter\"]}\n"
+        ),
+        "a crate outside the run has no summary:\n{alpha}"
     );
 }
 
@@ -317,57 +327,16 @@ fn one_named_crate_with_nothing_to_outline_still_fails() {
     assert!(String::from_utf8_lossy(&result.stderr).contains("not a crate"));
 }
 
-const ROOTED: &str = "*Updated 2026-01-01T00:00:00Z*
-
-<a id=\"crate.rooted\"></a>
-# rooted
-
-```
-//! The root package.
-```
-
-<a id=\"legend\"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [rooted](#mod.rooted)
-  - [Root](#type.rooted.Root)
-
-**MACROS:** none
-
-<a id=\"surface\"></a>
-## Public surface
-
-- [Root](#type.rooted.Root)
-
-<a id=\"mod.rooted\"></a>
-## rooted
-
-<a id=\"type.rooted.Root\"></a>
-### Root
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A root type.
-pub struct Root;
-```
-";
+const ROOTED: &str = r#"*Updated 2026-01-01T00:00:00Z*
+{"k":"vibelight-outline","schema":1,"crate":"rooted","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":6,"to":9}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Root"],"evidence":"no hit of `Root` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Root","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":1}
+{"k":"doc","path":"crate","text":"The root package."}
+{"k":"struct","path":"Root","rust":"pub struct Root","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Root","text":"A root type."}
+"#;
 
 #[test]
 fn a_root_manifest_that_is_also_a_package_is_outlined_with_its_members() {

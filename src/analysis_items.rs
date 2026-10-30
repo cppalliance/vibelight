@@ -346,7 +346,7 @@ impl<'a> AnalysisRun<'a> {
 
     /// Returns an item's path below its crate's root, such as
     /// `["parse", "Args", "new"]`. A member of an impl that belongs to no
-    /// declaration is named after the impl's self type as written.
+    /// declaration is named after the impl's self type as Rust writes it.
     pub(crate) fn path(&self, item: ItemId) -> Vec<String> {
         let krate = &self.krates[item.target];
         let mut path = match item.item {
@@ -357,7 +357,7 @@ impl<'a> AnalysisRun<'a> {
             ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => {
                 match self.attached[item.target][i] {
                     Some(d) => krate.decl_path(d),
-                    None => vec![krate.impls[i].self_text.visible(&krate.refs)],
+                    None => vec![krate.impls[i].self_text.rust_visible(&krate.refs)],
                 }
             }
         };

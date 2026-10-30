@@ -1,6 +1,7 @@
 //! The folders of a run hold what the last run wrote: an outline no crate
-//! of the run writes any more is removed with a note, in both formats, and
-//! every other file in them is left alone.
+//! of the run writes any more is removed with a note, in both formats and
+//! in the markdown of an older release too, and every other file in them is
+//! left alone.
 
 use std::fs;
 use std::path::PathBuf;
@@ -26,7 +27,11 @@ fn a_run_removes_the_outlines_no_crate_writes_and_keeps_every_other_file() {
     assert!(vibelight_in(&repo, &[]).status.success());
     let out = repo.join(".vibelight");
     let outline = "*Updated 2026-01-01T00:00:00Z*\n\n<a id=\"crate.old\"></a>\n# old\n";
+    let records = "*Updated 2026-01-01T00:00:00Z*\n\
+                   {\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"gone\",\"target\":\"lib\"}\n\
+                   {\"k\":\"modules\",\"items\":[]}\n";
     let page = "<!-- Updated 2026-01-01T00:00:00Z -->\n<!DOCTYPE html>\n<html>\n";
+    fs::write(out.join("gone.md"), records).unwrap();
     fs::write(out.join("old.md"), outline).unwrap();
     fs::write(out.join("README.md"), "# Notes\n").unwrap();
     fs::write(out.join("notes.txt"), outline).unwrap();
@@ -38,11 +43,20 @@ fn a_run_removes_the_outlines_no_crate_writes_and_keeps_every_other_file() {
         lines(&result.stderr),
         [
             NOTE.to_owned(),
+            removed(&[".vibelight", "gone.md"]),
             removed(&[".vibelight", "html", "old.html"]),
             removed(&[".vibelight", "old.md"]),
         ]
     );
-    assert!(!out.join("old.md").exists() && !out.join("html").join("old.html").exists());
+    assert!(
+        !out.join("gone.md").exists(),
+        "a stale outline of records stays"
+    );
+    assert!(
+        !out.join("old.md").exists(),
+        "a stale outline of an older release stays"
+    );
+    assert!(!out.join("html").join("old.html").exists());
     for kept in [
         "README.md",
         "notes.txt",

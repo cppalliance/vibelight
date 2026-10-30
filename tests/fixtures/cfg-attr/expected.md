@@ -1,85 +1,27 @@
 *Updated 2026-01-01T00:00:00Z*
-
-<a id="crate.cfg_attr"></a>
-# cfg_attr
-
-```
-//! cfg and cfg_attr.
-```
-
-<a id="legend"></a>
-## Legend
-
-- Each type is one block of Rust with the bodies left out: the item with its attributes and its fields, variants, or trait items; then each inherent impl that adds members, under a `// impl in` line that names the file holding it; then one line for each trait impl.
-- Visibilities, signatures, and impl headers are written as in the source, without their comments; a constant's value shows as `...` when it is long, and is left out when it calls a macro or holds a comment.
-- `#[derive(...)]` lists every derived trait, and `#[cfg(...)]` and the attributes that shape an API or its wire format print as written; other attributes are left out.
-- Each impl prints with its type, so a module that holds only impls shows nothing but its docs.
-- `MACRO` marks each macro definition, invocation, derive from another crate, and attribute macro; the kill list near the top counts them.
-- Public surface lists every path a user of the crate can name, and `(test support)` marks one that is test support.
-- Each module has a section that holds its declarations in dependency order: a type that no other type names comes first, a type that only one other type names follows it, and a type that several name follows the last of them.
-- Last in a module's section come the types behind a `cfg` that lists `test` inside `any(...)`, which are test support, and then the types that name nothing and that nothing names.
-- A `Source:` line links to the definition and to each impl block, with the members each inherent impl adds.
-- A `Counts:` line gives a type's variants, fields (and how many are an `Option`), associated items, `Default`, `From`, and `Drop` impls, and functions; a `Used by:` line links what names it; a `Fields:` list, for a type with 8 or more functions, names the functions that reach each field through `self`, and gives only a count for a hub that more than half of them reach; External items lists the items of other crates that signatures name; and Same shapes groups types with the same variants or fields.
-- The first line is the UTC time the file's content last changed.
-
-- [Legend](#legend)
-- [Public surface](#surface)
-- [cfg_attr](#mod.cfg_attr)
-  - [Plain](#type.cfg_attr.Plain)
-  - [Settings](#type.cfg_attr.Settings)
-
-**MACROS:** none
-
-<a id="surface"></a>
-## Public surface
-
-- [Plain](#type.cfg_attr.Plain)
-- [Settings](#type.cfg_attr.Settings)
-
-<a id="mod.cfg_attr"></a>
-## cfg_attr
-
-<a id="type.cfg_attr.Plain"></a>
-### Plain
-
-Counts: none
-
-Used by: nothing
-
-```
-/// A test-only cfg_attr is ignored.
-pub struct Plain;
-```
-
-<a id="type.cfg_attr.Settings"></a>
-### Settings
-
-Counts: 2 fields, 2 functions
-
-Used by: nothing
-
-```
-/// Derives through cfg_attr.
-#[derive(Clone, Debug)]
-pub struct Settings {
-    /// Only with a feature.
-    #[cfg(feature = "extra")]
-    pub extra: u32,
-
-    #[cfg(feature = "fast")]
-    #[cfg(unix)]
-    pub both: u8,
-}
-
-// impl in src/lib.rs
-impl Settings {
-    /// Gated by the impl's cfg.
-    #[cfg(feature = "methods")]
-    pub fn gated(&self);
-
-    /// Also gated, with its own cfg.
-    #[cfg(feature = "methods")]
-    #[cfg(windows)]
-    pub fn doubly(&self);
-}
-```
+{"k":"vibelight-outline","schema":1,"crate":"cfg_attr","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":15,"to":27}]}
+{"k":"lead","id":"doc-echo","mode":"direct-syntax","subjects":["crate"],"evidence":"every content word of \"cfg and cfg_attr.\" is in its name, signature, or types","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Plain"],"evidence":"no hit of `Plain` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Settings::both"],"evidence":"no hit of `both` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Settings::doubly"],"evidence":"no hit of `doubly` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Settings::extra"],"evidence":"no hit of `extra` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Settings::gated"],"evidence":"no hit of `gated` in the scanned sources beyond its 1 declaration","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Settings"],"evidence":"1 production hits of `Settings` outside macros, none a resolved or unique qualified path to it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Settings::both"],"evidence":"0 struct literals of `Settings` set it, and no `.both` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Settings::extra"],"evidence":"0 struct literals of `Settings` set it, and no `.extra` access or pattern reads it","locs":[{"file":"src/lib.rs","line":0}],"limits":["external-consumers","generated-code","macros"]}
+{"k":"surface","path":"Plain","kind":"struct"}
+{"k":"surface","path":"Settings","kind":"struct"}
+{"k":"mod","path":"crate","loc":{"file":"src/lib.rs","line":0},"types":2}
+{"k":"doc","path":"crate","text":"cfg and cfg_attr."}
+{"k":"struct","path":"Settings","rust":"pub struct Settings { #[cfg(feature = \"extra\")] pub extra: u32, #[cfg(feature = \"fast\")] #[cfg(unix)] pub both: u8 }","loc":{"file":"src/lib.rs","line":0},"derives":["Clone","Debug"],"token_hits":1}
+{"k":"doc","path":"Settings","text":"Derives through cfg_attr."}
+{"k":"field","path":"Settings::extra","rust":"#[cfg(feature = \"extra\")] pub extra: u32","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Settings::extra","text":"Only with a feature."}
+{"k":"impl","path":"Settings","rust":"impl Settings","locs":[{"file":"src/lib.rs","line":0}]}
+{"k":"fn","path":"Settings::gated","sig":"pub fn gated(&self)","loc":{"file":"src/lib.rs","line":0},"cfgs":["feature = \"methods\""],"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Settings::gated","text":"Gated by the impl's cfg."}
+{"k":"fn","path":"Settings::doubly","sig":"pub fn doubly(&self)","loc":{"file":"src/lib.rs","line":0},"cfgs":["feature = \"methods\"","windows"],"body":{"statements":0,"tokens":2}}
+{"k":"doc","path":"Settings::doubly","text":"Also gated, with its own cfg."}
+{"k":"struct","path":"Plain","rust":"pub struct Plain","loc":{"file":"src/lib.rs","line":0}}
+{"k":"doc","path":"Plain","text":"A test-only cfg_attr is ignored."}

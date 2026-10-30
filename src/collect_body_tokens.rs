@@ -20,7 +20,7 @@ const KEYWORDS: [&str; 36] = [
 
 /// The version of the shingle hash, its first input byte. A change to how
 /// tokens become canonical changes it.
-const SHINGLE_VERSION: u8 = 1;
+const SHINGLE_VERSION: u8 = 2;
 /// How many canonical tokens one shingle holds.
 const SHINGLE: usize = 5;
 /// The fewest canonical tokens a body has shingles for.
@@ -133,11 +133,15 @@ fn end_run(out: &mut Vec<String>, run: &mut String) {
 }
 
 /// Returns the canonical tokens, each macro invocation folded into
-/// `MACRO`, and for each token whether it is inside macro arguments.
+/// `MACRO`, and for each token whether it is inside macro arguments. What
+/// rustfmt adds or drops with the line width is left out, so a body's
+/// layout never changes its fingerprint: every comma, and the braces of a
+/// block right after a match arm's `=>` or a closure's `|`.
 fn canonical(toks: &[Tok]) -> (Vec<String>, Vec<bool>) {
     let closes = closes(toks);
     let mut canonical = Vec::new();
     let mut in_macro = vec![false; toks.len()];
+    let mut dropped = vec![false; toks.len()];
     let mut i = 0;
     while i < toks.len() {
         if let Some(end) = macro_end(toks, &closes, i) {
@@ -145,11 +149,27 @@ fn canonical(toks: &[Tok]) -> (Vec<String>, Vec<bool>) {
             in_macro[i + 2..=end].fill(true);
             i = end + 1;
         } else {
-            canonical.extend(canonical_token(&toks[i]));
+            let comma = matches!(toks[i], Tok::Punct(',', _));
+            let block = matches!(toks[i], Tok::Open(Delimiter::Brace)) && after_arm_or_bar(toks, i);
+            if block {
+                dropped[closes[i]] = true;
+            }
+            if !comma && !block && !dropped[i] {
+                canonical.extend(canonical_token(&toks[i]));
+            }
             i += 1;
         }
     }
     (canonical, in_macro)
+}
+
+/// Tells whether the token at `at` follows a match arm's `=>` or a `|`.
+fn after_arm_or_bar(toks: &[Tok], at: usize) -> bool {
+    match at.checked_sub(1).map(|before| &toks[before]) {
+        Some(Tok::Punct('|', _)) => true,
+        Some(Tok::Punct('>', _)) => at >= 2 && matches!(toks[at - 2], Tok::Punct('=', true)),
+        _ => false,
+    }
 }
 
 /// Lexes text into flat tokens, without doc attributes, which is what
@@ -327,9 +347,9 @@ fn fingerprint(canonical: &[String]) -> Fingerprint {
     }
 }
 
-/// Hashes one shingle with version 1 of the shingle hash: FNV-1a 64 over
-/// the version byte, then each token's bytes, each followed by `0xFF`,
-/// which no UTF-8 text holds.
+/// Hashes one shingle with the current version of the shingle hash:
+/// FNV-1a 64 over the version byte, then each token's bytes, each followed
+/// by `0xFF`, which no UTF-8 text holds.
 fn shingle(tokens: &[String]) -> u64 {
     let bytes = tokens
         .iter()
@@ -362,7 +382,22 @@ mod tests {
     #[test]
     fn a_shingle_hashes_the_version_and_its_tokens() {
         let tokens = owned(&["let", "ID", "=", "LIT", ";"]);
-        assert_eq!(shingle(&tokens), 0xa562_97b4_dc3a_99ac);
+        assert_eq!(shingle(&tokens), 0x20bd_8b4a_338a_100f);
+    }
+
+    #[test]
+    fn the_layout_rustfmt_picks_by_width_leaves_the_canonical_tokens_alone() {
+        let wide = "{ v.iter().find_map(|b| match b { A { t } => Some(t), _ => None }).f(x, y) }";
+        let narrow = "{ v.iter().find_map(|b| { match b { A { t, } => { Some(t,) } _ => None, } }).f(x, y,) }";
+        let (wide, _) = canonical(&tokens(wide));
+        let (narrow, _) = canonical(&tokens(narrow));
+        assert_eq!(wide, narrow);
+        assert!(!wide.contains(&",".to_owned()));
+        assert_eq!(
+            canonical(&tokens("{ if a { b } }")).0.len(),
+            7,
+            "other braces stay"
+        );
     }
 
     #[test]
