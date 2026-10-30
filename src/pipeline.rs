@@ -5,7 +5,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, anyhow, bail};
 
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
@@ -17,7 +17,7 @@ use crate::settings::{Notation, Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    attach, collect, collect_check, document, document_external, index, layout_decl,
+    analysis, attach, collect, collect_check, document, document_external, index, layout_decl,
     layout_rust_decl, modtree, order, render_html, render_md, resolve, resolve_run, spellings,
     surface, test_support,
 };
@@ -68,12 +68,20 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         outcome.ambiguous += tally.ambiguous;
         krates.push(krate);
     }
-    resolve_run::link(&mut krates, &crate_map(chosen, &targets));
+    let deps = crate_map(chosen, &targets);
+    resolve_run::link(&mut krates, &deps);
     for krate in &krates {
         collect_check::validate_body_facts(krate)?;
     }
     for package in &chosen.packages {
         collect_check::validate_package_facts(package)?;
+    }
+    {
+        let (infos, packages) = analysis::inputs(chosen, &targets, &krates, deps);
+        let run = analysis::AnalysisRun::build(&krates, &infos, &packages);
+        run.validate().map_err(|why| {
+            anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
+        })?;
     }
     let first_docs = document_external::first_docs(&krates);
     let mut docs: Vec<(Built, Built)> = Vec::new();
@@ -206,7 +214,7 @@ fn shown(base: &Path, dir: &Path) -> String {
 
 /// Lists every target of the run in output stem order, each with the index
 /// of its crate, and fails when two targets would write the same file.
-fn targets(chosen: &Chosen) -> Result<Vec<(usize, &Target)>> {
+pub(crate) fn targets(chosen: &Chosen) -> Result<Vec<(usize, &Target)>> {
     let mut targets: Vec<(usize, &Target)> = chosen
         .packages
         .iter()
@@ -236,7 +244,10 @@ fn targets(chosen: &Chosen) -> Result<Vec<(usize, &Target)>> {
 
 /// Maps, for each target, every dependency name it may write to the index
 /// of that dependency's library target in the run.
-fn crate_map(chosen: &Chosen, targets: &[(usize, &Target)]) -> Vec<BTreeMap<String, usize>> {
+pub(crate) fn crate_map(
+    chosen: &Chosen,
+    targets: &[(usize, &Target)],
+) -> Vec<BTreeMap<String, usize>> {
     let libs: BTreeMap<&Path, usize> = targets
         .iter()
         .enumerate()

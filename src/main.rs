@@ -1,7 +1,20 @@
 //! Command-line entry point: writes a markdown and an HTML outline per target.
 
+mod analysis;
+mod analysis_check;
+mod analysis_items;
+mod analysis_paths;
+#[cfg(test)]
+mod analysis_tests;
+mod analysis_uses;
 mod attach;
 mod attrs;
+mod census;
+mod census_check;
+mod census_docs;
+mod census_lex;
+mod census_paths;
+mod census_sources;
 mod collect;
 mod collect_attrs;
 mod collect_bases;

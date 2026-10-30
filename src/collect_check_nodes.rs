@@ -48,7 +48,7 @@ pub(crate) fn check_nodes(krate: &Crate) -> Result<(), String> {
 
 /// Returns the references a trait impl member writes, or `None` for a
 /// member that is not a function, constant, or type.
-fn member_refs(member: &Member) -> Option<Vec<RefId>> {
+pub(crate) fn member_refs(member: &Member) -> Option<Vec<RefId>> {
     let texts: Vec<&Text> = match &member.kind {
         MemberKind::Fn(sig) => sig_texts(sig),
         MemberKind::Const { ty, .. } | MemberKind::Type(ty) => vec![ty],

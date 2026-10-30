@@ -353,6 +353,9 @@ pub(crate) struct Module {
     pub(crate) raw_doc: Option<String>,
     /// The lint attributes of the `mod` line and the inner ones, sorted.
     pub(crate) lints: Vec<String>,
+    /// The bytes of `file` that hold the module's items: the whole file, or
+    /// the inside of an inline module's braces; empty for a missing file.
+    pub(crate) scope: Range<usize>,
 }
 
 /// The kind of a macro, in kill list order.

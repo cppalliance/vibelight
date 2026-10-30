@@ -31,23 +31,31 @@ struct World<'a> {
 /// that dependency's index in `krates`. A name already resolved inside its
 /// own crate keeps that target, and `canonical` never changes.
 pub(crate) fn link(krates: &mut [Crate], deps: &[BTreeMap<String, usize>]) {
-    let found: Vec<Vec<Option<CrossRef>>> = {
-        let shared: &[Crate] = krates;
-        let world = World {
-            scopes: shared.iter().map(Scope::new).collect(),
-            deps,
-        };
-        shared
-            .iter()
-            .enumerate()
-            .map(|(c, krate)| krate.refs.iter().map(|r| world.foreign(c, r)).collect())
-            .collect()
-    };
+    let found = cross_refs(krates, deps);
     for (krate, found) in krates.iter_mut().zip(found) {
         for (r, foreign) in krate.refs.iter_mut().zip(found) {
             r.foreign = foreign;
         }
     }
+}
+
+/// Returns, for each crate and each of its names, the item in another
+/// crate of the run that the name reaches through `deps`, as `link` would
+/// fill it in, and changes no crate. A name resolved inside its own crate
+/// reaches nothing here.
+pub(crate) fn cross_refs(
+    krates: &[Crate],
+    deps: &[BTreeMap<String, usize>],
+) -> Vec<Vec<Option<CrossRef>>> {
+    let world = World {
+        scopes: krates.iter().map(Scope::new).collect(),
+        deps,
+    };
+    krates
+        .iter()
+        .enumerate()
+        .map(|(c, krate)| krate.refs.iter().map(|r| world.foreign(c, r)).collect())
+        .collect()
 }
 
 impl World<'_> {

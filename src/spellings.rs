@@ -40,11 +40,19 @@ pub(crate) struct Entry {
 /// it made could not be fixed. Each entry names the spelling to prefer,
 /// when it has one.
 pub(crate) fn find(krate: &Crate) -> Vec<Entry> {
+    find_hiding(krate, |i| krate.impls[i].attached.is_some())
+}
+
+/// Does what [`find`] does, with `attached` telling which impls are
+/// attached to their types, so that it also works on a crate that attach
+/// has not changed yet.
+pub(crate) fn find_hiding(krate: &Crate, attached: impl Fn(usize) -> bool) -> Vec<Entry> {
     let hidden: BTreeSet<RefId> = krate
         .impls
         .iter()
-        .filter(|i| i.attached.is_some())
-        .flat_map(|i| i.self_text.0.iter())
+        .enumerate()
+        .filter(|&(i, _)| attached(i))
+        .flat_map(|(_, i)| i.self_text.0.iter())
         .filter_map(|seg| match seg {
             Seg::Ref(id) => Some(*id),
             Seg::Plain(_) => None,
