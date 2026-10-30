@@ -64,6 +64,17 @@ mod layout_rust_decl;
 mod layout_rust_items;
 mod layout_special;
 mod leads;
+mod leads_census;
+#[cfg(test)]
+mod leads_census_crates_tests;
+mod leads_census_deps;
+mod leads_census_paths;
+mod leads_census_place;
+mod leads_census_reach;
+mod leads_census_scope;
+#[cfg(test)]
+mod leads_census_tests;
+mod leads_census_variants;
 mod leads_check;
 mod leads_docs;
 mod leads_docs_claims;

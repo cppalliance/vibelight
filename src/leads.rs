@@ -11,7 +11,7 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads_items::{impl_module, parent_module};
 use crate::model::{FileId, Loc, ModId, path_order};
-use crate::{leads_docs, leads_names, leads_shapes};
+use crate::{leads_census, leads_docs, leads_names, leads_shapes};
 
 pub(crate) use crate::leads_check::validate;
 
@@ -28,10 +28,12 @@ pub(crate) enum Mode {
 }
 
 /// The blind spots a lead may name, sorted.
-pub(crate) const LIMITS: [&str; 4] = [
+pub(crate) const LIMITS: [&str; 6] = [
+    "cfg-selection",
     "dynamic-dispatch",
     "external-consumers",
     "external-impls",
+    "generated-code",
     "macros",
 ];
 
@@ -189,7 +191,7 @@ struct Group {
     find: fn(&AnalysisRun<'_>, &mut Vec<Lead>),
 }
 
-const GROUPS: [Group; 3] = [
+const GROUPS: [Group; 4] = [
     Group {
         ids: leads_shapes::IDS,
         absent: leads_shapes::ABSENT,
@@ -204,6 +206,11 @@ const GROUPS: [Group; 3] = [
         ids: leads_docs::IDS,
         absent: leads_docs::ABSENT,
         find: leads_docs::find,
+    },
+    Group {
+        ids: leads_census::IDS,
+        absent: leads_census::ABSENT,
+        find: leads_census::find,
     },
 ];
 
