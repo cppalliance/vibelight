@@ -65,6 +65,18 @@ mod layout_rust_items;
 mod layout_special;
 mod leads;
 mod leads_check;
+mod leads_docs;
+mod leads_docs_claims;
+mod leads_docs_lists;
+mod leads_docs_phrases;
+mod leads_docs_refs;
+mod leads_docs_repeat;
+mod leads_docs_scan;
+mod leads_docs_std;
+#[cfg(test)]
+mod leads_docs_tests;
+mod leads_docs_text;
+mod leads_docs_words;
 #[cfg(test)]
 mod leads_impls_tests;
 mod leads_items;

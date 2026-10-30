@@ -11,7 +11,7 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads_items::{impl_module, parent_module};
 use crate::model::{FileId, Loc, ModId, path_order};
-use crate::{leads_names, leads_shapes};
+use crate::{leads_docs, leads_names, leads_shapes};
 
 pub(crate) use crate::leads_check::validate;
 
@@ -189,7 +189,7 @@ struct Group {
     find: fn(&AnalysisRun<'_>, &mut Vec<Lead>),
 }
 
-const GROUPS: [Group; 2] = [
+const GROUPS: [Group; 3] = [
     Group {
         ids: leads_shapes::IDS,
         absent: leads_shapes::ABSENT,
@@ -199,6 +199,11 @@ const GROUPS: [Group; 2] = [
         ids: leads_names::IDS,
         absent: leads_names::ABSENT,
         find: leads_names::find,
+    },
+    Group {
+        ids: leads_docs::IDS,
+        absent: leads_docs::ABSENT,
+        find: leads_docs::find,
     },
 ];
 
