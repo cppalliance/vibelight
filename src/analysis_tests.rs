@@ -18,7 +18,7 @@ use crate::model_body::Role;
 use crate::root::TargetKind;
 
 /// The crates of a one-package run and what analysis gathered beside them.
-struct Fixture {
+pub(crate) struct Fixture {
     _tmp: tempfile::TempDir,
     krates: Vec<Crate>,
     targets: Vec<TargetInfo>,
@@ -26,7 +26,7 @@ struct Fixture {
 }
 
 /// Writes a package and reads, resolves, and links it as a run does.
-fn fixture(files: &[(&str, &str)]) -> Fixture {
+pub(crate) fn fixture(files: &[(&str, &str)]) -> Fixture {
     let tmp = tempfile::tempdir().unwrap();
     for (rel, text) in files {
         let path = tmp.path().join(rel);
@@ -61,7 +61,8 @@ fn read(dir: &Path) -> (Vec<Crate>, Vec<TargetInfo>, Vec<PackageInfo>) {
     (krates, targets, packages)
 }
 
-fn run(fixture: &Fixture) -> AnalysisRun<'_> {
+/// Builds and checks the analysis view of a fixture.
+pub(crate) fn run(fixture: &Fixture) -> AnalysisRun<'_> {
     let run = AnalysisRun::build(&fixture.krates, &fixture.targets, &fixture.packages);
     run.validate().unwrap();
     run

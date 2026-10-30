@@ -63,6 +63,28 @@ mod layout_rust;
 mod layout_rust_decl;
 mod layout_rust_items;
 mod layout_special;
+mod leads;
+mod leads_check;
+#[cfg(test)]
+mod leads_impls_tests;
+mod leads_items;
+mod leads_names;
+mod leads_names_modules;
+mod leads_names_roles;
+#[cfg(test)]
+mod leads_names_tests;
+mod leads_shapes;
+mod leads_shapes_impls;
+mod leads_shapes_params;
+#[cfg(test)]
+mod leads_shapes_tests;
+mod leads_shapes_traits;
+mod leads_shapes_twins;
+#[cfg(test)]
+mod leads_tests;
+mod leads_types;
+mod leads_types_shape;
+mod leads_words;
 mod legend;
 mod macros;
 mod manifest;

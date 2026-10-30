@@ -18,8 +18,8 @@ use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
     analysis, attach, collect, collect_check, document, document_external, index, layout_decl,
-    layout_rust_decl, modtree, order, render_html, render_md, resolve, resolve_run, spellings,
-    surface, test_support,
+    layout_rust_decl, leads, modtree, order, render_html, render_md, resolve, resolve_run,
+    spellings, surface, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -70,19 +70,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     }
     let deps = crate_map(chosen, &targets);
     resolve_run::link(&mut krates, &deps);
-    for krate in &krates {
-        collect_check::validate_body_facts(krate)?;
-    }
-    for package in &chosen.packages {
-        collect_check::validate_package_facts(package)?;
-    }
-    {
-        let (infos, packages) = analysis::inputs(chosen, &targets, &krates, deps);
-        let run = analysis::AnalysisRun::build(&krates, &infos, &packages);
-        run.validate().map_err(|why| {
-            anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
-        })?;
-    }
+    analyze(chosen, &targets, &krates, deps)?;
     let first_docs = document_external::first_docs(&krates);
     let mut docs: Vec<(Built, Built)> = Vec::new();
     for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
@@ -151,6 +139,36 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         index::render_html(&entries, stamp),
     ));
     Ok(outcome)
+}
+
+/// Checks the analysis facts of the run's resolved, unattached crates and
+/// of its packages, builds the run's analysis view from them with `deps`,
+/// the crate map that resolution used, and finds its leads, checking the
+/// view and the leads too.
+///
+/// # Errors
+/// Returns an internal error when a fact, the view, or a lead breaks an
+/// invariant.
+fn analyze(
+    chosen: &Chosen,
+    targets: &[(usize, &Target)],
+    krates: &[Crate],
+    deps: Vec<BTreeMap<String, usize>>,
+) -> Result<()> {
+    for krate in krates {
+        collect_check::validate_body_facts(krate)?;
+    }
+    for package in &chosen.packages {
+        collect_check::validate_package_facts(package)?;
+    }
+    let (infos, packages) = analysis::inputs(chosen, targets, krates, deps);
+    let run = analysis::AnalysisRun::build(krates, &infos, &packages);
+    run.validate().map_err(|why| {
+        anyhow!("internal error: the analysis of the run breaks an invariant: {why}")
+    })?;
+    let leads = leads::find(&run);
+    leads::validate(&leads, &run)
+        .map_err(|why| anyhow!("internal error: the leads of the run break an invariant: {why}"))
 }
 
 /// What one target's documents are built from, whatever the format.
