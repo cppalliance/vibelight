@@ -14,21 +14,22 @@ use crate::layout::Block;
 use crate::model::{Crate, Loc, Warning};
 use crate::render_html::Anchors;
 use crate::render_slop::{AnalysisTarget, RenderInput};
-use crate::root::Target;
-use crate::settings::{Notation, Output, Plan};
+use crate::root::{Target, TargetKind};
+use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    analysis, attach, collect, collect_check, document, index, layout_decl, leads, modtree, order,
-    render_html, render_slop, render_slop_lists, resolve, resolve_run, spellings, surface,
-    test_support,
+    analysis, attach, collect, collect_check, document, index, layout_decl, leads, manifest,
+    modtree, order, render_html, render_slop, render_slop_lists, resolve, resolve_run, spellings,
+    surface, test_support,
 };
 
 /// What a run would write and what it reports.
 #[derive(Debug, Default)]
 pub(crate) struct Outcome {
-    /// Each file the run writes, with its text: the outlines in output-name
-    /// order, then the index.
+    /// Each file the run writes, with its text: for each target in output
+    /// stem order its markdown outline and then its HTML page, then the
+    /// markdown index and the HTML index.
     pub(crate) files: Vec<(PathBuf, String)>,
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
@@ -44,7 +45,7 @@ pub(crate) struct Outcome {
 /// measured from.
 struct Built {
     doc: Document,
-    base: LinkBase,
+    link_base: LinkBase,
 }
 
 /// Outlines every target of the chosen crates in memory: a markdown file
@@ -83,7 +84,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         let others = attach::attach(krate);
         let krate: &Crate = krate;
         let spellings = spellings::find(krate);
-        let surface = if target.lib {
+        let surface = if target.kind == TargetKind::Lib {
             surface::walk(krate)
         } else {
             Vec::new()
@@ -116,13 +117,15 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
-        let member_link: &dyn Fn(Loc) -> String =
-            &|loc| page.base.target(&krate.files[loc.file].rel, Some(loc.line));
+        let member_link: &dyn Fn(Loc) -> String = &|loc| {
+            page.link_base
+                .target(&krate.files[loc.file].rel, Some(loc.line))
+        };
         let text = render_html::render(&page.doc, Some(member_link), &run, stamp);
         let path = html.dir.join(format!("{}.html", target.stem));
         outcome.files.push((path, text));
         let prefix = (chosen.packages.len() > 1)
-            .then(|| inputs::relative(&chosen.base, &chosen.packages[p].dir))
+            .then(|| manifest::relative(&chosen.base, &chosen.packages[p].dir))
             .flatten()
             .filter(|prefix| !prefix.is_empty());
         outcome
@@ -198,7 +201,7 @@ fn analyze(
     }
     let mut texts = Vec::new();
     for (t, &(p, target)) in targets.iter().enumerate() {
-        let base = LinkBase::new(&chosen.packages[p].input.dir, markdown)
+        let link_base = LinkBase::new(&chosen.packages[p].input.dir, markdown)
             .context("cannot resolve the crate and output directories")?;
         let input = RenderInput {
             analysis_target: AnalysisTarget {
@@ -210,7 +213,7 @@ fn analyze(
             stamp,
             target_kind: target.kind,
             shown_dir: shown(&chosen.base, &chosen.packages[p].dir),
-            root: base.root(),
+            root: link_base.root(),
         };
         texts.push(
             render_slop::render(&input)
@@ -238,39 +241,33 @@ struct Parts<'a> {
 }
 
 impl Parts<'_> {
-    /// Builds the document for one format: its blocks and their order come
-    /// from its options, and its source links are measured from its folder.
+    /// Builds the document, its source links measured from the HTML folder.
     fn build(&self, output: &Output) -> Result<Built> {
         let decls = 0..self.krate.decls.len();
         let blocks: Vec<Block> = decls
             .clone()
-            .map(|d| layout_decl::decl_block(self.krate, d, output.options.members))
+            .map(|d| layout_decl::decl_block(self.krate, d))
             .collect();
-        let printed = match output.options.notation {
-            Notation::Cpp => &blocks,
-        };
         let order = order::order(self.krate, &blocks);
-        let base = LinkBase::new(self.crate_dir, &output.dir)
+        let link_base = LinkBase::new(self.crate_dir, &output.dir)
             .context("cannot resolve the crate and output directories")?;
         let inputs = document::Inputs {
             krate: self.krate,
             others: self.others,
             order: &order,
             blocks: &blocks,
-            printed,
             spellings: self.spellings,
             surface: self.surface,
-            options: output.options,
         };
-        let doc = document::build(&inputs, Some(&base));
-        Ok(Built { doc, base })
+        let doc = document::build(&inputs, Some(&link_base));
+        Ok(Built { doc, link_base })
     }
 }
 
 /// Shows a crate folder below the base of the run with forward slashes,
 /// the base itself as `.`, and a folder outside it in full.
 fn shown(base: &Path, dir: &Path) -> String {
-    match inputs::relative(base, dir) {
+    match manifest::relative(base, dir) {
         Some(rel) if rel.is_empty() => ".".to_owned(),
         Some(rel) => rel,
         None => dir.display().to_string(),
@@ -290,12 +287,7 @@ pub(crate) fn targets(chosen: &Chosen) -> Result<Vec<(usize, &Target)>> {
     for pair in targets.windows(2) {
         let ((first, target), (second, other)) = (pair[0], pair[1]);
         if target.stem == other.stem {
-            let name = |p: usize| {
-                let dir = &chosen.packages[p].dir;
-                inputs::relative(&chosen.base, dir)
-                    .filter(|rel| !rel.is_empty())
-                    .unwrap_or_else(|| dir.display().to_string())
-            };
+            let name = |p: usize| inputs::shown(&chosen.base, &chosen.packages[p].dir);
             bail!(
                 "{} and {} would both write {stem}.md and {stem}.html",
                 name(first),
@@ -316,7 +308,7 @@ pub(crate) fn crate_map(
     let libs: BTreeMap<&Path, usize> = targets
         .iter()
         .enumerate()
-        .filter(|(_, (_, target))| target.lib)
+        .filter(|(_, (_, target))| target.kind == TargetKind::Lib)
         .map(|(i, &(p, _))| (chosen.packages[p].dir.as_path(), i))
         .collect();
     targets

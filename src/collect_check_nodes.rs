@@ -6,8 +6,7 @@ use std::cmp::Ordering;
 use std::ops::Range;
 
 use crate::model::{
-    Crate, Foreign, ItemKind, Member, MemberKind, Meta, RefId, Shape, Sig, Text, VariantFields,
-    name_order,
+    Crate, Foreign, ItemKind, MemberKind, Meta, Shape, Sig, VariantFields, name_order,
 };
 
 /// Checks a crate's node facts, naming the first broken invariant.
@@ -31,7 +30,7 @@ pub(crate) fn check_nodes(krate: &Crate) -> Result<(), String> {
         }
         for member in &item.trait_members {
             let name = &member.name;
-            let refs = member_refs(member)
+            let refs = (member.kind.refs())
                 .ok_or_else(|| format!("trait member {name} of impl {i} has no signature"))?;
             if refs
                 .iter()
@@ -44,25 +43,6 @@ pub(crate) fn check_nodes(krate: &Crate) -> Result<(), String> {
         }
     }
     check_metas(krate)
-}
-
-/// Returns the references a trait impl member writes, or `None` for a
-/// member that is not a function, constant, or type.
-pub(crate) fn member_refs(member: &Member) -> Option<Vec<RefId>> {
-    let texts: Vec<&Text> = match &member.kind {
-        MemberKind::Fn(sig) => sig_texts(sig),
-        MemberKind::Const { ty, .. } | MemberKind::Type(ty) => vec![ty],
-        MemberKind::Field(_) | MemberKind::Mark(_) | MemberKind::Unsupported(_) => return None,
-    };
-    Some(texts.into_iter().flat_map(Text::refs).collect())
-}
-
-fn sig_texts(sig: &Sig) -> Vec<&Text> {
-    let mut texts = vec![&sig.generics];
-    texts.extend(sig.params.iter().map(|p| &p.text));
-    texts.extend(sig.ret.iter());
-    texts.extend(sig.where_clause.iter().flat_map(|clause| clause.0.iter()));
-    texts
 }
 
 /// Checks the raw doc text and lint attributes of every node collect built

@@ -1,5 +1,6 @@
 //! Splits the dependency order into the groups the HTML prints: each run of
-//! types in one module is a group, named for the module.
+//! types whose modules share their first `DEPTH` path segments is a group,
+//! named for those segments.
 
 use crate::model::DeclId;
 

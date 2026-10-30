@@ -64,7 +64,7 @@ mod tests {
 
     /// Where a reference's value is, as `module::name`, and what kind it is.
     fn value_of(krate: &Crate, r: &TypeRef) -> Option<String> {
-        let at = r.value?;
+        let at = r.value()?;
         let module = &krate.modules[at.module];
         let item = &module.items[at.item];
         let kind = match item.kind {
@@ -127,10 +127,10 @@ mod tests {
              pub use only::Lone;\n",
         );
         let both = reference(&krate, "", "shapes::Shape");
-        assert!(both.target.is_some(), "the type is preferred");
+        assert!(both.decl().is_some(), "the type is preferred");
         assert_eq!(value_of(&krate, both), None);
         let lone = reference(&krate, "", "only::Lone");
-        assert_eq!(lone.target, None);
+        assert_eq!(lone.decl(), None);
         assert_eq!(value_of(&krate, lone).as_deref(), Some("fn only::Lone"));
     }
 
@@ -159,7 +159,7 @@ mod tests {
             .iter()
             .find(|r| !r.comment && r.text == "Gauge")
             .expect("the field names it");
-        assert_eq!((field.target, field.value), (None, None));
+        assert_eq!((field.decl(), field.value()), (None, None));
         assert_eq!(
             tally.unresolved, 0,
             "Gauge is imported, so it is not counted"
@@ -176,7 +176,7 @@ mod tests {
             .iter()
             .find(|r| r.text == "Clone")
             .expect("the derive writes it");
-        assert_eq!(derive.value, None);
+        assert_eq!(derive.value(), None);
         assert!(!derive.may_be_value);
     }
 
@@ -209,7 +209,7 @@ mod tests {
                       pub use m::f;\n";
         let cfg_of = |lib: &str| {
             let (_tmp, krate, _) = resolved(lib);
-            let at = reference(&krate, "", "m::f").value.expect("it resolves");
+            let at = reference(&krate, "", "m::f").value().expect("it resolves");
             krate.modules[at.module].items[at.item].meta.cfgs.clone()
         };
         assert_eq!(cfg_of(first), ["unix"]);

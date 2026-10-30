@@ -17,7 +17,7 @@ use crate::stamp;
 
 /// The `.gitignore` of vibelight's own folder: the outlines, the HTML
 /// pages, and the index.
-pub(crate) const GITIGNORE: &str = "*.md\n*.html\n";
+const GITIGNORE: &str = "*.md\n*.html\n";
 
 /// What writing a run did beside writing its files.
 #[derive(Debug, Default, PartialEq, Eq)]

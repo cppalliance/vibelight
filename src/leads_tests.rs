@@ -9,7 +9,7 @@ use std::path::Path;
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_tests::{fixture, run, run_with};
-use crate::leads::{self, Lead, Mode, SUMMARY_FROM, Summary};
+use crate::leads::{self, Lead, Mode, SUMMARY_ABOVE, Summary};
 
 /// The manifest of a package named `t`.
 pub(crate) const MANIFEST: (&str, &str) = ("Cargo.toml", "[package]\nname = \"t\"\n");
@@ -99,23 +99,25 @@ fn more_than_five_leads_of_one_id_in_one_module_become_one_summary() {
     };
     let source = format!(
         "pub struct Many {{ {} }}\npub mod few {{ pub struct Few {{ {} }} }}\n",
-        flags(SUMMARY_FROM + 2),
-        flags(SUMMARY_FROM)
+        flags(SUMMARY_ABOVE + 2),
+        flags(SUMMARY_ABOVE)
     );
     with_leads(&[MANIFEST, ("src/lib.rs", &source)], |_, leads| {
         let flags: Vec<&Lead> = leads.iter().filter(|l| l.id == "option-as-flag").collect();
-        assert_eq!(flags.len(), 1 + SUMMARY_FROM, "one summary and five leads");
+        assert_eq!(flags.len(), 1 + SUMMARY_ABOVE, "one summary and five leads");
         let summary = flags.iter().find(|l| l.summary.is_some()).unwrap();
         let counted = summary.summary.map(|s| (s.target, s.module, s.count));
-        assert_eq!(counted, Some((0, 0, SUMMARY_FROM + 2)));
+        assert_eq!(counted, Some((0, 0, SUMMARY_ABOVE + 2)));
         let names: Vec<&str> = summary
             .subjects
             .iter()
             .map(|s| s.path[1].as_str())
             .collect();
-        let expected: Vec<String> = (0..SUMMARY_FROM + 2).map(|i| format!("flag_{i}")).collect();
+        let expected: Vec<String> = (0..SUMMARY_ABOVE + 2)
+            .map(|i| format!("flag_{i}"))
+            .collect();
         assert_eq!(names, expected, "sorted by name");
-        assert_eq!(summary.locs.len(), SUMMARY_FROM + 2);
+        assert_eq!(summary.locs.len(), SUMMARY_ABOVE + 2);
         assert!(
             summary
                 .evidence
@@ -123,7 +125,7 @@ fn more_than_five_leads_of_one_id_in_one_module_become_one_summary() {
         );
         let rest = flags.iter().filter(|l| l.summary.is_none());
         assert!(rest.clone().all(|l| l.subjects[0].path[0] == "few"));
-        assert_eq!(rest.count(), SUMMARY_FROM, "five leads stay leads");
+        assert_eq!(rest.count(), SUMMARY_ABOVE, "five leads stay leads");
     });
 }
 

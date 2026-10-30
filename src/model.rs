@@ -5,6 +5,7 @@ use std::ops::Range;
 
 use crate::model_body::{AttrPath, Body};
 use crate::source::SourceFile;
+use crate::typerefs::strip_raw;
 
 /// Index into [`Crate::files`].
 pub(crate) type FileId = usize;
@@ -24,7 +25,7 @@ pub(crate) struct Loc {
 
 pub(crate) use crate::model_body::{BodyName, BodyOwner};
 pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
-pub(crate) use crate::text::{CrossRef, Reach, Seg, Text, TypeRef, ValueRef, Where, Written};
+pub(crate) use crate::text::{CrossRef, Reach, Res, Seg, Text, TypeRef, ValueRef, Where, Written};
 
 /// One comment printed above a node.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -71,14 +72,17 @@ pub(crate) enum Vis {
 }
 
 /// How a function takes its object.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Receiver {
     /// No receiver.
     None,
-    /// `&self`, dropped with nothing in its place.
-    Shared,
-    /// `&mut self`, dropped.
-    Mutable,
+    /// `&self`, dropped with nothing in its place, and the receiver as
+    /// written, such as `&'a self`.
+    Shared(String),
+    /// `&mut self`, dropped and marked by a trailing `mut` after the
+    /// parameters in the HTML, and the receiver as written, such as
+    /// `&'a mut self`.
+    Mutable(String),
     /// Any other receiver, kept as the first parameter.
     Value,
 }
@@ -93,9 +97,6 @@ pub(crate) struct Sig {
     /// The generic parameter list, `<...>`, or empty.
     pub(crate) generics: Text,
     pub(crate) receiver: Receiver,
-    /// The receiver as written when the C++ spelling drops it, such as
-    /// `&'a mut self`.
-    pub(crate) self_text: Option<String>,
     /// The parameters, a kept receiver first.
     pub(crate) params: Vec<Param>,
     /// The return type, without the arrow.
@@ -103,7 +104,8 @@ pub(crate) struct Sig {
     pub(crate) where_clause: Option<Where>,
 }
 
-/// One parameter or tuple field and the comments above it.
+/// One parameter, tuple field, or named variant field and the comments above
+/// it.
 #[derive(Clone, Debug)]
 pub(crate) struct Param {
     pub(crate) text: Text,
@@ -217,7 +219,7 @@ pub(crate) struct Base {
     pub(crate) long: bool,
 }
 
-/// A struct, enum, union, trait, or type alias.
+/// A struct, enum, union, trait, trait alias, or type alias.
 #[derive(Clone, Debug)]
 pub(crate) struct Decl {
     pub(crate) kind: DeclKind,
@@ -436,11 +438,10 @@ impl Crate {
     }
 }
 
-/// Compares names as rule 9 sorts members: an `r#` prefix ignored, then
-/// case ignored, then exact spelling.
+/// Compares names as members sort: an `r#` prefix ignored, then case
+/// ignored, then exact spelling.
 pub(crate) fn name_order(a: &str, b: &str) -> Ordering {
-    let strip = |s: &'_ str| -> String { s.strip_prefix("r#").unwrap_or(s).to_owned() };
-    let (x, y) = (strip(a), strip(b));
+    let (x, y) = (strip_raw(a), strip_raw(b));
     x.to_lowercase()
         .cmp(&y.to_lowercase())
         .then_with(|| x.cmp(&y))

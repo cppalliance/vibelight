@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::glob;
-use crate::inputs::relative;
+use crate::manifest::relative;
 
 /// The globs that leave crates out of a run, with the folder they are
 /// measured from: the config's.

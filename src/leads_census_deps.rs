@@ -4,13 +4,11 @@
 //! only tests, benches, examples, and doc tests, so a hit in one context
 //! never hides an unused entry of another.
 
-use crate::analysis::AnalysisRun;
+use crate::analysis::{AnalysisRun, library_of};
 use crate::census::Context;
 use crate::leads::{Lead, Mode, Subject};
 use crate::leads_census_scope::Scope;
 use crate::manifest_facts::{DepEntry, DepKind};
-use crate::root::TargetKind;
-
 /// The suffixes of a package that links a native library, which a crate
 /// may depend on only to link it.
 const NATIVE_SUFFIXES: [&str; 2] = ["-sys", "_sys"];
@@ -31,11 +29,7 @@ fn contexts(kind: DepKind) -> &'static [Context] {
 
 /// Returns the table a dependency entry is in, as a manifest writes it.
 fn table(dep: &DepEntry) -> String {
-    let kind = match dep.kind {
-        DepKind::Normal => "dependencies",
-        DepKind::Dev => "dev-dependencies",
-        DepKind::Build => "build-dependencies",
-    };
+    let kind = dep.kind.table();
     match &dep.target {
         Some(target) => format!("target.'{target}'.{kind}"),
         None => kind.to_owned(),
@@ -51,8 +45,8 @@ fn table(dep: &DepEntry) -> String {
 /// which may only add features, are left out.
 pub(crate) fn find(run: &AnalysisRun<'_>, scope: &Scope, out: &mut Vec<Lead>) {
     for (p, package) in run.packages.iter().enumerate() {
-        let lib = (package.targets.iter()).find(|&&t| run.targets[t].kind == TargetKind::Lib);
-        let Some(&home) = lib.or_else(|| package.targets.first()) else {
+        let lib = library_of(run.targets, p);
+        let Some(home) = lib.or_else(|| run.targets.iter().position(|t| t.package == p)) else {
             continue;
         };
         if scope.unread(p) {

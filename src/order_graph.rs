@@ -64,8 +64,8 @@ pub(crate) fn place(
     for root in roots {
         placer.emit(root);
     }
-    // Every group has a root above it, so nothing is left; a group that is
-    // would still be placed, in path order, rather than lost.
+    // Every group has a root above it, so nothing is left; a group that is left
+    // anyway would still be placed, in path order, rather than lost.
     let mut rest: Vec<usize> = (0..count).filter(|&g| !placer.emitted[g]).collect();
     rest.sort_by(|&a, &b| {
         path_cmp(

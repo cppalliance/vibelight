@@ -200,10 +200,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<L
             };
             let site = Site {
                 item: at,
-                decl: decl.map(|d| ItemId {
-                    target: t,
-                    item: ItemRef::Decl(d),
-                }),
+                decl: decl.map(|d| ItemId::decl(t, d)),
                 func: funcs.get(&at).copied(),
             };
             let chains = body.facts.chains.as_slice();

@@ -1,6 +1,6 @@
-//! Checks the invariants of a run's leads before anything reads them, so a
-//! broken lead stops the run as an internal error rather than reaching an
-//! outline: the registry, then each lead's id, mode, subjects, evidence,
+//! Checks the invariants of a run's leads, which debug builds do before
+//! anything reads them, so a broken lead stops the run as an internal error
+//! rather than reaching an outline: the registry, then each lead's id, mode, subjects, evidence,
 //! locations, limits, targets, and summary, then the order of the leads and
 //! the summary rule.
 
@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::leads::{
-    LIMITS, Lead, Mode, SUMMARY_FROM, ids, lead_order, rests_on_absence, subject_order,
+    LIMITS, Lead, Mode, SUMMARY_ABOVE, ids, lead_order, rests_on_absence, subject_order,
 };
 use crate::model::ModId;
 
@@ -44,7 +44,7 @@ pub(crate) fn validate(leads: &[Lead], run: &AnalysisRun<'_>) -> Result<(), Stri
         }
     }
     for ((id, ..), (count, summarized)) in homes {
-        if (summarized && count > 1) || (!summarized && count > SUMMARY_FROM) {
+        if (summarized && count > 1) || (!summarized && count > SUMMARY_ABOVE) {
             return Err(format!("the {id} leads of one module are not summarized"));
         }
     }
@@ -107,7 +107,7 @@ fn check_lead(lead: &Lead, run: &AnalysisRun<'_>) -> Result<(), String> {
     }
     if let Some(summary) = &lead.summary {
         let home = lead.home() == Some((summary.target, summary.module));
-        if !home || summary.count <= SUMMARY_FROM {
+        if !home || summary.count <= SUMMARY_ABOVE {
             return Err(format!("summarizes {} leads out of place", summary.count));
         }
     }

@@ -4,20 +4,20 @@
 use std::ops::Range;
 
 use syn::visit::Visit;
-use syn::{Attribute, Expr, ImplItem, TraitItem};
+use syn::{Attribute, ImplItem, TraitItem};
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_body::self_fields;
 use crate::collect_body_code::Code;
 use crate::collect_impl::Parts;
-use crate::comments::{Attached, attach};
+use crate::collect_use::written_value;
+use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{
     BodyOwner, DeclId, Holder, Loc, MacroKind, MacroUse, Member, MemberKind, Meta, Note, Text, Vis,
 };
 use crate::model_body::{BodyKind, Owner};
-use crate::source::{Comment, SourceFile, scan};
 use crate::typerefs::range_of;
 
 impl Collector<'_> {
@@ -36,13 +36,9 @@ impl Collector<'_> {
         let files = self.files;
         let file = &files[here.file];
         let children: Vec<Range<usize>> = items.iter().map(|i| range_of(i, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (placed, dangling) = place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut members = Vec::new();
-        for ((item, lead), trail) in items.iter().zip(leading).zip(trailing) {
+        for (item, placed) in items.iter().zip(placed) {
             if self.test_only(here, trait_item_attrs(item), item) {
                 continue;
             }
@@ -66,8 +62,7 @@ impl Collector<'_> {
                         ident: &c.ident,
                         vis: None,
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks,
                         range,
@@ -94,8 +89,7 @@ impl Collector<'_> {
                         ident: &f.sig.ident,
                         vis: None,
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks,
                         range,
@@ -112,8 +106,7 @@ impl Collector<'_> {
                         ident: &t.ident,
                         vis: None,
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks: Vec::new(),
                         range,
@@ -212,8 +205,7 @@ impl Collector<'_> {
         here: &Here,
         id: usize,
         item: &ImplItem,
-        lead: Vec<Comment>,
-        trail: &[Comment],
+        placed: Placed,
         impl_cfgs: &[String],
     ) -> Option<Member> {
         let files = self.files;
@@ -276,7 +268,7 @@ impl Collector<'_> {
             }
             _ => return None,
         };
-        let mut comments = lead;
+        let mut comments = placed.leading;
         comments.extend(self.pools[here.file].take(range_of(item, file)));
         let notes = self.notes(here, &[], comments);
         for reference in &mut self.refs[first..] {
@@ -292,7 +284,7 @@ impl Collector<'_> {
             kind,
             meta: Meta {
                 notes,
-                trailing: self.trailing(here, trail),
+                trailing: self.trailing(here, &placed.trailing),
                 cfgs,
                 attrs: attrs::api(attrs, file),
                 marks: Vec::new(),
@@ -316,11 +308,35 @@ fn trait_item_attrs(item: &TraitItem) -> &[Attribute] {
         _ => &[],
     }
 }
+#[cfg(test)]
+mod tests {
+    use crate::collect_body_facts::tests::collected;
+    use crate::model::MemberKind;
 
-/// Returns a constant's value as written, or `None` when it invokes a macro
-/// or holds a comment, the way `value` decides, without recording a mark.
-fn written_value(file: &SourceFile, expr: &Expr) -> Option<String> {
-    let range = range_of(expr, file);
-    let plain = macros::expr_macros(expr).is_empty() && scan(&file.text, range.clone()).is_empty();
-    plain.then(|| file.clean(range))
+    #[test]
+    fn a_trait_impl_constant_with_a_comment_shows_no_value() {
+        let (_tmp, krate) = collected(
+            "pub struct G;\n\
+             pub trait T { const A: u8; const B: u8; const C: u8; }\n\
+             impl T for G {\n\
+             const A: u8 = 1 /* one */ + 0;\n\
+             const B: u8 = 2 + 0;\n\
+             const C: u8 = u8::MAX - 1;\n\
+             }\n",
+        );
+        let value = |name: &str| {
+            let member = krate.impls[0]
+                .trait_members
+                .iter()
+                .find(|m| m.name == name)
+                .expect("the member exists");
+            let MemberKind::Const { value, .. } = &member.kind else {
+                panic!("{name} is a constant");
+            };
+            value.clone()
+        };
+        assert_eq!(value("A"), None);
+        assert_eq!(value("B").as_deref(), Some("2 + 0"));
+        assert_eq!(value("C").as_deref(), Some("u8::MAX - 1"));
+    }
 }

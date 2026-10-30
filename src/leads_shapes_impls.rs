@@ -29,10 +29,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<L
     let mut methods: Methods<'_, '_> = BTreeMap::new();
     for func in &catalog.funcs {
         if let (FnKind::Inherent, Some(d)) = (func.kind, func.decl) {
-            let at = ItemId {
-                target: func.item.target,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(func.item.target, d);
             methods.entry(at).or_default().push(func);
         }
     }
@@ -289,10 +286,7 @@ fn inverse_pair(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead
             if source.0.last() == Some(&Tok::Code("&".to_owned())) {
                 source.0.pop();
             }
-            let to = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let to = ItemId::decl(t, d);
             if let Some(source) = named(&source, None) {
                 from.insert((source, item_name(run, to)), (to, i));
             }
@@ -325,15 +319,7 @@ fn inverse_pair(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead
         .filter(|f| f.is_own() && !f.has_receiver())
     {
         let t = func.item.target;
-        let own = (func.decl).map(|d| {
-            item_name(
-                run,
-                ItemId {
-                    target: t,
-                    item: ItemRef::Decl(d),
-                },
-            )
-        });
+        let own = (func.decl).map(|d| item_name(run, ItemId::decl(t, d)));
         let input = match func.args.as_slice() {
             [arg] => named(&arg.ty, own.as_ref()),
             _ => None,
@@ -387,13 +373,7 @@ fn spelling_table(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
             (func.ret.as_ref()).is_some_and(|ret| ret.key() == "&'static std::primitive::str");
         let t = func.item.target;
         let spelled = match (spells, func.has_receiver(), func.args.as_slice(), func.decl) {
-            (true, true, [], Some(d)) => Some(item_name(
-                run,
-                ItemId {
-                    target: t,
-                    item: ItemRef::Decl(d),
-                },
-            )),
+            (true, true, [], Some(d)) => Some(item_name(run, ItemId::decl(t, d))),
             (true, false, [arg], _) => named(&arg.ty, None).filter(|name| name.starts_with('#')),
             _ => None,
         };
@@ -412,10 +392,7 @@ fn spelling_table(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
             if variants.len() < 2 || !unit {
                 continue;
             }
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let renamed = |attrs: &[String]| {
                 attrs
                     .iter()

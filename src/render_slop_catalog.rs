@@ -271,7 +271,7 @@ pub(crate) struct FnRecord {
 pub(crate) struct ValueRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
-    /// The initializer, when it is one literal.
+    /// The initializer, when it is one short literal.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) value: Option<String>,
     pub(crate) loc: Loc,

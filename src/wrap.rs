@@ -6,7 +6,7 @@ use crate::model::TypeRef;
 /// The widest a line may be, counting its indent and visible text.
 pub(crate) const MAX_WIDTH: usize = 80;
 
-/// A function declaration split where rule 16 may break it.
+/// A function declaration split where the long-line rule may break it.
 pub(crate) struct FnParts {
     /// Qualifiers, name, and generics.
     pub(crate) head: Vec<Span>,
@@ -20,7 +20,7 @@ pub(crate) struct FnParts {
     pub(crate) end: Vec<Span>,
 }
 
-/// A `where` clause laid out both ways rule 16 prints it.
+/// A `where` clause laid out both ways the long-line rule prints it.
 pub(crate) struct WhereParts {
     /// `where` and the predicates joined by `, `.
     pub(crate) one: Vec<Span>,
@@ -45,8 +45,8 @@ fn line(indent: usize, spans: Vec<Span>) -> Line {
     }
 }
 
-/// Lays out a function declaration at `indent` under rule 16. A parameter
-/// with a comment forces one parameter per line.
+/// Lays out a function declaration at `indent` under the long-line rule. A
+/// parameter with a comment forces one parameter per line.
 pub(crate) fn function(
     parts: &FnParts,
     indent: usize,

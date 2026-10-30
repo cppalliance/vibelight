@@ -1,6 +1,6 @@
-//! Checks the invariants of a run's analysis view before anything reads
-//! it, so that a broken view stops the run as an internal error rather than
-//! reaching a detector: the tables of every target, the items and their
+//! Checks the invariants of a run's analysis view, which debug builds do
+//! before anything reads it, so that a broken view stops the run as an
+//! internal error rather than reaching a detector: the tables of every target, the items and their
 //! bodies, the edges, the census, and the observed uses. Every query the
 //! detectors use is checked against the tables it reads.
 
@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_paths::{Edge, PathKind, Via};
+use crate::analysis_paths::{Edge, PathKind};
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
 use crate::model::{DeclKind, Reach};
@@ -36,7 +36,7 @@ impl AnalysisRun<'_> {
         let n = self.krates.len();
         let lens = [
             self.targets.len(),
-            self.deps.len(),
+            self.analysis_deps.len(),
             self.cross.len(),
             self.attached.len(),
             self.impls_of.len(),
@@ -54,17 +54,16 @@ impl AnalysisRun<'_> {
         }
         let mut stems = BTreeSet::new();
         for (t, info) in self.targets.iter().enumerate() {
-            let listed = self
-                .packages
-                .get(info.package)
-                .is_some_and(|p| p.targets.contains(&t));
-            if !listed || info.crate_name.is_empty() || !stems.insert(info.stem.as_str()) {
+            if info.package >= self.packages.len()
+                || info.crate_name.is_empty()
+                || !stems.insert(info.stem.as_str())
+            {
                 return Err(format!(
-                    "target {} is not listed once in its package",
+                    "target {} has no package, no crate name, or a repeated stem",
                     info.stem
                 ));
             }
-            for (name, &lib) in &self.deps[t] {
+            for (name, &lib) in &self.analysis_deps[t] {
                 let library = lib != t
                     && self
                         .targets
@@ -80,7 +79,10 @@ impl AnalysisRun<'_> {
                     return Err(format!("target {} may not name {name}", info.stem));
                 }
             }
-            let kept = info.deps.keys().all(|name| self.deps[t].contains_key(name));
+            let kept = info
+                .deps
+                .keys()
+                .all(|name| self.analysis_deps[t].contains_key(name));
             let loaded = info.files.iter().all(|extra| {
                 extra.context == Context::Test && self.krates[t].test_files.contains(&extra.rel)
             });
@@ -92,18 +94,11 @@ impl AnalysisRun<'_> {
             }
         }
         for (p, package) in self.packages.iter().enumerate() {
-            let ordered = package.targets.windows(2).all(|w| w[0] < w[1]);
-            let owned = package
-                .targets
-                .iter()
-                .all(|&t| self.targets.get(t).is_some_and(|info| info.package == p));
-            let libs = package
-                .targets
-                .iter()
-                .filter(|&&t| self.targets[t].kind == TargetKind::Lib)
+            let libs = (self.targets.iter())
+                .filter(|t| t.package == p && t.kind == TargetKind::Lib)
                 .count();
-            if !ordered || !owned || libs > 1 {
-                return Err(format!("package {p} does not own its targets in order"));
+            if libs > 1 {
+                return Err(format!("package {p} has more than one library"));
             }
             let facts = &package.facts;
             let roots = (facts.tests.iter().chain(&facts.benches))
@@ -202,7 +197,7 @@ impl AnalysisRun<'_> {
                 let named = self
                     .name(id)
                     .is_some_and(|name| owner.is_none_or(|own| own == name));
-                let held = self.loc(id).is_some_and(|loc| loc.file == body.file);
+                let held = self.loc(id).is_some_and(|loc| loc.file == body.loc.file);
                 if !fits || !named || !held || self.body_of(id) != Some(b) {
                     return Err(format!("body {b} of {} has the wrong item", krate.name));
                 }
@@ -245,10 +240,7 @@ impl AnalysisRun<'_> {
             let decls = self.surfaces[t]
                 .iter()
                 .filter_map(|entry| match entry.kind {
-                    surface::Kind::Decl(d) => Some(ItemId {
-                        target: t,
-                        item: ItemRef::Decl(d),
-                    }),
+                    surface::Kind::Decl(d) => Some(ItemId::decl(t, d)),
                     _ => None,
                 });
             let items = self.surface_items[t]
@@ -310,12 +302,11 @@ impl AnalysisRun<'_> {
                         PathKind::Construct => edge.fact < facts.constructs.len(),
                         PathKind::Pattern => edge.fact < facts.patterns.len(),
                     };
-                    let resolved = (edge.via == Via::Unresolved) == edge.item.is_none();
                     let exists = edge.item.is_none_or(|item| self.name(item).is_some());
                     let prefixed = edge.prefix.is_none_or(|p| {
                         matches!(p.item, ItemRef::Decl(_)) && self.name(p).is_some()
                     });
-                    if !(fits && resolved && exists && prefixed) {
+                    if !(fits && exists && prefixed) {
                         return Err(format!(
                             "an edge of body {b} of {} is malformed",
                             krate.name
@@ -325,7 +316,7 @@ impl AnalysisRun<'_> {
             }
             for (&r, cross) in &self.cross[t] {
                 let open = krate.refs.get(r).is_some_and(|r| {
-                    r.target.is_none() && r.value.is_none() && r.foreign.is_none()
+                    r.decl().is_none() && r.value().is_none() && r.foreign.is_none()
                 });
                 let reached = self
                     .item_of_ref(t, r)
@@ -412,8 +403,7 @@ impl AnalysisRun<'_> {
                             && hit.context == u.context
                             && hit.module == u.module
                             && hit.segments.last() == Some(&unraw)
-                            && count.total > 0
-                            && count.uses() <= count.total
+                            && !count.by_place.is_empty()
                     }),
                     UseKind::Signature
                     | UseKind::Body

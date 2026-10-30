@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::iter;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::ItemId;
 use crate::leads::{Lead, Mode};
 use crate::leads_containers::Keyed;
 use crate::leads_types::{Ty, leaf};
@@ -14,9 +14,6 @@ use crate::model::{DeclId, DeclKind, MemberKind, Shape, Text};
 
 /// The fewest collections of one key for `shared-key`.
 const SHARED_FROM: usize = 2;
-
-/// The keyed collection fields of each struct and union.
-type KeyedFields<'c, 'a> = BTreeMap<ItemId, Vec<Keyed<'c, 'a>>>;
 
 /// `shared-key`: [`SHARED_FROM`] or more collections keyed by one type,
 /// held by a struct or union and the types it owns, not all by itself;
@@ -26,15 +23,16 @@ type KeyedFields<'c, 'a> = BTreeMap<ItemId, Vec<Keyed<'c, 'a>>>;
 /// enum's variants are alternatives, so an enum owns nothing. Each key is
 /// found once on each outermost owner: a type that no other owner of the
 /// same collections owns, or the first of types that own each other.
-pub(crate) fn find(run: &AnalysisRun<'_>, keyed: &KeyedFields<'_, '_>, out: &mut Vec<Lead>) {
+pub(crate) fn find(
+    run: &AnalysisRun<'_>,
+    keyed: &BTreeMap<ItemId, Vec<Keyed<'_, '_>>>,
+    out: &mut Vec<Lead>,
+) {
     for (t, krate) in run.krates.iter().enumerate() {
         let edges = owns(run, t);
         let reach: Vec<BTreeSet<DeclId>> =
             (0..krate.decls.len()).map(|d| reached(&edges, d)).collect();
-        let at = |d: DeclId| ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        };
+        let at = |d: DeclId| ItemId::decl(t, d);
         let held = |d: DeclId| keyed.get(&at(d)).map_or(&[][..], Vec::as_slice);
         let mut owners: BTreeMap<&str, BTreeSet<DeclId>> = BTreeMap::new();
         let mut groups: BTreeMap<(DeclId, &str), Vec<&Keyed<'_, '_>>> = BTreeMap::new();

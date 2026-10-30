@@ -9,7 +9,7 @@
 use crate::layout::{Line, Span};
 
 /// How the prose renderer reaches the page's own inline renderer.
-pub(crate) struct Inline<'a> {
+pub(crate) struct InlineRenderer<'a> {
     /// Writes one line's spans as inline HTML, with no comment coloring.
     pub(crate) spans: &'a dyn Fn(&mut String, &[Span]),
     /// Returns one span's printed text, references resolved.
@@ -20,7 +20,7 @@ pub(crate) struct Inline<'a> {
 }
 
 /// Writes `lines` as prose.
-pub(crate) fn block(out: &mut String, lines: &[Line], inline: &Inline<'_>) {
+pub(crate) fn block(out: &mut String, lines: &[Line], inline: &InlineRenderer<'_>) {
     let mut paragraph: Vec<Vec<Span>> = Vec::new();
     let mut bullets: Vec<Vec<Vec<Span>>> = Vec::new();
     let mut fence: Option<String> = None;
@@ -102,13 +102,13 @@ pub(crate) fn block(out: &mut String, lines: &[Line], inline: &Inline<'_>) {
 /// Writes a markdown heading as the page's smallest heading.
 fn subheading(out: &mut String, words: &str) {
     out.push_str("<h4>");
-    out.push_str(&escape(words.trim()));
+    out.push_str(&crate::render_html::escape(words.trim()));
     out.push_str("</h4>\n");
 }
 
 /// Returns a line's printed text with its markers dropped, which is what
 /// decides how the line classifies.
-fn plain(line: &Line, inline: &Inline<'_>) -> String {
+fn plain(line: &Line, inline: &InlineRenderer<'_>) -> String {
     line.spans
         .iter()
         .filter(|span| !matches!(span, Span::Marker(_)))
@@ -118,7 +118,7 @@ fn plain(line: &Line, inline: &Inline<'_>) -> String {
 
 /// Returns the line's spans with the first `skip` characters of text
 /// dropped, which removes a bullet's mark or the line's own indentation.
-fn without(line: &Line, skip: usize, inline: &Inline<'_>) -> Vec<Span> {
+fn without(line: &Line, skip: usize, inline: &InlineRenderer<'_>) -> Vec<Span> {
     let mut left = skip;
     let mut out: Vec<Span> = Vec::new();
     for span in &line.spans {
@@ -174,14 +174,14 @@ fn flush(
     out: &mut String,
     paragraph: &mut Vec<Vec<Span>>,
     bullets: &mut Vec<Vec<Vec<Span>>>,
-    inline: &Inline<'_>,
+    inline: &InlineRenderer<'_>,
 ) {
     flush_paragraph(out, paragraph, inline);
     flush_bullets(out, bullets, inline);
 }
 
 /// Writes the paragraph being built, if any.
-fn flush_paragraph(out: &mut String, paragraph: &mut Vec<Vec<Span>>, inline: &Inline<'_>) {
+fn flush_paragraph(out: &mut String, paragraph: &mut Vec<Vec<Span>>, inline: &InlineRenderer<'_>) {
     if paragraph.is_empty() {
         return;
     }
@@ -196,7 +196,7 @@ fn flush_paragraph(out: &mut String, paragraph: &mut Vec<Vec<Span>>, inline: &In
 }
 
 /// Writes the bullet list being built, if any.
-fn flush_bullets(out: &mut String, bullets: &mut Vec<Vec<Vec<Span>>>, inline: &Inline<'_>) {
+fn flush_bullets(out: &mut String, bullets: &mut Vec<Vec<Vec<Span>>>, inline: &InlineRenderer<'_>) {
     if bullets.is_empty() {
         return;
     }
@@ -214,16 +214,14 @@ fn flush_bullets(out: &mut String, bullets: &mut Vec<Vec<Vec<Span>>>, inline: &I
     out.push_str("</ul>\n");
 }
 
-/// Escapes text for HTML content.
-fn escape(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            _ => out.push(c),
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_heading_escapes_markup() {
+        let mut out = String::new();
+        subheading(&mut out, " Vec<&T> ");
+        assert_eq!(out, "<h4>Vec&lt;&amp;T&gt;</h4>\n");
     }
-    out
 }

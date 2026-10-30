@@ -42,7 +42,7 @@ pub(crate) struct Finder<'a> {
 }
 
 impl<'a> Finder<'a> {
-    pub(crate) fn new(file: &'a SourceFile) -> Finder<'a> {
+    fn new(file: &'a SourceFile) -> Finder<'a> {
         Finder {
             file,
             found: Vec::new(),
@@ -235,9 +235,7 @@ impl Slicer<'_> {
                     generics: self.generics.to_vec(),
                     comment: false,
                     may_be_value: false,
-                    target: None,
-                    value: None,
-                    canonical: None,
+                    res: None,
                     written: Some(Written {
                         loc: Loc {
                             file: self.file_id,

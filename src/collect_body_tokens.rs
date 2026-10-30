@@ -1,30 +1,26 @@
 //! Scans a body's tokens for analysis, macro arguments included: its clone
 //! fingerprint, method-call names, literals, the identifiers inside macro
-//! arguments, and the words of a statement a comment goes with.
+//! arguments, and the words of a statement a comment goes with. This scan
+//! drops doc attributes while it flattens, and folds each macro invocation
+//! into one `MACRO` token; it shares only the keyword table with
+//! `census_lex`. The census flags `macro_rules!` bodies as macro tokens,
+//! and this scan folds only invocations.
 
 use std::collections::BTreeSet;
 
 use proc_macro2::{Delimiter, Literal, Spacing, TokenStream, TokenTree};
 
+use crate::census_lex::is_keyword;
 use crate::model_body::Fingerprint;
 use crate::typerefs::strip_raw;
 
-/// The keywords, which canonical tokens keep as written; `true` and
-/// `false` are literals.
-const KEYWORDS: [&str; 36] = [
-    "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern",
-    "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref",
-    "return", "self", "Self", "static", "struct", "super", "trait", "type", "unsafe", "use",
-    "where", "while",
-];
-
 /// The version of the shingle hash, its first input byte. A change to how
 /// tokens become canonical changes it.
-const SHINGLE_VERSION: u8 = 2;
+const SHINGLE_VERSION: u8 = 3;
 /// How many canonical tokens one shingle holds.
-const SHINGLE: usize = 5;
+pub(crate) const SHINGLE: usize = 5;
 /// The fewest canonical tokens a body has shingles for.
-const MIN_TOKENS: usize = 20;
+pub(crate) const MIN_TOKENS: usize = 20;
 
 /// One token, with each group flattened into its delimiters.
 #[derive(Clone, Debug)]
@@ -259,7 +255,7 @@ fn macro_end(toks: &[Tok], closes: &[usize], at: usize) -> Option<usize> {
     };
     let bang = matches!(toks.get(at + 1), Some(Tok::Punct('!', false)));
     let group = matches!(toks.get(at + 2), Some(Tok::Open(_)));
-    (!KEYWORDS.contains(&name.as_str()) && bang && group).then(|| closes[at + 2])
+    (!is_keyword(name) && bang && group).then(|| closes[at + 2])
 }
 
 /// Returns the name of the method a `.` at `dot` calls: an identifier
@@ -272,7 +268,7 @@ fn method_after(toks: &[Tok], dot: usize) -> Option<String> {
     let Some(Tok::Ident(name)) = toks.get(dot + 1) else {
         return None;
     };
-    if KEYWORDS.contains(&name.as_str()) {
+    if is_keyword(name) {
         return None;
     }
     let mut at = dot + 2;
@@ -309,11 +305,8 @@ fn angles_end(toks: &[Tok], open: usize) -> Option<usize> {
 fn canonical_token(tok: &Tok) -> Option<String> {
     let text = match tok {
         Tok::Ident(name) if name == "true" || name == "false" => "LIT",
-        Tok::Ident(name) => KEYWORDS
-            .iter()
-            .find(|keyword| **keyword == name.as_str())
-            .copied()
-            .unwrap_or("ID"),
+        Tok::Ident(name) if is_keyword(name) => name,
+        Tok::Ident(_) => "ID",
         Tok::Punct(c, _) => return Some(c.to_string()),
         Tok::Lit(_) => "LIT",
         Tok::Open(delimiter) => match delimiter {
@@ -382,7 +375,7 @@ mod tests {
     #[test]
     fn a_shingle_hashes_the_version_and_its_tokens() {
         let tokens = owned(&["let", "ID", "=", "LIT", ";"]);
-        assert_eq!(shingle(&tokens), 0x20bd_8b4a_338a_100f);
+        assert_eq!(shingle(&tokens), 0x9911_5bf0_c184_646e);
     }
 
     #[test]
@@ -451,6 +444,11 @@ mod tests {
             "to_string",
         ];
         assert_eq!(found, owned(&expected));
+    }
+
+    #[test]
+    fn a_body_scan_reads_gen_as_a_method() {
+        assert_eq!(scan("{ x.gen() }", &[]).methods, owned(&["gen"]));
     }
 
     #[test]

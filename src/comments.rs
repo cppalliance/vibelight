@@ -47,31 +47,29 @@ impl Pool {
     }
 }
 
-/// The comments rule 20 assigns to the children of one scope.
+/// The ordinary comments that belong to one child of a scope. A comment
+/// leads a child when it sits in the gap before it, and trails the child
+/// before it when it starts on the line where that child ends and ends on
+/// that line too.
 #[derive(Debug, Default)]
-pub(crate) struct Attached {
-    /// Comments above each child.
-    pub(crate) leading: Vec<Vec<Comment>>,
-    /// Comments at the end of each child's last line.
-    pub(crate) trailing: Vec<Vec<Comment>>,
-    /// Comments with nothing after them in the scope.
-    pub(crate) dangling: Vec<Comment>,
+pub(crate) struct Placed {
+    /// Comments above the child.
+    pub(crate) leading: Vec<Comment>,
+    /// Comments at the end of the child's last line.
+    pub(crate) trailing: Vec<Comment>,
 }
 
-/// Assigns the comments in the gaps of `scope` to its `children`, which are
-/// sorted and do not overlap.
-pub(crate) fn attach(
+/// Places the comments in the gaps of `scope` with its `children`, which are
+/// sorted and do not overlap. Returns one `Placed` for each child, and the
+/// comments with nothing after them in the scope.
+pub(crate) fn place_comments(
     pool: &mut Pool,
     file: &SourceFile,
     scope: Range<usize>,
     children: &[Range<usize>],
-) -> Attached {
-    let n = children.len();
-    let mut out = Attached {
-        leading: vec![Vec::new(); n],
-        trailing: vec![Vec::new(); n],
-        dangling: Vec::new(),
-    };
+) -> (Vec<Placed>, Vec<Comment>) {
+    let mut placed: Vec<Placed> = children.iter().map(|_| Placed::default()).collect();
+    let mut dangling = Vec::new();
     let mut previous = scope.start;
     let gap_ends = children
         .iter()
@@ -81,20 +79,20 @@ pub(crate) fn attach(
         let mut rest = Vec::new();
         for comment in pool.take(previous..gap_end.max(previous)) {
             if k > 0 && is_trailing(file, previous, &comment) {
-                out.trailing[k - 1].push(comment);
+                placed[k - 1].trailing.push(comment);
             } else {
                 rest.push(comment);
             }
         }
         match children.get(k) {
             Some(child) => {
-                out.leading[k] = rest;
+                placed[k].leading = rest;
                 previous = child.end.max(previous);
             }
-            None => out.dangling = rest,
+            None => dangling = rest,
         }
     }
-    out
+    (placed, dangling)
 }
 
 /// Tells whether a comment sits on the line where a node ends, with only
@@ -206,9 +204,7 @@ impl NoteCx<'_> {
                             generics: self.generics.to_vec(),
                             comment: true,
                             may_be_value: true,
-                            target: None,
-                            value: None,
-                            canonical: None,
+                            res: None,
                             written: None,
                             foreign: None,
                         });
@@ -305,7 +301,7 @@ pub(crate) fn comment_lines(file: &SourceFile, comment: &Comment) -> Vec<String>
 
 /// Turns the text of a `/** */` doc comment into lines: a blank first or
 /// last line goes, and a leading `*` on every line is removed.
-pub(crate) fn beautify(value: &str) -> Vec<String> {
+fn beautify(value: &str) -> Vec<String> {
     let mut lines: Vec<&str> = value.split('\n').collect();
     let mut from = 1;
     if lines.len() > 1 && lines[0].trim().is_empty() {
@@ -359,13 +355,13 @@ mod tests {
         let file = SourceFile::new("a.rs".into(), text);
         let mut pool = Pool::new(&file);
         let children = [0..1, 16..17];
-        let att = attach(&mut pool, &file, 0..text.len(), &children);
+        let (placed, dangling) = place_comments(&mut pool, &file, 0..text.len(), &children);
         let show = |c: &Vec<Comment>| -> Vec<String> {
             c.iter().map(|c| text[c.range.clone()].to_owned()).collect()
         };
-        assert_eq!(show(&att.trailing[0]), ["// t"]);
-        assert_eq!(show(&att.leading[1]), ["// lead"]);
-        assert_eq!(show(&att.dangling), ["// end"]);
+        assert_eq!(show(&placed[0].trailing), ["// t"]);
+        assert_eq!(show(&placed[1].leading), ["// lead"]);
+        assert_eq!(show(&dangling), ["// end"]);
         assert_eq!(pool.take(0..text.len()).len(), 0);
     }
 

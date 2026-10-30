@@ -14,6 +14,7 @@ use crate::analysis_items::{Scopes, innermost};
 use crate::census::{Census, Context, Form, QualifiedPathHit, Scan, Source, TokenHit};
 use crate::census_docs::{doc_texts, doctests};
 use crate::census_lex::lex;
+use crate::macros;
 use crate::model::{Crate, FileId, ItemKind, MemberKind, ModId, Seg, Shape, VariantFields};
 use crate::root::TargetKind;
 use crate::source::SourceFile;
@@ -261,7 +262,7 @@ fn declarations(krates: &[Crate]) -> BTreeMap<String, usize> {
             }
             for item in &module.items {
                 let declares = match &item.kind {
-                    ItemKind::Mark(text) => text.starts_with("macro_rules! "),
+                    ItemKind::Mark(text) => macros::definition_name(text).is_some(),
                     ItemKind::Reexport { .. } | ItemKind::Unsupported(_) => false,
                     ItemKind::Fn(_)
                     | ItemKind::Const { .. }

@@ -60,7 +60,7 @@ pub(crate) fn cross_refs(
 
 impl World<'_> {
     fn foreign(&self, c: usize, r: &TypeRef) -> Option<CrossRef> {
-        if r.target.is_some() || r.value.is_some() || self.deps[c].is_empty() {
+        if r.decl().is_some() || r.value().is_some() || self.deps[c].is_empty() {
             return None;
         }
         let first = r.path.first()?;
@@ -68,11 +68,11 @@ impl World<'_> {
             return None;
         }
         let mut seen = Seen::new();
-        let values = r.may_be_value;
+        let may_be_value = r.may_be_value;
         let found = if r.global {
-            self.extern_path(c, &r.path, &mut seen, values)
+            self.extern_path(c, &r.path, &mut seen, may_be_value)
         } else {
-            self.walk(c, r.module, &r.path, &mut seen, values)
+            self.walk(c, r.module, &r.path, &mut seen, may_be_value)
         };
         match found? {
             Hop::Decl(krate, decl) if krate != c => Some(CrossRef {
@@ -88,27 +88,33 @@ impl World<'_> {
     }
 
     /// Walks a path whose first name is one of crate `c`'s dependencies.
-    fn extern_path(&self, c: usize, path: &[String], seen: &mut Seen, values: bool) -> Option<Hop> {
+    fn extern_path(
+        &self,
+        c: usize,
+        path: &[String],
+        seen: &mut Seen,
+        may_be_value: bool,
+    ) -> Option<Hop> {
         let (first, rest) = path.split_first()?;
         let &dep = self.deps[c].get(first)?;
-        self.follow(Hop::Module(dep, 0), rest, seen, values)
+        self.follow(Hop::Module(dep, 0), rest, seen, may_be_value)
     }
 
     /// Walks a path from `module` of crate `c` as `resolve` does, except
     /// that a first name not found there may be a dependency, so any step
-    /// can lead into another crate. With `values` set, the last name may be
-    /// a function, constant, or static.
+    /// can lead into another crate. With `may_be_value` set, the last name
+    /// may be a function, constant, or static.
     fn walk(
         &self,
         c: usize,
         module: ModId,
         path: &[String],
         seen: &mut Seen,
-        values: bool,
+        may_be_value: bool,
     ) -> Option<Hop> {
         match path.first()?.as_str() {
-            "crate" => self.follow(Hop::Module(c, 0), &path[1..], seen, values),
-            "self" => self.follow(Hop::Module(c, module), &path[1..], seen, values),
+            "crate" => self.follow(Hop::Module(c, 0), &path[1..], seen, may_be_value),
+            "self" => self.follow(Hop::Module(c, module), &path[1..], seen, may_be_value),
             "super" => {
                 let mut current = module;
                 let mut i = 0;
@@ -116,47 +122,54 @@ impl World<'_> {
                     current = self.scopes[c].parents[current]?;
                     i += 1;
                 }
-                self.follow(Hop::Module(c, current), &path[i..], seen, values)
+                self.follow(Hop::Module(c, current), &path[i..], seen, may_be_value)
             }
-            first => match self.lookup_in(c, module, first, seen, values && path.len() == 1) {
-                Some(found) => self.follow(found, &path[1..], seen, values),
-                None => self.extern_path(c, path, seen, values),
-            },
+            first => {
+                match self.lookup_in(c, module, first, seen, may_be_value && path.len() == 1) {
+                    Some(found) => self.follow(found, &path[1..], seen, may_be_value),
+                    None => self.extern_path(c, path, seen, may_be_value),
+                }
+            }
         }
     }
 
     /// Looks up each name of `rest` in turn, starting from `at`.
-    fn follow(&self, mut at: Hop, rest: &[String], seen: &mut Seen, values: bool) -> Option<Hop> {
+    fn follow(
+        &self,
+        mut at: Hop,
+        rest: &[String],
+        seen: &mut Seen,
+        may_be_value: bool,
+    ) -> Option<Hop> {
         for (i, name) in rest.iter().enumerate() {
             let Hop::Module(c, module) = at else {
                 return None;
             };
-            at = self.lookup_in(c, module, name, seen, values && i + 1 == rest.len())?;
+            at = self.lookup_in(c, module, name, seen, may_be_value && i + 1 == rest.len())?;
         }
         Some(at)
     }
 
-    /// Looks up one name in a module: its `use` items, then its globs, then
-    /// its declarations, then, with `values` set, its functions, constants,
-    /// and statics, then its child modules.
+    /// Looks up one name in a module in the order of `Scope::lookup_in`, but
+    /// across the crates of the run.
     fn lookup_in(
         &self,
         c: usize,
         module: ModId,
         name: &str,
         seen: &mut Seen,
-        values: bool,
+        may_be_value: bool,
     ) -> Option<Hop> {
-        if !seen.insert((c, module, name.to_owned(), values)) {
+        if !seen.insert((c, module, name.to_owned(), may_be_value)) {
             return None;
         }
         let scope = &self.scopes[c];
         let uses = &scope.krate.modules[module].uses;
         if let Some(u) = uses.iter().find(|u| u.name.as_deref() == Some(name)) {
             return if u.global {
-                self.extern_path(c, &u.path, seen, values)
+                self.extern_path(c, &u.path, seen, may_be_value)
             } else {
-                self.walk(c, module, &u.path, seen, values)
+                self.walk(c, module, &u.path, seen, may_be_value)
             };
         }
         for u in uses.iter().filter(|u| u.name.is_none()) {
@@ -167,7 +180,7 @@ impl World<'_> {
             };
             if let Some(Hop::Module(k, m)) = source {
                 if (k, m) != (c, module) {
-                    if let Some(found) = self.lookup_in(k, m, name, seen, values) {
+                    if let Some(found) = self.lookup_in(k, m, name, seen, may_be_value) {
                         return Some(found);
                     }
                 }
@@ -176,7 +189,7 @@ impl World<'_> {
         if let Some(&id) = scope.decls[module].get(name).and_then(|ids| ids.first()) {
             return Some(Hop::Decl(c, id));
         }
-        if values {
+        if may_be_value {
             let first = scope.values[module]
                 .get(name)
                 .and_then(|items| items.first());

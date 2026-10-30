@@ -70,7 +70,7 @@ pub(crate) struct Keyed<'c, 'a> {
 impl Keyed<'_, '_> {
     /// Returns the field as the evidence shows it.
     pub(crate) fn text(&self) -> String {
-        format!("`{}: {}`", self.field.name, self.field.ty.shown())
+        self.field.ty.typed(&self.field.name)
     }
 }
 

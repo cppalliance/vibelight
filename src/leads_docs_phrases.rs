@@ -10,7 +10,7 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::ItemId;
 use crate::leads::{Lead, Mode};
 use crate::leads_comments_words::prose_line;
-use crate::leads_docs::{Doc, Docs, Node, typed};
+use crate::leads_docs::{Doc, Docs, Node};
 use crate::leads_docs_text::{Kind, Phrase, Prose, START, identifiers, read_except};
 use crate::leads_items::handles_err;
 use crate::leads_types::{Ty, leaf};
@@ -52,8 +52,8 @@ pub(crate) fn find(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>) 
 
 /// Version 1 of the history words: phrases that tell an earlier design.
 /// `no longer` counts only before a word that tells use, and `legacy` only
-/// for the item's own callers or code, since both also tell runtime state
-/// or an outside system's history.
+/// after `for`, or before `callers`, `code`, `shim`, or `support`, since both
+/// also tell runtime state or an outside system's history.
 const HISTORY: [Phrase; 9] = [
     &[&["formerly"]],
     &[&["was", "were"], &["renamed"]],
@@ -80,7 +80,7 @@ const NO_LONGER: [&str; 9] = [
 ];
 
 /// The words that name a visibility.
-const SHOWN: [&str; 6] = [
+const VISIBILITY_WORDS: [&str; 6] = [
     "exported",
     "exposed",
     "pub",
@@ -91,10 +91,14 @@ const SHOWN: [&str; 6] = [
 
 /// Version 1 of the visibility excuses.
 const EXCUSES: [Phrase; 8] = [
-    &[&SHOWN, &["only"], &["so", "for", "because"]],
-    &[&["only"], &SHOWN, &["so", "for", "because"]],
-    &[&SHOWN, &["so"], &["that"]],
-    &[&SHOWN, &["for"], &["test", "tests", "testing", "benches"]],
+    &[&VISIBILITY_WORDS, &["only"], &["so", "for", "because"]],
+    &[&["only"], &VISIBILITY_WORDS, &["so", "for", "because"]],
+    &[&VISIBILITY_WORDS, &["so"], &["that"]],
+    &[
+        &VISIBILITY_WORDS,
+        &["for"],
+        &["test", "tests", "testing", "benches"],
+    ],
     &[&["only"], &["for"], &["test", "tests", "testing"]],
     &[&["for"], &["internal"], &["use"]],
     &[&["internal"], &["use"], &["only"]],
@@ -237,7 +241,7 @@ fn impossible_error(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>)
             let text = lines.join(" ");
             if let Some(said) = first(&read_except(&text, Vec::new()), false) {
                 let at = Loc {
-                    file: body.file,
+                    file: body.loc.file,
                     line: comment.line,
                 };
                 let found = lead(format!("{said} in a body comment"));
@@ -289,7 +293,7 @@ fn conditional_field(docs: &Docs<'_>, f: usize, doc: &Doc<'_>) -> Option<(String
     let (name, found) = found?;
     let evidence = format!(
         "{}: {}, which names `{name}`",
-        typed(&field.name, &field.ty),
+        field.ty.typed(&field.name),
         prose.said(found)
     );
     Some((name.to_owned(), evidence))
@@ -317,7 +321,7 @@ fn container_invariant_claim(
     if !claimed.is_empty() {
         let evidence = format!(
             "{} claims {}",
-            typed(&field.name, &field.ty),
+            field.ty.typed(&field.name),
             claimed.join(", ")
         );
         let lead = Lead::new("container-invariant-claim", Mode::DirectSyntax, evidence);

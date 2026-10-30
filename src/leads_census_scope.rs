@@ -15,6 +15,7 @@ use crate::model::{
     DeclId, DeclKind, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Receiver, Shape,
     ValueRef, Vis,
 };
+use crate::route::derive_path;
 use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
 
@@ -38,20 +39,6 @@ const UNREAD: [&str; 3] = ["missing file", "module file loop", "unparsable file"
 /// The macro that pulls a file into a source, which the census does not
 /// read.
 const INCLUDE: &str = "include";
-
-/// The derives whose code the compilers leave out of dead code analysis;
-/// any other derive writes code the run does not see.
-const STD_DERIVES: [&str; 9] = [
-    "Clone",
-    "Copy",
-    "Debug",
-    "Default",
-    "Eq",
-    "Hash",
-    "Ord",
-    "PartialEq",
-    "PartialOrd",
-];
 
 /// What kind of item a candidate is, which decides how the run can observe
 /// its uses.
@@ -240,7 +227,7 @@ impl Scope {
         let included = (run.census.token_hits(INCLUDE).iter())
             .filter(|hit| hit.form == Form::Macro)
             .map(|hit| hit.source);
-        for source in run.limits.iter().copied().chain(included) {
+        for source in run.census.unread().chain(included) {
             let source = &run.census.sources[source];
             unread[source.package] = true;
             if let Some(t) = source.target {
@@ -257,10 +244,11 @@ impl Scope {
         }
         let surface = (0..n)
             .map(|t| {
-                let reaches = |u: &usize| *u == t || run.deps[*u].values().any(|&d| d == t);
+                let reaches =
+                    |u: &usize| *u == t || run.analysis_deps[*u].values().any(|&d| d == t);
                 (0..n)
                     .filter(reaches)
-                    .any(|u| own[u] || unread[run.targets[u].package])
+                    .any(|u| unread[run.targets[u].package])
             })
             .collect();
         let attr_names = (run.krates.iter())
@@ -279,7 +267,7 @@ impl Scope {
     /// Tells whether code that can name an item goes unread: its target's
     /// own, or for an item on a library's surface, any code that can reach
     /// the library.
-    pub(crate) fn blind(&self, run: &AnalysisRun<'_>, item: ItemId) -> bool {
+    fn blind(&self, run: &AnalysisRun<'_>, item: ItemId) -> bool {
         let t = item.target;
         self.own[t] || (self.surface[t] && run.on_surface(item))
     }
@@ -305,7 +293,7 @@ impl Scope {
     /// Tells whether an `allow` or `expect` of `dead_code` or `unused`
     /// reaches a candidate: on itself, its declaration, or a module around
     /// it. An impl's own lint attributes go unread.
-    pub(crate) fn kept(&self, run: &AnalysisRun<'_>, c: &Candidate<'_>) -> bool {
+    fn kept(&self, run: &AnalysisRun<'_>, c: &Candidate<'_>) -> bool {
         let krate = &run.krates[c.item.target];
         keeps_dead(&c.meta.lints)
             || c.decl
@@ -361,8 +349,7 @@ pub(crate) fn edge_path<'r>(run: &'r AnalysisRun<'_>, e: usize) -> &'r [String] 
 /// variants.
 pub(crate) fn plain(run: &AnalysisRun<'_>, t: usize, d: DeclId) -> bool {
     let decl = &run.krates[t].decls[d];
-    let derived =
-        (decl.written_derives.iter()).all(|name| STD_DERIVES.contains(&leaf(name).as_str()));
+    let derived = (decl.written_derives.iter()).all(|name| derive_path(&leaf(name)).is_some());
     let marked = (run.krates[t].macros.iter())
         .any(|mark| mark.kind == MacroKind::Attribute && mark.holder == Holder::Decl(d));
     let serde = decl.meta.attrs.iter().any(|attr| attr.starts_with("serde"));

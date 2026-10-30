@@ -1,6 +1,7 @@
-//! Checks the invariants of the facts collection keeps for analysis, before
-//! anything reads them, so a broken fact stops the run as an internal error
-//! rather than reaching an analysis.
+//! Checks the analysis facts before anything reads them, so a broken fact
+//! stops a debug run as an internal error rather than reaching an analysis:
+//! the facts collection keeps for each crate, and the manifest facts of each
+//! package.
 
 use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
@@ -8,16 +9,12 @@ use std::ops::RangeInclusive;
 use anyhow::{Context, Result, anyhow, bail};
 
 use crate::collect_attrs::SERDE_PATH_KEYS;
+use crate::collect_body_tokens::{MIN_TOKENS, SHINGLE};
 use crate::collect_check_nodes::check_nodes;
 use crate::inputs::Package;
 use crate::model::{Crate, DeclKind, ItemKind, Member, MemberKind, RefId, Shape};
 use crate::model_body::{Body, BodyFacts, BodyId, BodyKind, Owner, Placement, Role, Root};
 use crate::root::TargetKind;
-
-/// The fewest canonical tokens a body has shingles for, and how many one
-/// shingle holds.
-const MIN_TOKENS: usize = 20;
-const SHINGLE: usize = 5;
 
 /// Checks the analysis facts of one collected, unattached crate: each
 /// body's key, owner, and facts, the test-only ranges and files, the trait
@@ -35,8 +32,8 @@ pub(crate) fn validate_body_facts(krate: &Crate) -> Result<()> {
     })
 }
 
-/// Checks one package's analysis facts: its manifest facts, and each
-/// target's kind beside its `lib` flag.
+/// Checks one package's analysis facts: its manifest facts, and that only a
+/// lone target of a package with no name is a single file.
 ///
 /// # Errors
 /// Returns an internal error that names the first broken invariant.
@@ -51,12 +48,10 @@ pub(crate) fn validate_package_facts(package: &Package) -> Result<()> {
     for target in targets {
         let single = target.kind == TargetKind::SingleFile;
         let alone = targets.len() == 1 && package.facts.name.is_none();
-        if target.lib != (target.kind == TargetKind::Lib) || (single && !alone) {
+        if single && !alone {
             bail!(
-                "internal error: target {} is {:?} with lib {}",
-                target.stem,
-                target.kind,
-                target.lib
+                "internal error: target {} is a single file but not alone in a package without a name",
+                target.stem
             );
         }
     }
@@ -66,7 +61,7 @@ pub(crate) fn validate_package_facts(package: &Package) -> Result<()> {
 fn check_crate(krate: &Crate) -> Result<(), String> {
     let mut keys = BTreeSet::new();
     for (id, body) in krate.bodies.iter().enumerate() {
-        if !keys.insert((body.file, body.start, body.kind)) {
+        if !keys.insert((body.loc.file, body.start, body.kind)) {
             return Err(format!(
                 "body {id} repeats the file, start, and kind of another"
             ));
@@ -75,7 +70,7 @@ fn check_crate(krate: &Crate) -> Result<(), String> {
     }
     check_nodes(krate)?;
     for path in &krate.attr_paths {
-        check_ref(krate, path.path_ref, &path.path, Some(true))?;
+        check_ref(krate, path.path_ref, &path.path, true)?;
         if !SERDE_PATH_KEYS.contains(&path.key.as_str()) || path.loc.file >= krate.files.len() {
             return Err(format!(
                 "the serde path {} is malformed",
@@ -90,10 +85,10 @@ fn check_body(krate: &Crate, id: BodyId) -> Result<(), String> {
     let body = &krate.bodies[id];
     let file = krate
         .files
-        .get(body.file)
+        .get(body.loc.file)
         .ok_or("its file is out of range")?;
     let line = file.line_of(body.start);
-    if body.start >= file.text.len() || body.loc.file != body.file || body.loc.line != line {
+    if body.start >= file.text.len() || body.loc.line != line {
         return Err("its start and line disagree".to_owned());
     }
     if !owner_holds(krate, body) {
@@ -166,7 +161,7 @@ fn check_paths(krate: &Crate, facts: &BodyFacts) -> Result<(), String> {
         return Err("a parameter name repeats".to_owned());
     }
     for call in &facts.calls {
-        check_ref(krate, call.full_ref, &call.path, Some(true))?;
+        check_ref(krate, call.full_ref, &call.path, true)?;
         check_prefix(krate, call.prefix_ref, &call.path)?;
         let placed = |list: &[(usize, String)]| {
             list.windows(2).all(|w| w[0].0 < w[1].0) && list.iter().all(|(i, _)| *i < call.args)
@@ -187,11 +182,11 @@ fn check_paths(krate: &Crate, facts: &BodyFacts) -> Result<(), String> {
         }
     }
     for path in &facts.constructs {
-        check_ref(krate, path.full_ref, &path.path, Some(false))?;
+        check_ref(krate, path.full_ref, &path.path, false)?;
         check_prefix(krate, path.prefix_ref, &path.path)?;
     }
     for path in &facts.patterns {
-        check_ref(krate, path.full_ref, &path.path, Some(true))?;
+        check_ref(krate, path.full_ref, &path.path, true)?;
         check_prefix(krate, path.prefix_ref, &path.path)?;
     }
     if !facts.chains.windows(2).all(|w| w[0] < w[1]) {
@@ -233,11 +228,13 @@ fn check_shape(facts: &BodyFacts, lines: RangeInclusive<u32>) -> Result<(), Stri
     if facts.loop_depth > facts.loops {
         return Err("loops nest deeper than there are loops".to_owned());
     }
-    if facts.statements > facts.stmts.len() || (facts.single.is_some() && facts.statements != 1) {
+    if facts.statements > facts.stmt_lines.len()
+        || (facts.single.is_some() && facts.statements != 1)
+    {
         return Err("the statement count disagrees with the statements".to_owned());
     }
     let inside = |&(first, last): &(u32, u32)| lines.contains(&first) && first <= last;
-    if !facts.stmts.iter().all(inside) || facts.stmts.iter().any(|s| s.1 > *lines.end()) {
+    if !facts.stmt_lines.iter().all(inside) || facts.stmt_lines.iter().any(|s| s.1 > *lines.end()) {
         return Err("a statement lies outside the body's lines".to_owned());
     }
     let shingles = &facts.fingerprint.shingles;
@@ -254,16 +251,18 @@ fn check_shape(facts: &BodyFacts, lines: RangeInclusive<u32>) -> Result<(), Stri
     }
     for comment in &facts.comments {
         let line = comment.line;
-        let placed = match comment.statement {
+        let placed = match comment.stmt {
             None => comment.placement == Placement::Inner && comment.fingerprint.is_empty(),
-            Some(s) => facts
-                .stmts
-                .get(s)
-                .is_some_and(|&(first, last)| match comment.placement {
-                    Placement::Leading => first >= line,
-                    Placement::Trailing => last <= line,
-                    Placement::Inner => first <= line && line <= last,
-                }),
+            Some(s) => {
+                facts
+                    .stmt_lines
+                    .get(s)
+                    .is_some_and(|&(first, last)| match comment.placement {
+                        Placement::Leading => first >= line,
+                        Placement::Trailing => last <= line,
+                        Placement::Inner => first <= line && line <= last,
+                    })
+            }
         };
         let written = !comment.text.is_empty() && lines.contains(&line);
         if !(placed && written && strict(&comment.fingerprint)) {
@@ -274,12 +273,12 @@ fn check_shape(facts: &BodyFacts, lines: RangeInclusive<u32>) -> Result<(), Stri
 }
 
 /// Checks that a fact's reference is the comment reference for its path,
-/// with `value` saying whether it may be a value when that matters.
-fn check_ref(krate: &Crate, id: RefId, path: &[String], value: Option<bool>) -> Result<(), String> {
+/// with `value` saying whether it may be a value.
+fn check_ref(krate: &Crate, id: RefId, path: &[String], value: bool) -> Result<(), String> {
     let fits = krate
         .refs
         .get(id)
-        .is_some_and(|r| r.comment && r.path == path && value.is_none_or(|v| r.may_be_value == v));
+        .is_some_and(|r| r.comment && r.path == path && r.may_be_value == value);
     if fits {
         Ok(())
     } else {
@@ -295,7 +294,7 @@ fn check_ref(krate: &Crate, id: RefId, path: &[String], value: Option<bool>) -> 
 fn check_prefix(krate: &Crate, prefix: Option<RefId>, path: &[String]) -> Result<(), String> {
     let short = path.split_last().map_or(&[][..], |(_, rest)| rest);
     match prefix {
-        Some(id) if !short.is_empty() => check_ref(krate, id, short, Some(false)),
+        Some(id) if !short.is_empty() => check_ref(krate, id, short, false),
         None if short.is_empty() => Ok(()),
         _ => Err(format!(
             "the prefix reference of {} is wrong",
@@ -368,7 +367,7 @@ mod tests {
             "does not hold",
         );
         fails(
-            |krate| krate.bodies[0].facts.comments[0].statement = Some(usize::MAX),
+            |krate| krate.bodies[0].facts.comments[0].stmt = Some(usize::MAX),
             "misplaced",
         );
         fails(

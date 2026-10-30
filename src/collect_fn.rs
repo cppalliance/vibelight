@@ -8,20 +8,13 @@ use syn::{Attribute, FnArg, ItemFn, ReceiverKind, ReturnType, Safety, Signature,
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_body_code::Code;
-use crate::comments::{Attached, attach};
+use crate::comments::{Placed, place_comments};
 use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
 use crate::model_body::BodyKind;
-use crate::source::Comment;
 use crate::typerefs::range_of;
 
 impl Collector<'_> {
-    pub(crate) fn item_fn(
-        &mut self,
-        here: &Here,
-        f: &ItemFn,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_fn(&mut self, here: &Here, f: &ItemFn, placed: Placed) {
         if self.test_only(here, &f.attrs, f) {
             return;
         }
@@ -34,12 +27,12 @@ impl Collector<'_> {
         self.body_names(&here, &f.block, BodyOwner::Module);
         let sig = self.sig(&here, &f.sig);
         let loc = loc(&here, f.sig.ident.span());
-        let notes = self.node_notes(&here, &f.attrs, lead, range_of(f, file));
+        let notes = self.node_notes(&here, &f.attrs, placed.leading, range_of(f, file));
         let mark = self.attribute_mark(&f.attrs, false, Holder::Module(here.module), loc);
         let (raw_doc, lints) = self.attr_facts(&here, &f.attrs);
         let meta = Meta {
             notes,
-            trailing: self.trailing(&here, trail),
+            trailing: self.trailing(&here, &placed.trailing),
             cfgs: attrs::cfgs(&f.attrs, file),
             attrs: attrs::api(&f.attrs, file),
             marks: mark.into_iter().collect(),
@@ -87,43 +80,40 @@ impl Collector<'_> {
         if let Some(variadic) = &sig.variadic {
             children.push(range_of(variadic, file));
         }
-        let Attached {
-            leading, trailing, ..
-        } = attach(&mut self.pools[here.file], file, scope, &children);
-        let mut comments = leading.into_iter().zip(trailing);
+        let (per_param, _) = place_comments(&mut self.pools[here.file], file, scope, &children);
+        let mut comments = per_param.into_iter();
         let mut receiver = Receiver::None;
-        let mut self_text = None;
         let mut params = Vec::new();
         for arg in &sig.inputs {
-            let (lead, trail) = comments.next().unwrap_or_default();
+            let placed = comments.next().unwrap_or_default();
             let range = range_of(arg, file);
             match arg {
                 FnArg::Receiver(r) => {
+                    let text = file.clean(range.clone());
                     receiver = match &r.kind {
-                        ReceiverKind::Reference(_, _, None) => Receiver::Shared,
-                        ReceiverKind::Reference(_, _, Some(_)) => Receiver::Mutable,
-                        ReceiverKind::Typed(_, ty) => typed_receiver(ty),
+                        ReceiverKind::Reference(_, _, None) => Receiver::Shared(text),
+                        ReceiverKind::Reference(_, _, Some(_)) => Receiver::Mutable(text),
+                        ReceiverKind::Typed(_, ty) => typed_receiver(ty, text),
                         _ => Receiver::Value,
                     };
-                    if receiver == Receiver::Value {
+                    if matches!(receiver, Receiver::Value) {
                         let text = self.slicer(here).node(r, |f| f.visit_receiver(r));
-                        params.push(self.param(here, &r.attrs, text, lead, trail, range));
+                        params.push(self.param(here, &r.attrs, text, placed, range));
                     } else {
-                        self_text = Some(file.clean(range.clone()));
                         self.discard(here, range);
                     }
                 }
                 FnArg::Typed(pt) => {
                     let text = self.slicer(here).node(pt, |f| f.visit_type(&pt.ty));
-                    params.push(self.param(here, &pt.attrs, text, lead, trail, range));
+                    params.push(self.param(here, &pt.attrs, text, placed, range));
                 }
             }
         }
         if let Some(variadic) = &sig.variadic {
-            let (lead, trail) = comments.next().unwrap_or_default();
+            let placed = comments.next().unwrap_or_default();
             let range = range_of(variadic, file);
             let text = Text::plain(file.clean(range.clone()));
-            params.push(self.param(here, &variadic.attrs, text, lead, trail, range));
+            params.push(self.param(here, &variadic.attrs, text, placed, range));
         }
         let ret = match &sig.output {
             ReturnType::Type(_, ty) => Some(self.slicer(here).node(&**ty, |f| f.visit_type(ty))),
@@ -135,7 +125,6 @@ impl Collector<'_> {
             name: sig.ident.to_string(),
             generics,
             receiver,
-            self_text,
             params,
             ret,
             where_clause,
@@ -149,11 +138,11 @@ impl Collector<'_> {
         here: &Here,
         attrs: &[Attribute],
         text: Text,
-        mut lead: Vec<Comment>,
-        trail: Vec<Comment>,
+        placed: Placed,
         range: Range<usize>,
     ) -> Param {
-        lead.extend(trail);
+        let mut lead = placed.leading;
+        lead.extend(placed.trailing);
         let notes = self.node_notes(here, attrs, lead, range);
         let (raw_doc, lints) = self.attr_facts(here, attrs);
         Param {
@@ -169,15 +158,16 @@ impl Collector<'_> {
 }
 
 /// Classifies `self: Type`: `&Self` and `&mut Self` count as `&self` and
-/// `&mut self`; anything else is taken by value.
-fn typed_receiver(ty: &Type) -> Receiver {
+/// `&mut self`, holding `text` as the receiver as written; anything else is
+/// taken by value.
+fn typed_receiver(ty: &Type, text: String) -> Receiver {
     if let Type::Reference(reference) = ty {
         let is_self = matches!(&*reference.elem, Type::Path(p) if p.qself.is_none() && p.path.is_ident("Self"));
         if is_self {
             return if reference.mutability.is_some() {
-                Receiver::Mutable
+                Receiver::Mutable(text)
             } else {
-                Receiver::Shared
+                Receiver::Shared(text)
             };
         }
     }

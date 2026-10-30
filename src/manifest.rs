@@ -1,7 +1,7 @@
 //! Reads what a run needs from Cargo manifests: the members of a workspace
 //! and the path dependencies of each crate.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
@@ -9,6 +9,17 @@ use anyhow::{Context, Result};
 use toml::{Table, Value};
 
 use crate::glob;
+use crate::manifest_facts::DepKind;
+
+/// The dependency tables and the kind each holds: the hyphen name of each
+/// kind first, then the underscore spelling Cargo still reads.
+pub(crate) const DEP_TABLES: [(&str, DepKind); 5] = [
+    ("dependencies", DepKind::Normal),
+    ("dev-dependencies", DepKind::Dev),
+    ("dev_dependencies", DepKind::Dev),
+    ("build-dependencies", DepKind::Build),
+    ("build_dependencies", DepKind::Build),
+];
 
 /// A path dependency as a crate's manifest writes it.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -32,9 +43,8 @@ pub(crate) struct Workspace {
     /// True when the root manifest is also a package, which makes the root
     /// a member.
     pub(crate) package: bool,
-    /// The `[workspace.dependencies]` entries that have a path: each key
-    /// with its directory and whether `package = "..."` renames it.
-    pub(crate) deps: BTreeMap<String, (PathBuf, bool)>,
+    /// The `[workspace.dependencies]` entries that have a path.
+    pub(crate) deps: Vec<Dep>,
 }
 
 /// Reads and parses one manifest.
@@ -70,6 +80,17 @@ fn lexical(path: &Path) -> PathBuf {
 /// Joins a relative path written in a file to that file's directory.
 pub(crate) fn join(dir: &Path, rel: &str) -> PathBuf {
     lexical(&dir.join(rel))
+}
+
+/// Returns `dir` below `base` with forward slashes, or `None` when it is
+/// not below `base`.
+pub(crate) fn relative(base: &Path, dir: &Path) -> Option<String> {
+    let rest = dir.strip_prefix(base).ok()?;
+    let names: Vec<String> = rest
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    Some(names.join("/"))
 }
 
 /// Returns the crate directories below `dir` that a glob such as
@@ -120,7 +141,7 @@ pub(crate) fn find_workspace(dir: &Path) -> Result<Option<Workspace>> {
     Ok(None)
 }
 
-fn strings(value: Option<&Value>) -> Vec<String> {
+pub(crate) fn strings(value: Option<&Value>) -> Vec<String> {
     value
         .and_then(Value::as_array)
         .map(|items| {
@@ -133,15 +154,16 @@ fn strings(value: Option<&Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn shared_deps(root: &Path, deps: &Table) -> BTreeMap<String, (PathBuf, bool)> {
+fn shared_deps(root: &Path, deps: &Table) -> Vec<Dep> {
     deps.iter()
         .filter_map(|(key, value)| {
             let entry = value.as_table()?;
             let path = entry.get("path").and_then(Value::as_str)?;
-            Some((
-                key.clone(),
-                (join(root, path), entry.contains_key("package")),
-            ))
+            Some(Dep {
+                key: key.clone(),
+                renamed: entry.contains_key("package"),
+                dir: join(root, path),
+            })
         })
         .collect()
 }
@@ -217,55 +239,51 @@ fn subdirs(dir: &Path) -> Vec<PathBuf> {
 /// sorted. A `workspace = true` entry takes its path from the workspace.
 /// Dev-dependencies never count.
 pub(crate) fn path_deps(dir: &Path, table: &Table, workspace: Option<&Workspace>) -> Vec<Dep> {
-    deps_in(
-        dir,
-        table,
-        workspace,
-        &["dependencies", "build-dependencies"],
-    )
+    deps_in(dir, table, workspace, &[DepKind::Normal, DepKind::Build])
 }
 
-/// Returns the path dependencies a manifest names in the tables `kinds`
-/// name, such as `dev-dependencies`, and in the same tables under every
-/// `[target.*]`, sorted.
+/// Returns the path dependencies a manifest names in the tables of the
+/// `kinds`, each under every spelling Cargo reads, such as
+/// `dev_dependencies`, and in the same tables under every `[target.*]`,
+/// sorted.
 pub(crate) fn deps_in(
     dir: &Path,
     table: &Table,
     workspace: Option<&Workspace>,
-    kinds: &[&str],
+    kinds: &[DepKind],
 ) -> Vec<Dep> {
-    let mut tables: Vec<&Table> = kinds
-        .iter()
-        .filter_map(|kind| table.get(*kind).and_then(Value::as_table))
+    let spellings: Vec<&str> = (DEP_TABLES.iter())
+        .filter(|(_, kind)| kinds.contains(kind))
+        .map(|&(name, _)| name)
         .collect();
+    let mut holders = vec![table];
     if let Some(targets) = table.get("target").and_then(Value::as_table) {
-        for target in targets.values().filter_map(Value::as_table) {
-            tables.extend(
-                kinds
-                    .iter()
-                    .filter_map(|kind| target.get(*kind).and_then(Value::as_table)),
-            );
-        }
+        holders.extend(targets.values().filter_map(Value::as_table));
     }
+    let tables: Vec<&Table> = holders
+        .into_iter()
+        .flat_map(|holder| {
+            (spellings.iter()).filter_map(move |name| holder.get(*name).and_then(Value::as_table))
+        })
+        .collect();
     let mut deps = BTreeSet::new();
     for (key, value) in tables.into_iter().flatten() {
         let Some(entry) = value.as_table() else {
             continue;
         };
         let found = if entry.get("workspace").and_then(Value::as_bool) == Some(true) {
-            workspace.and_then(|w| w.deps.get(key)).cloned()
+            workspace
+                .and_then(|w| w.deps.iter().find(|d| d.key == *key))
+                .cloned()
         } else {
-            entry
-                .get("path")
-                .and_then(Value::as_str)
-                .map(|path| (join(dir, path), entry.contains_key("package")))
-        };
-        if let Some((dir, renamed)) = found {
-            deps.insert(Dep {
+            entry.get("path").and_then(Value::as_str).map(|path| Dep {
                 key: key.clone(),
-                renamed,
-                dir,
-            });
+                renamed: entry.contains_key("package"),
+                dir: join(dir, path),
+            })
+        };
+        if let Some(dep) = found {
+            deps.insert(dep);
         }
     }
     deps.into_iter().collect()
@@ -320,6 +338,36 @@ mod tests {
         ]
         .map(|(key, renamed, dir)| (key.to_owned(), renamed, crates.join(dir)));
         assert_eq!(deps, expected);
+    }
+
+    #[test]
+    fn underscore_dependency_tables_are_followed() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = normalize(tmp.path()).unwrap();
+        write(
+            &root,
+            "app/Cargo.toml",
+            "[package]\nname = \"app\"\n\
+             [build_dependencies]\nbuilder = { path = \"../builder\" }\n\
+             [dev_dependencies]\ntesting = { path = \"../testing\" }\n\
+             [target.'cfg(unix)'.build_dependencies]\nunix = { path = \"../unix\" }\n",
+        );
+        let dir = root.join("app");
+        let table = read(&dir.join("Cargo.toml")).unwrap();
+        let keys: Vec<String> = path_deps(&dir, &table, None)
+            .into_iter()
+            .map(|d| d.key)
+            .collect();
+        assert_eq!(keys, ["builder", "unix"], "build counts, dev never does");
+    }
+
+    #[test]
+    fn every_dependency_kind_names_its_hyphen_table() {
+        let tables = [DepKind::Normal, DepKind::Dev, DepKind::Build].map(DepKind::table);
+        assert_eq!(
+            tables,
+            ["dependencies", "dev-dependencies", "build-dependencies"]
+        );
     }
 
     #[test]

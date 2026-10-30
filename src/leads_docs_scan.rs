@@ -153,11 +153,11 @@ fn marker(text: &str) -> (usize, bool) {
     (indent, false)
 }
 
-/// Counts the bytes `b` at and after `at`, before `end`.
-fn run_of(doc: &str, at: usize, end: usize, b: u8) -> usize {
+/// Counts the backticks at and after `at`, before `end`.
+fn backtick_run(doc: &str, at: usize, end: usize) -> usize {
     doc.as_bytes()[at..end]
         .iter()
-        .take_while(|&&c| c == b)
+        .take_while(|&&c| c == b'`')
         .count()
 }
 
@@ -166,7 +166,7 @@ fn close_run(doc: &str, from: usize, end: usize, n: usize) -> Option<usize> {
     let mut i = from;
     while i < end {
         if doc.as_bytes()[i] == b'`' {
-            let len = run_of(doc, i, end, b'`');
+            let len = backtick_run(doc, i, end);
             if len == n {
                 return Some(i);
             }
@@ -191,7 +191,7 @@ fn matching(doc: &str, open: usize, end: usize, left: u8, right: u8) -> Option<u
                 continue;
             }
             b'`' => {
-                let n = run_of(doc, i, end, b'`');
+                let n = backtick_run(doc, i, end);
                 i = close_run(doc, i + n, end, n).map_or(i + n, |close| close + n);
                 continue;
             }
@@ -306,7 +306,7 @@ impl Reader<'_> {
 
     fn code(&mut self, i: usize, end: usize) -> usize {
         let doc = self.prose.doc;
-        let n = run_of(doc, i, end, b'`');
+        let n = backtick_run(doc, i, end);
         let Some(close) = close_run(doc, i + n, end, n) else {
             self.push(Kind::Punct, "`".repeat(n), i..i + n);
             return i + n;

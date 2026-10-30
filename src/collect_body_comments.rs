@@ -36,7 +36,7 @@ pub(crate) fn comment_facts(
                 text: comment_lines(file, comment),
                 line: file.line_of(comment.range.start),
                 placement,
-                statement,
+                stmt: statement,
                 fingerprint,
             }
         })
@@ -113,7 +113,7 @@ mod tests {
                 (
                     c.text.join("\n"),
                     c.placement,
-                    c.statement.map(|s| facts.stmts[s].0),
+                    c.stmt.map(|s| facts.stmt_lines[s].0),
                     c.fingerprint.clone(),
                 )
             })

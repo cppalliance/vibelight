@@ -9,8 +9,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
-use crate::leads_items::{impl_module, parent_module};
+use crate::leads_items::impl_module;
 use crate::leads_words::words;
+use crate::macros;
 use crate::model::{Crate, DeclKind, FileId, ItemKind, ModId, Shape, ValueRef, Vis};
 use crate::root::TargetKind;
 use crate::surface::module_at;
@@ -50,10 +51,7 @@ fn impl_spread(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Lea
             files.len(),
             rels.join(", ")
         );
-        let at = ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(t, d);
         let mut lead = Lead::new("impl-spread", Mode::DirectSyntax, evidence).item(run, at);
         for &i in &inherent {
             lead = lead.at(t, krate.impls[i].loc);
@@ -77,14 +75,14 @@ fn single_item_module(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut 
     for (m, module) in krate.modules.iter().enumerate() {
         for item in &module.items {
             let defines = match &item.kind {
-                ItemKind::Mark(text) => text.starts_with("macro_rules! "),
+                ItemKind::Mark(text) => macros::definition_name(text).is_some(),
                 kind => crate::analysis_items::is_value(kind),
             };
             if defines {
                 held[m].push((item.name.clone(), item.name.clone()));
             }
         }
-        if let (Some(p), Some(name)) = (parent_module(krate, m), module.path.last()) {
+        if let (Some(p), Some(name)) = (krate.parent_module(m), module.path.last()) {
             held[p].push((format!("mod {name}"), name.clone()));
         }
     }
@@ -269,7 +267,9 @@ fn functions_named(krate: &Crate, p: ModId, name: &str) -> Vec<ValueRef> {
         }
         let at = match &item.kind {
             ItemKind::Fn(_) => Some(ValueRef { module: p, item: k }),
-            ItemKind::Reexport { text, .. } => text.refs().next().and_then(|r| krate.refs[r].value),
+            ItemKind::Reexport { text, .. } => {
+                text.refs().next().and_then(|r| krate.refs[r].value())
+            }
             _ => None,
         };
         let function = at.filter(|at| {
@@ -291,7 +291,7 @@ fn name_collision(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     for (t, krate) in run.krates.iter().enumerate() {
         let at = |item| ItemId { target: t, item };
         for (m, module) in krate.modules.iter().enumerate() {
-            let (Some(name), Some(p)) = (module.path.last(), parent_module(krate, m)) else {
+            let (Some(name), Some(p)) = (module.path.last(), krate.parent_module(m)) else {
                 continue;
             };
             let name = strip_raw(name);

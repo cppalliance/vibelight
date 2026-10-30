@@ -7,7 +7,7 @@ use syn::{Field, FieldsNamed, FieldsUnnamed};
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
-use crate::comments::{Attached, attach};
+use crate::comments::place_comments;
 use crate::model::{DeclId, Holder, Member, MemberKind, Meta, Note, Param, Text};
 use crate::typerefs::range_of;
 
@@ -27,13 +27,9 @@ impl Collector<'_> {
             file.end(named.brace_token.span.open())..file.start(named.brace_token.span.close());
         let fields: Vec<&Field> = named.named.iter().collect();
         let children: Vec<Range<usize>> = fields.iter().map(|f| range_of(*f, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (placed, dangling) = place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut members = Vec::new();
-        for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
+        for (field, placed) in fields.into_iter().zip(placed) {
             if self.test_only(here, &field.attrs, field) {
                 continue;
             }
@@ -44,7 +40,7 @@ impl Collector<'_> {
                 .slicer(here)
                 .node(&field.ty, |f| f.visit_type(&field.ty));
             let loc = loc(here, ident.span());
-            let notes = self.node_notes(here, &field.attrs, lead, range_of(field, file));
+            let notes = self.node_notes(here, &field.attrs, placed.leading, range_of(field, file));
             let mark = self.attribute_mark(&field.attrs, helpers, Holder::Decl(id), loc);
             let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             members.push(Member {
@@ -53,7 +49,7 @@ impl Collector<'_> {
                 kind: MemberKind::Field(ty),
                 meta: Meta {
                     notes,
-                    trailing: self.trailing(here, &trail),
+                    trailing: self.trailing(here, &placed.trailing),
                     cfgs: attrs::cfgs(&field.attrs, file),
                     attrs: attrs::api(&field.attrs, file),
                     marks: mark.into_iter().collect(),
@@ -77,19 +73,17 @@ impl Collector<'_> {
             file.end(unnamed.paren_token.span.open())..file.start(unnamed.paren_token.span.close());
         let fields: Vec<&Field> = unnamed.unnamed.iter().collect();
         let children: Vec<Range<usize>> = fields.iter().map(|f| range_of(*f, file)).collect();
-        let Attached {
-            leading, trailing, ..
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (placed, _) = place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut params = Vec::new();
-        for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
+        for (field, placed) in fields.into_iter().zip(placed) {
             if self.test_only(here, &field.attrs, field) {
                 continue;
             }
             let text = self
                 .slicer(here)
                 .node(&field.ty, |f| f.visit_type(&field.ty));
-            let mut comments = lead;
-            comments.extend(trail);
+            let mut comments = placed.leading;
+            comments.extend(placed.trailing);
             let notes = self.node_notes(here, &field.attrs, comments, range_of(field, file));
             let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             params.push(Param {
@@ -115,11 +109,9 @@ impl Collector<'_> {
             file.end(named.brace_token.span.open())..file.start(named.brace_token.span.close());
         let fields: Vec<&Field> = named.named.iter().collect();
         let children: Vec<Range<usize>> = fields.iter().map(|f| range_of(*f, file)).collect();
-        let Attached {
-            leading, trailing, ..
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (placed, _) = place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut params = Vec::new();
-        for ((field, lead), trail) in fields.into_iter().zip(leading).zip(trailing) {
+        for (field, placed) in fields.into_iter().zip(placed) {
             if self.test_only(here, &field.attrs, field) {
                 continue;
             }
@@ -132,8 +124,8 @@ impl Collector<'_> {
                     .slicer(here)
                     .node(&field.ty, |f| f.visit_type(&field.ty)),
             );
-            let mut comments = lead;
-            comments.extend(trail);
+            let mut comments = placed.leading;
+            comments.extend(placed.trailing);
             let notes = self.node_notes(here, &field.attrs, comments, range_of(field, file));
             let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             params.push(Param {

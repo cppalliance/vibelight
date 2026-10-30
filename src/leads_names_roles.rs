@@ -10,8 +10,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::ItemRef;
+use crate::census_lex::is_keyword;
 use crate::leads::{Lead, Mode};
-use crate::leads_comments_words::KEYWORDS;
 use crate::leads_items::{Catalog, FnKind, is_wire};
 use crate::leads_types::{Ty, leaf};
 use crate::leads_words::words;
@@ -227,7 +227,7 @@ fn stringly_typed(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
         .iter()
         .filter(|f| f.named && !is_wire(run, f.decl));
     for field in fields.filter(|f| stringly(&f.name, &f.ty)) {
-        let evidence = format!("`{}: {}`", field.name, field.ty.shown());
+        let evidence = field.ty.typed(&field.name);
         out.push(field.add(
             run,
             Lead::new("stringly-typed", Mode::DirectSyntax, evidence),
@@ -237,7 +237,7 @@ fn stringly_typed(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
         let found: Vec<String> = (func.args.iter())
             .filter_map(|arg| Some((arg.name.as_deref()?, &arg.ty)))
             .filter(|(name, ty)| stringly(name, ty))
-            .map(|(name, ty)| format!("`{name}: {}`", ty.shown()))
+            .map(|(name, ty)| ty.typed(name))
             .collect();
         if !found.is_empty() {
             let lead = Lead::new("stringly-typed", Mode::DirectSyntax, found.join(", "));
@@ -275,7 +275,7 @@ fn mixed(name: &str, other: &[String]) -> Option<String> {
     SYNONYMS_V1.iter().find_map(|set| {
         let pick = |list: &[String]| -> BTreeSet<String> {
             list.iter()
-                .filter(|w| set.contains(&w.as_str()) && !KEYWORDS.contains(&w.as_str()))
+                .filter(|w| set.contains(&w.as_str()) && !is_keyword(w))
                 .cloned()
                 .collect()
         };

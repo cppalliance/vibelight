@@ -25,7 +25,7 @@ pub(crate) enum Context {
     Example,
     /// A package build script.
     Build,
-    /// A runnable Rust code block in a library's doc text.
+    /// A compiled Rust code block in a library's doc text.
     Doctest,
 }
 
@@ -110,8 +110,6 @@ pub(crate) struct QualifiedPathHit {
 /// the run declare it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct NameCount {
-    /// Every token hit of the name.
-    pub(crate) total: usize,
     /// The items of the run with this name; each declaration writes the
     /// name once.
     pub(crate) declared: usize,
@@ -120,9 +118,14 @@ pub(crate) struct NameCount {
 }
 
 impl NameCount {
+    /// Returns every token hit of the name.
+    pub(crate) fn total(&self) -> usize {
+        self.by_place.values().sum()
+    }
+
     /// Returns the name-use count: the hits that are not declarations.
     pub(crate) fn uses(&self) -> usize {
-        self.total.saturating_sub(self.declared)
+        self.total().saturating_sub(self.declared)
     }
 }
 
@@ -152,6 +155,19 @@ impl Census {
     /// Returns the source of target `t`'s tree file `f`.
     pub(crate) fn tree_source(&self, t: usize, f: FileId) -> SourceId {
         self.tree[t] + f
+    }
+
+    /// Returns the ids of the sources that could not be read or lexed, in
+    /// source order.
+    pub(crate) fn unread(&self) -> impl Iterator<Item = SourceId> + '_ {
+        (self.sources.iter().enumerate())
+            .filter(|(_, source)| source.scan != Scan::Lexed)
+            .map(|(id, _)| id)
+    }
+
+    /// Tells whether every source was read and lexed.
+    pub(crate) fn fully_read(&self) -> bool {
+        self.unread().next().is_none()
     }
 
     /// Returns every token hit of a name written without `r#`.
@@ -186,7 +202,6 @@ impl Census {
         };
         for hit in self.token_hits(name) {
             let source = &self.sources[hit.source];
-            count.total += hit.count;
             *count
                 .by_place
                 .entry((source.package, source.target, hit.context))

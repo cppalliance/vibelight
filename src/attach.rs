@@ -1,7 +1,8 @@
 //! Attaches impl blocks to the types they belong to.
 
 use crate::model::{
-    Crate, DeclKind, Holder, ImplLoc, ImplNotes, Member, MemberKind, Note, Special, name_order,
+    Crate, DeclId, DeclKind, Holder, ImplLoc, ImplNotes, Member, MemberKind, Note, Special,
+    name_order,
 };
 use crate::route;
 
@@ -16,22 +17,31 @@ struct Sorted {
     notes: ImplNotes,
 }
 
+/// Returns, for each impl of a crate, the declaration it belongs to: the
+/// struct, enum, or union that its self type resolves to, which is the rule
+/// `attach` moves impls by.
+pub(crate) fn owners(krate: &Crate) -> Vec<Option<DeclId>> {
+    krate
+        .impls
+        .iter()
+        .map(|i| {
+            i.self_ref.and_then(|r| krate.refs[r].decl()).filter(|&d| {
+                matches!(
+                    krate.decls[d].kind,
+                    DeclKind::Struct | DeclKind::Enum | DeclKind::Union
+                )
+            })
+        })
+        .collect()
+}
+
 /// Moves every impl whose self type resolves to a struct, enum, or union
 /// into that type: inherent members, base-list entries, comments, and
 /// marks. Returns the ids of the impls left for the Other impls section.
 pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
     let mut others = Vec::new();
     let mut notes: Vec<Vec<Sorted>> = vec![Vec::new(); krate.decls.len()];
-    for id in 0..krate.impls.len() {
-        let target = krate.impls[id]
-            .self_ref
-            .and_then(|r| krate.refs[r].target)
-            .filter(|&d| {
-                matches!(
-                    krate.decls[d].kind,
-                    DeclKind::Struct | DeclKind::Enum | DeclKind::Union
-                )
-            });
+    for (id, target) in owners(krate).into_iter().enumerate() {
         let Some(decl_id) = target else {
             others.push(id);
             continue;
@@ -45,7 +55,6 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let mut impl_notes = std::mem::take(&mut item.notes);
         let trait_ = item.trait_.clone();
         let loc = item.loc;
-        let header = item.header.clone();
         let special = trait_
             .as_ref()
             .and_then(|base| route::special_kind(&krate.refs, base));
@@ -57,14 +66,9 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
         let decl = &mut krate.decls[decl_id];
         let adds = !members.is_empty() || trait_.is_some();
         if adds {
-            let start = decl.members.len();
             decl.impl_locs.push(ImplLoc {
                 loc,
                 members: member_names(&members),
-                range: start..start + members.len(),
-                header,
-                notes: impl_notes.clone(),
-                trait_impl: trait_.is_some(),
             });
         }
         decl.members.extend(members);
@@ -141,8 +145,8 @@ fn sorted_notes(mut list: Vec<Sorted>) -> Vec<ImplNotes> {
     list.into_iter().map(|entry| entry.notes).collect()
 }
 
-/// Returns the names of an impl's members, sorted, without its macro marks
-/// and unsupported entries.
+/// Returns the names of an impl's members, sorted and without repeats,
+/// leaving out its macro marks and unsupported entries.
 fn member_names(members: &[Member]) -> Vec<String> {
     let mut names: Vec<String> = members
         .iter()

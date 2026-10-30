@@ -1,9 +1,8 @@
-//! Reads the attributes the outline cares about: `cfg`, `path`, and docs.
+//! Reads the attributes and visibilities the outline cares about: `cfg`,
+//! `path`, `doc(hidden)`, API attributes, lint attributes, and the forms of
+//! `pub`.
 
-use syn::punctuated::Punctuated;
-use syn::{
-    AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Token, Visibility,
-};
+use syn::{AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Visibility};
 
 use crate::model::{Vis, name_order};
 use crate::source::SourceFile;
@@ -12,18 +11,11 @@ use crate::source::SourceFile;
 /// that holds a test-only predicate.
 pub(crate) fn is_test_only(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| {
-        attr.path().is_ident("cfg") && attr.parse_args::<Meta>().is_ok_and(|meta| test_only(&meta))
+        attr.path().is_ident("cfg")
+            && attr
+                .parse_args::<Meta>()
+                .is_ok_and(|meta| crate::macros::test_only(&meta))
     })
-}
-
-fn test_only(meta: &Meta) -> bool {
-    match meta {
-        Meta::Path(path) => path.is_ident("test"),
-        Meta::List(list) if list.path.is_ident("all") => list
-            .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
-            .is_ok_and(|items| items.iter().any(test_only)),
-        _ => false,
-    }
 }
 
 /// Returns each `cfg` predicate as written, normalized and sorted.
@@ -120,7 +112,7 @@ pub(crate) fn spelled(vis: &Visibility, file: &SourceFile) -> String {
 }
 
 /// Returns the normalized source text inside a meta list's delimiters.
-pub(crate) fn list_text(list: &MetaList, file: &SourceFile) -> String {
+fn list_text(list: &MetaList, file: &SourceFile) -> String {
     let span = match &list.delimiter {
         MacroDelimiter::Paren(d) => d.span,
         MacroDelimiter::Brace(d) => d.span,

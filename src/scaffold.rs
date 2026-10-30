@@ -12,8 +12,8 @@ use anyhow::{Context, Result};
 use toml::{Table, Value};
 
 use crate::config;
-use crate::inputs::relative;
-use crate::manifest::{self, Workspace};
+use crate::manifest::{self, Workspace, relative};
+use crate::manifest_facts::DepKind;
 
 /// The config a scaffold wrote.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -209,14 +209,14 @@ fn by_use(uses: Option<&Uses>) -> Option<&'static str> {
 fn dependents(workspace: &Workspace, members: &[Member]) -> BTreeMap<PathBuf, Uses> {
     let mut by_dir: BTreeMap<PathBuf, Uses> = BTreeMap::new();
     for member in members {
-        for kind in ["dependencies", "build-dependencies", "dev-dependencies"] {
+        for kind in [DepKind::Normal, DepKind::Build, DepKind::Dev] {
             let deps = manifest::deps_in(&member.dir, &member.table, Some(workspace), &[kind]);
             for dep in deps.into_iter().filter(|dep| dep.dir != member.dir) {
                 let found = by_dir.entry(dep.dir).or_default();
                 match kind {
-                    "dependencies" => found.normal = true,
-                    "build-dependencies" => found.build = true,
-                    _ => found.dev = true,
+                    DepKind::Normal => found.normal = true,
+                    DepKind::Build => found.build = true,
+                    DepKind::Dev => found.dev = true,
                 }
             }
         }
@@ -363,6 +363,31 @@ mod tests {
         let parsed = config::read(&written.path).unwrap();
         assert_eq!(parsed.exclude.len(), 8);
         assert_eq!(parsed.follow, ["**"]);
+    }
+
+    #[test]
+    fn a_member_used_only_through_underscore_dev_dependencies_is_left_out() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = manifest::normalize(tmp.path()).unwrap();
+        write_file(
+            &root,
+            "Cargo.toml",
+            "[workspace]\nmembers = [\"crates/*\"]\n",
+        );
+        package(
+            &root,
+            "crates/app",
+            "app",
+            "[dev_dependencies]\nhelpers = { path = \"../helpers\" }\n",
+        );
+        package(&root, "crates/helpers", "helpers", "");
+        let written = write(&root).unwrap().unwrap();
+        assert_eq!(written.left_out, 1);
+        let text = fs::read_to_string(&written.path).unwrap();
+        assert!(
+            text.contains("\"crates/helpers\",  # used only as a dev dependency\n"),
+            "{text}"
+        );
     }
 
     #[test]

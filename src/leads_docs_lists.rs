@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::ItemId;
 use crate::leads::{Lead, Mode};
 use crate::leads_docs::{Doc, Docs, Node};
 use crate::leads_docs_refs::intra_path;
@@ -223,10 +223,7 @@ fn partial_doc_list(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>, out: 
             krate.decls[d].name,
             shown(&|v| !seen.contains(&v))
         );
-        let at = ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(t, d);
         let lead = Lead::new("partial-doc-list", Mode::DirectSyntax, evidence).item(run, at);
         out.push(doc.add(run, lead));
     }
@@ -254,10 +251,7 @@ fn doc_count_mismatch(
     let t = doc.item.target;
     let decl = &run.krates[t].decls[d];
     let name: Vec<String> = words(&strip_raw(&decl.name));
-    let at = ItemId {
-        target: t,
-        item: ItemRef::Decl(d),
-    };
+    let at = ItemId::decl(t, d);
     let owned = |list: &[&str]| -> Vec<String> { list.iter().map(|n| (*n).to_owned()).collect() };
     let (nouns, count, what) = match &decl.shape {
         Shape::Enum(variants) => {

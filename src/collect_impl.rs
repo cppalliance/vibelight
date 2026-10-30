@@ -3,31 +3,29 @@
 use std::ops::Range;
 
 use syn::visit::Visit;
-use syn::{Attribute, ImplItem, ItemImpl, Type};
+use syn::{Attribute, ImplItem, ItemImpl, Type, Visibility};
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_bases::single_arg;
 use crate::collect_body::self_fields;
 use crate::collect_body_code::Code;
-use crate::comments::{Attached, attach};
+use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{
     Base, BodyOwner, Holder, Impl, Loc, MacroKind, MacroUse, Member, MemberKind, Meta, Note, Text,
     Vis,
 };
 use crate::model_body::{BodyKind, Owner};
-use crate::source::Comment;
 use crate::typerefs::range_of;
 /// The parts of one impl or trait member.
 pub(crate) struct Parts<'p> {
     pub(crate) attrs: &'p [Attribute],
     pub(crate) ident: &'p syn::Ident,
     /// `None` for a trait item, which is public.
-    pub(crate) vis: Option<&'p syn::Visibility>,
+    pub(crate) vis: Option<&'p Visibility>,
     pub(crate) kind: MemberKind,
-    pub(crate) lead: Vec<Comment>,
-    pub(crate) trail: &'p [Comment],
+    pub(crate) placed: Placed,
     pub(crate) loc: Loc,
     pub(crate) marks: Vec<String>,
     pub(crate) range: Range<usize>,
@@ -42,13 +40,7 @@ struct ImplBody {
 }
 
 impl Collector<'_> {
-    pub(crate) fn item_impl(
-        &mut self,
-        here: &Here,
-        i: &ItemImpl,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_impl(&mut self, here: &Here, i: &ItemImpl, placed: Placed) {
         if self.test_only(here, &i.attrs, i) {
             return;
         }
@@ -116,19 +108,12 @@ impl Collector<'_> {
             .clean(file.start(first)..head_end)
             .trim_end_matches(',')
             .to_owned();
-        let mut notes = self.node_notes(&here, &i.attrs, lead, range.start..head_end);
-        if let Some(text) = self.trailing(&here, trail) {
+        let mut notes = self.node_notes(&here, &i.attrs, placed.leading, range.start..head_end);
+        if let Some(text) = self.trailing(&here, &placed.trailing) {
             notes.push(Note::Plain(vec![text]));
         }
         let attributes = macros::attribute_macros(&i.attrs, false);
-        if !attributes.is_empty() {
-            self.macros.push(MacroUse {
-                kind: MacroKind::Attribute,
-                text: format!("attribute: {}", attributes.join(", ")),
-                holder: Holder::Impl(id),
-                loc,
-            });
-        }
+        self.attribute_names_mark(&attributes, Holder::Impl(id), loc);
         self.impls.push(Impl {
             loc,
             header,
@@ -164,15 +149,11 @@ impl Collector<'_> {
         let files = self.files;
         let file = &files[here.file];
         let children: Vec<Range<usize>> = items.iter().map(|i| range_of(i, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (placed, dangling) = place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut members = Vec::new();
         let mut trait_members = Vec::new();
         let mut marks = Vec::new();
-        for ((item, lead), trail) in items.iter().zip(leading).zip(trailing) {
+        for (item, placed) in items.iter().zip(placed) {
             if self.test_only(here, impl_item_attrs(item), item) {
                 continue;
             }
@@ -181,12 +162,12 @@ impl Collector<'_> {
                 let here = here.with(&f.sig.generics);
                 self.body_names(&here, &f.block, BodyOwner::Impl(id));
             }
-            let lead = if trait_impl {
-                let member = self.trait_member(here, id, item, lead, &trail, impl_cfgs);
+            let placed = if trait_impl {
+                let member = self.trait_member(here, id, item, placed, impl_cfgs);
                 trait_members.extend(member);
-                Vec::new()
+                Placed::default()
             } else {
-                lead
+                placed
             };
             let member = match item {
                 ImplItem::Const(c) if !trait_impl => {
@@ -203,8 +184,7 @@ impl Collector<'_> {
                         ident: &c.ident,
                         vis: Some(&c.vis),
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks,
                         range,
@@ -228,8 +208,7 @@ impl Collector<'_> {
                         ident: &f.sig.ident,
                         vis: Some(&f.vis),
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks,
                         range,
@@ -251,8 +230,7 @@ impl Collector<'_> {
                         ident: &t.ident,
                         vis: Some(&t.vis),
                         kind,
-                        lead,
-                        trail: &trail,
+                        placed,
                         loc,
                         marks: Vec::new(),
                         range,
@@ -326,7 +304,7 @@ impl Collector<'_> {
     /// Builds one member; its notes take every comment still unused inside
     /// its range.
     pub(crate) fn member(&mut self, here: &Here, parts: Parts<'_>) -> Member {
-        let notes = self.node_notes(here, parts.attrs, parts.lead, parts.range);
+        let notes = self.node_notes(here, parts.attrs, parts.placed.leading, parts.range);
         let (raw_doc, lints) = self.attr_facts(here, parts.attrs);
         let file = &self.files[here.file];
         Member {
@@ -335,7 +313,7 @@ impl Collector<'_> {
             kind: parts.kind,
             meta: Meta {
                 notes,
-                trailing: self.trailing(here, parts.trail),
+                trailing: self.trailing(here, &parts.placed.trailing),
                 cfgs: attrs::cfgs(parts.attrs, file),
                 attrs: attrs::api(parts.attrs, file),
                 marks: parts.marks,

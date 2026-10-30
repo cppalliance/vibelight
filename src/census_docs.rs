@@ -1,5 +1,5 @@
 //! Reads the raw doc text of a run: where each node's doc text is, the
-//! runnable Rust code blocks that rustdoc tests, which the census scans as
+//! compiled Rust code blocks that rustdoc tests, which the census scans as
 //! doc tests, and each doc's first paragraph, its summary.
 
 use crate::model::{Crate, ItemKind, Loc, Param, Shape, VariantFields};
@@ -88,15 +88,14 @@ pub(crate) fn fence(line: &str) -> Option<(char, usize, &str)> {
 }
 
 /// Tells whether a code block with this info string is a doc test rustdoc
-/// runs: Rust, and neither `ignore`d nor `compile_fail`.
+/// compiles: Rust, and neither `ignore`d nor `compile_fail`; a `no_run`
+/// block counts.
 fn runnable(info: &str) -> bool {
     let mut words = info
         .split(|c: char| c == ',' || c.is_whitespace())
         .filter(|w| !w.is_empty());
     words.all(|word| {
-        let known = RUSTDOC_WORDS.contains(&word)
-            || word.starts_with("edition")
-            || word.starts_with("ignore-");
+        let known = RUSTDOC_WORDS.contains(&word) || word.starts_with("edition");
         known && word != "compile_fail" && !word.starts_with("ignore")
     })
 }

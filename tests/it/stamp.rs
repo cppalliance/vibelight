@@ -1,8 +1,8 @@
 //! The stamp on the first line: it records when a file's content last
 //! changed, and a run leaves a file whose content is the same untouched. A
-//! crate's HTML page depends on its own crate alone, but its markdown is
-//! contextual to the run, so a change in one crate can restamp the
-//! markdown of another.
+//! crate's HTML page depends on its own crate and the crates it links to,
+//! but its markdown is contextual to the run, so a change in one crate can
+//! restamp the markdown of another.
 
 use std::fs;
 use std::path::Path;

@@ -97,8 +97,8 @@ impl Func<'_> {
         self.sig.receiver != Receiver::None
     }
 
-    /// Tells whether the function is a type's own: free, or a member of
-    /// an inherent impl, whose signature no trait sets.
+    /// Tells whether no trait sets the function's signature: it is free,
+    /// or a member of an inherent impl.
     pub(crate) fn is_own(&self) -> bool {
         matches!(self.kind, FnKind::Free | FnKind::Inherent)
     }
@@ -109,14 +109,11 @@ impl Func<'_> {
     pub(crate) fn signature(&self, run: &AnalysisRun<'_>) -> Ty {
         let t = self.item.target;
         let impl_member = matches!(self.kind, FnKind::Inherent | FnKind::TraitImpl);
-        let own = (self.decl.filter(|_| impl_member)).map(|d| ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        });
+        let own = (self.decl.filter(|_| impl_member)).map(|d| ItemId::decl(t, d));
         let receiver = match self.sig.receiver {
             Receiver::None => "fn",
-            Receiver::Shared => "&self",
-            Receiver::Mutable => "&mut self",
+            Receiver::Shared(_) => "&self",
+            Receiver::Mutable(_) => "&mut self",
             Receiver::Value => "self",
         };
         let code = |text: &str| Tok::Code(text.to_owned());
@@ -149,6 +146,9 @@ impl Func<'_> {
 
 /// Every field and function of a run.
 pub(crate) struct Catalog<'a> {
+    /// In order of declaration, then variant: `fields_of` searches it by
+    /// that order, and `derived_field` and `contained_shape` read it in
+    /// runs of one owner.
     pub(crate) fields: Vec<Field<'a>>,
     pub(crate) funcs: Vec<Func<'a>>,
 }
@@ -184,10 +184,7 @@ impl<'a> Catalog<'a> {
 
     fn add_fields(&mut self, run: &AnalysisRun<'a>, t: usize, krate: &'a Crate) {
         for (d, decl) in krate.decls.iter().enumerate() {
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let mut field = |variant, name: String, named, ty, vis, loc, meta| {
                 self.fields.push(Field {
                     decl: at,
@@ -260,7 +257,7 @@ impl<'a> Catalog<'a> {
         }
         for (i, imp) in krate.impls.iter().enumerate() {
             let decl = run.attached[t][i];
-            let module = decl.map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module);
+            let module = impl_home(run, t, i);
             let members = imp.members.iter().map(|m| (m, FnKind::Inherent));
             let traits = imp.trait_members.iter().map(|m| (m, FnKind::TraitImpl));
             let inherent = (0..imp.members.len()).map(|k| ItemRef::Inherent(i, k));
@@ -354,18 +351,12 @@ fn args(run: &AnalysisRun<'_>, t: usize, sig: &Sig, own: Option<ItemId>) -> Vec<
 }
 
 /// Returns a visibility from how it is written.
-pub(crate) fn vis_of(written: &str) -> Vis {
+fn vis_of(written: &str) -> Vis {
     match written {
         "pub" => Vis::Public,
         "" | "pub(self)" => Vis::Private,
         _ => Vis::Internal,
     }
-}
-
-/// Returns the module whose path is a module's without its last segment.
-pub(crate) fn parent_module(krate: &Crate, m: ModId) -> Option<ModId> {
-    let (_, up) = krate.modules[m].path.split_last()?;
-    krate.modules.iter().position(|module| module.path == up)
 }
 
 /// Returns the module an impl is written in: where its self type's first
@@ -376,6 +367,13 @@ pub(crate) fn impl_module(krate: &Crate, i: usize) -> ModId {
     first
         .or_else(|| imp.trait_.as_ref().and_then(|base| base.path_ref))
         .map_or(0, |r| krate.refs[r].module)
+}
+
+/// Returns the module of impl `i` of target `t`: its declaration's, or the
+/// one it is written in for an impl of no declaration of the run.
+pub(crate) fn impl_home(run: &AnalysisRun<'_>, t: usize, i: usize) -> ModId {
+    let krate = &run.krates[t];
+    run.attached[t][i].map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module)
 }
 
 /// Returns what impl `i` of target `t` implements, as a compared name such
@@ -447,10 +445,7 @@ pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<
             held.and_then(|held| {
                 catalog.funcs.iter().find(|f| {
                     let own = f.decl.map(|d| {
-                        let decl = ItemId {
-                            target: f.item.target,
-                            item: ItemRef::Decl(d),
-                        };
+                        let decl = ItemId::decl(f.item.target, d);
                         item_name(run, decl)
                     });
                     f.kind == FnKind::Inherent
@@ -470,14 +465,11 @@ pub(crate) fn handles_err(facts: &BodyFacts) -> bool {
         || (facts.patterns.iter()).any(|p| p.path.last().is_some_and(|last| last == "Err"))
 }
 
-/// Tells whether a declaration is a wire type: it derives `Serialize` or
-/// `Deserialize`, or carries a `serde` attribute.
+/// Tells whether an item is a declaration that is a wire type, as
+/// `Decl::is_wire` says.
 pub(crate) fn is_wire(run: &AnalysisRun<'_>, decl: ItemId) -> bool {
     let ItemRef::Decl(d) = decl.item else {
         return false;
     };
-    let decl = &run.krates[decl.target].decls[d];
-    let derived = (decl.written_derives.iter())
-        .any(|name| matches!(name.rsplit("::").next(), Some("Deserialize" | "Serialize")));
-    derived || decl.meta.attrs.iter().any(|attr| attr.starts_with("serde"))
+    run.krates[decl.target].decls[d].is_wire()
 }

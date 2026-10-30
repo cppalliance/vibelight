@@ -9,7 +9,7 @@ use std::fmt::Write as _;
 use syn::{Expr, UnOp};
 
 use crate::model::{
-    Decl, DeclKind, Foreign, MemberKind, Meta, Param, Shape, Sig, Text, TypeRef, Variant,
+    Decl, DeclKind, Foreign, MemberKind, Meta, Param, Receiver, Shape, Sig, Text, TypeRef, Variant,
     VariantFields, Where,
 };
 
@@ -66,7 +66,10 @@ pub(crate) fn sig(sig: &Sig, written_vis: &str, refs: &[TypeRef]) -> String {
         out.push(' ');
     }
     let _ = write!(out, "fn {}{}(", sig.name, rust(&sig.generics, refs));
-    let mut params: Vec<String> = sig.self_text.iter().cloned().collect();
+    let mut params: Vec<String> = match &sig.receiver {
+        Receiver::Shared(text) | Receiver::Mutable(text) => vec![text.clone()],
+        Receiver::None | Receiver::Value => Vec::new(),
+    };
     params.extend(sig.params.iter().map(|p| rust(&p.text, refs)));
     out.push_str(&params.join(", "));
     out.push(')');

@@ -27,8 +27,8 @@ use crate::test_support::is_test_support;
 /// and whether the owner is test support: the declaration it belongs to,
 /// or, for an impl that belongs to none, its self type as written.
 pub(crate) fn impl_owner(outline: &Outline<'_>, i: usize) -> (ModId, Vec<String>, bool) {
-    let krate = outline.krate;
-    if let Some(d) = outline.run.attached[outline.t][i] {
+    let krate = outline.krate();
+    if let Some(d) = outline.target.run.attached[outline.target.target][i] {
         let decl = &krate.decls[d];
         return (decl.module, krate.decl_path(d), decl.test_support);
     }
@@ -45,7 +45,7 @@ fn commented(meta: &Meta) -> bool {
 /// Adds every declaration's records: its own, its commented fields and
 /// variants, its trait items, and its unsupported members.
 pub(crate) fn decls(outline: &mut Outline<'_>) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     for (d, decl) in krate.decls.iter().enumerate() {
         decl_record(outline, d);
         parts(outline, d);
@@ -67,7 +67,7 @@ pub(crate) fn decls(outline: &mut Outline<'_>) {
 
 /// Adds a declaration's own record, with its doc after it.
 fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let decl = &krate.decls[d];
     let facts = &outline.facts;
     let path = krate.decl_path(d).join("::");
@@ -147,7 +147,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
 /// Adds a record for each field and variant of a declaration that has
 /// comments of its own, or a variant whose discriminant holds comments.
 fn parts(outline: &mut Outline<'_>, d: DeclId) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let decl = &krate.decls[d];
     let path = krate.decl_path(d);
     let refs = &krate.refs;
@@ -231,7 +231,7 @@ fn parts(outline: &mut Outline<'_>, d: DeclId) {
 /// an unsupported construct. A field prints in its type's shape, and a
 /// macro mark has a macro record.
 fn member_record(outline: &mut Outline<'_>, place: &Place<'_>, member: &Member, owner: &[String]) {
-    let refs = &outline.krate.refs;
+    let refs = &outline.krate().refs;
     match &member.kind {
         MemberKind::Fn(sig) => push_fn(outline, place, sig),
         MemberKind::Const { value, .. } => {
@@ -268,7 +268,7 @@ fn member_record(outline: &mut Outline<'_>, place: &Place<'_>, member: &Member, 
 /// Adds the impls' records: one for each owner and header, with every
 /// impl block that has them, and then a record for each of their members.
 pub(crate) fn impls(outline: &mut Outline<'_>) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let mut groups: BTreeMap<(Vec<String>, String), Vec<usize>> = BTreeMap::new();
     for (i, item) in krate.impls.iter().enumerate() {
         let (_, path, _) = impl_owner(outline, i);
@@ -326,7 +326,7 @@ pub(crate) fn impls(outline: &mut Outline<'_>) {
 /// Adds the records of one impl's members: an inherent impl's, or a trait
 /// impl's under its header.
 fn impl_members(outline: &mut Outline<'_>, i: usize, module: ModId, owner: &[String], ts: bool) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let item = &krate.impls[i];
     let inherent = (item.members.iter().enumerate()).map(|(k, m)| (ItemRef::Inherent(i, k), m));
     let traits =

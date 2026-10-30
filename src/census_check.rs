@@ -1,6 +1,6 @@
-//! Checks the invariants of a run's census before anything reads it: each
-//! source's place and limit, the order and context of every name hit, the
-//! qualified paths and their indexes, and the declarations.
+//! Checks the invariants of a run's census as part of `validate`, which
+//! debug builds run before anything reads it: each source's place, the order and context of every name hit, the qualified
+//! paths and their indexes, and the declarations.
 
 use crate::analysis::AnalysisRun;
 use crate::census::{Context, Scan, Source};
@@ -15,8 +15,8 @@ fn counted(context: Context, source: &Source) -> bool {
 }
 
 impl AnalysisRun<'_> {
-    /// Checks the census: its sources and limits, every hit, the qualified
-    /// paths and their indexes, and the declarations.
+    /// Checks the census: its sources, every hit, the qualified paths and
+    /// their indexes, and the declarations.
     pub(crate) fn check_census(&self) -> Result<(), String> {
         self.check_sources()?;
         self.check_tokens()?;
@@ -24,7 +24,7 @@ impl AnalysisRun<'_> {
     }
 
     /// Checks that each tree file has its source, that each source is in
-    /// its place, and that the limits list exactly the unread sources.
+    /// its place.
     fn check_sources(&self) -> Result<(), String> {
         let census = &self.census;
         for (t, krate) in self.krates.iter().enumerate() {
@@ -42,7 +42,7 @@ impl AnalysisRun<'_> {
                 }
             }
         }
-        for (id, source) in census.sources.iter().enumerate() {
+        for source in &census.sources {
             let target = source.target.is_none_or(|t| {
                 self.targets
                     .get(t)
@@ -60,13 +60,9 @@ impl AnalysisRun<'_> {
                 Context::Production | Context::Doctest => source.file.is_some(),
                 _ => source.file.is_none(),
             };
-            let listed = (source.scan != Scan::Lexed) == self.limits.binary_search(&id).is_ok();
-            if !(target && file && placed && listed && source.line > 0) {
+            if !(target && file && placed && source.line > 0) {
                 return Err(format!("source {} is out of place", source.rel));
             }
-        }
-        if self.limits.windows(2).any(|w| w[0] >= w[1]) {
-            return Err("the limits are not sorted".to_owned());
         }
         Ok(())
     }
@@ -89,16 +85,15 @@ impl AnalysisRun<'_> {
                         .is_some_and(|s| counted(hit.context, s))
             });
             let count = census.count(name);
-            let summed = count.by_place.values().sum::<usize>() == count.total;
-            let short = self.limits.is_empty() && count.total < count.declared;
-            if name.is_empty() || !ordered || !placed || !summed || short {
+            let short = census.fully_read() && count.total() < count.declared;
+            if name.is_empty() || !ordered || !placed || short {
                 return Err(format!(
                     "the hits of {name} are malformed or miss a declaration"
                 ));
             }
         }
         for (name, &declared) in &census.declarations {
-            let unseen = self.limits.is_empty() && !census.tokens.contains_key(name);
+            let unseen = census.fully_read() && !census.tokens.contains_key(name);
             if name.is_empty() || declared == 0 || census.declared(name) != declared || unseen {
                 return Err(format!("the census misses declarations of {name}"));
             }

@@ -3,25 +3,23 @@
 use std::collections::BTreeMap;
 
 use crate::layout::{
-    Block, Entry, Line, Span, above, code, const_line, fn_lines, join_groups, key, line_text,
-    mark_line, note_lines, plain, section, sections, sort_entries,
+    Block, Entry, Line, Span, above, code, const_line, empty_sections, fn_lines, join_groups, key,
+    line_text, mark_line, note_lines, plain, section, sort_entries,
 };
 use crate::layout_decl::{BodyParts, body};
 use crate::layout_marker::Marker;
+use crate::macros;
 use crate::model::{
     Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
 };
-use crate::settings::Notation;
 
 /// Builds a module's trailing block: the public items, then the internal
 /// and private ones, each section grouped as re-exports, macro marks,
 /// constants, statics, free functions, and extern blocks.
-pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Option<Block> {
+pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let module = &krate.modules[id];
-    let entry = |item: &Item, at: ValueRef| match notation {
-        Notation::Cpp => item_entry(krate, item, at),
-    };
-    let mut sections = sections(6);
+    let entry = |item: &Item, at: ValueRef| item_entry(krate, item, at);
+    let mut sections = empty_sections(6);
     let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
     let mut use_groups: BTreeMap<(Vis, usize), Vec<Entry>> = BTreeMap::new();
@@ -70,17 +68,12 @@ pub(crate) fn module_block(krate: &Crate, id: ModId, notation: Notation) -> Opti
     for group in sections.iter_mut().flatten() {
         sort_entries(group, &krate.refs);
     }
-    let word = match notation {
-        Notation::Cpp => "using",
-    };
     for (groups, items) in sections.iter_mut().zip(&foreign) {
         let reexports = std::mem::take(&mut groups[0]);
         if !reexports.is_empty() {
-            groups[0] = vec![packed(reexports, word)];
+            groups[0] = vec![packed(reexports, "using")];
         }
-        groups[5] = match notation {
-            Notation::Cpp => extern_blocks(krate, items),
-        };
+        groups[5] = extern_blocks(krate, items);
     }
     // The bucket order still groups the module's items by visibility, but no
     // section label is printed: a module has no enclosing type to annotate, so
@@ -124,8 +117,9 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     let refs = &krate.refs;
     let attrs_above = !matches!(item.kind, ItemKind::Fn(_));
     let (mut lines, mut repeats) = above(&item.meta, 0, item.loc, attrs_above);
-    // A module has no enclosing type, so the item's own visibility prints
-    // above it, where a type's header carries its own.
+    // A module has no enclosing type whose `internal:` and `private:`
+    // sections could label an item, so each item's own visibility prints
+    // above it.
     if let Some(line) = crate::layout_decl::visibility_line(item.vis, 0) {
         lines.push(line);
     }
@@ -310,15 +304,12 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
 }
 
 /// Builds a docs fence: `//!` lines, then a `// cfg:` line per `cfg`.
-pub(crate) fn docs_block(notes: &[Note], cfgs: &[String], notation: Notation) -> Option<Block> {
+pub(crate) fn docs_block(notes: &[Note], cfgs: &[String]) -> Option<Block> {
     let mut lines = note_lines(notes, 0, Marker::MODULE);
     for cfg in cfgs {
-        let spans = match notation {
-            Notation::Cpp => vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
-        };
         lines.push(Line {
             indent: 0,
-            spans,
+            spans: vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
             trailing: None,
         });
     }
@@ -353,11 +344,7 @@ pub(crate) struct Implements {
 /// Builds the Other impls section: a line for each trait impl, sorted by
 /// trait and then by self type, `implements: Trait for Type;`, and a block
 /// for each inherent impl, sorted by self type.
-pub(crate) fn other_impls(
-    krate: &Crate,
-    ids: &[usize],
-    notation: Notation,
-) -> (Vec<Implements>, Vec<(Block, Loc)>) {
+pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec<(Block, Loc)>) {
     let refs = &krate.refs;
     let mut traits: Vec<&Impl> = Vec::new();
     let mut inherent: Vec<&Impl> = Vec::new();
@@ -382,12 +369,10 @@ pub(crate) fn other_impls(
     let lines = traits
         .into_iter()
         .map(|item| {
-            let spans = match notation {
-                Notation::Cpp => implements(item),
-            };
+            let spans = implements(item);
             let mut marks = item.marks.clone();
             if !item.attributes.is_empty() {
-                marks.push(format!("attribute: {}", item.attributes.join(", ")));
+                marks.push(macros::mark_text(macros::ATTRIBUTE, &item.attributes));
             }
             Implements {
                 notes: note_lines(&item.notes, 0, Marker::DOC),
@@ -427,7 +412,6 @@ pub(crate) fn other_impls(
                     end_marks: &item.marks,
                     special: &[],
                     name: "",
-                    impls: &[],
                 },
             );
             block.lines.extend(inner.lines);

@@ -1,12 +1,12 @@
-//! Builds the outline document that both renderers print.
+//! Builds the outline document that the HTML renderer prints.
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
 use crate::model::{Crate, DeclId, ModId, ValueRef};
 use crate::order::Order;
-use crate::settings::{KillList, Notation, Options, OrderBy};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 
@@ -41,7 +41,7 @@ pub(crate) enum Inline {
     /// A kill list link: it points at the mark, under its heading.
     Kill {
         text: String,
-        heading: String,
+        heading_id: String,
         mark: Option<String>,
     },
     /// ` (source: ...)`, with one link or more.
@@ -89,36 +89,41 @@ pub(crate) struct Document {
     pub(crate) title: String,
     pub(crate) id: String,
     pub(crate) crate_docs: Option<Block>,
-    /// The Legend section, printed after the crate docs; empty for a format
-    /// without one.
+    /// The Legend section, printed after the crate docs.
     pub(crate) legend: Vec<Item>,
     pub(crate) contents: Vec<Item>,
     /// The macro counts.
     pub(crate) kill_summary: String,
-    /// One entry per macro; empty when the kill list shows only its counts.
+    /// One entry per macro.
     pub(crate) kill: Vec<Item>,
     pub(crate) sections: Vec<Node>,
     pub(crate) refs: Vec<crate::model::TypeRef>,
     /// The id each declaration's heading has.
     pub(crate) decl_ids: Vec<String>,
-    /// The id of each module-level function, constant, and static, which
-    /// only HTML prints.
+    /// The id of each module-level function, constant, and static.
     pub(crate) value_ids: BTreeMap<ValueRef, String>,
+}
+
+/// One mark line the builder has added.
+pub(crate) struct MarkLine {
+    /// The id of the heading it sits under.
+    pub(crate) heading_id: String,
+    pub(crate) text: String,
+    pub(crate) id: String,
 }
 
 pub(crate) struct Builder<'a> {
     pub(crate) krate: &'a Crate,
     pub(crate) links: Option<&'a LinkBase>,
     /// The blocks the document prints for the declarations.
-    pub(crate) printed: &'a [Block],
-    pub(crate) notation: Notation,
+    pub(crate) blocks: &'a [Block],
     pub(crate) texts: Vec<String>,
     pub(crate) decl_ids: Vec<String>,
     pub(crate) mod_ids: Vec<String>,
     pub(crate) nodes: Vec<Node>,
-    /// Each mark line: the heading it sits under, its text, and its id.
-    pub(crate) marks: Vec<(String, String, String)>,
-    pub(crate) heading: String,
+    /// Each mark line, in the order it was added.
+    pub(crate) marks: Vec<MarkLine>,
+    pub(crate) heading_id: String,
 }
 
 /// What a target's documents are built from.
@@ -129,11 +134,8 @@ pub(crate) struct Inputs<'a> {
     pub(crate) others: &'a [usize],
     pub(crate) order: &'a Order,
     pub(crate) blocks: &'a [Block],
-    /// The blocks to print, in the format's notation.
-    pub(crate) printed: &'a [Block],
     pub(crate) spellings: &'a [Entry],
     pub(crate) surface: &'a [crate::surface::Entry],
-    pub(crate) options: Options,
 }
 
 /// Builds the document from the ordered declarations and their blocks.
@@ -143,10 +145,8 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         others,
         order,
         blocks,
-        printed,
         spellings,
         surface,
-        options,
     } = *inputs;
     let texts = crate::order::block_texts(krate, blocks);
     let decl_ids = decl_ids(krate, &texts);
@@ -154,31 +154,23 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
     let mut b = Builder {
         krate,
         links,
-        printed,
-        notation: options.notation,
+        blocks,
         texts,
         decl_ids,
         mod_ids,
         nodes: Vec::new(),
         marks: Vec::new(),
-        heading: String::new(),
+        heading_id: String::new(),
     };
-    let mut contents = Vec::new();
-    if options.legend {
-        contents.push(Item {
-            inlines: vec![anchor("Legend", "legend")],
-            children: Vec::new(),
-        });
-    }
+    let mut contents = vec![Item {
+        inlines: vec![anchor("Legend", "legend")],
+        children: Vec::new(),
+    }];
     contents.extend(b.surface(surface));
     let modules = b.sorted_modules();
-    match options.order {
-        OrderBy::Groups => {
-            contents.extend(b.grouped(order));
-            contents.extend(b.other_impls_section(others));
-            contents.push(b.modules_section(&modules));
-        }
-    }
+    contents.extend(b.grouped(order));
+    contents.extend(b.other_impls_section(others));
+    contents.push(b.modules_section(&modules));
     if !spellings.is_empty() {
         contents.push(Item {
             inlines: vec![anchor("Spellings", "spellings")],
@@ -191,22 +183,12 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
             items,
         });
     }
-    let (kill_summary, entries) = b.kill_list();
-    let kill = match options.kill_list {
-        KillList::Full => entries,
-    };
-    let legend = if options.legend {
-        match options.notation {
-            Notation::Cpp => crate::legend::html_items(),
-        }
-    } else {
-        Vec::new()
-    };
+    let (kill_summary, kill) = b.kill_list();
     Document {
         title: krate.title.clone(),
         id: format!("crate.{}", krate.name),
-        crate_docs: docs_block(&krate.modules[0].docs, &[], options.notation),
-        legend,
+        crate_docs: docs_block(&krate.modules[0].docs, &[]),
+        legend: crate::legend::html_items(),
         contents,
         kill_summary,
         kill,
@@ -257,10 +239,7 @@ fn mod_ids(krate: &Crate) -> Vec<String> {
 
 /// Numbers the ids that repeat: the first of a group in `order` keeps its
 /// id, and the rest get `-2`, `-3`, and so on.
-pub(crate) fn suffixed(
-    base: &[String],
-    order: impl Fn(usize, usize) -> std::cmp::Ordering,
-) -> Vec<String> {
+pub(crate) fn suffixed(base: &[String], order: impl Fn(usize, usize) -> Ordering) -> Vec<String> {
     let mut groups: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     for (i, id) in base.iter().enumerate() {
         groups.entry(id).or_default().push(i);
@@ -277,7 +256,7 @@ pub(crate) fn suffixed(
 
 impl Builder<'_> {
     pub(crate) fn heading(&mut self, level: u8, id: &str, text: &str) {
-        id.clone_into(&mut self.heading);
+        id.clone_into(&mut self.heading_id);
         self.nodes.push(Node::Heading {
             level,
             id: id.to_owned(),

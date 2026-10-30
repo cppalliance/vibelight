@@ -17,6 +17,8 @@ exclude = [
     "/.github/",
     "/AGENTS.md",
     "/dist-workspace.toml",
+    "/vibelight.toml",
+    "/.vibelight/",
 ]
 # One integration-test binary, declared below, so no fixture file can ever
 # become a test target by accident.

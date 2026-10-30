@@ -3,7 +3,9 @@
 //! are measured from the config's folder, and a glob that matches no crate
 //! is a note, so a typo cannot go unseen. The markdown is contextual to the
 //! run, so leaving a crate out changes the leads and facts of the crates
-//! it used, while each kept crate's HTML stays the same.
+//! it used. A page depends on its own crate and the crates it links to, so
+//! each kept crate's HTML stays the same in these cases, which leave out a
+//! downstream or followed crate, but not in general.
 
 use std::fs;
 

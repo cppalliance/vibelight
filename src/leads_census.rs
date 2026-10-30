@@ -110,10 +110,7 @@ fn loose_member(run: &AnalysisRun<'_>, c: &Candidate<'_>) -> bool {
     let Some(d) = c.decl else {
         return false;
     };
-    let owner = ItemId {
-        target: c.item.target,
-        item: ItemRef::Decl(d),
-    };
+    let owner = ItemId::decl(c.item.target, d);
     run.uses_of(owner).iter().any(|u| {
         let UseKind::Qualifier(e) = u.kind else {
             return false;

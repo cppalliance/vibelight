@@ -80,9 +80,9 @@ span.src{cursor:default}
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
 <li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public gets <code>// internal</code> or <code>// private</code> above it.</li>
+<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
-<li><code>implements: Trait for Type;</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
+<li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
 <li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment reflows as one paragraph.</li>
 </ul>

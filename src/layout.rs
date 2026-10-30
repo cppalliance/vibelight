@@ -215,10 +215,15 @@ pub(crate) fn mark_line(
 }
 
 /// Returns the lines printed above a node: its notes, `cfg` lines, its
-/// attributes when `attrs` is set, each dimmed, and marks, with the marks'
+/// attributes when `with_attrs` is set, each dimmed, and marks, with the marks'
 /// repeats. A function and a field set it off: their attributes close the
 /// line they belong to.
-pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc, attrs: bool) -> (Vec<Line>, Vec<Repeat>) {
+pub(crate) fn above(
+    meta: &Meta,
+    indent: usize,
+    loc: Loc,
+    with_attrs: bool,
+) -> (Vec<Line>, Vec<Repeat>) {
     let mut lines = note_lines(&meta.notes, indent, Marker::DOC);
     for cfg in &meta.cfgs {
         lines.push(Line {
@@ -227,7 +232,7 @@ pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc, attrs: bool) -> (Vec<L
             trailing: None,
         });
     }
-    for attr in meta.attrs.iter().filter(|_| attrs) {
+    for attr in meta.attrs.iter().filter(|_| with_attrs) {
         lines.push(Line {
             indent,
             spans: vec![Span::Dim(format!("[[{attr}]]"))],
@@ -270,9 +275,9 @@ pub(crate) fn join_groups(groups: Vec<Vec<Entry>>, block: &mut Block) {
 /// and private, in print order.
 pub(crate) type Sections = [Vec<Vec<Entry>>; 3];
 
-/// Returns empty sections of `groups` groups each.
-pub(crate) fn sections(groups: usize) -> Sections {
-    std::array::from_fn(|_| (0..groups).map(|_| Vec::new()).collect())
+/// Returns empty sections of `per_section` groups each.
+pub(crate) fn empty_sections(per_section: usize) -> Sections {
+    std::array::from_fn(|_| (0..per_section).map(|_| Vec::new()).collect())
 }
 
 /// Returns the index of a visibility's section.
@@ -309,9 +314,8 @@ pub(crate) fn join_sections(data: Sections, members: Sections, default: Vis, blo
             }
             if vis != current {
                 block.lines.push(Line {
-                    indent: 0,
                     spans: vec![key(label)],
-                    trailing: None,
+                    ..Line::default()
                 });
                 current = vis;
             }
@@ -365,7 +369,7 @@ pub(crate) fn fn_lines(
             text: code(&p.text),
         })
         .collect();
-    let after = if sig.receiver == crate::model::Receiver::Mutable {
+    let after = if matches!(sig.receiver, crate::model::Receiver::Mutable(_)) {
         vec![plain(" "), key(MUT)]
     } else {
         Vec::new()
@@ -387,12 +391,10 @@ pub(crate) fn fn_lines(
 /// dimmed, or nothing when it has none. Each attribute is separated from
 /// what comes before by one space.
 pub(crate) fn attributes_end(attrs: &[String]) -> Vec<Span> {
-    let mut spans = Vec::new();
-    for attr in attrs {
-        spans.push(plain(" "));
-        spans.push(Span::Dim(format!("[[{attr}]]")));
-    }
-    spans
+    attrs
+        .iter()
+        .flat_map(|attr| [plain(" "), Span::Dim(format!("[[{attr}]]"))])
+        .collect()
 }
 
 /// Returns a constant's line, showing its value only when the whole line

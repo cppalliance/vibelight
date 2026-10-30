@@ -10,8 +10,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
-use crate::leads::{Lead, Mode};
-use crate::leads_items::{Catalog, FnKind, Func, impl_module, parent_module};
+use crate::leads::{Lead, Mode, module_of};
+use crate::leads_items::{Catalog, FnKind, Func, impl_home};
 use crate::leads_types::Ty;
 use crate::leads_words::words;
 use crate::model::{DeclKind, ItemKind, Meta, ModId, Receiver, Shape, ValueRef};
@@ -74,7 +74,9 @@ const STD_NAMES: [(&str, &str); 15] = [
 const WRAPPER_SUFFIXES: [&str; 4] = ["_body", "_helper", "_impl", "_inner"];
 
 /// The suffixes that name the private implementation behind a public
-/// wrapper, such as `parse` over `parse_inner`.
+/// wrapper, such as `parse` over `parse_inner`. The suffixes of
+/// [`WRAPPER_SUFFIXES`] but `_helper`: a `_helper` function is no private
+/// half of a public wrapper, so it is never left out of the lead.
 const IMPL_SUFFIXES: [&str; 3] = ["_body", "_impl", "_inner"];
 
 /// One named node of the run, as the name detectors read it.
@@ -114,7 +116,7 @@ fn named_nodes<'a>(run: &AnalysisRun<'a>) -> Vec<Named<'a>> {
                 out.push(Named {
                     item: at(ItemRef::Module(m)),
                     name,
-                    module: parent_module(krate, m).unwrap_or(m),
+                    module: module_of(run, at(ItemRef::Module(m))),
                     lints: &module.lints,
                     attrs: &[],
                     support: module.test_support,
@@ -151,7 +153,7 @@ fn named_nodes<'a>(run: &AnalysisRun<'a>) -> Vec<Named<'a>> {
         for (i, imp) in krate.impls.iter().enumerate() {
             let decl = run.attached[t][i];
             let support = decl.is_some_and(|d| krate.decls[d].test_support);
-            let m = decl.map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module);
+            let m = impl_home(run, t, i);
             for (k, member) in imp.members.iter().enumerate() {
                 let at = ItemRef::Inherent(i, k);
                 out.push(node(at, &member.name, m, &member.meta, (support, false)));
@@ -317,10 +319,7 @@ fn prelude_name(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
                 }
             }
             let evidence = format!("named like `{path}`");
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             out.push(Lead::new("prelude-name", Mode::DirectSyntax, evidence).item(run, at));
         }
         for (m, module) in krate.modules.iter().enumerate() {
@@ -426,7 +425,7 @@ fn getter_style_mix(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<
     let mut styles: BTreeMap<usize, (Vec<&Func<'_>>, Vec<&Func<'_>>)> = BTreeMap::new();
     for func in &catalog.funcs {
         let getter = func.kind == FnKind::Inherent
-            && func.sig.receiver == Receiver::Shared
+            && matches!(func.sig.receiver, Receiver::Shared(_))
             && func.args.is_empty()
             && func.ret.as_ref().is_some_and(|ret| !ret.is_unit());
         let Some(d) = func.decl.filter(|_| getter) else {
@@ -437,10 +436,7 @@ fn getter_style_mix(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<
             style.0.push(func);
             continue;
         }
-        let at = ItemId {
-            target: func.item.target,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(func.item.target, d);
         let field = catalog
             .fields_of(at, None)
             .any(|f| f.named && f.name == func.name);

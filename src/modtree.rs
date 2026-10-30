@@ -102,14 +102,9 @@ impl Walker<'_> {
                     inline_line: None,
                     problem: None,
                 });
-                let base = dir_of(rel);
-                let child_dir = if mod_rs {
-                    base.clone()
-                } else {
-                    join(&base, &name)
-                };
+                let dirs = Dirs::of_file(rel, &name, mod_rs);
                 self.chain.push(rel.to_owned());
-                self.children(module, &parsed.items, &child_dir, &base);
+                self.children(module, &parsed.items, &dirs);
                 self.chain.pop();
             }
             Err(error) => {
@@ -130,114 +125,113 @@ impl Walker<'_> {
     }
 
     /// Adds every child module declared among `items` of `module`.
-    fn children(&mut self, module: ModId, items: &[Item], child_dir: &str, path_base: &str) {
+    fn children(&mut self, module: ModId, items: &[Item], dirs: &Dirs) {
         let file = self.tree.modules[module].file;
         for (index, item) in items.iter().enumerate() {
             let Item::Mod(m) = item else {
                 continue;
             };
             if attrs::is_test_only(&m.attrs) {
-                self.test_module(m, child_dir, path_base);
+                self.test_module(m, dirs);
                 continue;
             }
             let mut path = self.tree.modules[module].path.clone();
             path.push(m.ident.to_string());
-            let name = crate::typerefs::strip_raw(&m.ident.to_string());
             let decl = Some((module, index));
-            let path_value = attrs::path_attr(&m.attrs);
-            if let Some((brace, inner_items)) = &m.content {
-                let source = &self.tree.files[file];
-                let scope = source.end(brace.span.open())..source.start(brace.span.close());
-                let line = u32::try_from(m.mod_token.span.start().line).unwrap_or(0);
-                let dir = inline_dir(path_value.as_deref(), &name, child_dir, path_base);
-                let (_, inner) = attrs::split_inner(&m.attrs);
-                let id = self.tree.modules.len();
-                self.tree.modules.push(ModSource {
-                    path,
-                    file,
-                    decl,
-                    items: inner_items.clone(),
-                    inner,
-                    scope,
-                    inline_line: Some(line),
-                    problem: None,
-                });
-                self.children(id, inner_items, &dir, &dir);
-                continue;
-            }
-            let candidates = candidates(path_value.as_deref(), &name, child_dir, path_base);
-            let found = self.load(&candidates);
             let line = u32::try_from(m.mod_token.span.start().line).unwrap_or(0);
-            let declaring = self.tree.files[file].rel.clone();
-            match found {
-                Some((rel, _, _)) if self.chain.contains(&rel) => {
-                    self.warn(
-                        &declaring,
-                        line,
-                        format!("module `{name}` loads {rel} again"),
-                    );
-                    self.missing(path, decl, file, line, "module file loop");
+            let name = crate::typerefs::strip_raw(&m.ident.to_string());
+            match self.resolve(m, &name, dirs) {
+                Body::Inline(inline, (brace, inner_items)) => {
+                    let source = &self.tree.files[file];
+                    let scope = source.end(brace.span.open())..source.start(brace.span.close());
+                    let (_, inner) = attrs::split_inner(&m.attrs);
+                    let id = self.tree.modules.len();
+                    self.tree.modules.push(ModSource {
+                        path,
+                        file,
+                        decl,
+                        items: inner_items.clone(),
+                        inner,
+                        scope,
+                        inline_line: Some(line),
+                        problem: None,
+                    });
+                    self.children(id, inner_items, &inline);
                 }
-                Some((rel, mod_rs, text)) => self.file_module(path, decl, &rel, &text, mod_rs),
-                None => {
-                    self.warn(
-                        &declaring,
-                        line,
-                        format!("no file found for module `{name}` ({})", candidates[0].0),
-                    );
-                    self.missing(path, decl, file, line, "missing file");
+                Body::File(Loaded { file: found, text }) => {
+                    self.file_module(path, decl, &found.rel, &text, found.mod_rs);
+                }
+                Body::Absent { warning, why } => {
+                    let declaring = self.tree.files[file].rel.clone();
+                    self.warn(&declaring, line, warning);
+                    self.missing(path, decl, file, line, why);
                 }
             }
         }
     }
 
-    /// Reads the first candidate file that exists: its path, whether it
-    /// holds its children the way a `mod.rs` does, and its text.
-    fn load(&self, candidates: &[(String, bool)]) -> Option<(String, bool, String)> {
-        candidates.iter().find_map(|(rel, mod_rs)| {
-            fs::read_to_string(self.crate_dir.join(rel))
-                .ok()
-                .map(|text| (rel.clone(), *mod_rs, text))
+    /// Finds where the items of the `mod` item `m`, named `name`, live:
+    /// inline, or in the first candidate file that loads and is not already
+    /// on the current path from the root.
+    fn resolve<'m>(&self, m: &'m ItemMod, name: &str, dirs: &Dirs) -> Body<'m> {
+        let path_value = attrs::path_attr(&m.attrs);
+        if let Some(content) = &m.content {
+            return Body::Inline(dirs.inline(path_value.as_deref(), name), content);
+        }
+        let tried = candidates(path_value.as_deref(), name, dirs);
+        let absent = |warning, why| Body::Absent { warning, why };
+        match self.load(&tried) {
+            Some(loaded) if self.chain.contains(&loaded.file.rel) => absent(
+                format!("module `{name}` loads {} again", loaded.file.rel),
+                "module file loop",
+            ),
+            Some(loaded) => Body::File(loaded),
+            None => absent(
+                format!("no file found for module `{name}` ({})", tried[0].rel),
+                "missing file",
+            ),
+        }
+    }
+
+    /// Reads the first candidate file that exists.
+    fn load(&self, candidates: &[Candidate]) -> Option<Loaded> {
+        candidates.iter().find_map(|candidate| {
+            let text = fs::read_to_string(self.crate_dir.join(&candidate.rel)).ok()?;
+            let file = candidate.clone();
+            Some(Loaded { file, text })
         })
     }
 
     /// Records the file a test-only module loads, and the files of the
     /// modules inside it, without parsing any of them into the tree.
-    fn test_module(&mut self, m: &ItemMod, child_dir: &str, path_base: &str) {
+    fn test_module(&mut self, m: &ItemMod, dirs: &Dirs) {
         let name = crate::typerefs::strip_raw(&m.ident.to_string());
-        let path_value = attrs::path_attr(&m.attrs);
-        if let Some((_, items)) = &m.content {
-            let dir = inline_dir(path_value.as_deref(), &name, child_dir, path_base);
-            self.test_children(items, &dir, &dir);
-            return;
-        }
-        let candidates = candidates(path_value.as_deref(), &name, child_dir, path_base);
-        let Some((rel, mod_rs, text)) = self.load(&candidates) else {
-            return;
+        let Loaded { file: found, text } = match self.resolve(m, &name, dirs) {
+            Body::Inline(inline, (_, items)) => {
+                self.test_children(items, &inline);
+                return;
+            }
+            Body::File(loaded) => loaded,
+            Body::Absent { .. } => return,
         };
-        if self.tree.test_files.contains(&rel) || self.chain.contains(&rel) {
+        if self.tree.test_files.contains(&found.rel) {
             return;
         }
-        self.tree.test_files.push(rel.clone());
-        let file = SourceFile::new(rel.clone(), &text);
+        self.tree.test_files.push(found.rel.clone());
+        let file = SourceFile::new(found.rel.clone(), &text);
         let Ok(parsed) = syn::parse_file(&file.text) else {
             return;
         };
-        let base = dir_of(&rel);
-        let child_dir = if mod_rs {
-            base.clone()
-        } else {
-            join(&base, &name)
-        };
-        self.test_children(&parsed.items, &child_dir, &base);
+        let dirs = Dirs::of_file(&found.rel, &name, found.mod_rs);
+        self.test_children(&parsed.items, &dirs);
     }
 
     /// Records the files of every module declared among a test module's
     /// items.
-    fn test_children(&mut self, items: &[Item], child_dir: &str, path_base: &str) {
+    fn test_children(&mut self, items: &[Item], dirs: &Dirs) {
         for item in items {
             if let Item::Mod(m) = item {
-                self.test_module(m, child_dir, path_base);
+                self.test_module(m, dirs);
             }
         }
     }
@@ -273,30 +267,75 @@ impl Walker<'_> {
     }
 }
 
-/// Returns the files a `mod name;` item may load, each with whether it
-/// holds its children the way a `mod.rs` does: the `#[path]` value, or
-/// `name.rs`, then `name/mod.rs`.
-fn candidates(
-    path_value: Option<&str>,
-    name: &str,
-    child_dir: &str,
-    path_base: &str,
-) -> Vec<(String, bool)> {
-    match path_value {
-        Some(value) => vec![(join(path_base, value), true)],
-        None => vec![
-            (join(child_dir, &format!("{name}.rs")), false),
-            (join(child_dir, &format!("{name}/mod.rs")), true),
-        ],
+/// The directories a module's `mod` items resolve against: `child_dir` for
+/// `mod name;` files, `path_base` for `#[path]` values.
+struct Dirs {
+    child_dir: String,
+    path_base: String,
+}
+
+impl Dirs {
+    /// Returns the directories of a module held in the file `rel`: its
+    /// children live in the file's folder when the file is `mod.rs`-like,
+    /// else in a folder named for the module.
+    fn of_file(rel: &str, name: &str, mod_rs: bool) -> Self {
+        let path_base = dir_of(rel);
+        let child_dir = join(&path_base, if mod_rs { "" } else { name });
+        Self {
+            child_dir,
+            path_base,
+        }
+    }
+
+    /// Returns the directories of an inline module, which uses one
+    /// directory for both: its `#[path]` value, or its name below the
+    /// `child_dir` of the module that declares it.
+    fn inline(&self, path_value: Option<&str>, name: &str) -> Self {
+        let dir = match path_value {
+            Some(value) => join(&self.path_base, value),
+            None => join(&self.child_dir, name),
+        };
+        Self {
+            child_dir: dir.clone(),
+            path_base: dir,
+        }
     }
 }
 
-/// Returns the directory an inline module's children live in: its
-/// `#[path]` value, or its name below `child_dir`.
-fn inline_dir(path_value: Option<&str>, name: &str, child_dir: &str, path_base: &str) -> String {
+/// A file a `mod name;` item may load, and whether it holds its children
+/// the way a `mod.rs` does.
+#[derive(Clone)]
+struct Candidate {
+    rel: String,
+    mod_rs: bool,
+}
+
+/// A candidate file that was read.
+struct Loaded {
+    file: Candidate,
+    text: String,
+}
+
+/// Where a `mod` item's items live.
+enum Body<'m> {
+    /// Written in braces: its children's directories, and the content.
+    Inline(Dirs, &'m (syn::token::Brace, Vec<Item>)),
+    /// Read from a file.
+    File(Loaded),
+    /// In no usable file: the warning to give, and the placeholder's problem.
+    Absent { warning: String, why: &'static str },
+}
+
+/// Returns the files a `mod name;` item may load: the `#[path]` value, or
+/// `name.rs`, then `name/mod.rs`.
+fn candidates(path_value: Option<&str>, name: &str, dirs: &Dirs) -> Vec<Candidate> {
+    let candidate = |rel, mod_rs| Candidate { rel, mod_rs };
     match path_value {
-        Some(value) => join(path_base, value),
-        None => join(child_dir, name),
+        Some(value) => vec![candidate(join(&dirs.path_base, value), true)],
+        None => vec![
+            candidate(join(&dirs.child_dir, &format!("{name}.rs")), false),
+            candidate(join(&dirs.child_dir, &format!("{name}/mod.rs")), true),
+        ],
     }
 }
 

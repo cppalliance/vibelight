@@ -10,14 +10,15 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::Lead;
 use crate::leads_docs_text::{Prose, boilerplate, read_except};
-use crate::leads_items::{Catalog, impl_module};
+use crate::leads_items::{Catalog, impl_home};
 use crate::leads_types::{Ty, item_name, leaf};
 use crate::model::{
     Crate, DeclId, DeclKind, Foreign, ItemKind, Loc, MemberKind, Meta, ModId, Note, RefId, Shape,
     Text, ValueRef, Vis,
 };
 use crate::{
-    leads_docs_claims, leads_docs_lists, leads_docs_phrases, leads_docs_refs, leads_docs_repeat,
+    leads_comments_docs, leads_docs_claims, leads_docs_lists, leads_docs_phrases, leads_docs_refs,
+    leads_docs_repeat,
 };
 
 /// The group's lead ids, in glossary order.
@@ -138,10 +139,7 @@ impl<'a> Docs<'a> {
         for (t, krate) in krates.iter().enumerate() {
             nodes(run, t, krate, &mut docs);
             for d in 0..krate.decls.len() {
-                let at = ItemId {
-                    target: t,
-                    item: ItemRef::Decl(d),
-                };
+                let at = ItemId::decl(t, d);
                 decls.insert(item_name(run, at), (t, d));
             }
         }
@@ -283,8 +281,7 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
         }
     }
     for (i, imp) in krate.impls.iter().enumerate() {
-        let module =
-            (run.attached[t][i]).map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module);
+        let module = impl_home(run, t, i);
         let inherent = (imp.members.iter().enumerate()).map(|(k, m)| (ItemRef::Inherent(i, k), m));
         let traited =
             (imp.trait_members.iter().enumerate()).map(|(k, m)| (ItemRef::TraitImpl(i, k), m));
@@ -324,12 +321,6 @@ pub(crate) fn value_type<'a>(run: &AnalysisRun<'a>, item: ItemId) -> Option<&'a 
     }
 }
 
-/// Shows a field or a type as a reader sees it, such as `names:
-/// Vec<String>`.
-pub(crate) fn typed(name: &str, ty: &Ty) -> String {
-    format!("`{name}: {}`", ty.shown())
-}
-
 /// Finds the group's leads.
 pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     let docs = Docs::new(run);
@@ -338,4 +329,5 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     leads_docs_repeat::find(run, &docs, out);
     leads_docs_refs::find(run, &docs, out);
     leads_docs_claims::find(run, &docs, out);
+    leads_comments_docs::find(run, &docs, out);
 }

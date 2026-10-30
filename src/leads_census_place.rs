@@ -9,9 +9,9 @@ use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_uses::{Use, UseKind};
 use crate::leads::{Lead, Mode};
 use crate::leads_census_scope::{Candidate, Kind, consumers, elsewhere, in_macro, module_name};
-use crate::leads_items::impl_module;
+use crate::leads_items::impl_home;
 use crate::leads_words::words;
-use crate::model::{ItemKind, MemberKind, ModId, Shape, Sig, Text, ValueRef, VariantFields};
+use crate::model::{ItemKind, MemberKind, ModId, Shape, Text, ValueRef, VariantFields};
 use crate::model_body::BodyId;
 
 /// The fewest other declarations and module values an item's module holds
@@ -42,7 +42,7 @@ fn namesake(name: &str, module: &str) -> bool {
     })
 }
 
-/// Returns the module that declares an item: a part's is its
+/// Returns the module an item is in: a module's is itself, a part's is its
 /// declaration's, and an impl member's is its type's, or the impl's for an
 /// impl of no declaration of the run.
 fn home(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
@@ -51,8 +51,7 @@ fn home(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
         ItemRef::Module(m) => m,
         ItemRef::Decl(d) | ItemRef::Own(d, _) | ItemRef::Variant(d, _) => krate.decls[d].module,
         ItemRef::Value(at) => at.module,
-        ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => run.attached[item.target][i]
-            .map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module),
+        ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => impl_home(run, item.target, i),
     }
 }
 
@@ -76,15 +75,11 @@ fn neighbor(run: &AnalysisRun<'_>, c: &Candidate<'_>, item: ItemId) -> bool {
     item.target == c.item.target && !part_of(run, c, item) && home(run, item) == c.module
 }
 
-/// Returns the texts of a signature: its parameters and its return type.
-fn sig_texts(sig: &Sig) -> impl Iterator<Item = &Text> {
-    sig.params.iter().map(|p| &p.text).chain(&sig.ret)
-}
-
 /// Returns the texts a candidate's declaration writes and the bodies it
-/// owns: a function's signature and block, a constant's or static's type
-/// and initializer, and a declaration's fields, variants, alias target, and
-/// members, its impls' members included. `None` for any other item.
+/// owns: a function's signature, generics and bounds included, and block, a
+/// constant's or static's type and initializer, and a declaration's fields,
+/// variants, alias target, and members, its impls' members included. `None`
+/// for any other item.
 fn written<'a>(run: &AnalysisRun<'a>, c: &Candidate<'_>) -> Option<(Vec<&'a Text>, Vec<BodyId>)> {
     let t = c.item.target;
     let krate = &run.krates[t];
@@ -92,14 +87,14 @@ fn written<'a>(run: &AnalysisRun<'a>, c: &Candidate<'_>) -> Option<(Vec<&'a Text
     let mut bodies: Vec<BodyId> = run.body_of(c.item).into_iter().collect();
     match c.item.item {
         ItemRef::Value(at) => match &krate.modules[at.module].items[at.item].kind {
-            ItemKind::Fn(sig) => texts.extend(sig_texts(sig)),
+            ItemKind::Fn(sig) => texts.extend(sig.texts()),
             ItemKind::Const { ty, .. } | ItemKind::Static { ty, .. } => texts.push(ty),
             _ => return None,
         },
         ItemRef::Decl(d) => {
             for (part, member) in run.members(t, d) {
                 match &member.kind {
-                    MemberKind::Fn(sig) => texts.extend(sig_texts(sig)),
+                    MemberKind::Fn(sig) => texts.extend(sig.texts()),
                     MemberKind::Field(ty) | MemberKind::Const { ty, .. } | MemberKind::Type(ty) => {
                         texts.push(ty);
                     }
@@ -222,8 +217,10 @@ fn held(run: &AnalysisRun<'_>, t: usize, m: ModId) -> Vec<ItemId> {
 pub(crate) fn defined_away(run: &AnalysisRun<'_>, c: &Candidate<'_>, out: &mut Vec<Lead>) {
     let t = c.item.target;
     let listed = matches!(c.kind, Kind::Decl(_) | Kind::Function | Kind::Value);
-    let neighbors = held(run, t, c.module);
-    if !listed || run.on_surface(c.item) || neighbors.len() <= NEIGHBORS_FROM {
+    let neighbors: Vec<ItemId> = (held(run, t, c.module).into_iter())
+        .filter(|&item| item != c.item)
+        .collect();
+    if !listed || run.on_surface(c.item) || neighbors.len() < NEIGHBORS_FROM {
         return;
     }
     let seen: Vec<&Use> = (consumers(run, c.item).into_iter())
@@ -240,7 +237,7 @@ pub(crate) fn defined_away(run: &AnalysisRun<'_>, c: &Candidate<'_>, out: &mut V
     if user_target != t || own.starts_with(theirs) || seen.len() < USES_FROM || tied(run, c) {
         return;
     }
-    let shared = (neighbors.into_iter().filter(|&item| item != c.item)).any(|item| {
+    let shared = neighbors.into_iter().any(|item| {
         (consumers(run, item).iter()).any(|u| u.kind != UseKind::Reexport && u.module == Some(user))
     });
     if shared {

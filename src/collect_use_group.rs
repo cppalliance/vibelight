@@ -8,22 +8,28 @@ use syn::{ItemUse, UseTree};
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
-use crate::comments::attach;
+use crate::comments::{Placed, place_comments};
 use crate::model::{Item, ItemKind, Meta, Note, Text, name_order};
-use crate::source::{Comment, SourceFile};
+use crate::source::SourceFile;
 use crate::typerefs::strip_raw;
 
 /// One name a `use` tree binds.
 pub(crate) struct Binding {
     /// The bound name, or `None` for a glob.
     pub(crate) name: Option<String>,
-    /// The source path, ending in the item's own name; a glob's module path.
-    pub(crate) path: Vec<String>,
-    /// The path as written, with `r#` kept.
+    /// The source path as written, with `r#` kept, ending in the item's own
+    /// name; a glob's module path.
     pub(crate) written: Vec<String>,
     pub(crate) rename: Option<String>,
     /// Where the name, its rename, or the glob's `*` is written.
     range: Range<usize>,
+}
+
+impl Binding {
+    /// Returns the source path with `r#` stripped from each segment.
+    pub(crate) fn path(&self) -> Vec<String> {
+        self.written.iter().map(|s| strip_raw(s)).collect()
+    }
 }
 
 /// One re-exported name and its own comments, before sorting.
@@ -43,8 +49,7 @@ impl Collector<'_> {
         &mut self,
         here: &Here,
         u: &ItemUse,
-        lead: Vec<Comment>,
-        trail: &[Comment],
+        placed: Placed,
         bindings: &[Binding],
     ) {
         let files = self.files;
@@ -52,20 +57,17 @@ impl Collector<'_> {
         let range = crate::typerefs::range_of(u, file);
         let global = u.leading_colon.is_some();
         let children: Vec<Range<usize>> = bindings.iter().map(|b| b.range.clone()).collect();
-        let attached = attach(&mut self.pools[here.file], file, range.clone(), &children);
-        let mut notes = self.notes(here, &u.attrs, lead);
-        notes.extend(self.notes(here, &[], attached.dangling));
+        let (per_name, dangling) =
+            place_comments(&mut self.pools[here.file], file, range.clone(), &children);
+        let mut notes = self.notes(here, &u.attrs, placed.leading);
+        notes.extend(self.notes(here, &[], dangling));
         let mut named = Vec::new();
-        for ((binding, leading), trailing) in bindings
-            .iter()
-            .zip(attached.leading)
-            .zip(&attached.trailing)
-        {
+        for (binding, around) in bindings.iter().zip(per_name) {
             named.push(Named {
                 sort: sort_name(binding),
                 text: self.reexport_text(here, binding, global),
-                notes: self.notes(here, &[], leading),
-                trailing: self.trailing(here, trailing),
+                notes: self.notes(here, &[], around.leading),
+                trailing: self.trailing(here, &around.trailing),
             });
         }
         named.sort_by(|a, b| {
@@ -75,7 +77,7 @@ impl Collector<'_> {
         let group = (!notes.is_empty() && named.len() > 1).then_some(range.start);
         let cfgs = attrs::cfgs(&u.attrs, file);
         let api = attrs::api(&u.attrs, file);
-        let trailing = self.trailing(here, trail);
+        let trailing = self.trailing(here, &placed.trailing);
         let loc = loc(here, u.use_token.span);
         let vis = attrs::vis(&u.vis);
         let (raw_doc, lints) = self.attr_facts(here, &u.attrs);
@@ -124,16 +126,13 @@ fn sort_name(binding: &Binding) -> String {
 pub(crate) fn expand(
     tree: &UseTree,
     file: &SourceFile,
-    path: &mut Vec<String>,
     written: &mut Vec<String>,
     out: &mut Vec<Binding>,
 ) {
     match tree {
         UseTree::Path(p) => {
-            path.push(strip_raw(&p.ident.to_string()));
             written.push(p.ident.to_string());
-            expand(&p.tree, file, path, written, out);
-            path.pop();
+            expand(&p.tree, file, written, out);
             written.pop();
         }
         UseTree::Name(n) => {
@@ -143,19 +142,15 @@ pub(crate) fn expand(
                 let bound = written.last().cloned().unwrap_or_default();
                 out.push(Binding {
                     name: Some(strip_raw(&bound)),
-                    path: path.clone(),
                     written: written.clone(),
                     rename: None,
                     range,
                 });
             } else {
-                let mut full = path.clone();
-                full.push(strip_raw(&name));
                 let mut shown = written.clone();
                 shown.push(name.clone());
                 out.push(Binding {
                     name: Some(strip_raw(&name)),
-                    path: full,
                     written: shown,
                     rename: None,
                     range,
@@ -164,19 +159,13 @@ pub(crate) fn expand(
         }
         UseTree::Rename(r) => {
             let name = r.ident.to_string();
-            let (full, shown) = if name == "self" {
-                (path.clone(), written.clone())
-            } else {
-                let mut full = path.clone();
-                full.push(strip_raw(&name));
-                let mut shown = written.clone();
+            let mut shown = written.clone();
+            if name != "self" {
                 shown.push(name);
-                (full, shown)
-            };
+            }
             let rename = r.rename.to_string();
             out.push(Binding {
                 name: Some(strip_raw(&rename)),
-                path: full,
                 written: shown,
                 rename: Some(rename),
                 range: file.start(r.ident.span())..file.end(r.rename.span()),
@@ -184,14 +173,13 @@ pub(crate) fn expand(
         }
         UseTree::Glob(g) => out.push(Binding {
             name: None,
-            path: path.clone(),
             written: written.clone(),
             rename: None,
             range: file.start(g.span())..file.end(g.span()),
         }),
         UseTree::Group(g) => {
             for item in &g.items {
-                expand(item, file, path, written, out);
+                expand(item, file, written, out);
             }
         }
     }

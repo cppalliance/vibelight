@@ -107,7 +107,7 @@ impl Collector<'_> {
 /// `///`, a block doc beautified, and a file `include_str!` reads as it is.
 /// The lines are joined by newlines, without blank lines at either end;
 /// `None` when there is no doc text.
-pub(crate) fn raw_doc(attrs: &[Attribute], file: &SourceFile, crate_dir: &Path) -> Option<String> {
+fn raw_doc(attrs: &[Attribute], file: &SourceFile, crate_dir: &Path) -> Option<String> {
     let mut lines: Vec<String> = Vec::new();
     for attr in attrs {
         match doc_text(attr, file, crate_dir) {
@@ -259,6 +259,6 @@ mod tests {
         );
         let port = &krate.refs[krate.attr_paths[0].path_ref];
         assert!(port.comment);
-        assert_eq!(port.value.map(|v| v.item), Some(0));
+        assert_eq!(port.value().map(|v| v.item), Some(0));
     }
 }

@@ -2,10 +2,11 @@
 
 use std::collections::BTreeMap;
 
-use crate::document::{Builder, Inline, Item, Link, Node, SourceLink, anchor};
+use crate::document::{Builder, Inline, Item, Link, MarkLine, Node, SourceLink, anchor};
 use crate::groups::{Group, groups};
 use crate::layout::Block;
 use crate::layout_items::{self, docs_block, module_block};
+use crate::macros;
 use crate::model::{Crate, DeclId, Loc, ModId};
 use crate::order::{Order, path_cmp};
 
@@ -134,8 +135,11 @@ impl Builder<'_> {
         let source = loc.and_then(|loc| self.link(loc, true));
         let id = (label == "MACRO").then(|| format!("macro.{}", self.marks.len() + 1));
         if let Some(id) = &id {
-            self.marks
-                .push((self.heading.clone(), text.to_owned(), id.clone()));
+            self.marks.push(MarkLine {
+                heading_id: self.heading_id.clone(),
+                text: text.to_owned(),
+                id: id.clone(),
+            });
         }
         self.nodes.push(Node::Mark {
             label,
@@ -181,18 +185,18 @@ impl Builder<'_> {
         if !decl.derives.is_empty() {
             self.mark(
                 "MACRO",
-                &format!("derive: {}", decl.derives.join(", ")),
+                &macros::mark_text(macros::DERIVE, &decl.derives),
                 None,
             );
         }
         if !decl.attributes.is_empty() {
             self.mark(
                 "MACRO",
-                &format!("attribute: {}", decl.attributes.join(", ")),
+                &macros::mark_text(macros::ATTRIBUTE, &decl.attributes),
                 None,
             );
         }
-        self.code(self.printed[d].clone());
+        self.code(self.blocks[d].clone());
     }
 
     /// Adds the Other impls section and returns its contents entry, when
@@ -244,13 +248,13 @@ impl Builder<'_> {
                 .collect();
             self.nodes.push(Node::List { class: "", items });
         }
-        if let Some(block) = module_block(self.krate, m, self.notation) {
+        if let Some(block) = module_block(self.krate, m) {
             self.code(block);
         }
     }
 
     /// Adds a module's heading at `level`, its `Source:` line, and its docs.
-    pub(crate) fn module_head(&mut self, m: ModId, level: u8) {
+    fn module_head(&mut self, m: ModId, level: u8) {
         let module = &self.krate.modules[m];
         let id = self.mod_ids[m].clone();
         self.heading(level, &id, &self.mod_heading(m));
@@ -268,9 +272,9 @@ impl Builder<'_> {
             self.nodes.push(Node::Source(plain_links(link)));
         }
         let docs = if m == 0 {
-            docs_block(&[], &module.cfgs, self.notation)
+            docs_block(&[], &module.cfgs)
         } else {
-            docs_block(&module.docs, &module.cfgs, self.notation)
+            docs_block(&module.docs, &module.cfgs)
         };
         if let Some(docs) = docs {
             self.code(docs);
@@ -278,7 +282,7 @@ impl Builder<'_> {
     }
 
     fn other_impls(&mut self, ids: &[usize]) {
-        let (lines, blocks) = layout_items::other_impls(self.krate, ids, self.notation);
+        let (lines, blocks) = layout_items::other_impls(self.krate, ids);
         if !lines.is_empty() {
             let items = lines
                 .into_iter()

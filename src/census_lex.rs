@@ -2,7 +2,9 @@
 //! writes the name, whether it is inside macro arguments, and whether it
 //! is inside a test-only span, and each qualified path, which
 //! `census_paths` reads from the same flat tokens. Doc attributes,
-//! keywords, and lifetimes give no names.
+//! keywords, and lifetimes give no names. This scan keeps doc-attribute
+//! tokens and flags them, and flags `macro_rules!` bodies as macro tokens;
+//! it shares only the keyword table with `collect_body_tokens`.
 
 use std::fmt::Write as _;
 use std::ops::Range;
@@ -14,11 +16,11 @@ use crate::census_paths::Path;
 
 /// Rust's strict and reserved keywords, sorted for a binary search. A
 /// keyword never names an item, but a raw identifier such as `r#type` does.
-const KEYWORDS: [&str; 52] = [
+const KEYWORDS: [&str; 51] = [
     "Self", "abstract", "as", "async", "await", "become", "box", "break", "const", "continue",
-    "crate", "do", "dyn", "else", "enum", "extern", "false", "final", "fn", "for", "gen", "if",
-    "impl", "in", "let", "loop", "macro", "match", "mod", "move", "mut", "override", "priv", "pub",
-    "ref", "return", "self", "static", "struct", "super", "trait", "true", "try", "type", "typeof",
+    "crate", "do", "dyn", "else", "enum", "extern", "false", "final", "fn", "for", "if", "impl",
+    "in", "let", "loop", "macro", "match", "mod", "move", "mut", "override", "priv", "pub", "ref",
+    "return", "self", "static", "struct", "super", "trait", "true", "try", "type", "typeof",
     "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
@@ -277,6 +279,16 @@ mod tests {
     fn keywords_are_sorted_for_the_binary_search() {
         assert!(KEYWORDS.windows(2).all(|w| w[0] < w[1]));
         assert!(PATH_KEYWORDS.iter().all(|k| is_keyword(k)));
+    }
+
+    #[test]
+    fn a_census_scan_records_gen_as_a_method_name() {
+        let found = names("fn f() { r.gen(); }");
+        assert!(
+            found
+                .iter()
+                .any(|(n, form, _)| n == "gen" && *form == Form::Method)
+        );
     }
 
     #[test]

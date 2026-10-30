@@ -5,14 +5,14 @@
 //! impossible, and a papercut in a comment or a doc. The two that compare
 //! a comment with its code compare words, never meaning. This file holds
 //! the group's registry and the body comment detectors; its siblings hold
-//! the words they compare and the docs.
+//! the words they compare and the papercuts of docs, which the doc group
+//! finds.
 
 use proc_macro2::LineColumn;
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
-use crate::leads_comments_docs;
 use crate::leads_comments_words::{
     Written, content, holds, looks_like_code, named, prose_line, prose_words, without_code,
 };
@@ -169,7 +169,7 @@ fn remarks<'a>(run: &AnalysisRun<'a>) -> Vec<Remark<'a>> {
                 (None, _) => continue,
             };
             let item = ItemId { target: t, item };
-            let file = &krate.files[body.file];
+            let file = &krate.files[body.loc.file];
             let mut previous: Option<&BodyCommentFact> = None;
             for fact in &body.facts.comments {
                 let joins = previous.is_some_and(|before| continues(file, before, fact));
@@ -178,7 +178,7 @@ fn remarks<'a>(run: &AnalysisRun<'a>) -> Vec<Remark<'a>> {
                     None => out.push(Remark {
                         item,
                         loc: Loc {
-                            file: body.file,
+                            file: body.loc.file,
                             line: fact.line,
                         },
                         lines: fact.text.iter().map(String::as_str).collect(),
@@ -207,7 +207,7 @@ fn continues(file: &SourceFile, before: &BodyCommentFact, fact: &BodyCommentFact
         f.text.len() == 1 && first.starts_with("//") && text.trim_start().starts_with(first)
     };
     fact.line == before.line + 1
-        && (fact.placement, fact.statement) == (before.placement, before.statement)
+        && (fact.placement, fact.stmt) == (before.placement, before.stmt)
         && alone(before)
         && alone(fact)
 }
@@ -234,7 +234,6 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
             out.push(remark.lead(run, "papercut", Mode::DirectSyntax, evidence));
         }
     }
-    leads_comments_docs::find(run, out);
 }
 
 /// Returns the phrases that words hold, in list order.

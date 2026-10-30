@@ -193,7 +193,7 @@ fn pull_in(
         if !seen.insert(dir.clone()) {
             continue;
         }
-        let Some(rel) = relative(base, &dir) else {
+        let Some(rel) = manifest::relative(base, &dir) else {
             continue;
         };
         if !follow.iter().any(|g| glob::matches(g, &rel)) || filter.excludes(&dir) {
@@ -209,8 +209,8 @@ fn pull_in(
 }
 
 /// Shows a crate folder below `base` with forward slashes, or else in full.
-fn shown(base: &Path, dir: &Path) -> String {
-    relative(base, dir)
+pub(crate) fn shown(base: &Path, dir: &Path) -> String {
+    manifest::relative(base, dir)
         .filter(|rel| !rel.is_empty())
         .unwrap_or_else(|| dir.display().to_string())
 }
@@ -299,15 +299,4 @@ fn empty_reason(dir: &Path) -> &'static str {
     } else {
         "no library or binary source"
     }
-}
-
-/// Returns `dir` below `base` with forward slashes, or `None` when it is
-/// not below `base`.
-pub(crate) fn relative(base: &Path, dir: &Path) -> Option<String> {
-    let rest = dir.strip_prefix(base).ok()?;
-    let names: Vec<String> = rest
-        .components()
-        .map(|c| c.as_os_str().to_string_lossy().into_owned())
-        .collect();
-    Some(names.join("/"))
 }

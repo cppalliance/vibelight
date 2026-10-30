@@ -145,3 +145,13 @@ fn a_papercut_in_a_body_comment_or_a_doc_is_a_lead_but_not_in_code_spans() {
          /// Panics with `todo!()` when the `HACK` flag is unset.\npub fn read() {}\n",
     );
 }
+
+#[test]
+fn a_crate_root_doc_papercut_is_a_lead() {
+    finds(
+        "papercut",
+        "//! A parser, with a TODO for later.\npub fn run() {}\n",
+        &["crate"],
+        "//! A parser, with `todo!()` left out.\npub fn run() {}\n",
+    );
+}

@@ -8,7 +8,7 @@ use proc_macro2::Span;
 use syn::{Attribute, Generics, Item, ItemMacro, ItemMod};
 
 use crate::attrs;
-use crate::comments::{Attached, NoteCx, Pool, attach};
+use crate::comments::{NoteCx, Placed, Pool, place_comments};
 use crate::macros;
 use crate::model::{
     BodyName, Crate, Decl, FileId, Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse,
@@ -184,49 +184,36 @@ impl Collector<'_> {
         self.modules[id].docs = docs;
 
         let children: Vec<Range<usize>> = source.items.iter().map(|i| range_of(i, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(
+        let (placed, dangling) = place_comments(
             &mut self.pools[source.file],
             file,
             inner_end..source.scope.end,
             &children,
         );
-        for (index, ((item, lead), trail)) in
-            source.items.iter().zip(leading).zip(trailing).enumerate()
-        {
-            self.item(&here, index, item, lead, &trail);
+        for (index, (item, placed)) in source.items.iter().zip(placed).enumerate() {
+            self.item(&here, index, item, placed);
         }
         let dangling = self.notes(&here, &[], dangling);
         self.modules[id].dangling = dangling;
     }
 
-    fn item(
-        &mut self,
-        here: &Here,
-        index: usize,
-        item: &Item,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    fn item(&mut self, here: &Here, index: usize, item: &Item, placed: Placed) {
         match item {
-            Item::Const(c) => self.item_const(here, c, lead, trail),
-            Item::Enum(e) => self.item_enum(here, e, lead, trail),
+            Item::Const(c) => self.item_const(here, c, placed),
+            Item::Enum(e) => self.item_enum(here, e, placed),
             Item::ExternCrate(_) => {}
-            Item::Fn(f) => self.item_fn(here, f, lead, trail),
-            Item::ForeignMod(f) => self.item_foreign(here, f, lead, trail),
-            Item::Impl(i) => self.item_impl(here, i, lead, trail),
-            Item::Macro(m) => self.item_macro(here, m, lead, trail),
-            Item::Mod(m) => self.item_mod(here, index, m, lead, trail),
-            Item::Static(s) => self.item_static(here, s, lead, trail),
-            Item::Struct(s) => self.item_struct(here, s, lead, trail),
-            Item::Trait(t) => self.item_trait(here, t, lead, trail),
-            Item::TraitAlias(t) => self.item_trait_alias(here, t, lead, trail),
-            Item::Type(t) => self.item_type(here, t, lead, trail),
-            Item::Union(u) => self.item_union(here, u, lead, trail),
-            Item::Use(u) => self.item_use(here, u, lead, trail),
+            Item::Fn(f) => self.item_fn(here, f, placed),
+            Item::ForeignMod(f) => self.item_foreign(here, f, placed),
+            Item::Impl(i) => self.item_impl(here, i, placed),
+            Item::Macro(m) => self.item_macro(here, m, placed),
+            Item::Mod(m) => self.item_mod(here, index, m, placed),
+            Item::Static(s) => self.item_static(here, s, placed),
+            Item::Struct(s) => self.item_struct(here, s, placed),
+            Item::Trait(t) => self.item_trait(here, t, placed),
+            Item::TraitAlias(t) => self.item_trait_alias(here, t, placed),
+            Item::Type(t) => self.item_type(here, t, placed),
+            Item::Union(u) => self.item_union(here, u, placed),
+            Item::Use(u) => self.item_use(here, u, placed),
             Item::Verbatim(tokens) => {
                 let loc = loc(here, macros::tokens_span(tokens));
                 self.unsupported_item(here, "verbatim item", loc, true);
@@ -242,7 +229,7 @@ impl Collector<'_> {
         }
     }
 
-    fn item_macro(&mut self, here: &Here, m: &ItemMacro, lead: Vec<Comment>, trail: &[Comment]) {
+    fn item_macro(&mut self, here: &Here, m: &ItemMacro, placed: Placed) {
         if self.test_only(here, &m.attrs, m) {
             return;
         }
@@ -250,7 +237,12 @@ impl Collector<'_> {
             here,
             macros::delimiter_range(&m.mac.delimiter, &self.files[here.file]),
         );
-        let notes = self.node_notes(here, &m.attrs, lead, range_of(m, &self.files[here.file]));
+        let notes = self.node_notes(
+            here,
+            &m.attrs,
+            placed.leading,
+            range_of(m, &self.files[here.file]),
+        );
         let name = macros::path_text(&m.mac.path);
         let (text, sort, kind) = match &m.ident {
             Some(ident) if m.mac.path.is_ident("macro_rules") => {
@@ -259,7 +251,7 @@ impl Collector<'_> {
                     self.exported_macros.push((ident.clone(), here.module));
                 }
                 (
-                    format!("macro_rules! {ident}"),
+                    macros::definition_text(&ident),
                     ident,
                     MacroKind::Definition,
                 )
@@ -280,7 +272,7 @@ impl Collector<'_> {
         let (raw_doc, lints) = self.attr_facts(here, &m.attrs);
         let meta = Meta {
             notes,
-            trailing: self.trailing(here, trail),
+            trailing: self.trailing(here, &placed.trailing),
             cfgs: attrs::cfgs(&m.attrs, &self.files[here.file]),
             attrs: attrs::api(&m.attrs, &self.files[here.file]),
             marks: Vec::new(),
@@ -297,14 +289,7 @@ impl Collector<'_> {
         });
     }
 
-    fn item_mod(
-        &mut self,
-        here: &Here,
-        index: usize,
-        m: &ItemMod,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    fn item_mod(&mut self, here: &Here, index: usize, m: &ItemMod, placed: Placed) {
         if self.test_only(here, &m.attrs, m) {
             return;
         }
@@ -319,8 +304,8 @@ impl Collector<'_> {
             .as_ref()
             .map_or(range.end, |(brace, _)| file.start(brace.span.open()));
         let (outer, _) = attrs::split_inner(&m.attrs);
-        let mut notes = self.node_notes(here, &outer, lead, range.start..head_end);
-        if let Some(text) = self.trailing(here, trail) {
+        let mut notes = self.node_notes(here, &outer, placed.leading, range.start..head_end);
+        if let Some(text) = self.trailing(here, &placed.trailing) {
             notes.push(Note::Plain(vec![text]));
         }
         let cfgs = attrs::cfgs(&m.attrs, file);
@@ -328,7 +313,9 @@ impl Collector<'_> {
             .insert(child, (notes, cfgs, attrs::vis(&m.vis)));
     }
 
-    /// Adds a `// UNSUPPORTED` entry to the module's trailing block.
+    /// Adds a `// UNSUPPORTED` entry to the module's trailing block. It also
+    /// warns when `warn` is set; a module whose `problem` the tree walk
+    /// already warned about passes `false`.
     pub(crate) fn unsupported_item(&mut self, here: &Here, kind: &str, loc: Loc, warn: bool) {
         if warn {
             self.warn(loc, format!("unsupported {kind}"));
@@ -433,10 +420,21 @@ impl Collector<'_> {
         loc: Loc,
     ) -> Option<String> {
         let names = macros::attribute_macros(attrs, helpers);
+        self.attribute_names_mark(&names, holder, loc)
+    }
+
+    /// Records the attribute macros `names` in the kill list and returns
+    /// their mark, `attribute: a, b`, if there are any.
+    pub(crate) fn attribute_names_mark(
+        &mut self,
+        names: &[String],
+        holder: Holder,
+        loc: Loc,
+    ) -> Option<String> {
         if names.is_empty() {
             return None;
         }
-        let text = format!("attribute: {}", names.join(", "));
+        let text = macros::mark_text(macros::ATTRIBUTE, names);
         self.macros.push(MacroUse {
             kind: MacroKind::Attribute,
             text: text.clone(),
@@ -456,7 +454,7 @@ pub(crate) fn loc(here: &Here, span: Span) -> Loc {
 }
 
 /// Returns the names of type and const generic parameters.
-pub(crate) fn generic_names(generics: &Generics) -> Vec<String> {
+fn generic_names(generics: &Generics) -> Vec<String> {
     generics
         .params
         .iter()

@@ -57,10 +57,13 @@ pub(crate) fn has_ext(name: &str, ext: &str) -> bool {
 /// the stamp every golden starts with.
 pub(crate) const EPOCH: &str = "1767225600";
 
-/// The binary, with the stamp pinned to `EPOCH`.
+/// The binary, with the stamp pinned to `EPOCH`. It starts in the system's
+/// temporary folder, so the repository's own `vibelight.toml` is never the
+/// config of a test run; a test that needs a folder sets `current_dir`.
 pub(crate) fn vibelight() -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_vibelight"));
     command.env("SOURCE_DATE_EPOCH", EPOCH);
+    command.current_dir(std::env::temp_dir());
     command
 }
 

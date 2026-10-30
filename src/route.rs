@@ -3,8 +3,9 @@
 
 use std::collections::BTreeSet;
 
+use crate::macros;
 use crate::model::{
-    Base, Crate, DeclId, DeclKind, Holder, MacroKind, Seg, Shape, Special, SpecialKind, Text,
+    Base, Crate, DeclId, DeclKind, Holder, MacroKind, Res, Seg, Shape, Special, SpecialKind, Text,
     TypeRef,
 };
 use crate::prelude::{is_standard, item_path};
@@ -38,10 +39,10 @@ pub(crate) fn derive_path(name: &str) -> Option<&'static str> {
 /// of its own.
 pub(crate) fn special_kind(refs: &[TypeRef], base: &Base) -> Option<SpecialKind> {
     let reference = &refs[base.path_ref?];
-    if base.generic || reference.target.is_some() {
+    if base.generic || reference.decl().is_some() {
         return None;
     }
-    let path = reference.canonical.as_deref().filter(|p| is_standard(p))?;
+    let path = reference.outside().filter(|p| is_standard(p))?;
     let kind = kind_of(path.last()?)?;
     (kind != SpecialKind::From || base.arg.is_some()).then_some(kind)
 }
@@ -89,8 +90,8 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
     let mut kept = Vec::new();
     for (name, &r) in decl.derives.iter().zip(&decl.derive_refs) {
         let reference = &krate.refs[r];
-        let full: Option<Vec<String>> = match (&reference.canonical, reference.target) {
-            (Some(path), None) if path.len() > 1 => is_standard(path).then(|| path.clone()),
+        let full: Option<Vec<String>> = match reference.outside() {
+            Some(path) if path.len() > 1 => is_standard(path).then(|| path.to_vec()),
             _ => match reference.path.as_slice() {
                 [one] => derive_path(one).map(|p| p.split("::").map(str::to_owned).collect()),
                 _ => None,
@@ -112,8 +113,7 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
             Some(_) => kept.push(name.clone()),
             None => {
                 let reference = &mut krate.refs[r];
-                reference.target = None;
-                reference.canonical = Some(full);
+                reference.res = Some(Res::Outside(full));
                 decl.bases.push(Base {
                     text: Text(vec![Seg::Ref(r)], None),
                     name: last,
@@ -124,7 +124,7 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
         }
     }
     decl.derives = kept;
-    let text = format!("derive: {}", decl.derives.join(", "));
+    let text = macros::mark_text(macros::DERIVE, &decl.derives);
     let gone = decl.derives.is_empty();
     let this =
         |m: &crate::model::MacroUse| m.kind == MacroKind::Derive && m.holder == Holder::Decl(id);
@@ -159,16 +159,16 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
             continue;
         };
         let reference = refs[id].clone();
-        match (reference.target, &reference.canonical) {
-            (Some(target), _) => {
+        match &reference.res {
+            Some(Res::Decl(target)) => {
                 base.long = true;
                 refs.push(TypeRef {
-                    text: paths[target].clone(),
+                    text: paths[*target].clone(),
                     ..reference
                 });
                 base.text.0[at] = Seg::Ref(refs.len() - 1);
             }
-            (None, Some(path)) if is_standard(path) => {
+            Some(Res::Outside(path)) if is_standard(path) => {
                 let name = path.last().cloned().unwrap_or_default();
                 let item = item_path(path).unwrap_or_else(|| path.join("::"));
                 let full = if path.len() == 1 {
@@ -178,7 +178,7 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
                 };
                 short.push((index, at, name, full, item));
             }
-            (None, Some(path)) => {
+            Some(Res::Outside(path)) => {
                 base.long = true;
                 let text = path.join("::");
                 base.text.0[at] = if reference.foreign.is_some() {
@@ -191,7 +191,7 @@ fn spell(refs: &mut Vec<TypeRef>, paths: &[String], names: &BTreeSet<String>, ba
                     Seg::Plain(text)
                 };
             }
-            (None, None) => base.long = true,
+            Some(Res::Value(_)) | None => base.long = true,
         }
     }
     for (index, at, name, full, item) in &short {
@@ -222,9 +222,9 @@ mod tests {
             generics: Vec::new(),
             comment: false,
             may_be_value: false,
-            target,
-            value: None,
-            canonical: canonical.map(split),
+            res: target
+                .map(Res::Decl)
+                .or_else(|| canonical.map(|path| Res::Outside(split(path)))),
             written: None,
             foreign: None,
         }

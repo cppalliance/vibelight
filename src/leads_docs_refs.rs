@@ -145,10 +145,7 @@ fn outside_format(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>) -> bool
     let t = doc.item.target;
     let krate = &run.krates[t];
     let outside = |d: DeclId| {
-        let at = ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(t, d);
         let decl = &krate.decls[d];
         let foreign = match &decl.shape {
             Shape::Alias(target) => target.visible(&krate.refs).contains("extern"),
@@ -238,7 +235,7 @@ pub(crate) fn intra_path(dest: &str) -> Option<Vec<String>> {
 fn reached(run: &AnalysisRun<'_>, t: usize, r: RefId) -> bool {
     let reference = &run.krates[t].refs[r];
     let generic = (reference.path.first()).is_some_and(|first| reference.generics.contains(first));
-    generic || reference.canonical.is_some() || run.item_of_ref(t, r).is_some()
+    generic || reference.outside().is_some() || run.item_of_ref(t, r).is_some()
 }
 
 /// `doc-unresolved-link`: explicit intra-doc links of a doc whose path

@@ -9,7 +9,7 @@ use std::path::Path;
 use anyhow::{Result, bail};
 use toml::{Table, Value};
 
-use crate::manifest;
+use crate::manifest::{self, DEP_TABLES};
 use crate::manifest_roots::{build_script, roots};
 
 /// What analysis reads from one package manifest.
@@ -40,9 +40,9 @@ pub(crate) struct ManifestFacts {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Feature {
     pub(crate) name: String,
-    pub(crate) enables: Vec<String>,
+    enables: Vec<String>,
     /// True for the feature Cargo makes for an optional dependency.
-    pub(crate) implicit: bool,
+    implicit: bool,
 }
 
 /// The table a dependency entry is in.
@@ -53,20 +53,17 @@ pub(crate) enum DepKind {
     Build,
 }
 
-/// One dependency entry, keyed by its name, kind, and target table, which
-/// lead its order.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// One dependency entry, keyed by its name, kind, and target table.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct DepEntry {
     /// The table key, which the source writes as the crate's name.
     pub(crate) name: String,
     pub(crate) kind: DepKind,
     /// The `[target.'...']` table it is under, as written.
     pub(crate) target: Option<String>,
-    pub(crate) optional: bool,
+    optional: bool,
     /// The package `package = "..."` names, here or in the workspace entry.
     pub(crate) package: Option<String>,
-    /// Whether it is `workspace = true`.
-    pub(crate) workspace: bool,
     /// Its features with the workspace entry's added, sorted, each once.
     pub(crate) features: Vec<String>,
 }
@@ -78,15 +75,15 @@ impl DepEntry {
     }
 }
 
-/// The dependency tables and the kind each holds, with the spellings Cargo
-/// still reads.
-const DEP_TABLES: [(&str, DepKind); 5] = [
-    ("dependencies", DepKind::Normal),
-    ("dev-dependencies", DepKind::Dev),
-    ("dev_dependencies", DepKind::Dev),
-    ("build-dependencies", DepKind::Build),
-    ("build_dependencies", DepKind::Build),
-];
+impl DepKind {
+    /// Returns the table a manifest writes for the kind: its first spelling
+    /// in `DEP_TABLES`, the hyphen one.
+    pub(crate) fn table(self) -> &'static str {
+        (DEP_TABLES.iter())
+            .find_map(|&(name, kind)| (kind == self).then_some(name))
+            .unwrap_or_default()
+    }
+}
 
 /// Reads the facts of the package in `dir`; with no manifest there are
 /// none.
@@ -199,8 +196,8 @@ fn entry(
         .filter(|_| workspace)
         .and_then(|s| s.get(name))
         .and_then(Value::as_table);
-    let mut features = strings(get("features"));
-    features.extend(strings(inherited.and_then(|t| t.get("features"))));
+    let mut features = manifest::strings(get("features"));
+    features.extend(manifest::strings(inherited.and_then(|t| t.get("features"))));
     features.sort();
     features.dedup();
     let package = get("package")
@@ -213,7 +210,6 @@ fn entry(
         target: target.map(str::to_owned),
         optional: get("optional").and_then(Value::as_bool) == Some(true),
         package,
-        workspace,
         features,
     }
 }
@@ -226,7 +222,7 @@ fn features(table: &Table, deps: &[DepEntry]) -> Vec<Feature> {
     for (name, value) in declared.into_iter().flatten() {
         let feature = Feature {
             name: name.clone(),
-            enables: strings(Some(value)),
+            enables: manifest::strings(Some(value)),
             implicit: false,
         };
         out.insert(name.clone(), feature);
@@ -249,19 +245,6 @@ fn features(table: &Table, deps: &[DepEntry]) -> Vec<Feature> {
         out.insert(dep.name.clone(), feature);
     }
     out.into_values().collect()
-}
-
-fn strings(value: Option<&Value>) -> Vec<String> {
-    value
-        .and_then(Value::as_array)
-        .map(|items| {
-            items
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_owned)
-                .collect()
-        })
-        .unwrap_or_default()
 }
 
 impl ManifestFacts {
@@ -291,10 +274,7 @@ impl ManifestFacts {
                 );
             }
         }
-        let sorted = self
-            .deps
-            .windows(2)
-            .all(|w| w[0].key() < w[1].key() && w[0] < w[1]);
+        let sorted = self.deps.windows(2).all(|w| w[0].key() < w[1].key());
         if !sorted {
             bail!("dependency entries are not sorted, each key once");
         }
@@ -394,7 +374,6 @@ mod tests {
             target: None,
             optional: false,
             package: None,
-            workspace: false,
             features: Vec::new(),
         };
         assert_eq!(
@@ -414,11 +393,9 @@ mod tests {
                 },
                 DepEntry {
                     package: Some("real-name".to_owned()),
-                    workspace: true,
                     ..dep("real", DepKind::Normal)
                 },
                 DepEntry {
-                    workspace: true,
                     features: owned(&["derive", "rc"]),
                     ..dep("serde", DepKind::Normal)
                 },

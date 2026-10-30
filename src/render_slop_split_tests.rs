@@ -16,7 +16,7 @@ use crate::render_slop_split::{LINE_CAP, Node, lines, owner};
 /// by `step`.
 fn loc(n: u32, step: u32) -> Loc {
     Loc {
-        target: (n % 5 == 0).then(|| "other".to_owned()),
+        stem: (n % 5 == 0).then(|| "other".to_owned()),
         file: format!("src/module_{}/file.rs", n % 7),
         line: n * step + 1,
     }

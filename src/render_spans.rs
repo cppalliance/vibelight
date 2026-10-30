@@ -143,7 +143,7 @@ impl Page<'_> {
     /// crate's page, or plain text when it names nothing of the run.
     fn reference(&self, out: &mut String, id: usize) {
         let reference = &self.doc.refs[id];
-        let local = match (reference.target, reference.value) {
+        let local = match (reference.decl(), reference.value()) {
             (Some(target), _) => Some(&self.doc.decl_ids[target]),
             (None, Some(value)) => self.doc.value_ids.get(&value),
             (None, None) => None,

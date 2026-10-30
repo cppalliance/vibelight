@@ -2,7 +2,7 @@
 //! for an analyst to confirm or extinguish in the source. A lead is never a
 //! finding. It says how its evidence was found and, when it rests on
 //! something the run does not observe, what the run cannot see. The config's
-//! `quiet` entries drop leads, and then more than [`SUMMARY_FROM`] leads of
+//! `quiet` entries drop leads, and then more than [`SUMMARY_ABOVE`] leads of
 //! one id in one module become one summary lead.
 
 use std::cmp::Ordering;
@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
-use crate::leads_items::{impl_module, parent_module};
+use crate::leads_items::impl_home;
 use crate::model::{FileId, Loc, ModId, path_order};
 use crate::{
     leads_body, leads_census, leads_comments, leads_containers, leads_docs, leads_names,
@@ -42,7 +42,7 @@ pub(crate) const LIMITS: [&str; 6] = [
 ];
 
 /// The most leads of one id in one module that print one by one.
-pub(crate) const SUMMARY_FROM: usize = 5;
+pub(crate) const SUMMARY_ABOVE: usize = 5;
 
 /// One thing a lead names: an item of the run, or a part of one such as a
 /// parameter or a variant's field, by its path below its crate's root.
@@ -174,16 +174,13 @@ impl Lead {
 
 /// Returns the module that declares an item, as [`Subject::module`] holds
 /// it.
-fn module_of(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
+pub(crate) fn module_of(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
     let krate = &run.krates[item.target];
     match item.item {
-        ItemRef::Module(m) => parent_module(krate, m).unwrap_or(m),
+        ItemRef::Module(m) => krate.parent_module(m).unwrap_or(m),
         ItemRef::Decl(d) | ItemRef::Own(d, _) | ItemRef::Variant(d, _) => krate.decls[d].module,
         ItemRef::Value(at) => at.module,
-        ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => match run.attached[item.target][i] {
-            Some(d) => krate.decls[d].module,
-            None => impl_module(krate, i),
-        },
+        ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => impl_home(run, item.target, i),
     }
 }
 
@@ -258,7 +255,7 @@ pub(crate) struct Found {
 
 /// Runs every detector group and returns the run's leads, each with its
 /// lists sorted, those that a `quiet` entry names dropped, more than
-/// [`SUMMARY_FROM`] leads of one id in one module summarized, in lead
+/// [`SUMMARY_ABOVE`] leads of one id in one module summarized, in lead
 /// order.
 pub(crate) fn find(run: &AnalysisRun<'_>, quiet: &[String]) -> Found {
     let mut found = Vec::new();
@@ -296,7 +293,7 @@ fn fold(found: &mut Vec<Lead>) {
     found.retain(|lead| lead.id != "repeated-literal" || !spelled(lead));
 }
 
-/// Collapses each set of more than [`SUMMARY_FROM`] leads that share an id
+/// Collapses each set of more than [`SUMMARY_ABOVE`] leads that share an id
 /// and a home module into one summary lead: their subjects, locations, and
 /// limits, their evidence in lead order, and their weakest mode.
 fn summarize(run: &AnalysisRun<'_>, leads: Vec<Lead>) -> Vec<Lead> {
@@ -309,7 +306,7 @@ fn summarize(run: &AnalysisRun<'_>, leads: Vec<Lead>) -> Vec<Lead> {
         }
     }
     for ((id, target, module), mut group) in homes {
-        if group.len() <= SUMMARY_FROM {
+        if group.len() <= SUMMARY_ABOVE {
             out.extend(group);
             continue;
         }

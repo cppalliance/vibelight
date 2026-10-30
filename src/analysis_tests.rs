@@ -153,7 +153,7 @@ fn a_binary_reaches_its_own_library_without_changing_the_crates() {
     assert_eq!(kinds, [TargetKind::Lib, TargetKind::Bin]);
     assert!(run.targets[1].deps.is_empty(), "the crate map has no edge");
     assert_eq!(
-        run.deps[1].get("gauge"),
+        run.analysis_deps[1].get("gauge"),
         Some(&0),
         "analysis adds the library"
     );
@@ -366,7 +366,7 @@ fn a_name_use_count_leaves_out_one_hit_per_declaration() {
     let run = run(&fx);
     let count = |name: &str| {
         let count = run.census.count(name);
-        (count.total, count.declared, count.uses())
+        (count.total(), count.declared, count.uses())
     };
     assert_eq!(count("alpha"), (3, 2, 1));
     assert_eq!(count("beta"), (1, 1, 0));

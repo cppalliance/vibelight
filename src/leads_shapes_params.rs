@@ -70,7 +70,7 @@ fn param_clump(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             let id = *ids
                 .entry((t, name.clone(), arg.ty.key()))
                 .or_insert_with(|| {
-                    shown.push(format!("`{name}: {}`", arg.ty.shown()));
+                    shown.push(arg.ty.typed(name));
                     taken.push(0);
                     next
                 });
@@ -169,11 +169,6 @@ fn tuple_return(run: &AnalysisRun<'_>, func: &Func<'_>, out: &mut Vec<Lead>) {
     out.push(Lead::new("tuple-return", Mode::DirectSyntax, evidence).item(run, func.item));
 }
 
-/// Returns a parameter as the evidence shows it.
-fn arg_text(name: Option<&str>, ty: &Ty) -> String {
-    format!("`{}: {}`", name.unwrap_or("_"), ty.shown())
-}
-
 /// `out-param-cursor`: a parameter of type `&mut` and a primitive. One
 /// whose name's last word is one of [`CURSOR_WORDS`] is a cursor by
 /// design, and so is every one of a function that calls itself, directly
@@ -189,7 +184,7 @@ fn out_param_cursor(run: &AnalysisRun<'_>, func: &Func<'_>, out: &mut Vec<Lead>)
             let mutable = matches!(arg.ty.0.as_slice(), [Tok::Code(amp), Tok::Code(m), ..] if amp == "&" && m == "mut");
             mutable && arg.ty.deref().primitive().is_some() && !cursor(arg.name.as_deref())
         })
-        .map(|arg| arg_text(arg.name.as_deref(), &arg.ty))
+        .map(|arg| arg.ty.typed(arg.name.as_deref().unwrap_or("_")))
         .collect();
     if !cursors.is_empty() && !recurses(run, func.item) {
         let evidence = format!("`&mut` primitive parameters {}", cursors.join(", "));

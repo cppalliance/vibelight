@@ -13,9 +13,10 @@ use crate::analysis_paths::PathKind;
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
 use crate::model::{
-    Crate, DeclId, ItemKind, MemberKind, ModId, Note, Shape, Sig, Text, VariantFields, path_order,
+    Crate, DeclId, ItemKind, MemberKind, ModId, Note, Shape, Text, VariantFields, path_order,
 };
 use crate::model_body::{BodyFacts, Role, Root, Single};
+use crate::render_slop::AnalysisTarget;
 use crate::render_slop_catalog::{BodyComment, BodyRecord};
 
 /// Returns a list, or `None` when it is empty.
@@ -96,19 +97,9 @@ pub(crate) fn note_doc(notes: &[Note], krate: &Crate) -> Option<String> {
     (!text.is_empty()).then(|| text.to_owned())
 }
 
-/// Returns the texts of a signature that can name types.
-pub(crate) fn sig_texts(sig: &Sig) -> Vec<&Text> {
-    let mut texts = vec![&sig.generics];
-    texts.extend(sig.params.iter().map(|p| &p.text));
-    texts.extend(sig.ret.iter());
-    texts.extend(sig.where_clause.iter().flat_map(|clause| clause.0.iter()));
-    texts
-}
-
 /// The facts of one target's outline.
 pub(crate) struct Facts<'a> {
-    pub(crate) run: &'a AnalysisRun<'a>,
-    pub(crate) t: usize,
+    target: AnalysisTarget<'a>,
     /// For each declaration of the target, the declarations and modules
     /// whose signatures name it.
     named_by: Vec<BTreeSet<String>>,
@@ -118,12 +109,13 @@ pub(crate) struct Facts<'a> {
 }
 
 impl<'a> Facts<'a> {
-    pub(crate) fn new(run: &'a AnalysisRun<'a>, t: usize) -> Facts<'a> {
+    pub(crate) fn new(target: AnalysisTarget<'a>) -> Facts<'a> {
+        let AnalysisTarget { run, target: t } = target;
         let krate = &run.krates[t];
         let mut named_by = vec![BTreeSet::new(); krate.decls.len()];
         let mut note = |r: usize, user: &str, own: Option<DeclId>| {
             let reference = &krate.refs[r];
-            if let Some(d) = reference.target.filter(|_| !reference.comment) {
+            if let Some(d) = reference.decl().filter(|_| !reference.comment) {
                 if Some(d) != own {
                     named_by[d].insert(user.to_owned());
                 }
@@ -160,8 +152,7 @@ impl<'a> Facts<'a> {
             }
         }
         Facts {
-            run,
-            t,
+            target,
             named_by,
             reexported_by,
         }
@@ -175,7 +166,7 @@ impl<'a> Facts<'a> {
     /// Returns the modules that re-export an item of the target.
     pub(crate) fn reexported_by(&self, item: ItemRef) -> Option<Vec<String>> {
         let at = ItemId {
-            target: self.t,
+            target: self.target.target,
             item,
         };
         let found = self.reexported_by.get(&at)?;
@@ -186,21 +177,14 @@ impl<'a> Facts<'a> {
     /// the kinds of code other than production code observed to use it;
     /// links in docs do not count.
     pub(crate) fn observed(&self, item: ItemRef) -> (Option<Vec<String>>, Option<Vec<String>>) {
-        let at = ItemId {
-            target: self.t,
-            item,
-        };
+        let AnalysisTarget { run, target: t } = self.target;
+        let at = ItemId { target: t, item };
         let mut crates = BTreeSet::new();
         let mut tests = BTreeSet::new();
-        for found in self
-            .run
-            .uses_of(at)
-            .iter()
-            .filter(|u| u.kind != UseKind::Doc)
-        {
-            let source = &self.run.census.sources[found.source];
-            if let Some(other) = source.target.filter(|&other| other != self.t) {
-                crates.insert(self.run.targets[other].stem.clone());
+        for found in run.uses_of(at).iter().filter(|u| u.kind != UseKind::Doc) {
+            let source = &run.census.sources[found.source];
+            if let Some(other) = source.target.filter(|&other| other != t) {
+                crates.insert(run.targets[other].stem.clone());
             }
             if let Some(name) = context_name(found.context) {
                 tests.insert(name.to_owned());
@@ -215,11 +199,8 @@ impl<'a> Facts<'a> {
     /// Returns the bodies of the run whose direct calls resolve to an item
     /// of the target.
     pub(crate) fn direct_callers(&self, item: ItemRef) -> Option<Vec<String>> {
-        let at = ItemId {
-            target: self.t,
-            item,
-        };
-        let run = self.run;
+        let AnalysisTarget { run, target: t } = self.target;
+        let at = ItemId { target: t, item };
         let callers = run
             .edges_to(at)
             .filter(|edge| edge.kind == PathKind::Call(Role::Call))
@@ -232,7 +213,7 @@ impl<'a> Facts<'a> {
                     || {
                         let body = &run.krates[edge.target].bodies[edge.body];
                         let m = run
-                            .module_at(edge.target, body.file, body.start)
+                            .module_at(edge.target, body.loc.file, body.start)
                             .unwrap_or(0);
                         let mut path = run.krates[edge.target].modules[m].path.clone();
                         path.push("_".to_owned());
@@ -240,7 +221,7 @@ impl<'a> Facts<'a> {
                     },
                     |caller| run.path(caller),
                 );
-                subject(run, self.t, edge.target, &path)
+                subject(run, t, edge.target, &path)
             });
         some(sorted_paths(callers))
     }
@@ -255,14 +236,12 @@ impl<'a> Facts<'a> {
         Option<Vec<String>>,
         Option<Vec<BodyComment>>,
     ) {
-        let at = ItemId {
-            target: self.t,
-            item,
-        };
-        let Some(b) = self.run.body_of(at) else {
+        let AnalysisTarget { run, target: t } = self.target;
+        let at = ItemId { target: t, item };
+        let Some(b) = run.body_of(at) else {
             return (None, None, None);
         };
-        let facts = &self.run.krates[self.t].bodies[b].facts;
+        let facts = &run.krates[t].bodies[b].facts;
         (Some(counts(facts)), some(ops(facts)), comments(facts))
     }
 
@@ -324,7 +303,7 @@ fn decl_texts<'a>(run: &AnalysisRun<'a>, t: usize, d: DeclId) -> Vec<&'a Text> {
             MemberKind::Field(ty) | MemberKind::Type(ty) | MemberKind::Const { ty, .. } => {
                 texts.push(ty);
             }
-            MemberKind::Fn(sig) => texts.extend(sig_texts(sig)),
+            MemberKind::Fn(sig) => texts.extend(sig.texts()),
             MemberKind::Mark(_) | MemberKind::Unsupported(_) => {}
         }
     }

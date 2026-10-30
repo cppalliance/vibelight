@@ -10,7 +10,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::analysis::{AnalysisRun, PackageInfo, TargetInfo};
+use crate::analysis::{AnalysisRun, TargetInfo, library_of};
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::model::{Crate, CrossRef, DeclId, MemberKind, Reach, RefId, Shape};
 use crate::model_body::{Body, BodyId, Owner, Role};
@@ -61,25 +61,67 @@ pub(crate) struct Edge {
     /// The declaration the path's prefix names, such as `Table` in
     /// `Table::new`, or the self type of `Self::name`.
     pub(crate) prefix: Option<ItemId>,
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "only the tests read which rule resolved a path")
+    )]
     pub(crate) via: Via,
+}
+
+impl Edge {
+    /// Returns the edge of path `fact` of a body, with what it reached.
+    fn new(target: usize, body: BodyId, kind: PathKind, fact: usize, reached: Reached) -> Self {
+        Self {
+            target,
+            body,
+            kind,
+            fact,
+            item: reached.item,
+            prefix: reached.prefix,
+            via: reached.via,
+        }
+    }
+}
+
+/// What one path reached: the item, the declaration its prefix names, and
+/// the rule that resolved it.
+#[derive(Clone, Copy, Debug)]
+struct Reached {
+    item: Option<ItemId>,
+    prefix: Option<ItemId>,
+    via: Via,
+}
+
+impl Reached {
+    /// Returns a path that reached `item` by the rule `via`.
+    fn at(item: ItemId, prefix: Option<ItemId>, via: Via) -> Self {
+        Self {
+            item: Some(item),
+            prefix,
+            via,
+        }
+    }
+
+    /// Returns a path that reached no item, so that `Via::Unresolved` and
+    /// a missing item agree by construction.
+    fn open(prefix: Option<ItemId>) -> Self {
+        Self {
+            item: None,
+            prefix,
+            via: Via::Unresolved,
+        }
+    }
 }
 
 /// Returns each target's dependency map for analysis: the map name
 /// resolution used, and for a binary also its package's library, under the
 /// library's crate name unless the map already holds that name.
-pub(crate) fn augmented(
-    targets: &[TargetInfo],
-    packages: &[PackageInfo],
-) -> Vec<BTreeMap<String, usize>> {
+pub(crate) fn augmented(targets: &[TargetInfo]) -> Vec<BTreeMap<String, usize>> {
     targets
         .iter()
         .map(|info| {
             let mut deps = info.deps.clone();
-            let lib = packages[info.package]
-                .targets
-                .iter()
-                .copied()
-                .find(|&l| targets[l].kind == TargetKind::Lib);
+            let lib = library_of(targets, info.package);
             if let (TargetKind::Bin, Some(lib)) = (info.kind, lib) {
                 deps.entry(targets[lib].crate_name.clone()).or_insert(lib);
             }
@@ -104,7 +146,7 @@ pub(crate) fn cross(
                 .zip(&krate.refs)
                 .enumerate()
                 .filter(|(_, (_, r))| {
-                    r.target.is_none() && r.value.is_none() && r.foreign.is_none()
+                    r.decl().is_none() && r.value().is_none() && r.foreign.is_none()
                 })
                 .filter_map(|(r, (cross, _))| Some((r, cross?)))
                 .collect()
@@ -121,18 +163,9 @@ impl AnalysisRun<'_> {
             for (b, body) in krate.bodies.iter().enumerate() {
                 let facts = &body.facts;
                 for (fact, call) in facts.calls.iter().enumerate() {
-                    let (item, prefix, via) =
-                        self.resolve(t, body, &call.path, call.full_ref, call.prefix_ref);
+                    let reached = self.resolve(t, body, &call.path, call.full_ref, call.prefix_ref);
                     let kind = PathKind::Call(call.role);
-                    edges.push(Edge {
-                        target: t,
-                        body: b,
-                        kind,
-                        fact,
-                        item,
-                        prefix,
-                        via,
-                    });
+                    edges.push(Edge::new(t, b, kind, fact, reached));
                 }
                 let lists = [
                     (PathKind::Construct, &facts.constructs),
@@ -140,17 +173,9 @@ impl AnalysisRun<'_> {
                 ];
                 for (kind, list) in lists {
                     for (fact, path) in list.iter().enumerate() {
-                        let (item, prefix, via) =
+                        let reached =
                             self.resolve(t, body, &path.path, path.full_ref, path.prefix_ref);
-                        edges.push(Edge {
-                            target: t,
-                            body: b,
-                            kind,
-                            fact,
-                            item,
-                            prefix,
-                            via,
-                        });
+                        edges.push(Edge::new(t, b, kind, fact, reached));
                     }
                 }
             }
@@ -167,44 +192,44 @@ impl AnalysisRun<'_> {
         path: &[String],
         full: RefId,
         prefix: Option<RefId>,
-    ) -> (Option<ItemId>, Option<ItemId>, Via) {
-        let at = |target, item| Some(ItemId { target, item });
+    ) -> Reached {
+        let at = |target, item| ItemId { target, item };
         if path.first().is_some_and(|first| first == "Self") {
             let Owner::Impl(i, _) = &body.owner else {
-                return (None, None, Via::Unresolved);
+                return Reached::open(None);
             };
             let Some(d) = self.attached[t][*i] else {
-                return (None, None, Via::Unresolved);
+                return Reached::open(None);
             };
             let own = at(t, ItemRef::Decl(d));
             let inherent = self.krates[t].impls[*i].trait_.is_none();
             return match path {
-                [_] => (own, None, Via::SelfType),
+                [_] => Reached::at(own, None, Via::SelfType),
                 [_, name] => match self.variant(t, d, name) {
-                    Some(variant) => (at(t, variant), own, Via::Variant),
+                    Some(variant) => Reached::at(at(t, variant), Some(own), Via::Variant),
                     None if inherent => match self.inherent(t, d, name) {
-                        Some(member) => (at(t, member), own, Via::SelfType),
-                        None => (None, own, Via::Unresolved),
+                        Some(member) => Reached::at(at(t, member), Some(own), Via::SelfType),
+                        None => Reached::open(Some(own)),
                     },
-                    None => (None, own, Via::Unresolved),
+                    None => Reached::open(Some(own)),
                 },
-                _ => (None, None, Via::Unresolved),
+                _ => Reached::open(None),
             };
         }
         let owner = prefix.and_then(|r| self.decl_of_ref(t, r));
-        let prefix = owner.and_then(|(c, d)| at(c, ItemRef::Decl(d)));
+        let prefix = owner.map(|(c, d)| at(c, ItemRef::Decl(d)));
         if let Some(item) = self.item_of_ref(t, full) {
-            return (Some(item), prefix, Via::Path);
+            return Reached::at(item, prefix, Via::Path);
         }
         let (Some((c, d)), Some(name)) = (owner, path.last()) else {
-            return (None, prefix, Via::Unresolved);
+            return Reached::open(prefix);
         };
         if let Some(variant) = self.variant(c, d, name) {
-            return (at(c, variant), prefix, Via::Variant);
+            return Reached::at(at(c, variant), prefix, Via::Variant);
         }
         match self.inherent(c, d, name) {
-            Some(member) => (at(c, member), prefix, Via::Member),
-            None => (None, prefix, Via::Unresolved),
+            Some(member) => Reached::at(at(c, member), prefix, Via::Member),
+            None => Reached::open(prefix),
         }
     }
 
@@ -248,13 +273,10 @@ impl AnalysisRun<'_> {
     /// analysis map.
     pub(crate) fn item_of_ref(&self, t: usize, r: RefId) -> Option<ItemId> {
         let reference = self.krates.get(t)?.refs.get(r)?;
-        if let Some(d) = reference.target {
-            return Some(ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            });
+        if let Some(d) = reference.decl() {
+            return Some(ItemId::decl(t, d));
         }
-        if let Some(at) = reference.value {
+        if let Some(at) = reference.value() {
             return Some(ItemId {
                 target: t,
                 item: ItemRef::Value(at),

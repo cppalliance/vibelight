@@ -65,7 +65,7 @@ impl Collector<'_> {
             macro_idents: scan.macro_idents,
             counts: read.counts,
             statements: code.statements(),
-            stmts: read
+            stmt_lines: read
                 .statements
                 .iter()
                 .map(|s| (file.line_of(s.range.start), last_line(file, s)))
@@ -81,7 +81,6 @@ impl Collector<'_> {
             comments: comment_facts(file, &read.statements, &comments),
         };
         self.bodies.push(Body {
-            file: here.file,
             start: range.start,
             loc: Loc {
                 file: here.file,
@@ -110,9 +109,7 @@ impl Collector<'_> {
             generics: here.generics.clone(),
             comment: true,
             may_be_value,
-            target: None,
-            value: None,
-            canonical: None,
+            res: None,
             written: None,
             foreign: None,
         });
@@ -271,7 +268,7 @@ pub(crate) mod tests {
         let mut keys: Vec<_> = krate
             .bodies
             .iter()
-            .map(|b| (b.file, b.start, b.kind))
+            .map(|b| (b.loc.file, b.start, b.kind))
             .collect();
         keys.sort();
         keys.dedup();
@@ -360,7 +357,7 @@ pub(crate) mod tests {
         let run = &caller.calls[2];
         assert_eq!(run.literal_args, [(0, s("7"))]);
         assert_eq!(run.passed_params, [(1, s("name"))]);
-        let reached = krate.refs[run.full_ref].value.expect("run resolves");
+        let reached = krate.refs[run.full_ref].value().expect("run resolves");
         assert_eq!(
             krate.modules[reached.module].items[reached.item].name,
             "run"
@@ -368,7 +365,7 @@ pub(crate) mod tests {
         let table = caller.calls[1].prefix_ref.expect("a prefix");
         assert_eq!(
             krate.refs[table]
-                .target
+                .decl()
                 .map(|d| krate.decls[d].name.as_str()),
             Some("Table")
         );
@@ -382,7 +379,8 @@ pub(crate) mod tests {
         let via_self = &make.calls[0];
         assert_eq!(via_self.path, ["Self", "new"]);
         assert_eq!(
-            krate.refs[via_self.full_ref].target, None,
+            krate.refs[via_self.full_ref].decl(),
+            None,
             "Self waits for analysis"
         );
         for call in caller.calls.iter().chain(&make.calls) {

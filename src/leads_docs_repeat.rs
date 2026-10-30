@@ -73,7 +73,7 @@ fn add_ty(vocab: &mut BTreeSet<String>, ty: &Ty) {
 }
 
 /// Returns the words a doc may echo: those of its node's path, signature,
-/// fields, variants, and types.
+/// fields, variants, members, and types.
 fn vocabulary(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>) -> BTreeSet<String> {
     let mut vocab = BTreeSet::new();
     for segment in doc.path(run) {
@@ -108,10 +108,7 @@ fn vocabulary(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>) -> BTreeSet
         Node::Field(f) => add_ty(&mut vocab, &catalog.fields[f].ty),
         Node::Decl(d) => {
             let decl = &run.krates[t].decls[d];
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             fields(at, None, &mut vocab);
             match &decl.shape {
                 Shape::Enum(variants) => {
@@ -128,10 +125,7 @@ fn vocabulary(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>) -> BTreeSet
             }
         }
         Node::Variant(d, v) => {
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             fields(at, Some(v), &mut vocab);
         }
         Node::Value => {
@@ -146,9 +140,9 @@ fn vocabulary(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>) -> BTreeSet
 
 /// `doc-echo`: a doc of prose alone, with no code block, code span, or
 /// link, and at least [`ECHO_MIN_TERMS`] content words, every one of them
-/// a word of its node's path, signature, fields, or types. A code span or
-/// a link names something beside the node, such as the value a field
-/// holds.
+/// a word of its node's path, signature, fields, variants, or types. A
+/// code span or a link names something beside the node, such as the value
+/// a field holds.
 fn doc_echo(run: &AnalysisRun<'_>, docs: &Docs<'_>, doc: &Doc<'_>, out: &mut Vec<Lead>) {
     let coded = doc.prose.toks.iter().any(|tok| tok.kind == Kind::Code);
     if coded || !doc.prose.blocks.is_empty() || !doc.prose.links.is_empty() {

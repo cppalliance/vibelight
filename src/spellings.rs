@@ -140,10 +140,7 @@ fn preferred(
 /// or `None` for a name in the crate or one that does not resolve. A bare
 /// prelude name stands for its `std` path.
 fn item(r: &TypeRef) -> Option<String> {
-    if r.target.is_some() {
-        return None;
-    }
-    r.canonical.as_deref().and_then(item_path)
+    r.outside().and_then(item_path)
 }
 
 /// Returns a name as written, without generic arguments or `r#` prefixes.

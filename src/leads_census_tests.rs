@@ -316,3 +316,39 @@ fn a_type_alias_written_once_has_one_observed_alias_use() {
         &format!("{alias}pub fn first(p: Pair) -> u8 {{ p.0 }}\n"),
     );
 }
+
+#[test]
+fn a_type_named_only_in_a_bound_ties_a_candidate() {
+    let lib = |bound: &str| {
+        format!(
+            "mod util {{\n\
+             pub(crate) trait Marker {{}}\n\
+             pub(crate) fn clamp<T>(v: T) -> T where T: {bound} {{ v }}\n\
+             }}\n\
+             mod render {{ pub(crate) fn shown(v: u32) -> u32 {{ crate::util::clamp(v) }} }}\n\
+             pub fn run(v: u32) -> u32 {{ render::shown(v) }}\n"
+        )
+    };
+    finds(
+        "defined-away-from-observed-users",
+        &lib("Copy"),
+        &["util::clamp"],
+        &lib("Marker"),
+    );
+}
+
+#[test]
+fn an_impl_of_no_declaration_has_its_own_module() {
+    let source = "mod a {\n\
+         impl Vec<u8> { pub fn paint(&self, red: bool, green: bool, blue: bool) {} }\n\
+         }\n\
+         pub fn run() {}\n";
+    with_leads(&[MANIFEST, ("src/lib.rs", source)], |run, leads| {
+        let krate = &run.krates[0];
+        assert_eq!(krate.impls.len(), 1);
+        assert_eq!(run.attached[0][0], None);
+        let a = krate.modules.iter().position(|m| m.path == ["a"]);
+        let lead = leads.iter().find(|l| l.id == "same-type-params").unwrap();
+        assert_eq!(lead.home(), a.map(|a| (0, a)));
+    });
+}

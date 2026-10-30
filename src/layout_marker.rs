@@ -38,22 +38,10 @@ impl Marker {
         bare: "// cfg:",
     };
 
-    /// The `// impl in <file>` line that opens an inherent impl's members.
-    pub(crate) const IMPL_IN: Marker = Marker {
-        spaced: "// impl in ",
-        bare: "// impl in",
-    };
-
     /// The `// impl <trait>` line above an impl's comments.
     pub(crate) const IMPL: Marker = Marker {
         spaced: "// impl ",
         bare: "// impl",
-    };
-
-    /// The `// internal` or `// private` line above a type's header.
-    pub(crate) const VISIBILITY: Marker = Marker {
-        spaced: "// ",
-        bare: "//",
     };
 
     /// Returns the text to print: `spaced` when the line's own text starts a

@@ -167,7 +167,21 @@ pub(crate) struct CrossRef {
     pub(crate) reach: Reach,
 }
 
-/// A type name found in a declaration, a comment, or a re-export.
+/// What a type name resolves to, filled in by resolve.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum Res {
+    /// The declaration the name resolves to.
+    Decl(DeclId),
+    /// The function, constant, or static of this crate the name resolves
+    /// to, when no declaration of that name is found.
+    Value(ValueRef),
+    /// The full path of a name outside the crate: through `use` items, or
+    /// the bare name of a prelude item.
+    Outside(Vec<String>),
+}
+
+/// A type name found in a declaration, or a comment reference kept for
+/// analysis, which `comment` marks.
 #[derive(Clone, Debug)]
 pub(crate) struct TypeRef {
     /// The name as written, such as `std::result::Result` or `Block`.
@@ -180,26 +194,50 @@ pub(crate) struct TypeRef {
     pub(crate) module: ModId,
     /// Generic parameter names in scope where the name is written.
     pub(crate) generics: Vec<String>,
-    /// True for a name from a comment, a re-export, a derive, or a function
-    /// body, which never counts for naming, toward the unresolved tally, or
+    /// True for a comment reference: a name from a comment, a re-export, a
+    /// derive, a function body, a trait impl member, or a `serde` attribute
+    /// path, which never counts for naming, toward the unresolved tally, or
     /// for spellings.
     pub(crate) comment: bool,
-    /// True for a name that may also be a function, constant, or static:
-    /// one in a comment or a re-export, never a derive.
+    /// True for a name that may also be a function, constant, or static: one
+    /// in a comment, a re-export, a function body's call or pattern path, or
+    /// a `serde` attribute path. Never a derive, a type name, a struct
+    /// literal's path, or a path prefix.
     pub(crate) may_be_value: bool,
-    /// The declaration the name resolves to, filled in by resolve.
-    pub(crate) target: Option<DeclId>,
-    /// The function, constant, or static of this crate the name resolves
-    /// to, filled in by resolve when no declaration of that name is found.
-    pub(crate) value: Option<ValueRef>,
-    /// The full path of a name outside the crate, filled in by resolve:
-    /// through `use` items, or the bare name of a prelude item.
-    pub(crate) canonical: Option<Vec<String>>,
+    /// What the name resolves to, filled in by resolve.
+    pub(crate) res: Option<Res>,
     /// Where the name is written, for a name sliced from the source.
     pub(crate) written: Option<Written>,
     /// The item in another crate of the run that the name reaches, filled
     /// in after every crate of the run is resolved.
     pub(crate) foreign: Option<CrossRef>,
+}
+
+impl TypeRef {
+    /// Returns the declaration the name resolves to.
+    pub(crate) fn decl(&self) -> Option<DeclId> {
+        match self.res {
+            Some(Res::Decl(id)) => Some(id),
+            _ => None,
+        }
+    }
+
+    /// Returns the function, constant, or static of this crate the name
+    /// resolves to.
+    pub(crate) fn value(&self) -> Option<ValueRef> {
+        match self.res {
+            Some(Res::Value(at)) => Some(at),
+            _ => None,
+        }
+    }
+
+    /// Returns the full path of a name outside the crate.
+    pub(crate) fn outside(&self) -> Option<&[String]> {
+        match &self.res {
+            Some(Res::Outside(path)) => Some(path),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -221,9 +259,7 @@ mod tests {
             generics: Vec::new(),
             comment: false,
             may_be_value: false,
-            target: None,
-            value: None,
-            canonical: None,
+            res: None,
             written: None,
             foreign: None,
         }];

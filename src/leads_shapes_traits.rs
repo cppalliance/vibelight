@@ -11,8 +11,7 @@ use crate::analysis_paths::PathKind;
 use crate::analysis_uses::{Use, UseKind};
 use crate::census::Context;
 use crate::leads::{Lead, Mode};
-use crate::leads_items::{Catalog, impls_of_trait, is_deserialize, trait_of};
-use crate::leads_types::leaf;
+use crate::leads_items::{Catalog, impls_of_trait, is_deserialize, is_wire, trait_of};
 use crate::leads_words::words;
 use crate::model::{DeclId, DeclKind, MemberKind, ModId, Shape, VariantFields};
 use crate::typerefs::strip_raw;
@@ -64,10 +63,7 @@ fn manual_serde(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
             if !trait_of(run, t, i).is_some_and(|name| is_deserialize(&name)) {
                 continue;
             }
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let decl = &krate.decls[d];
             let lead = if let Some(twin) = wire_twin(run, t, i, at) {
                 let other = run.name(twin).unwrap_or_default();
@@ -115,10 +111,7 @@ fn one_observed_trait_impl(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     }
     for (t, krate) in run.krates.iter().enumerate() {
         for (d, decl) in krate.decls.iter().enumerate() {
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let found = impls.get(&at).map_or(&[][..], Vec::as_slice);
             let (DeclKind::Trait, [(it, i)]) = (decl.kind, found) else {
                 continue;
@@ -143,10 +136,7 @@ fn one_observed_trait_impl(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
             }
             let evidence = format!("one impl in the run: `{}`", imp.header);
             let lead = Lead::new("one-observed-trait-impl", Mode::Resolved, evidence);
-            let owner = ItemId {
-                target: it,
-                item: ItemRef::Decl(owner),
-            };
+            let owner = ItemId::decl(it, owner);
             let lead = lead.item(run, at).item(run, owner).at(it, imp.loc);
             out.push(lead.limits(&["external-impls", "macros"]));
         }
@@ -169,20 +159,14 @@ fn has_methods(run: &AnalysisRun<'_>, t: usize, d: DeclId) -> bool {
 fn thin_wrapper(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     for (t, krate) in run.krates.iter().enumerate() {
         for (d, decl) in krate.decls.iter().enumerate() {
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let fields: Vec<_> = catalog.fields_of(at, None).collect();
             let ([field], DeclKind::Struct, false) =
                 (fields.as_slice(), decl.kind, decl.test_support)
             else {
                 continue;
             };
-            let serde = (decl.written_derives.iter())
-                .any(|name| matches!(leaf(name).as_str(), "Deserialize" | "Serialize"))
-                || decl.meta.attrs.iter().any(|attr| attr.starts_with("serde"));
-            if serde || has_methods(run, t, d) || run.on_surface(at) {
+            if is_wire(run, at) || has_methods(run, t, d) || run.on_surface(at) {
                 continue;
             }
             let uses: Vec<&Use> = (run.uses_of(at).iter())
@@ -260,13 +244,7 @@ fn error_family(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
         let mut lead = Lead::new("error-family", Mode::DirectSyntax, evidence);
         let members: BTreeSet<DeclId> = shared.into_values().flatten().collect();
         for d in members {
-            lead = lead.item(
-                run,
-                ItemId {
-                    target: t,
-                    item: ItemRef::Decl(d),
-                },
-            );
+            lead = lead.item(run, ItemId::decl(t, d));
         }
         out.push(lead);
     }

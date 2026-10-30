@@ -6,10 +6,11 @@
 
 use crate::analysis_items::ItemRef;
 use crate::leads_words::split_param;
+use crate::macros;
 use crate::model::{
     self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, Vis, name_order,
 };
-use crate::render_slop::{Doc, Outline};
+use crate::render_slop::{Doc, Outline, Rank};
 use crate::render_slop_catalog::{
     ExternRecord, FnRecord, MacroRecord, ModRecord, ParamDoc, UnsupportedRecord, UseRecord,
     ValueRecord, VisCounts,
@@ -35,8 +36,8 @@ pub(crate) struct Place<'m> {
 }
 
 impl Place<'_> {
-    /// Returns whether the node is test support: its owner is, or its own
-    /// `cfg`s make it so, as for a declaration.
+    /// Returns `Some(true)` when the node is test support: its owner is, or
+    /// its own `cfg`s make it so, as for a declaration, and `None` otherwise.
     pub(crate) fn support(&self) -> Option<bool> {
         flag(self.test_support || is_test_support(&self.meta.cfgs))
     }
@@ -51,7 +52,7 @@ pub(crate) fn under(path: &[String], name: &str) -> String {
 
 /// Adds every module's records, its items' records, and every macro's.
 pub(crate) fn modules(outline: &mut Outline<'_>) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     for (m, module) in krate.modules.iter().enumerate() {
         module_record(outline, m);
         for (k, item) in module.items.iter().enumerate() {
@@ -73,7 +74,7 @@ pub(crate) fn modules(outline: &mut Outline<'_>) {
 
 /// Adds a module's own record, with its doc after it.
 fn module_record(outline: &mut Outline<'_>, m: ModId) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let module = &krate.modules[m];
     let loc = module.inline.unwrap_or(model::Loc {
         file: module.file,
@@ -118,15 +119,14 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
         path: &path,
         text: module.raw_doc.as_deref(),
     };
-    outline.push(m, loc, Record::Mod(record), doc);
-    outline.lift(0, String::new());
+    outline.push_ranked(Rank::Own, m, Record::Mod(record), doc);
 }
 
 /// Adds a module item's record: a re-export, a constant, a static, a free
 /// function, an extern item, or an unsupported construct. A macro's record
 /// comes from the crate's macro list.
 fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let meta = place.meta;
     match kind {
         ItemKind::Reexport { text, .. } => {
@@ -143,8 +143,8 @@ fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
                 path: &place.path,
                 text: None,
             };
-            outline.push(place.module, place.loc, Record::Use(record), doc);
-            outline.lift(1, format!("{rust} {}", meta.cfgs.join(" ")));
+            let rank = Rank::Reexport(format!("{rust} {}", meta.cfgs.join(" ")));
+            outline.push_ranked(rank, place.module, Record::Use(record), doc);
         }
         ItemKind::Mark(_) => {}
         ItemKind::Const { ty, value } => {
@@ -206,8 +206,9 @@ pub(crate) fn push_unsupported(
 /// Returns the attribute macros among a node's marks, sorted.
 fn attributes(meta: &Meta) -> Option<Vec<String>> {
     let mut names: Vec<String> = (meta.marks.iter())
-        .filter_map(|mark| mark.strip_prefix("attribute: "))
-        .flat_map(|names| names.split(", "))
+        .filter_map(|mark| macros::mark_parts(mark))
+        .filter(|(kind, _)| *kind == macros::ATTRIBUTE)
+        .flat_map(|(_, names)| names)
         .map(str::to_owned)
         .collect();
     names.sort_by(|a, b| name_order(a, b));
@@ -236,7 +237,7 @@ fn param_docs(sig: &Sig, refs: &[model::TypeRef]) -> Option<Vec<ParamDoc>> {
 /// Adds a function's record: free, inherent, a trait impl's, or a trait's
 /// own.
 pub(crate) fn push_fn(outline: &mut Outline<'_>, place: &Place<'_>, sig: &Sig) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let meta = place.meta;
     let facts = &outline.facts;
     let (crates, tests) = facts.observed(place.item);
@@ -312,7 +313,7 @@ pub(crate) fn push_value(
 /// Adds a record for each macro definition and invocation of the crate:
 /// a definition under its own name, an invocation under what holds it.
 fn macros(outline: &mut Outline<'_>) {
-    let krate = outline.krate;
+    let krate = outline.krate();
     for mark in &krate.macros {
         if !matches!(mark.kind, MacroKind::Definition | MacroKind::Invocation) {
             continue;
@@ -343,7 +344,7 @@ fn macros(outline: &mut Outline<'_>) {
                 (module, path, test_support, None)
             }
         };
-        if let Some(name) = mark.text.strip_prefix("macro_rules! ") {
+        if let Some(name) = macros::definition_name(&mark.text) {
             path.push(name.to_owned());
         }
         let shown = if path.is_empty() {

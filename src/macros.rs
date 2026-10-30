@@ -108,7 +108,9 @@ pub(crate) fn effective(attrs: &[Attribute]) -> Vec<Meta> {
     out
 }
 
-fn test_only(meta: &Meta) -> bool {
+/// Tells whether a `cfg` predicate is test-only: `test`, or an `all(...)`
+/// that holds a test-only predicate.
+pub(crate) fn test_only(meta: &Meta) -> bool {
     match meta {
         Meta::Path(path) => path.is_ident("test"),
         Meta::List(list) if list.path.is_ident("all") => list
@@ -124,6 +126,20 @@ pub(crate) fn is_exported(attrs: &[Attribute]) -> bool {
     effective(attrs)
         .iter()
         .any(|meta| meta.path().is_ident("macro_export"))
+}
+
+/// The prefix of the item text of a `macro_rules!` definition.
+const DEFINITION: &str = "macro_rules! ";
+
+/// Returns the item text of the `macro_rules!` definition of `ident`.
+pub(crate) fn definition_text(ident: &str) -> String {
+    format!("{DEFINITION}{ident}")
+}
+
+/// Returns the macro name when `text` is the item text of a `macro_rules!`
+/// definition.
+pub(crate) fn definition_name(text: &str) -> Option<&str> {
+    text.strip_prefix(DEFINITION)
 }
 
 /// Returns the traits from every derive attribute, merged and sorted.
@@ -164,6 +180,25 @@ pub(crate) fn attribute_macros(attrs: &[Attribute], helpers: bool) -> Vec<String
         }
     }
     sorted(names)
+}
+
+/// The kind in the mark text of a list of attribute macros.
+pub(crate) const ATTRIBUTE: &str = "attribute";
+
+/// The kind in the mark text of a list of derives.
+pub(crate) const DERIVE: &str = "derive";
+
+/// Returns the mark text of a list of names: the `kind`, a colon, and the
+/// names joined by commas, as in `attribute: a, b`.
+pub(crate) fn mark_text(kind: &str, names: &[String]) -> String {
+    format!("{kind}: {}", names.join(", "))
+}
+
+/// Takes mark text apart into its kind and its names, or returns `None`
+/// when `text` is not mark text.
+pub(crate) fn mark_parts(text: &str) -> Option<(&str, Vec<&str>)> {
+    let (kind, names) = text.split_once(": ")?;
+    Some((kind, names.split(", ").collect()))
 }
 
 /// Returns a path as written: its segments joined by `::`.
@@ -265,6 +300,23 @@ mod tests {
         assert_eq!(attribute_macros(&list, true), ["tokio::main"]);
         let list = attrs("#[async_trait] #[clippy::msrv] struct A;");
         assert_eq!(attribute_macros(&list, false), ["async_trait"]);
+    }
+
+    #[test]
+    fn mark_text_is_taken_apart_into_kind_and_names() {
+        let names = ["tokio::main".to_owned(), "::a::b".to_owned()];
+        let text = mark_text(ATTRIBUTE, &names);
+        assert_eq!(text, "attribute: tokio::main, ::a::b");
+        assert_eq!(
+            mark_parts(&text),
+            Some((ATTRIBUTE, vec!["tokio::main", "::a::b"]))
+        );
+        assert_eq!(
+            mark_parts(&mark_text(DERIVE, &["Clone".to_owned()])),
+            Some((DERIVE, vec!["Clone"]))
+        );
+        assert_eq!(mark_parts("vec!"), None);
+        assert_eq!(mark_parts("attribute::x!"), None);
     }
 
     #[test]

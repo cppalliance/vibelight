@@ -1,6 +1,7 @@
 //! Reads function bodies: the type names they write, which keep a type out
-//! of the HTML's Unconnected types (rule 26) and name nothing else, and the
-//! fields a method reaches through `self`, which the detectors group.
+//! of the HTML's Unconnected types, the declarations that nothing names, and
+//! name nothing else, and the fields a method reaches through `self`, which
+//! the detectors group.
 
 use std::collections::BTreeSet;
 
@@ -28,9 +29,7 @@ impl Collector<'_> {
                 generics: here.generics.clone(),
                 comment: true,
                 may_be_value: false,
-                target: None,
-                value: None,
-                canonical: None,
+                res: None,
                 written: None,
                 foreign: None,
             });

@@ -1,8 +1,6 @@
 //! Settles what a run covers and where it writes, from the command line
-//! and `vibelight.toml`, and fixes the options that shape the HTML, which
-//! is for a person browsing the code. The markdown, for a model analyzing
-//! it, has no options; only the config's boilerplate and quiet entries
-//! tune its leads.
+//! and `vibelight.toml`. The markdown has no options; only the config's
+//! boilerplate and quiet entries tune its leads.
 
 use std::path::{Path, PathBuf};
 
@@ -10,59 +8,10 @@ use crate::config::{self, Config, Crates};
 use crate::exclude::Exclude;
 use crate::inputs::Selection;
 
-/// How a type's block orders its functions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MembersBy {
-    /// By name, whatever impl holds them.
-    Name,
-}
-
-/// How a file orders its declarations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum OrderBy {
-    /// In groups of types, each named for a module, then a Modules section.
-    Groups,
-}
-
-/// How much of the macro kill list a file shows.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum KillList {
-    /// Every entry, after the counts.
-    Full,
-}
-
-/// How a file spells its declarations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Notation {
-    /// As a C++ header, for a person who reads C++.
-    Cpp,
-}
-
-/// The settings that shape the HTML files.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Options {
-    pub(crate) notation: Notation,
-    pub(crate) kill_list: KillList,
-    pub(crate) order: OrderBy,
-    pub(crate) members: MembersBy,
-    /// The Legend section, which explains the notation.
-    pub(crate) legend: bool,
-}
-
-/// The HTML holds what a person browses: the declarations, linked.
-pub(crate) const HTML: Options = Options {
-    notation: Notation::Cpp,
-    kill_list: KillList::Full,
-    order: OrderBy::Groups,
-    members: MembersBy::Name,
-    legend: true,
-};
-
-/// Where the HTML is written, and the options that shape it.
+/// Where the HTML is written.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Output {
     pub(crate) dir: PathBuf,
-    pub(crate) options: Options,
 }
 
 /// What a run covers and where it writes.
@@ -72,9 +21,8 @@ pub(crate) struct Plan {
     pub(crate) selection: Option<Selection>,
     pub(crate) follow: Vec<String>,
     pub(crate) exclude: Exclude,
-    /// The folder of the markdown files and the index; the HTML files go in
-    /// its `html` folder.
-    pub(crate) out: PathBuf,
+    /// The base folder; the HTML files go in its `html` folder.
+    out: PathBuf,
     /// True when the folder is vibelight's own rather than one `-o` names,
     /// so the run keeps a `.gitignore` in it.
     pub(crate) owned: bool,
@@ -94,7 +42,6 @@ impl Plan {
     pub(crate) fn html(&self) -> Output {
         Output {
             dir: self.out.join("html"),
-            options: HTML,
         }
     }
 }
@@ -199,6 +146,5 @@ mod tests {
         assert_eq!(plan.out, PathBuf::from("elsewhere"));
         assert!(!plan.owned);
         assert_eq!(plan.markdown_dir(), Path::new("elsewhere"));
-        assert_eq!(plan.html().options, HTML);
     }
 }

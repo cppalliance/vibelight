@@ -1,5 +1,5 @@
 //! The doc detectors of explicit claims that the written declarations
-//! settle: the parameters an `# Arguments` section names, the return
+//! settle: the parameters a function's parameter section names, the return
 //! values, errors, and parameter states a function's doc states, and the
 //! numbers a doc ties to a constant.
 
@@ -104,9 +104,9 @@ pub(crate) fn find(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>) 
 }
 
 /// `doc-unknown-param`: code spans that open a list item or a sentence of
-/// a function's `# Arguments` or `# Parameters` section and name no
-/// parameter it writes, a leading underscore aside. A function with a
-/// parameter whose pattern binds several names is left out.
+/// a function's `# Arguments`, `# Args`, `# Parameters`, or `# Params`
+/// section and name no parameter it writes, a leading underscore aside. A
+/// function with a parameter whose pattern binds several names is left out.
 fn doc_unknown_param(run: &AnalysisRun<'_>, func: &Func<'_>, doc: &Doc<'_>, out: &mut Vec<Lead>) {
     if func.args.iter().any(|arg| arg.name.is_none()) {
         return;
@@ -168,8 +168,8 @@ fn literal(prose: &Prose<'_>, i: usize) -> Option<(&'static str, &'static [&'sta
 /// `doc-signature-mismatch`: an `# Errors` section on a function whose
 /// return type cannot carry an error, a sentence that names `None`, `Err`,
 /// `true`, or `false` that the return type cannot hold, within
-/// [`RETURN_REACH`] tokens after an opening "Returns" or as its opening
-/// token before a condition, and a parameter said to be
+/// [`RETURN_REACH`] tokens after an opening "Return", "Returns", or "Yields",
+/// or as its opening token before a condition, and a parameter said to be
 /// `None` whose type cannot hold it. Opaque and generic types and type
 /// aliases may hold anything.
 fn doc_signature_mismatch(

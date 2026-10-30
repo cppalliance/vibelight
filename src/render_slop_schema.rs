@@ -149,15 +149,15 @@ pub(crate) struct ModuleRange {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Loc {
     /// The outline stem of the other target of the run that holds the file.
-    pub(crate) target: Option<String>,
+    pub(crate) stem: Option<String>,
     pub(crate) file: String,
     pub(crate) line: u32,
 }
 
 impl fmt::Display for Loc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(target) = &self.target {
-            write!(f, "{target}:")?;
+        if let Some(stem) = &self.stem {
+            write!(f, "{stem}:")?;
         }
         write!(f, "{}:{}", self.file, self.line)
     }
@@ -176,13 +176,13 @@ impl Loc {
     pub(crate) fn parse(text: &str) -> Option<Loc> {
         let mut parts = text.rsplitn(3, ':');
         let (line, file) = (parts.next()?, parts.next()?);
-        let target = parts.next();
+        let stem = parts.next();
         let valid = !file.is_empty()
             && !file.contains('\\')
-            && target.is_none_or(|target| !target.is_empty())
+            && stem.is_none_or(|stem| !stem.is_empty())
             && line.bytes().all(|b| b.is_ascii_digit());
         let loc = Loc {
-            target: target.map(str::to_owned),
+            stem: stem.map(str::to_owned),
             file: file.to_owned(),
             line: line.parse().ok().filter(|_| valid)?,
         };
@@ -221,10 +221,12 @@ pub(crate) struct LeadRecord {
     pub(crate) locs: Option<Vec<Loc>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) limits: Option<Vec<String>>,
-    /// For a summary, the module whose leads it stands for.
+    /// For a summary, the module whose leads it stands for; set together
+    /// with `count`, and never alone.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) module: Option<String>,
-    /// For a summary, how many leads it stands for.
+    /// For a summary, how many leads it stands for; set together with
+    /// `module`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) count: Option<usize>,
 }
@@ -308,7 +310,9 @@ pub(crate) struct DocRecord {
 }
 
 /// The rest of a record that is too wide for one line: more elements of
-/// one of its arrays, or more of one of its strings.
+/// one of its arrays, or more of one of its strings. Exactly one of `items`
+/// and `text` is set: `items` continues an array field and `text` continues
+/// a string field.
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
 pub(crate) struct MoreRecord {

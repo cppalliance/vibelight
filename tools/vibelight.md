@@ -202,7 +202,7 @@ The markdown is compact JSON Lines after the stamp line: one self-contained obje
 - `crates`: the other targets of the run whose code names it by path.
 - `tests`: the kinds of test, bench, example, build, and doc test code that name it by path.
 - `direct_callers`: the bodies whose direct calls by path resolve to it.
-- `body`: counts of a body's statements, tokens, loops, error paths, panics, and macros, with no code.
+- `body`: `statements` and `tokens`; `loops` and `loop_depth` (shown above 1); `tries` (`?` operators), `errs` and `nones` (paths ending in `Err` and `None`); `awaits`; `panics`; `macros`, the sorted names of the macros the body invokes; `single`, what a one-statement body does; every field after `tokens` is left out at 0 or empty.
 - `ops`: the fields and parameters a body uses, and the methods it calls on them.
 - `comments`: the comments inside a body.
 
@@ -230,7 +230,7 @@ Look for these kinds:
 - **contained-shape**: A struct, union, or named variant payload of three or more fields whose every field, by name and type, is also a field of other types in the same target, one lead with every type that holds it.
   - Wrong when: the types sit on a real boundary, such as a wire type beside its domain type.
   - Verify: read the types' constructors and users; if one is always built from or beside the others, embed the smaller in the larger.
-- **derived-field**: A span or range field beside a line, column, or offset field in one type that also holds the text the span measures, a field named body, source, text, or content, or a `String`, `str`, `Arc<str>`, `Rc<str>`, or `Cow<str>` field not named as a message, name, label, title, description, or reason; or a collection field beside a count, length, or `is_` field of the same stem.
+- **derived-field**: A span or range field beside a line, column, or offset field in one type that also holds the text the span measures, a field named body, source, text, or content, or a `String`, `str`, `Arc<str>`, `Rc<str>`, or `Cow<str>` field not named as a message (or `msg`), name, label, title, description, or reason; or a collection field beside a count, length, or `is_` field of the same stem.
   - Wrong when: the second field measures something else, such as a line of another text.
   - Verify: find every write to both fields; if the second is always computed from the first and the text, derive it on read.
 - **drop-option**: An `Option` field of a type with a `Drop` impl.
@@ -386,10 +386,10 @@ Look for these kinds:
 - **doc-unresolved-backtick**: A backticked path shaped like a Rust path, of two or more segments, a call, or a `snake_case` name with an underscore inside, outside the doc's links, that resolves to nothing and has a name that no code, string literal, attribute, manifest, `std` name, or code block of the doc writes; docs of wire, `repr`, and `extern` items, example sentences, and placeholder names such as `get_x` are left out, this is lexical, and names that macros write go unseen.
   - Wrong when: the name belongs to an outside format or tool, such as a key of a file that the crate reads.
   - Verify: search the workspace for the name; if it was renamed or removed, update the doc.
-- **doc-unknown-param**: A code span that opens a list item or a sentence of an `# Arguments` or `# Parameters` section and names no parameter of the function, a leading underscore aside; a function with a destructured parameter is left out.
+- **doc-unknown-param**: A code span that opens a list item or a sentence of an `# Arguments`, `# Args`, `# Parameters`, or `# Params` section and names no parameter of the function, a leading underscore aside; a function with a destructured parameter is left out.
   - Wrong when: the name is a part of a parameter that the section describes on purpose.
   - Verify: compare the section with the signature; rename or remove the entry.
-- **doc-signature-mismatch**: An `# Errors` section on a function whose return type cannot carry an error, a sentence that opens with "Returns" or with a literal and a condition and names `None`, `Err`, `true`, or `false` that the return type cannot hold, or a parameter said to be `None` whose type cannot hold it; opaque and generic types and type aliases may hold anything, and the absence of a direct error path is no contradiction.
+- **doc-signature-mismatch**: An `# Errors` section on a function whose return type cannot carry an error, a sentence that opens with "Return", "Returns", or "Yields", or with a literal and a condition, and names `None`, `Err`, `true`, or `false` that the return type cannot hold, or a parameter said to be `None` whose type cannot hold it; opaque and generic types and type aliases may hold anything, and the absence of a direct error path is no contradiction.
   - Wrong when: the sentence describes another function, such as a callback that the function takes.
   - Verify: read the signature; fix the doc or the signature so that they agree.
 - **doc-count-mismatch**: An enum's or a struct's own doc that writes a count from two before a noun that counts variants or fields, such as "the three kinds", that differs from the declared count; a count after a hedge such as "at least" is no claim.

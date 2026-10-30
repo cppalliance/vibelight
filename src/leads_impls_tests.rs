@@ -284,6 +284,17 @@ fn a_one_field_struct_without_methods_that_one_module_uses_is_a_thin_wrapper() {
 }
 
 #[test]
+fn a_serde_type_is_not_a_thin_wrapper() {
+    let id = "thin-wrapper-one-observed-user";
+    let plain = "struct Meters(u32);\npub fn total() -> u32 { let m = Meters(3); m.0 }\n";
+    assert_eq!(lib(plain, id), ["Meters"]);
+    let derived = format!("#[derive(serde::Deserialize)]\n{plain}");
+    assert_eq!(lib(&derived, id), Vec::<String>::new());
+    let attributed = format!("#[serde(transparent)]\n{plain}");
+    assert_eq!(lib(&attributed, id), Vec::<String>::new());
+}
+
+#[test]
 fn a_hand_written_deserialize_beside_a_wire_twin_or_for_a_tiny_enum_is_manual() {
     finds(
         "manual-serde",

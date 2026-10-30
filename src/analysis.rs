@@ -13,14 +13,14 @@ use std::path::Path;
 use crate::analysis_items::{ItemId, ItemRef, Scopes};
 use crate::analysis_paths::Edge;
 use crate::analysis_uses::Use;
-use crate::census::{Census, Context, Scan, SourceId};
+use crate::census::{Census, Context};
 use crate::inputs::Chosen;
 use crate::manifest_facts::ManifestFacts;
 use crate::model::{Crate, CrossRef, DeclId, RefId};
 use crate::model_body::BodyId;
 use crate::root::{Target, TargetKind};
 use crate::source::SourceFile;
-use crate::{analysis_items, analysis_paths, census_sources, modtree, spellings, surface};
+use crate::{analysis_items, analysis_paths, attach, census_sources, modtree, spellings, surface};
 
 /// What analysis knows of one target of the run.
 #[derive(Debug)]
@@ -43,8 +43,6 @@ pub(crate) struct TargetInfo {
 #[derive(Debug)]
 pub(crate) struct PackageInfo {
     pub(crate) facts: ManifestFacts,
-    /// Its targets, as indexes into the run's targets, ascending.
-    pub(crate) targets: Vec<usize>,
     /// The files of its tests, benches, examples, and build script: each
     /// root and the module files it loads, each once per context.
     pub(crate) files: Vec<Extra>,
@@ -71,18 +69,16 @@ pub(crate) fn inputs(
     krates: &[Crate],
     deps: Vec<BTreeMap<String, usize>>,
 ) -> (Vec<TargetInfo>, Vec<PackageInfo>) {
-    let mut packages: Vec<PackageInfo> = chosen
+    let packages: Vec<PackageInfo> = chosen
         .packages
         .iter()
         .map(|package| PackageInfo {
             facts: package.facts.clone(),
-            targets: Vec::new(),
             files: package_files(&package.input.dir, &package.facts),
         })
         .collect();
     let mut infos = Vec::new();
-    for (t, ((&(p, target), krate), deps)) in targets.iter().zip(krates).zip(deps).enumerate() {
-        packages[p].targets.push(t);
+    for ((&(p, target), krate), deps) in targets.iter().zip(krates).zip(deps) {
         let dir = &chosen.packages[p].input.dir;
         infos.push(TargetInfo {
             package: p,
@@ -98,6 +94,13 @@ pub(crate) fn inputs(
         });
     }
     (infos, packages)
+}
+
+/// Returns the index of the first target of `package` that is a library.
+pub(crate) fn library_of(targets: &[TargetInfo], package: usize) -> Option<usize> {
+    targets
+        .iter()
+        .position(|t| t.package == package && t.kind == TargetKind::Lib)
 }
 
 /// Reads the module tree of each test, bench, example, and build script
@@ -183,7 +186,7 @@ pub(crate) struct AnalysisRun<'a> {
     pub(crate) packages: &'a [PackageInfo],
     /// Each target's dependency map for analysis: its own, and for a
     /// binary also its package's library.
-    pub(crate) deps: Vec<BTreeMap<String, usize>>,
+    pub(crate) analysis_deps: Vec<BTreeMap<String, usize>>,
     /// For each target, what that map reaches for each reference that
     /// nothing reached before.
     pub(crate) cross: Vec<BTreeMap<RefId, CrossRef>>,
@@ -216,8 +219,6 @@ pub(crate) struct AnalysisRun<'a> {
     /// than one way, with the self types of the impls that belong to its
     /// declarations left out, as after attach.
     pub(crate) spellings: Vec<Vec<spellings::Entry>>,
-    /// The census sources that could not be read or lexed, ascending.
-    pub(crate) limits: Vec<SourceId>,
     /// The texts that mark a doc passage as boilerplate, which the doc
     /// detectors leave unread.
     pub(crate) boilerplate: Vec<String>,
@@ -233,10 +234,9 @@ impl<'a> AnalysisRun<'a> {
         packages: &'a [PackageInfo],
         boilerplate: &[String],
     ) -> AnalysisRun<'a> {
-        let deps = analysis_paths::augmented(targets, packages);
-        let cross = analysis_paths::cross(krates, &deps);
-        let attached: Vec<Vec<Option<DeclId>>> =
-            krates.iter().map(analysis_items::attach).collect();
+        let analysis_deps = analysis_paths::augmented(targets);
+        let cross = analysis_paths::cross(krates, &analysis_deps);
+        let attached: Vec<Vec<Option<DeclId>>> = krates.iter().map(attach::owners).collect();
         let impls_of = krates
             .iter()
             .zip(&attached)
@@ -276,15 +276,11 @@ impl<'a> AnalysisRun<'a> {
             .map(|(krate, attached)| spellings::find_hiding(krate, |i| attached[i].is_some()))
             .collect();
         let census = census_sources::build(krates, targets, packages, &scopes);
-        let limits = (census.sources.iter().enumerate())
-            .filter(|(_, source)| source.scan != Scan::Lexed)
-            .map(|(id, _)| id)
-            .collect();
         let mut run = AnalysisRun {
             krates,
             targets,
             packages,
-            deps,
+            analysis_deps,
             cross,
             attached,
             impls_of,
@@ -299,7 +295,6 @@ impl<'a> AnalysisRun<'a> {
             surfaces,
             surface_items,
             spellings,
-            limits,
             boilerplate: boilerplate.to_vec(),
         };
         run.edges = run.link_bodies();

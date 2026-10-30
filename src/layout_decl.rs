@@ -1,10 +1,8 @@
 //! Lays out declaration blocks: headers and bodies.
 
-use std::ops::Range;
-
 use crate::layout::{
-    Block, Entry, Line, Sections, Span, above, code, join_sections, key, mark_line, note_lines,
-    plain, section, sections, sort_entries, where_parts,
+    Block, Line, Sections, Span, above, code, empty_sections, join_sections, key, mark_line,
+    note_lines, plain, section, sort_entries, where_parts,
 };
 use crate::layout_head::header_lines;
 use crate::layout_marker::Marker;
@@ -14,10 +12,9 @@ use crate::model::{
     Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, TypeRef,
     Variant, Vis, name_order,
 };
-use crate::settings::MembersBy;
 
-/// Builds the block of one declaration, its functions ordered by `members`.
-pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block {
+/// Builds the block of one declaration, its functions ordered by name.
+pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     let decl = &krate.decls[id];
     let refs = &krate.refs;
     let mut block = Block::default();
@@ -54,9 +51,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
         Shape::Enum(variants) => Some(variants.as_slice()),
         _ => None,
     };
-    let impls = match members {
-        MembersBy::Name => Vec::new(),
-    };
     let body = body(
         krate,
         &BodyParts {
@@ -68,7 +62,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
             end_marks: &decl.end_marks,
             special: &decl.special,
             name: &decl.name,
-            impls: &impls,
         },
     );
     block.lines.push(brace("{"));
@@ -91,48 +84,20 @@ pub(crate) fn visibility_line(vis: Vis, indent: usize) -> Option<Line> {
     Some(Line {
         indent,
         spans: vec![
-            Span::Marker(Marker::VISIBILITY.spaced),
+            Span::Marker(Marker::PLAIN.spaced),
             Span::Comment(text.to_owned()),
         ],
         trailing: None,
     })
 }
 
-/// Sorts every group of a body's members, then adds each impl's functions,
-/// in source order, after the other functions of their section. The fields
-/// and the variants are not here: they keep their declared order in the
-/// data sections.
-fn order_groups(
-    sections: &mut Sections,
-    impls: &[(String, Range<usize>)],
-    by_impl: Vec<[Vec<Entry>; 3]>,
-    refs: &[TypeRef],
-) {
+/// Sorts every group of a body's members. The fields and the variants are
+/// not here: they keep their declared order in the data sections.
+fn order_groups(sections: &mut Sections, refs: &[TypeRef]) {
     for groups in sections.iter_mut() {
         for group in groups.iter_mut() {
             sort_entries(group, refs);
         }
-    }
-    for ((file, _), held) in impls.iter().zip(by_impl) {
-        for (groups, mut entries) in sections.iter_mut().zip(held) {
-            if let Some(first) = entries.first_mut() {
-                first.lines.insert(0, impl_line(file));
-            }
-            groups[5].extend(entries);
-        }
-    }
-}
-
-/// Returns the line that starts the functions of one inherent impl when
-/// functions are ordered by impl.
-fn impl_line(file: &str) -> Line {
-    Line {
-        indent: 4,
-        spans: vec![
-            Span::Marker(Marker::IMPL_IN.spaced),
-            Span::Comment(file.to_owned()),
-        ],
-        trailing: None,
     }
 }
 
@@ -248,9 +213,6 @@ pub(crate) struct BodyParts<'b> {
     pub(crate) special: &'b [Special],
     /// The type's name, which the special members spell.
     pub(crate) name: &'b str,
-    /// When functions are ordered by impl: each inherent impl's file and the
-    /// indexes of the members it adds, in print order.
-    pub(crate) impls: &'b [(String, Range<usize>)],
 }
 
 /// Builds the lines between a type's braces: the data first, a struct's
@@ -260,16 +222,13 @@ pub(crate) struct BodyParts<'b> {
 /// unsupported lines.
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
-    let mut data = sections(6);
-    let mut sections = sections(6);
-    let mut by_impl: Vec<[Vec<Entry>; 3]> =
-        parts.impls.iter().map(|_| Default::default()).collect();
+    let mut data = empty_sections(6);
+    let mut sections = empty_sections(6);
     let real = parts
         .members
         .iter()
-        .enumerate()
-        .filter(|(_, m)| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)));
-    for (index, member) in real {
+        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)));
+    for member in real {
         let group = match &member.kind {
             MemberKind::Type(_) => 0,
             MemberKind::Const { .. } => 1,
@@ -282,18 +241,14 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         } else {
             member.vis
         };
-        let held = parts
-            .impls
-            .iter()
-            .position(|(_, range)| range.contains(&index));
         let entry = member_entry(krate, member);
-        match held.filter(|_| matches!(member.kind, MemberKind::Fn(_))) {
-            Some(k) => by_impl[k][section(vis)].push(entry),
-            None if group == 2 => data[section(vis)][group].push(entry),
-            None => sections[section(vis)][group].push(entry),
+        if group == 2 {
+            data[section(vis)][group].push(entry);
+        } else {
+            sections[section(vis)][group].push(entry);
         }
     }
-    order_groups(&mut sections, parts.impls, by_impl, refs);
+    order_groups(&mut sections, refs);
     if let Some(variants) = parts.variants {
         data[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }

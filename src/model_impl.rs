@@ -1,6 +1,8 @@
 //! The model of impl blocks and the special members they become.
 
-use crate::model::{Base, DeclId, Loc, Member, Note, RefId, Text};
+use crate::model::{
+    Base, Crate, Decl, DeclId, Loc, Member, MemberKind, ModId, Note, RefId, Sig, Text,
+};
 
 /// The standard trait behind a C++ special member function, a constructor
 /// or the destructor, in print order.
@@ -30,22 +32,13 @@ pub(crate) struct Special {
 
 /// An attached impl block that adds members or base-list entries, for the
 /// HTML's `Source:` line.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub(crate) struct ImplLoc {
     /// The `impl` line.
     pub(crate) loc: Loc,
-    /// The names of the members an inherent impl adds, sorted; a trait
-    /// impl adds none.
+    /// The names of the members an inherent impl adds, sorted and without
+    /// repeats; a trait impl adds none.
     pub(crate) members: Vec<String>,
-    /// The indexes in the type's members of the members the impl adds, in
-    /// source order.
-    pub(crate) range: std::ops::Range<usize>,
-    /// The impl's header as written, such as `impl<T> Clone for Box<T>`.
-    pub(crate) header: String,
-    /// The comments above the impl line.
-    pub(crate) notes: Vec<Note>,
-    /// True for a trait impl.
-    pub(crate) trait_impl: bool,
 }
 
 /// The comments above one attached impl line, kept together so the outline
@@ -89,4 +82,48 @@ pub(crate) struct Impl {
     pub(crate) dangling: Vec<Note>,
     /// The declaration this impl attached to, filled in by attach.
     pub(crate) attached: Option<DeclId>,
+}
+
+impl Sig {
+    /// Returns the texts of a signature that can name types: its generics,
+    /// parameters, return type, and where predicates.
+    pub(crate) fn texts(&self) -> Vec<&Text> {
+        let mut texts = vec![&self.generics];
+        texts.extend(self.params.iter().map(|p| &p.text));
+        texts.extend(self.ret.iter());
+        texts.extend(self.where_clause.iter().flat_map(|clause| clause.0.iter()));
+        texts
+    }
+}
+
+impl MemberKind {
+    /// Returns the references a function, constant, or type member writes,
+    /// or `None` for any other member.
+    pub(crate) fn refs(&self) -> Option<Vec<RefId>> {
+        let texts: Vec<&Text> = match self {
+            MemberKind::Fn(sig) => sig.texts(),
+            MemberKind::Const { ty, .. } | MemberKind::Type(ty) => vec![ty],
+            MemberKind::Field(_) | MemberKind::Mark(_) | MemberKind::Unsupported(_) => return None,
+        };
+        Some(texts.into_iter().flat_map(Text::refs).collect())
+    }
+}
+
+impl Decl {
+    /// Tells whether a declaration is a wire type: a written derive ends in
+    /// `Deserialize` or `Serialize`, or an attribute starts with `serde`.
+    pub(crate) fn is_wire(&self) -> bool {
+        let derived = (self.written_derives.iter())
+            .any(|name| matches!(name.rsplit("::").next(), Some("Deserialize" | "Serialize")));
+        derived || self.meta.attrs.iter().any(|attr| attr.starts_with("serde"))
+    }
+}
+
+impl Crate {
+    /// Returns the module whose path is a module's without its last
+    /// segment, or `None` for the root.
+    pub(crate) fn parent_module(&self, m: ModId) -> Option<ModId> {
+        let (_, up) = self.modules[m].path.split_last()?;
+        self.modules.iter().position(|module| module.path == up)
+    }
 }

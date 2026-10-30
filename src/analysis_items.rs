@@ -1,6 +1,6 @@
 //! The items of a run's analysis view: an id for every item that analysis
-//! indexes, the declaration each impl belongs to by attach's rule, the item
-//! each body belongs to, each declaration's logical members, the modules of
+//! indexes, the impls of each declaration by attach's rule, the item each
+//! body belongs to, each declaration's logical members, the modules of
 //! each file, doc summaries, and the items on each library's surface.
 
 use std::cmp::Reverse;
@@ -48,6 +48,16 @@ pub(crate) struct ItemId {
     pub(crate) item: ItemRef,
 }
 
+impl ItemId {
+    /// Returns the id of declaration `d` of target `t`.
+    pub(crate) fn decl(target: usize, d: DeclId) -> Self {
+        Self {
+            target,
+            item: ItemRef::Decl(d),
+        }
+    }
+}
+
 /// The node behind an item; a module carries the name of its crate, which
 /// names the root.
 enum Node<'a> {
@@ -56,24 +66,6 @@ enum Node<'a> {
     Value(&'a Item),
     Variant(&'a Variant),
     Member(&'a Member),
-}
-
-/// Returns, for each impl of a crate, the declaration it belongs to: the
-/// struct, enum, or union that its self type resolves to, which is the rule
-/// attach moves impls by.
-pub(crate) fn attach(krate: &Crate) -> Vec<Option<DeclId>> {
-    krate
-        .impls
-        .iter()
-        .map(|i| {
-            i.self_ref.and_then(|r| krate.refs[r].target).filter(|&d| {
-                matches!(
-                    krate.decls[d].kind,
-                    DeclKind::Struct | DeclKind::Enum | DeclKind::Union
-                )
-            })
-        })
-        .collect()
 }
 
 /// Returns, for each declaration, the impls that belong to it, ascending.
@@ -222,7 +214,7 @@ pub(crate) fn surface_items(krate: &Crate, entries: &[surface::Entry]) -> BTreeS
     let mut reexported: BTreeMap<String, Vec<ValueRef>> = BTreeMap::new();
     for item in krate.modules.iter().flat_map(|m| &m.items) {
         if let ItemKind::Reexport { text, .. } = &item.kind {
-            if let Some(at) = text.refs().next().and_then(|r| krate.refs[r].value) {
+            if let Some(at) = text.refs().next().and_then(|r| krate.refs[r].value()) {
                 reexported
                     .entry(strip_raw(&item.name))
                     .or_default()

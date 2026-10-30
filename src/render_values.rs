@@ -7,7 +7,7 @@ mod tests {
 
     use crate::document::{Document, Node};
     use crate::layout::{Block, Line, Span};
-    use crate::model::{CrossRef, Loc, Reach, TypeRef, ValueRef};
+    use crate::model::{CrossRef, Loc, Reach, Res, TypeRef, ValueRef};
     use crate::render_html::{Anchors, render};
 
     /// A page holding one function name with an id, one name that links to
@@ -23,9 +23,7 @@ mod tests {
             generics: Vec::new(),
             comment: true,
             may_be_value: true,
-            target: None,
-            value,
-            canonical: None,
+            res: value.map(Res::Value),
             written: None,
             foreign,
         };

@@ -44,7 +44,7 @@ pub(crate) fn identity(run: &AnalysisRun<'_>, t: usize, r: RefId, own: Option<It
         return item_name(run, item);
     }
     let reference = &run.krates[t].refs[r];
-    if let Some(path) = reference.canonical.as_deref().and_then(item_path) {
+    if let Some(path) = reference.outside().and_then(item_path) {
         return path;
     }
     let written = reference.path.join("::");
@@ -98,6 +98,12 @@ impl Ty {
     /// segment.
     pub(crate) fn shown(&self) -> String {
         self.render(leaf)
+    }
+
+    /// Returns a field or a parameter as the evidence shows it, such as
+    /// `` `names: Vec<String>` ``.
+    pub(crate) fn typed(&self, name: &str) -> String {
+        format!("`{name}: {}`", self.shown())
     }
 
     fn render(&self, name: impl Fn(&str) -> String) -> String {

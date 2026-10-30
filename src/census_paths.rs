@@ -23,7 +23,6 @@ pub(crate) struct Path {
 #[derive(Clone, Copy)]
 struct Start {
     global: bool,
-    at: LineColumn,
     in_macro: bool,
     in_test: bool,
 }
@@ -38,7 +37,6 @@ impl Toks {
                 Some(global) => {
                     let start = Start {
                         global,
-                        at: self.toks[i].span.start(),
                         in_macro: in_macro[i],
                         in_test: in_test[i],
                     };
@@ -52,8 +50,9 @@ impl Toks {
 
     /// Tells whether a path starts at `i`, and whether it starts with `::`:
     /// a name or a path keyword that `::` follows, with no `.`, `::`, or
-    /// lifetime quote just before it, or a `::` with no name, `>`, group, or
-    /// literal just before it.
+    /// lifetime quote just before it, or a `::` with no name, closing `>` of
+    /// generic arguments, group, or literal just before it. A `:` or the `>`
+    /// of `->` or `=>` ends no path, so a `::` after one starts a path.
     fn start(&self, i: usize) -> Option<bool> {
         let before = i.checked_sub(1).and_then(|b| self.tok(b));
         if let Some((word, keyword)) = self.ident(i) {
@@ -69,7 +68,11 @@ impl Toks {
             Some(Tok::Ident(..)) => self
                 .ident(i - 1)
                 .is_some_and(|(word, keyword)| !keyword || PATH_KEYWORDS.contains(&word)),
-            Some(Tok::Punct('>' | ':', _) | Tok::Close | Tok::Lit) => true,
+            Some(Tok::Punct('>', _)) => !matches!(
+                i.checked_sub(2).and_then(|b| self.tok(b)),
+                Some(Tok::Punct('-' | '=', true))
+            ),
+            Some(Tok::Close | Tok::Lit) => true,
             _ => false,
         };
         (!joined).then_some(true)
@@ -102,7 +105,7 @@ impl Toks {
             }
         }
         if segments.len() > 1 {
-            out.push(path(segments, start, start.at));
+            out.push(path(segments, start, self.toks[i].span.start()));
         }
         i + 1
     }
@@ -224,6 +227,13 @@ mod tests {
                 s("crate::Item", false, false),
             ]
         );
+    }
+
+    #[test]
+    fn a_path_after_a_colon_or_an_arrow_starts_a_qualified_path() {
+        for text in ["x: ::a::B", "-> ::a::B", "=> ::a::B"] {
+            assert_eq!(paths_of(text), [("a::B".to_owned(), true, false)], "{text}");
+        }
     }
 
     #[test]

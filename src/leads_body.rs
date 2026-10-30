@@ -8,7 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::ItemId;
 use crate::analysis_paths::PathKind;
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
@@ -189,10 +189,7 @@ fn private_read(catalog: &Catalog<'_>, func: &Func<'_>, name: &str) -> bool {
     let (FnKind::Inherent, Some(d), [only]) = (func.kind, func.decl, func.self_fields) else {
         return false;
     };
-    let own = ItemId {
-        target: func.item.target,
-        item: ItemRef::Decl(d),
-    };
+    let own = ItemId::decl(func.item.target, d);
     let field = (catalog.fields_of(own, None)).find(|f| f.named && f.name == name);
     only == name
         && func.vis == Vis::Private

@@ -7,7 +7,7 @@
 use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::ItemId;
 use crate::analysis_paths::PathKind;
 use crate::census::Form;
 use crate::leads::{Lead, Mode};
@@ -136,10 +136,7 @@ fn field(run: &AnalysisRun<'_>, c: &Candidate<'_>, d: DeclId, out: &mut Vec<Lead
         return;
     }
     let dotted = (run.census.token_hits(&c.name).iter()).any(|hit| hit.form == Form::Field);
-    let owner = ItemId {
-        target: t,
-        item: ItemRef::Decl(d),
-    };
+    let owner = ItemId::decl(t, d);
     let kinds: Vec<PathKind> = run.edges_to(owner).map(|edge| edge.kind).collect();
     if dotted || kinds.contains(&PathKind::Pattern) {
         return;

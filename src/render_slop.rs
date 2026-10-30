@@ -48,50 +48,69 @@ pub(crate) struct RenderInput<'a> {
     pub(crate) root: String,
 }
 
+/// Where a record sorts in its module: the module's own record first, then
+/// its re-exports by their text, since rustfmt reorders `use` items, then
+/// the rest by file and line.
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Rank {
+    Own,
+    /// A re-export, under its text.
+    Reexport(String),
+    Item {
+        file: String,
+        line: u32,
+    },
+}
+
 /// One record of the catalog and the `doc` record after it, with where it
-/// sorts in its module: the module's own record first, then its re-exports
-/// by their text, since rustfmt reorders `use` items, then the rest by file
-/// and line.
+/// sorts in its module.
 pub(crate) struct Entry {
     pub(crate) module: ModId,
-    /// 0 for the module's own record, 1 for a re-export, and 2 otherwise.
-    pub(crate) group: u8,
-    pub(crate) file: String,
-    pub(crate) line: u32,
-    /// What a re-export sorts by: its text.
-    pub(crate) key: String,
+    pub(crate) rank: Rank,
     pub(crate) records: Vec<Record>,
 }
 
 /// A target's outline while its records are built.
 pub(crate) struct Outline<'a> {
-    pub(crate) run: &'a AnalysisRun<'a>,
-    pub(crate) t: usize,
-    pub(crate) krate: &'a Crate,
+    pub(crate) target: AnalysisTarget<'a>,
     pub(crate) facts: Facts<'a>,
     pub(crate) entries: Vec<Entry>,
 }
 
-impl Outline<'_> {
+impl<'a> Outline<'a> {
+    /// Returns the crate of this outline's target.
+    pub(crate) fn krate(&self) -> &'a Crate {
+        &self.target.run.krates[self.target.target]
+    }
+
     /// Returns a source line of target `target` as this outline writes it.
     pub(crate) fn loc(&self, target: usize, loc: model::Loc) -> Loc {
+        let run = self.target.run;
         Loc {
-            target: (target != self.t).then(|| self.run.targets[target].stem.clone()),
-            file: self.run.krates[target].files[loc.file]
-                .rel
-                .replace('\\', "/"),
+            stem: (target != self.target.target).then(|| run.targets[target].stem.clone()),
+            file: run.krates[target].files[loc.file].rel.replace('\\', "/"),
             line: loc.line,
         }
     }
 
     /// Returns a source line of this outline's target.
     pub(crate) fn own(&self, loc: model::Loc) -> Loc {
-        self.loc(self.t, loc)
+        self.loc(self.target.target, loc)
     }
 
     /// Adds a catalog record of module `module`, written at `at`, with its
     /// doc text, when it has one, in a `doc` record after it.
     pub(crate) fn push(&mut self, module: ModId, at: model::Loc, record: Record, doc: Doc<'_>) {
+        let rank = Rank::Item {
+            file: self.krate().files[at.file].rel.replace('\\', "/"),
+            line: at.line,
+        };
+        self.push_ranked(rank, module, record, doc);
+    }
+
+    /// Adds a catalog record of module `module` that sorts at `rank`, with
+    /// its doc text, when it has one, in a `doc` record after it.
+    pub(crate) fn push_ranked(&mut self, rank: Rank, module: ModId, record: Record, doc: Doc<'_>) {
         let mut records = vec![record];
         if let Some(text) = doc.text {
             records.push(Record::Doc(DocRecord {
@@ -101,23 +120,9 @@ impl Outline<'_> {
         }
         self.entries.push(Entry {
             module,
-            group: 2,
-            file: self.krate.files[at.file].rel.replace('\\', "/"),
-            line: at.line,
-            key: String::new(),
+            rank,
             records,
         });
-    }
-
-    /// Moves the record just pushed to the front of its module: the
-    /// module's own record in group 0, or a re-export in group 1 under
-    /// `key`.
-    pub(crate) fn lift(&mut self, group: u8, key: String) {
-        if let Some(entry) = self.entries.last_mut() {
-            entry.group = group;
-            entry.key = key;
-            entry.line = 0;
-        }
     }
 }
 
@@ -134,15 +139,13 @@ pub(crate) struct Doc<'d> {
 /// Returns an internal error when a record cannot be written as JSON, or
 /// when the modules record finds no line count that its ranges agree with.
 pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
-    let AnalysisTarget { run, target: t } = input.analysis_target;
-    let krate = &run.krates[t];
+    let target = input.analysis_target;
     let mut outline = Outline {
-        run,
-        t,
-        krate,
-        facts: Facts::new(run, t),
+        target,
+        facts: Facts::new(target),
         entries: Vec::new(),
     };
+    let krate = outline.krate();
     let mut lists = render_slop_lists::leads(&outline, input.leads);
     lists.extend(render_slop_lists::surface(&outline));
     lists.extend(render_slop_lists::external(&outline));
@@ -157,13 +160,7 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
         rank[m] = place;
     }
     let mut entries = outline.entries;
-    entries.sort_by(|a, b| {
-        (rank[a.module].cmp(&rank[b.module]))
-            .then(a.group.cmp(&b.group))
-            .then_with(|| a.key.cmp(&b.key))
-            .then_with(|| a.file.cmp(&b.file))
-            .then(a.line.cmp(&b.line))
-    });
+    entries.sort_by(|a, b| (rank[a.module].cmp(&rank[b.module])).then_with(|| a.rank.cmp(&b.rank)));
     let mut listed = Vec::new();
     for record in &lists {
         listed.extend(render_slop_split::lines(record)?);

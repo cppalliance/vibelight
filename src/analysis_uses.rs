@@ -6,12 +6,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::analysis::AnalysisRun;
+use crate::analysis::{AnalysisRun, library_of};
 use crate::analysis_items::{ItemId, ItemRef, is_value};
 use crate::census::{Context, QualifiedPathHit, SourceId};
-use crate::collect_check_nodes::member_refs;
 use crate::model::{DeclKind, ItemKind, Member, MemberKind, ModId, RefId, Shape, ValueRef};
-use crate::root::TargetKind;
 use crate::typerefs::strip_raw;
 
 /// Where an observed use comes from.
@@ -96,16 +94,13 @@ impl Qualified {
         };
         for t in 0..run.targets.len() {
             index.target(run, t);
-            let mut reach: BTreeSet<usize> = run.deps[t].values().copied().collect();
+            let mut reach: BTreeSet<usize> = run.analysis_deps[t].values().copied().collect();
             reach.insert(t);
             index.reach.push(reach);
         }
-        for package in run.packages {
-            let libs = package
-                .targets
-                .iter()
-                .filter(|&&l| run.targets[l].kind == TargetKind::Lib);
-            let reach = libs.flat_map(|&l| index.reach[l].iter().copied()).collect();
+        for p in 0..run.packages.len() {
+            let reach = library_of(run.targets, p)
+                .map_or_else(BTreeSet::new, |lib| index.reach[lib].clone());
             index.package_reach.push(reach);
         }
         index
@@ -262,8 +257,8 @@ impl AnalysisRun<'_> {
         }
         for (e, edge) in self.edges.iter().enumerate() {
             let body = &self.krates[edge.target].bodies[edge.body];
-            let source = self.census.tree_source(edge.target, body.file);
-            let module = self.module_at(edge.target, body.file, body.start);
+            let source = self.census.tree_source(edge.target, body.loc.file);
+            let module = self.module_at(edge.target, body.loc.file, body.start);
             let found = [
                 (edge.item, UseKind::Path(e)),
                 (edge.prefix, UseKind::Qualifier(e)),
@@ -346,7 +341,10 @@ impl AnalysisRun<'_> {
             }
         }
         for (i, item) in krate.impls.iter().enumerate() {
-            for r in item.trait_members.iter().filter_map(member_refs).flatten() {
+            for r in (item.trait_members.iter())
+                .filter_map(|m| m.kind.refs())
+                .flatten()
+            {
                 mark(r, Some(UseKind::Signature));
             }
             if self.attached[t][i].is_some() {

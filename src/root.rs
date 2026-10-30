@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use toml::Value;
 
+use crate::manifest;
+
 /// One outline to write: a library, a binary, or a single file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Target {
@@ -19,8 +21,8 @@ pub(crate) struct Target {
     pub(crate) crate_name: String,
     /// The root file, relative to the crate directory, with forward slashes.
     pub(crate) root: String,
-    /// True for the library target, the one dependencies name.
-    pub(crate) lib: bool,
+    /// What the target is; `TargetKind::Lib` marks the library target, the one
+    /// dependencies name.
     pub(crate) kind: TargetKind,
 }
 
@@ -117,22 +119,17 @@ fn single_file(path: &Path) -> Result<Input> {
             title: stem.to_owned(),
             crate_name: stem.replace('-', "_"),
             root: name.to_owned(),
-            lib: false,
             kind: TargetKind::SingleFile,
         }],
     })
 }
 
 fn from_manifest(dir: &Path, manifest: &Path) -> Result<Vec<Target>> {
-    let text = fs::read_to_string(manifest)
-        .with_context(|| format!("cannot read {}", manifest.display()))?;
-    let table: toml::Table = text
-        .parse()
-        .with_context(|| format!("cannot parse {}", manifest.display()))?;
+    let table = manifest::read(manifest)?;
     let Some(package) = table.get("package").and_then(Value::as_table) else {
         if table.contains_key("workspace") {
             bail!(
-                "{} is a workspace manifest; point vibelight at a crate directory, or pass --workspace",
+                "{} is a workspace manifest; point vibelight at a member crate's directory, or set `workspace = true` in vibelight.toml",
                 manifest.display()
             );
         }
@@ -217,7 +214,6 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             title: name.clone(),
             crate_name: name,
             root,
-            lib: true,
             kind: TargetKind::Lib,
         });
     }
@@ -232,7 +228,6 @@ fn assemble(lib: Option<(String, String)>, bins: BTreeMap<String, String>) -> Ve
             crate_name: name.replace('-', "_"),
             title: name,
             root,
-            lib: false,
             kind: TargetKind::Bin,
         });
     }
@@ -378,15 +373,14 @@ mod tests {
     }
 
     #[test]
-    fn each_target_records_its_kind_beside_lib() {
+    fn each_target_records_its_kind() {
         let tmp = tempfile::tempdir().unwrap();
         write(tmp.path(), "Cargo.toml", "[package]\nname = \"foo\"\n");
         write(tmp.path(), "src/lib.rs", "");
         write(tmp.path(), "src/main.rs", "");
         let input = find(tmp.path()).unwrap();
-        let kinds: Vec<(bool, TargetKind)> =
-            input.targets.iter().map(|t| (t.lib, t.kind)).collect();
-        assert_eq!(kinds, [(true, TargetKind::Lib), (false, TargetKind::Bin)]);
+        let kinds: Vec<TargetKind> = input.targets.iter().map(|t| t.kind).collect();
+        assert_eq!(kinds, [TargetKind::Lib, TargetKind::Bin]);
     }
 
     #[test]

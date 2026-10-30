@@ -39,7 +39,8 @@ enum Found {
     Module(ModId),
     /// A function, with whether it is test support.
     Function(ModId, bool),
-    /// A constant or a static, with whether it is test support.
+    /// A constant, a static, or an extern type, with whether it is test
+    /// support.
     Value(ModId, bool),
 }
 
@@ -142,7 +143,7 @@ impl Walk<'_> {
             return;
         };
         let reference = &krate.refs[id];
-        let found = match reference.target {
+        let found = match reference.decl() {
             Some(d) => Some(Found::Decl(d)),
             None => lookup(
                 krate,
@@ -234,7 +235,7 @@ pub(crate) fn module_at(
         at = match segment.as_str() {
             "crate" if index == 0 => 0,
             "self" if index == 0 => at,
-            "super" => parent(krate, at)?,
+            "super" => krate.parent_module(at)?,
             name => *children(krate, at).iter().find(|&&c| {
                 krate.modules[c].path.last().map(|s| strip_raw(s)) == Some(strip_raw(name))
             })?,
@@ -244,9 +245,9 @@ pub(crate) fn module_at(
 }
 
 /// Finds what a `use` path written in module `from` names: a declaration,
-/// a module, a function, a constant, or a static of the crate. A name the
-/// target module itself re-exports is followed, with `seen` guarding
-/// against cycles.
+/// a module, a function, a constant, a static, or an extern type of the
+/// crate. A name the target module itself re-exports is followed, with
+/// `seen` guarding against cycles.
 fn lookup(
     krate: &Crate,
     from: ModId,
@@ -290,7 +291,7 @@ fn lookup(
                     Seg::Plain(_) => None,
                 });
                 if let Some(next) = next {
-                    if let Some(d) = next.target {
+                    if let Some(d) = next.decl() {
                         return Some(Found::Decl(d));
                     }
                     if let Some(found) = lookup(krate, next.module, &next.path, next.global, seen) {
@@ -302,10 +303,4 @@ fn lookup(
         }
     }
     None
-}
-
-fn parent(krate: &Crate, m: ModId) -> Option<ModId> {
-    let path = &krate.modules[m].path;
-    let (_, up) = path.split_last()?;
-    (0..krate.modules.len()).find(|&p| krate.modules[p].path == up)
 }

@@ -4,31 +4,26 @@ use std::ops::Range;
 
 use syn::visit::Visit;
 use syn::{
-    Expr, ForeignItem, ItemConst, ItemForeignMod, ItemStatic, ItemUse, StaticMutability, Visibility,
+    Attribute, Expr, ForeignItem, ItemConst, ItemForeignMod, ItemStatic, ItemUse, StaticMutability,
+    Visibility,
 };
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_body_code::Code;
 use crate::collect_use_group::{Binding, expand};
-use crate::comments::{Attached, attach};
+use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{
     Foreign, Holder, Item, ItemKind, Loc, MacroKind, MacroUse, Meta, Seg, Text, TypeRef, Use,
     ValueRef, Vis,
 };
 use crate::model_body::{BodyKind, Owner};
-use crate::source::{Comment, scan};
+use crate::source::{SourceFile, scan};
 use crate::typerefs::range_of;
 
 impl Collector<'_> {
-    pub(crate) fn item_use(
-        &mut self,
-        here: &Here,
-        u: &ItemUse,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_use(&mut self, here: &Here, u: &ItemUse, placed: Placed) {
         if self.test_only(here, &u.attrs, u) {
             return;
         }
@@ -36,17 +31,11 @@ impl Collector<'_> {
         let files = self.files;
         let file = &files[here.file];
         let mut bindings = Vec::new();
-        expand(
-            &u.tree,
-            file,
-            &mut Vec::new(),
-            &mut Vec::new(),
-            &mut bindings,
-        );
+        expand(&u.tree, file, &mut Vec::new(), &mut bindings);
         for binding in &bindings {
             self.modules[here.module].uses.push(Use {
                 name: binding.name.clone(),
-                path: binding.path.clone(),
+                path: binding.path(),
                 global,
             });
         }
@@ -54,7 +43,7 @@ impl Collector<'_> {
             self.discard(here, range_of(u, file));
             return;
         }
-        self.reexports(here, u, lead, trail, &bindings);
+        self.reexports(here, u, placed, &bindings);
     }
 
     /// Returns a re-export's text: `path::Item`, `Alias = path::Item`, or
@@ -74,15 +63,13 @@ impl Collector<'_> {
         let id = self.refs.len();
         self.refs.push(TypeRef {
             text: written,
-            path: binding.path.clone(),
+            path: binding.path(),
             global,
             module: here.module,
             generics: Vec::new(),
             comment: true,
             may_be_value: true,
-            target: None,
-            value: None,
-            canonical: None,
+            res: None,
             written: None,
             foreign: None,
         });
@@ -93,13 +80,7 @@ impl Collector<'_> {
         }
     }
 
-    pub(crate) fn item_const(
-        &mut self,
-        here: &Here,
-        c: &ItemConst,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_const(&mut self, here: &Here, c: &ItemConst, placed: Placed) {
         if self.test_only(here, &c.attrs, c) {
             return;
         }
@@ -121,21 +102,14 @@ impl Collector<'_> {
             &c.vis,
             c.ident.to_string(),
             kind,
-            lead,
-            trail,
+            placed,
             loc,
             marks,
             range_of(c, &self.files[here.file]),
         );
     }
 
-    pub(crate) fn item_static(
-        &mut self,
-        here: &Here,
-        s: &ItemStatic,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_static(&mut self, here: &Here, s: &ItemStatic, placed: Placed) {
         if self.test_only(here, &s.attrs, s) {
             return;
         }
@@ -152,8 +126,7 @@ impl Collector<'_> {
             &s.vis,
             s.ident.to_string(),
             kind,
-            lead,
-            trail,
+            placed,
             loc,
             marks,
             range_of(s, &self.files[here.file]),
@@ -167,21 +140,20 @@ impl Collector<'_> {
     fn push_value_item(
         &mut self,
         here: &Here,
-        attrs: &[syn::Attribute],
+        attrs: &[Attribute],
         vis: &Visibility,
         name: String,
         kind: ItemKind,
-        lead: Vec<Comment>,
-        trail: &[Comment],
+        placed: Placed,
         loc: Loc,
         marks: Vec<String>,
         range: Range<usize>,
     ) {
-        let notes = self.node_notes(here, attrs, lead, range);
+        let notes = self.node_notes(here, attrs, placed.leading, range);
         let (raw_doc, lints) = self.attr_facts(here, attrs);
         let meta = Meta {
             notes,
-            trailing: self.trailing(here, trail),
+            trailing: self.trailing(here, &placed.trailing),
             cfgs: attrs::cfgs(attrs, &self.files[here.file]),
             attrs: attrs::api(attrs, &self.files[here.file]),
             marks,
@@ -220,9 +192,7 @@ impl Collector<'_> {
     ) -> (Option<String>, Vec<String>) {
         let files = self.files;
         let file = &files[here.file];
-        let range = range_of(expr, file);
         let calls = macros::expr_macros(expr);
-        let has_comment = !scan(&file.text, range.clone()).is_empty();
         self.body(here, kind, owner, Code::Expr(expr), None);
         if !calls.is_empty() {
             for call in &calls {
@@ -235,23 +205,14 @@ impl Collector<'_> {
             }
             return (None, calls);
         }
-        if has_comment {
-            return (None, Vec::new());
-        }
-        (Some(file.clean(range)), Vec::new())
+        (written_value(file, expr), Vec::new())
     }
 
     #[expect(
         clippy::too_many_lines,
         reason = "one match covers every foreign item kind and the unsupported fallback"
     )]
-    pub(crate) fn item_foreign(
-        &mut self,
-        here: &Here,
-        block: &ItemForeignMod,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_foreign(&mut self, here: &Here, block: &ItemForeignMod, placed: Placed) {
         if self.test_only(here, &block.attrs, block) {
             return;
         }
@@ -264,18 +225,15 @@ impl Collector<'_> {
         let scope =
             file.end(block.brace_token.span.open())..file.start(block.brace_token.span.close());
         let children: Vec<Range<usize>> = block.items.iter().map(|i| range_of(i, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(&mut self.pools[here.file], file, scope.clone(), &children);
+        let (inner, dangling) =
+            place_comments(&mut self.pools[here.file], file, scope.clone(), &children);
         let head = range_of(block, file).start..scope.start;
-        let mut block_notes = self.node_notes(here, &block.attrs, lead, head);
-        if let Some(text) = self.trailing(here, trail) {
+        let mut block_notes = self.node_notes(here, &block.attrs, placed.leading, head);
+        if let Some(text) = self.trailing(here, &placed.trailing) {
             block_notes.push(crate::model::Note::Plain(vec![text]));
         }
         let cfgs = attrs::cfgs(&block.attrs, file);
-        for ((item, lead_i), trail_i) in block.items.iter().zip(leading).zip(trailing) {
+        for (item, item_placed) in block.items.iter().zip(inner) {
             let range = range_of(item, file);
             let (attrs, vis, name, foreign, loc) = match item {
                 ForeignItem::Fn(f) => {
@@ -345,14 +303,14 @@ impl Collector<'_> {
                 continue;
             }
             let mut notes = std::mem::take(&mut block_notes);
-            notes.extend(self.node_notes(here, attrs, lead_i, range));
+            notes.extend(self.node_notes(here, attrs, item_placed.leading, range));
             let mut item_cfgs = attrs::cfgs(attrs, file);
             item_cfgs.extend(cfgs.iter().cloned());
             attrs::sort_marks(&mut item_cfgs);
             let (raw_doc, lints) = self.attr_facts(here, attrs);
             let meta = Meta {
                 notes,
-                trailing: self.trailing(here, &trail_i),
+                trailing: self.trailing(here, &item_placed.trailing),
                 cfgs: item_cfgs,
                 attrs: attrs::api(attrs, file),
                 marks: Vec::new(),
@@ -374,4 +332,12 @@ impl Collector<'_> {
         let dangling = self.notes(here, &[], dangling);
         self.modules[here.module].dangling.extend(dangling);
     }
+}
+
+/// Returns a constant's value as written, or `None` when it invokes a macro
+/// or holds a comment, the way `value` decides, without recording a mark.
+pub(crate) fn written_value(file: &SourceFile, expr: &Expr) -> Option<String> {
+    let range = range_of(expr, file);
+    let plain = macros::expr_macros(expr).is_empty() && scan(&file.text, range.clone()).is_empty();
+    plain.then(|| file.clean(range))
 }

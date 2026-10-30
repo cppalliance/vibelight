@@ -91,7 +91,7 @@ fn same_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>)
     let mut groups: BTreeMap<(usize, &str, Vec<String>), Vec<ItemId>> = BTreeMap::new();
     for (t, krate) in run.krates.iter().enumerate() {
         for (d, decl) in krate.decls.iter().enumerate() {
-            let at = decl_item(t, d);
+            let at = ItemId::decl(t, d);
             if let Some((kind, entries)) = shape(catalog, at, decl, Ty::key) {
                 groups.entry((t, kind, entries)).or_default().push(at);
             }
@@ -112,13 +112,6 @@ fn same_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>)
             lead = lead.item(run, at);
         }
         out.push(lead);
-    }
-}
-
-fn decl_item(t: usize, d: DeclId) -> ItemId {
-    ItemId {
-        target: t,
-        item: ItemRef::Decl(d),
     }
 }
 
@@ -158,17 +151,14 @@ struct Held {
 /// holds it. Two structs with the same fields are `same-shape`'s.
 fn contained_shape(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     let mut shapes: Vec<Held> = Vec::new();
-    let mut start = 0;
-    while let Some(first) = catalog.fields.get(start) {
-        let key = (first.decl, first.variant);
-        let group: Vec<&Field<'_>> = (catalog.fields[start..].iter())
-            .take_while(|f| (f.decl, f.variant) == key)
-            .collect();
-        start += group.len();
+    for group in catalog
+        .fields
+        .chunk_by(|a, b| (a.decl, a.variant) == (b.decl, b.variant))
+    {
         if group.iter().all(|f| f.named) {
             shapes.push(Held {
-                decl: key.0,
-                variant: key.1,
+                decl: group[0].decl,
+                variant: group[0].variant,
                 fields: group.iter().map(|f| (f.name.clone(), f.ty.key())).collect(),
             });
         }
@@ -265,7 +255,7 @@ fn twins(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, t: usize) -> Vec<Twin> {
         if decl.kind != DeclKind::Struct || funcs.len() < TWIN_METHODS {
             continue;
         }
-        let at = decl_item(t, d);
+        let at = ItemId::decl(t, d);
         let name = strip_raw(&decl.name);
         let fields: Vec<Ty> = catalog
             .fields_of(at, None)
@@ -391,7 +381,7 @@ fn mirror_enum(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             let mut names: Vec<String> = variants.iter().map(|v| strip_raw(&v.name)).collect();
             names.sort();
             if names.len() >= MIRROR_FROM {
-                groups.entry(names).or_default().push(decl_item(t, d));
+                groups.entry(names).or_default().push(ItemId::decl(t, d));
             }
         }
     }
@@ -429,7 +419,7 @@ fn cross_crate_duplicate(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut
     let mut groups: BTreeMap<(String, &str, String), Vec<ItemId>> = BTreeMap::new();
     for (t, krate) in run.krates.iter().enumerate() {
         for (d, decl) in krate.decls.iter().enumerate() {
-            let at = decl_item(t, d);
+            let at = ItemId::decl(t, d);
             if let Some((kind, entries)) = shape(catalog, at, decl, Ty::shown) {
                 let key = (strip_raw(&decl.name), kind, entries.join("; "));
                 groups.entry(key).or_default().push(at);
@@ -468,7 +458,7 @@ fn same_signature(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
     for func in funcs.filter(|f| !escapes(run, f.item)) {
         let mut sig = func.signature(run);
         if let Some(d) = func.decl {
-            let own = Tok::Name(item_name(run, decl_item(func.item.target, d)));
+            let own = Tok::Name(item_name(run, ItemId::decl(func.item.target, d)));
             for tok in &mut sig.0 {
                 if matches!(tok, Tok::Name(name) if name == "Self") {
                     *tok = own.clone();

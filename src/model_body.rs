@@ -3,10 +3,11 @@
 //! The markdown prints them as counts, names, and comments, never as code,
 //! and the HTML prints none of them.
 
-use crate::model::{DeclId, FileId, Loc, ModId, RefId, ValueRef};
+use crate::model::{DeclId, Loc, ModId, RefId, ValueRef};
 
 /// A type name a function body writes. It keeps the type out of the HTML's
-/// Unconnected types (rule 26) and names nothing else.
+/// Unconnected types, the declarations that nothing names, and names nothing
+/// else.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct BodyName {
     pub(crate) name: RefId,
@@ -74,7 +75,6 @@ pub(crate) enum Owner {
 /// them.
 #[derive(Clone, Debug)]
 pub(crate) struct Body {
-    pub(crate) file: FileId,
     /// The byte offset where the body starts in the file's LF-normalized
     /// text: a block's `{`, or an initializer's first token.
     pub(crate) start: usize,
@@ -109,8 +109,8 @@ pub(crate) struct BodyFacts {
     /// block counts as one.
     pub(crate) statements: usize,
     /// The first and last line of each statement at every depth, in source
-    /// order, which `BodyCommentFact::statement` indexes.
-    pub(crate) stmts: Vec<(u32, u32)>,
+    /// order, which `BodyCommentFact::stmt` indexes.
+    pub(crate) stmt_lines: Vec<(u32, u32)>,
     /// What the body does when it is one statement that calls or reads.
     pub(crate) single: Option<Single>,
     /// The `for`, `while`, and `loop` expressions.
@@ -180,8 +180,8 @@ pub(crate) struct PathFact {
     pub(crate) prefix_ref: Option<RefId>,
 }
 
-/// How often a body writes each error, absence, and panic marker outside
-/// macro arguments.
+/// How often a body writes each error, absence, panic, and `.await` marker
+/// outside macro arguments.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Counts {
     /// `?` operators.
@@ -275,8 +275,8 @@ pub(crate) struct BodyCommentFact {
     /// The line the comment starts on.
     pub(crate) line: u32,
     pub(crate) placement: Placement,
-    /// The index in `BodyFacts::stmts` of the statement it goes with.
-    pub(crate) statement: Option<usize>,
+    /// The index in `BodyFacts::stmt_lines` of the statement it goes with.
+    pub(crate) stmt: Option<usize>,
     /// The lowercase identifiers and operators of that statement, and of
     /// the next two for a leading comment, sorted, each once.
     pub(crate) fingerprint: Vec<String>,

@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 
 use crate::layout::{Block, Span};
 use crate::model::{
-    BodyOwner, Crate, DeclId, Foreign, ItemKind, MemberKind, ModId, Seg, Shape, Sig, Text,
+    BodyOwner, Crate, DeclId, Foreign, ItemKind, MemberKind, ModId, Seg, Shape, Text,
     VariantFields, path_order,
 };
 use crate::order_graph::{Graph, first_by_path, place, reach, strongly_connected};
@@ -33,8 +33,8 @@ pub(crate) struct Namers {
     pub(crate) modules: Vec<ModId>,
 }
 
-/// Compares declarations in path order (rule 30); declarations that share
-/// a path compare by their rendered text.
+/// Compares declarations by full path, segment by segment; declarations
+/// that share a path compare by their rendered text.
 pub(crate) fn path_cmp(krate: &Crate, texts: &[String], a: DeclId, b: DeclId) -> Ordering {
     path_order(&krate.decl_path(a), &krate.decl_path(b))
         .then_with(|| texts[a].cmp(&texts[b]))
@@ -150,7 +150,7 @@ fn declared_mentions(krate: &Crate, d: DeclId) -> Vec<DeclId> {
         .flat_map(Text::refs)
         .filter_map(|r| {
             let reference = &krate.refs[r];
-            reference.target.filter(|&t| t != d && !reference.comment)
+            reference.decl().filter(|&t| t != d && !reference.comment)
         })
         .collect()
 }
@@ -214,7 +214,7 @@ fn split(krate: &Crate, mentions: &[Vec<DeclId>], by_modules: &[Vec<ModId>]) -> 
         named[d] |= !modules.is_empty();
     }
     for body in &krate.body_names {
-        let Some(t) = krate.refs[body.name].target else {
+        let Some(t) = krate.refs[body.name].decl() else {
             continue;
         };
         let owned = match body.owner {
@@ -225,7 +225,7 @@ fn split(krate: &Crate, mentions: &[Vec<DeclId>], by_modules: &[Vec<ModId>]) -> 
                     .self_text
                     .refs()
                     .chain(header.trait_.iter().flat_map(|base| base.text.refs()))
-                    .any(|r| krate.refs[r].target == Some(t))
+                    .any(|r| krate.refs[r].decl() == Some(t))
             }
             BodyOwner::Trait(d) => d == t,
         };
@@ -250,8 +250,9 @@ fn split(krate: &Crate, mentions: &[Vec<DeclId>], by_modules: &[Vec<ModId>]) -> 
     }
 }
 
-/// Lists the declarations each block names (rule 24), in the order it
-/// names them.
+/// Lists the declarations each block names through a resolved type
+/// reference outside its comments, in the order it names them. A block's own
+/// declaration does not count.
 fn block_mentions(krate: &Crate, blocks: &[Block]) -> Vec<Vec<DeclId>> {
     blocks
         .iter()
@@ -263,7 +264,7 @@ fn block_mentions(krate: &Crate, blocks: &[Block]) -> Vec<Vec<DeclId>> {
                 .flat_map(|line| &line.spans)
                 .filter_map(|span| match span {
                     Span::Ref(id) => krate.refs[*id]
-                        .target
+                        .decl()
                         .filter(|&t| t != own && !krate.refs[*id].comment),
                     _ => None,
                 })
@@ -277,14 +278,14 @@ fn block_mentions(krate: &Crate, blocks: &[Block]) -> Vec<Vec<DeclId>> {
 /// type is in use, so it is never Unconnected, but a module is not a
 /// declaration, so it never owns the type or delays its place. Only the
 /// items' own text counts, not their comments.
-pub(crate) fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
+fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
     let mut out: Vec<Vec<ModId>> = vec![Vec::new(); krate.decls.len()];
     for (m, module) in krate.modules.iter().enumerate() {
         for item in &module.items {
             for text in item_texts(&item.kind) {
                 for seg in &text.0 {
                     if let Seg::Ref(id) = seg {
-                        if let Some(t) = krate.refs[*id].target {
+                        if let Some(t) = krate.refs[*id].decl() {
                             if !out[t].contains(&m) {
                                 out[t].push(m);
                             }
@@ -305,7 +306,7 @@ pub(crate) fn item_texts(kind: &ItemKind) -> Vec<&Text> {
         | ItemKind::Foreign {
             item: Foreign::Fn(sig),
             ..
-        } => sig_texts(sig),
+        } => sig.texts(),
         ItemKind::Const { ty, .. }
         | ItemKind::Static { ty, .. }
         | ItemKind::Foreign {
@@ -315,12 +316,4 @@ pub(crate) fn item_texts(kind: &ItemKind) -> Vec<&Text> {
         ItemKind::Reexport { text, .. } => vec![text],
         ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => Vec::new(),
     }
-}
-
-fn sig_texts(sig: &Sig) -> Vec<&Text> {
-    let mut texts = vec![&sig.generics];
-    texts.extend(sig.params.iter().map(|p| &p.text));
-    texts.extend(sig.ret.iter());
-    texts.extend(sig.where_clause.iter().flat_map(|clause| clause.0.iter()));
-    texts
 }

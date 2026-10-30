@@ -14,7 +14,7 @@ pub(crate) use crate::leads_docs_scan::read;
 pub(crate) use crate::leads_docs_scan::read_except;
 
 /// The most characters a quote of prose keeps.
-pub(crate) const QUOTE_CHARS: usize = 160;
+const QUOTE_CHARS: usize = 160;
 
 /// What one token of prose is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -73,9 +73,9 @@ pub(crate) struct Prose<'a> {
     pub(crate) ignored: Vec<Range<usize>>,
 }
 
-/// One word of a phrase: the lowercase words that may stand there. A
-/// phrase whose first word is [`START`] matches only where a sentence
-/// starts.
+/// A phrase: its words in order, each a set of the lowercase words that
+/// may stand there. A phrase whose first word is [`START`] matches only
+/// where a sentence starts.
 pub(crate) type Phrase = &'static [&'static [&'static str]];
 
 /// The mark of a phrase that matches only where a sentence starts.

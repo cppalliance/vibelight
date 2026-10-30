@@ -80,9 +80,7 @@ impl Collector<'_> {
             generics: Vec::new(),
             comment: true,
             may_be_value: false,
-            target: None,
-            value: None,
-            canonical: None,
+            res: None,
             written: None,
             foreign: None,
         });

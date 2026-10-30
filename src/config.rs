@@ -1,6 +1,7 @@
-//! Reads `vibelight.toml`: which crates a run covers and where it writes.
-//! It is found in the current directory or the first parent that holds
-//! one, and its relative paths are measured from its own directory.
+//! Reads `vibelight.toml`: which crates a run covers, where it writes, and
+//! which doc passages and leads the detectors skip. It is found in the
+//! current directory or the first parent that holds one, and its relative
+//! paths are measured from its own directory.
 
 use std::fmt::Display;
 use std::fs;
@@ -21,7 +22,7 @@ pub(crate) const OUT: &str = ".vibelight";
 /// The crates a config chooses.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Crates {
-    /// Neither `workspace` nor `crates` is set.
+    /// Neither `crates` nor a true or directory `workspace` is set.
     Unset,
     /// The members of the workspace that holds this directory.
     Workspace(PathBuf),

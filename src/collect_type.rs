@@ -4,20 +4,20 @@ use std::ops::Range;
 
 use syn::visit::Visit;
 use syn::{
-    Attribute, Fields, ItemEnum, ItemStruct, ItemTrait, ItemTraitAlias, ItemType, ItemUnion,
+    Attribute, Fields, Generics, ItemEnum, ItemStruct, ItemTrait, ItemTraitAlias, ItemType,
+    ItemUnion, Visibility,
 };
 
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_body_code::Code;
-use crate::comments::{Attached, attach};
+use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{
     Decl, DeclKind, Holder, Loc, MacroKind, MacroUse, Member, Meta, Note, RefId, Shape, Text,
     Variant, VariantFields, Vis, Where,
 };
 use crate::model_body::{BodyKind, Owner};
-use crate::source::Comment;
 use crate::typerefs::range_of;
 
 /// The parts every declaration shares.
@@ -35,13 +35,7 @@ struct Head {
 }
 
 impl Collector<'_> {
-    pub(crate) fn item_struct(
-        &mut self,
-        here: &Here,
-        s: &ItemStruct,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_struct(&mut self, here: &Here, s: &ItemStruct, placed: Placed) {
         if self.test_only(here, &s.attrs, s) {
             return;
         }
@@ -67,21 +61,14 @@ impl Collector<'_> {
             &s.vis,
             &s.attrs,
             &s.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
         self.push_decl(&here, head, shape, members, dangling);
     }
 
-    pub(crate) fn item_union(
-        &mut self,
-        here: &Here,
-        u: &ItemUnion,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_union(&mut self, here: &Here, u: &ItemUnion, placed: Placed) {
         if self.test_only(here, &u.attrs, u) {
             return;
         }
@@ -98,21 +85,14 @@ impl Collector<'_> {
             &u.vis,
             &u.attrs,
             &u.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
         self.push_decl(&here, head, Shape::Named, members, dangling);
     }
 
-    pub(crate) fn item_enum(
-        &mut self,
-        here: &Here,
-        e: &ItemEnum,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_enum(&mut self, here: &Here, e: &ItemEnum, placed: Placed) {
         if self.test_only(here, &e.attrs, e) {
             return;
         }
@@ -123,13 +103,10 @@ impl Collector<'_> {
         let file = &files[here.file];
         let scope = file.end(e.brace_token.span.open())..file.start(e.brace_token.span.close());
         let children: Vec<Range<usize>> = e.variants.iter().map(|v| range_of(v, file)).collect();
-        let Attached {
-            leading,
-            trailing,
-            dangling,
-        } = attach(&mut self.pools[here.file], file, scope, &children);
+        let (per_variant, dangling) =
+            place_comments(&mut self.pools[here.file], file, scope, &children);
         let mut variants = Vec::new();
-        for ((variant, lead_v), trail_v) in e.variants.iter().zip(leading).zip(trailing) {
+        for (variant, variant_placed) in e.variants.iter().zip(per_variant) {
             if self.test_only(&here, &variant.attrs, variant) {
                 continue;
             }
@@ -144,7 +121,12 @@ impl Collector<'_> {
                 file.clean(range_of(expr, file))
             });
             let loc = loc(&here, variant.ident.span());
-            let notes = self.node_notes(&here, &variant.attrs, lead_v, range_of(variant, file));
+            let notes = self.node_notes(
+                &here,
+                &variant.attrs,
+                variant_placed.leading,
+                range_of(variant, file),
+            );
             let mark = self.attribute_mark(&variant.attrs, helpers, Holder::Decl(id), loc);
             let (raw_doc, lints) = self.attr_facts(&here, &variant.attrs);
             variants.push(Variant {
@@ -153,7 +135,7 @@ impl Collector<'_> {
                 discriminant,
                 meta: Meta {
                     notes,
-                    trailing: self.trailing(&here, &trail_v),
+                    trailing: self.trailing(&here, &variant_placed.trailing),
                     cfgs: attrs::cfgs(&variant.attrs, file),
                     attrs: attrs::api(&variant.attrs, file),
                     marks: mark.into_iter().collect(),
@@ -174,21 +156,14 @@ impl Collector<'_> {
             &e.vis,
             &e.attrs,
             &e.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
         self.push_decl(&here, head, Shape::Enum(variants), Vec::new(), dangling);
     }
 
-    pub(crate) fn item_trait(
-        &mut self,
-        here: &Here,
-        t: &ItemTrait,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_trait(&mut self, here: &Here, t: &ItemTrait, placed: Placed) {
         if self.test_only(here, &t.attrs, t) {
             return;
         }
@@ -225,8 +200,7 @@ impl Collector<'_> {
             &t.vis,
             &t.attrs,
             &t.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
@@ -243,13 +217,7 @@ impl Collector<'_> {
         );
     }
 
-    pub(crate) fn item_trait_alias(
-        &mut self,
-        here: &Here,
-        t: &ItemTraitAlias,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_trait_alias(&mut self, here: &Here, t: &ItemTraitAlias, placed: Placed) {
         if self.test_only(here, &t.attrs, t) {
             return;
         }
@@ -277,21 +245,14 @@ impl Collector<'_> {
             &t.vis,
             &t.attrs,
             &t.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
         self.push_decl(&here, head, Shape::Alias(bounds), Vec::new(), Vec::new());
     }
 
-    pub(crate) fn item_type(
-        &mut self,
-        here: &Here,
-        t: &ItemType,
-        lead: Vec<Comment>,
-        trail: &[Comment],
-    ) {
+    pub(crate) fn item_type(&mut self, here: &Here, t: &ItemType, placed: Placed) {
         if self.test_only(here, &t.attrs, t) {
             return;
         }
@@ -306,8 +267,7 @@ impl Collector<'_> {
             &t.vis,
             &t.attrs,
             &t.generics,
-            lead,
-            trail,
+            placed,
             range,
             loc,
         );
@@ -323,17 +283,16 @@ impl Collector<'_> {
         here: &Here,
         kind: DeclKind,
         ident: &syn::Ident,
-        vis: &syn::Visibility,
+        vis: &Visibility,
         attrs: &[Attribute],
-        generics: &syn::Generics,
-        lead: Vec<Comment>,
-        trail: &[Comment],
+        generics: &Generics,
+        placed: Placed,
         range: Range<usize>,
         loc: Loc,
     ) -> Head {
         let generics_text = self.generics_text(here, generics);
         let where_clause = self.where_text(here, generics.where_clause.as_ref());
-        let notes = self.node_notes(here, attrs, lead, range);
+        let notes = self.node_notes(here, attrs, placed.leading, range);
         let derives = macros::derives(attrs);
         let derive_refs = derives
             .iter()
@@ -345,19 +304,12 @@ impl Collector<'_> {
         if !derives.is_empty() {
             self.macros.push(MacroUse {
                 kind: MacroKind::Derive,
-                text: format!("derive: {}", derives.join(", ")),
+                text: macros::mark_text(macros::DERIVE, &derives),
                 holder: Holder::Decl(id),
                 loc,
             });
         }
-        if !attributes.is_empty() {
-            self.macros.push(MacroUse {
-                kind: MacroKind::Attribute,
-                text: format!("attribute: {}", attributes.join(", ")),
-                holder: Holder::Decl(id),
-                loc,
-            });
-        }
+        self.attribute_names_mark(&attributes, Holder::Decl(id), loc);
         Head {
             kind,
             name: ident.to_string(),
@@ -367,7 +319,7 @@ impl Collector<'_> {
             where_clause,
             meta: Meta {
                 notes,
-                trailing: self.trailing(here, trail),
+                trailing: self.trailing(here, &placed.trailing),
                 cfgs: attrs::cfgs(attrs, &self.files[here.file]),
                 attrs: attrs::api(attrs, &self.files[here.file]),
                 marks: Vec::new(),

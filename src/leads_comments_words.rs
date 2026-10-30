@@ -6,6 +6,7 @@
 
 use std::collections::BTreeSet;
 
+use crate::census_lex::is_keyword;
 use crate::leads_words::words;
 
 /// The stopwords of version 1, sorted: English words that name nothing a
@@ -59,14 +60,6 @@ const REASONS_V1: [&str; 33] = [
     "without",
     "would",
     "yet",
-];
-
-/// The keywords, which name no identifier.
-pub(crate) const KEYWORDS: [&str; 38] = [
-    "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern",
-    "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub",
-    "ref", "return", "self", "Self", "static", "struct", "super", "trait", "true", "type",
-    "unsafe", "use", "where", "while",
 ];
 
 /// The fewest letters a stem keeps; a plain plural keeps one fewer.
@@ -164,11 +157,12 @@ pub(crate) fn content(prose: &str) -> Option<Vec<String>> {
     Some(out)
 }
 
-/// Returns the stem a lowercase word compares by: an `ing`, `ed`, `es`,
-/// or plural `s` ending removed, `ies` turned into `y`, then a final `e`
-/// removed, each only while [`STEM_MIN`] letters stay, so `parse`,
-/// `parses`, `parsed`, and `parsing` share one stem.
-pub(crate) fn stem(word: &str) -> String {
+/// Returns the stem a lowercase word compares by: an `ing`, `ed`, or `es`
+/// ending removed, `ies` turned into `y`, a plain plural `s` removed, then a
+/// final `e` removed. Each removal needs [`STEM_MIN`] letters to stay, except
+/// the plural `s`, which needs one fewer and is left on a word that ends in
+/// `ss`, so `parse`, `parses`, `parsed`, and `parsing` share one stem.
+fn stem(word: &str) -> String {
     let long = |base: &&str| base.chars().count() >= STEM_MIN;
     if let Some(base) = word.strip_suffix("ies").filter(long) {
         return format!("{base}y");
@@ -219,7 +213,7 @@ pub(crate) fn named(text: &str) -> Vec<String> {
                 && name.chars().any(char::is_alphabetic);
             let lower = name.to_lowercase();
             let seen = out.iter().any(|known| known.to_lowercase() == lower);
-            if explicit && word && !seen && !KEYWORDS.contains(&name) {
+            if explicit && word && !seen && !is_keyword(name) {
                 out.push(name.to_owned());
             }
         }
@@ -360,6 +354,7 @@ mod tests {
             owned(&["items", "len"])
         );
         assert_eq!(named("__bold__ and load::Loader:x"), owned(&["Loader"]));
+        assert_eq!(named("Retry `try` and `box` first."), owned(&[]));
         assert!(looks_like_code("let x = run(y);"));
         assert!(looks_like_code("Some(v) => v"));
         assert!(!looks_like_code("Read `x;` first"));

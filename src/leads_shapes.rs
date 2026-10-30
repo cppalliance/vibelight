@@ -100,19 +100,13 @@ fn option_as_flag(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Le
         .iter()
         .filter(|f| is_flag(&f.ty) && !is_wire(run, f.decl))
     {
-        let evidence = format!("`{}: {}`", field.name, field.ty.shown());
+        let evidence = field.ty.typed(&field.name);
         out.push(field.add(run, Lead::new(ID, Mode::DirectSyntax, evidence)));
     }
     for func in catalog.funcs.iter().filter(|f| f.is_own()) {
         let mut seen: Vec<String> = (func.args.iter())
             .filter(|arg| is_flag(&arg.ty))
-            .map(|arg| {
-                format!(
-                    "`{}: {}`",
-                    arg.name.as_deref().unwrap_or("_"),
-                    arg.ty.shown()
-                )
-            })
+            .map(|arg| arg.ty.typed(arg.name.as_deref().unwrap_or("_")))
             .collect();
         if let Some(ret) = func.ret.as_ref().filter(|ret| is_flag(ret)) {
             seen.push(format!("returns `{}`", ret.shown()));
@@ -150,16 +144,11 @@ fn holds_text(field: &Field<'_>) -> bool {
 /// or a collection field beside a count, length, or `is_` field of the
 /// same stem.
 fn derived_field(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
-    let mut start = 0;
-    while let Some(first) = catalog.fields.get(start) {
-        let owner = (first.decl, first.variant);
-        let len = (catalog.fields[start..].iter())
-            .take_while(|f| (f.decl, f.variant) == owner)
-            .count();
-        let fields: Vec<&Field<'_>> = (catalog.fields[start..start + len].iter())
-            .filter(|f| f.named)
-            .collect();
-        start += len;
+    for owned in catalog
+        .fields
+        .chunk_by(|a, b| (a.decl, a.variant) == (b.decl, b.variant))
+    {
+        let fields: Vec<&Field<'_>> = owned.iter().filter(|f| f.named).collect();
         let has =
             |f: &Field<'_>, set: &[&str]| words(&f.name).iter().any(|w| set.contains(&w.as_str()));
         let mut found: Vec<(Vec<&Field<'_>>, String)> = Vec::new();
@@ -217,19 +206,14 @@ fn drop_option(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             let Some(drop) = impls_of_trait(run, t, d, "std::ops::Drop").next() else {
                 continue;
             };
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let options: Vec<&Field<'_>> = (catalog.fields_of(at, None))
                 .filter(|f| f.ty.option().is_some())
                 .collect();
             if options.is_empty() {
                 continue;
             }
-            let shown: Vec<String> = (options.iter())
-                .map(|f| format!("`{}: {}`", f.name, f.ty.shown()))
-                .collect();
+            let shown: Vec<String> = (options.iter()).map(|f| f.ty.typed(&f.name)).collect();
             let evidence = format!("a Drop impl beside {}", shown.join(", "));
             let mut lead = Lead::new("drop-option", Mode::DirectSyntax, evidence);
             lead = lead.at(t, krate.impls[drop].loc);
@@ -276,10 +260,7 @@ fn fallible_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec
             continue;
         }
         let t = func.item.target;
-        let at = ItemId {
-            target: t,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(t, d);
         let held = catalog
             .fields_of(at, None)
             .find(|f| f.named && f.name == *field);
@@ -319,10 +300,7 @@ fn field_and_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Ve
         if !named || !func.args.is_empty() || !func.has_receiver() || func.ret.is_none() {
             continue;
         }
-        let at = ItemId {
-            target: func.item.target,
-            item: ItemRef::Decl(d),
-        };
+        let at = ItemId::decl(func.item.target, d);
         let field = (catalog.fields_of(at, None))
             .find(|f| f.named && f.name == *read && f.vis != Vis::Private && f.vis <= func.vis);
         if let Some(field) = field {
@@ -355,10 +333,7 @@ fn enum_shapes(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>
             let Shape::Enum(variants) = &decl.shape else {
                 continue;
             };
-            let at = ItemId {
-                target: t,
-                item: ItemRef::Decl(d),
-            };
+            let at = ItemId::decl(t, d);
             let payload = |v: usize| -> Vec<(String, String)> {
                 (catalog.fields_of(at, Some(v)))
                     .map(|f| {

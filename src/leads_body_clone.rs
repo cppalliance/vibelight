@@ -27,7 +27,7 @@ const CLONE_MIN_SHINGLES: usize = 32;
 const COMMON_SHINGLE: usize = 64;
 
 /// One compared body.
-struct Doc<'a> {
+struct Compared<'a> {
     item: ItemId,
     shingles: &'a [u64],
     tokens: usize,
@@ -36,7 +36,7 @@ struct Doc<'a> {
 /// One clone group: its bodies, and the least and the most overlap, in
 /// percent, of the pairs that join them.
 struct Group {
-    docs: Vec<usize>,
+    compared: Vec<usize>,
     low: usize,
     high: usize,
 }
@@ -45,9 +45,9 @@ struct Group {
 /// shingles whose shingle sets overlap by [`CLONE_PERCENT`] or more of
 /// their union, joined into groups through the pairs that do.
 pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
-    let docs = docs(run);
-    let pairs = pairs(&docs);
-    for group in groups(docs.len(), &pairs) {
+    let compared = compared(run);
+    let pairs = pairs(&compared);
+    for group in groups(compared.len(), &pairs) {
         let overlap = if group.low == group.high {
             format!("{}%", group.low)
         } else {
@@ -55,11 +55,11 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
         };
         let evidence = format!(
             "{} function bodies, joined by token-shingle overlaps of {overlap}",
-            group.docs.len()
+            group.compared.len()
         );
         let mut lead = Lead::new("body-clone", Mode::DirectSyntax, evidence);
-        for d in group.docs {
-            lead = lead.item(run, docs[d].item);
+        for d in group.compared {
+            lead = lead.item(run, compared[d].item);
         }
         out.push(lead);
     }
@@ -68,7 +68,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
 /// Returns the compared bodies: each function body of an item with
 /// [`CLONE_MIN_SHINGLES`] or more distinct shingles, in target and body
 /// order.
-fn docs<'a>(run: &AnalysisRun<'a>) -> Vec<Doc<'a>> {
+fn compared<'a>(run: &AnalysisRun<'a>) -> Vec<Compared<'a>> {
     let mut out = Vec::new();
     for (t, krate) in run.krates.iter().enumerate() {
         for (b, body) in krate.bodies.iter().enumerate() {
@@ -82,7 +82,7 @@ fn docs<'a>(run: &AnalysisRun<'a>) -> Vec<Doc<'a>> {
             let print = &body.facts.fingerprint;
             let long = print.shingles.len() >= CLONE_MIN_SHINGLES;
             if let (true, Some(item)) = (function && long, run.body_items[t][b]) {
-                out.push(Doc {
+                out.push(Compared {
                     item: ItemId { target: t, item },
                     shingles: &print.shingles,
                     tokens: print.tokens,
@@ -133,8 +133,8 @@ fn keyed<T: Copy>(list: &[(u64, T)], key: u64) -> &[(u64, T)] {
 /// first. Each body's rarest shingles, its prefix, go in the index, and a
 /// body's candidates are the later bodies of close size whose prefixes
 /// share a shingle with its own.
-fn pairs(docs: &[Doc<'_>]) -> Vec<(usize, usize, usize)> {
-    let mut every: Vec<u64> = docs
+fn pairs(compared: &[Compared<'_>]) -> Vec<(usize, usize, usize)> {
+    let mut every: Vec<u64> = compared
         .iter()
         .flat_map(|d| d.shingles.iter().copied())
         .collect();
@@ -146,7 +146,7 @@ fn pairs(docs: &[Doc<'_>]) -> Vec<(usize, usize, usize)> {
             _ => bodies.push((s, 1)),
         }
     }
-    let prefixes: Vec<Vec<u64>> = (docs.iter())
+    let prefixes: Vec<Vec<u64>> = (compared.iter())
         .map(|doc| {
             let mut rare: Vec<(usize, u64)> = (doc.shingles.iter())
                 .map(|&s| (keyed(&bodies, s).first().map_or(0, |&(_, n)| n), s))
@@ -166,22 +166,22 @@ fn pairs(docs: &[Doc<'_>]) -> Vec<(usize, usize, usize)> {
     let mut out = Vec::new();
     let mut candidates = Vec::new();
     for (a, prefix) in prefixes.iter().enumerate() {
-        let doc = &docs[a];
+        let doc = &compared[a];
         candidates.clear();
         for &s in prefix {
             let later = (keyed(&index, s).iter())
                 .map(|&(_, d)| d)
                 .filter(|&d| d > a);
             candidates.extend(later.filter(|&b| {
-                close(doc.shingles.len(), docs[b].shingles.len())
-                    && close(doc.tokens, docs[b].tokens)
+                close(doc.shingles.len(), compared[b].shingles.len())
+                    && close(doc.tokens, compared[b].tokens)
             }));
         }
         candidates.sort_unstable();
         candidates.dedup();
         for &b in &candidates {
-            let both = shared(doc.shingles, docs[b].shingles);
-            let union = doc.shingles.len() + docs[b].shingles.len() - both;
+            let both = shared(doc.shingles, compared[b].shingles);
+            let union = doc.shingles.len() + compared[b].shingles.len() - both;
             if 100 * both >= CLONE_PERCENT * union {
                 out.push((a, b, 100 * both / union));
             }
@@ -210,7 +210,7 @@ fn groups(n: usize, pairs: &[(usize, usize, usize)]) -> Vec<Group> {
     let mut groups: BTreeMap<usize, Group> = BTreeMap::new();
     for &(a, _, percent) in pairs {
         let group = groups.entry(root(&mut parent, a)).or_insert(Group {
-            docs: Vec::new(),
+            compared: Vec::new(),
             low: percent,
             high: percent,
         });
@@ -220,7 +220,7 @@ fn groups(n: usize, pairs: &[(usize, usize, usize)]) -> Vec<Group> {
     for d in 0..n {
         let top = root(&mut parent, d);
         if let Some(group) = groups.get_mut(&top) {
-            group.docs.push(d);
+            group.compared.push(d);
         }
     }
     groups.into_values().collect()

@@ -10,8 +10,8 @@ use crate::layout_marker::Marker;
 use crate::model::{Loc, TypeRef, ValueRef};
 use crate::render_style::STYLE;
 
-/// The id of the checkbox that hides the member comments, which the sidebar
-/// label and the style sheet both name.
+/// The id of the checkbox that hides the member comments, which the
+/// checkbox's `id` and the sidebar label's `for` both name.
 const TOGGLE_ID: &str = "vibelight-comments";
 
 /// The least indentation a comment line needs to be a member's comment and so
@@ -181,7 +181,7 @@ impl Page<'_> {
         crate::render_prose::block(
             out,
             &block.lines[..doc],
-            &crate::render_prose::Inline {
+            &crate::render_prose::InlineRenderer {
                 spans: &spans,
                 text_of: &text_of,
                 hideable: false,
@@ -199,7 +199,7 @@ impl Page<'_> {
             crate::render_prose::block(
                 out,
                 &block.lines[..doc],
-                &crate::render_prose::Inline {
+                &crate::render_prose::InlineRenderer {
                     spans: &spans,
                     text_of: &text_of,
                     hideable: true,
@@ -384,10 +384,10 @@ impl Page<'_> {
                 }
                 Inline::Kill {
                     text,
-                    heading,
+                    heading_id,
                     mark,
                 } => {
-                    let target = mark.as_ref().unwrap_or(heading);
+                    let target = mark.as_ref().unwrap_or(heading_id);
                     let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(target), escape(text));
                 }
                 Inline::Source(links) => {
@@ -470,5 +470,10 @@ mod tests {
     fn escapes_markup() {
         assert_eq!(escape("Vec<&'a T>"), "Vec&lt;&amp;'a T&gt;");
         assert_eq!(attr("a\"b"), "a&quot;b");
+    }
+
+    #[test]
+    fn style_padding_matches_box_padding() {
+        assert!(STYLE.contains(&format!("padding:.2rem {BOX_PADDING} 0")));
     }
 }

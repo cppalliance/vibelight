@@ -16,8 +16,11 @@ use crate::model_body::{Body, BodyKind};
 /// compares, format placeholders such as `{name:?}` left out.
 const LITERAL_CHARS: usize = 8;
 
-/// The fewest bodies that one string literal is in, or the fewest targets.
+/// The fewest bodies that one string literal is in.
 const LITERAL_BODIES: usize = 3;
+
+/// The fewest targets whose bodies hold one string literal, however few
+/// bodies that is.
 const LITERAL_TARGETS: usize = 2;
 
 /// The most characters of a literal that evidence shows.
@@ -37,9 +40,10 @@ const NUMBER_FROM: f64 = 10.0;
 /// size or a percent base; a sign is not kept.
 const ROUND_NUMBERS: [&str; 9] = ["16", "32", "64", "100", "128", "256", "512", "1000", "1024"];
 
-/// The fewest doc words, outside code blocks, of a `doc-outweighs-body`
-/// lead, and how many times the body's canonical tokens they exceed.
+/// The fewest doc words, outside code blocks, of a `doc-outweighs-body` lead.
 const DOC_WORDS: usize = 100;
+
+/// How many times the body's canonical tokens the doc's words must exceed.
 const DOC_TIMES: usize = 3;
 
 /// The items whose bodies share some literals, each once.

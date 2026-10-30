@@ -76,7 +76,7 @@ fn globbed(run: &AnalysisRun<'_>) -> BTreeSet<(usize, ModId)> {
                 let Some((first, rest)) = path.split_first() else {
                     continue;
                 };
-                if let Some(&t) = run.deps[u].get(first) {
+                if let Some(&t) = run.analysis_deps[u].get(first) {
                     if let Some(m) = module_at(&run.krates[t], 0, rest, false) {
                         out.insert((t, m));
                     }
@@ -123,7 +123,7 @@ fn no_observed_reexport_use(run: &AnalysisRun<'_>, scope: &Scope, out: &mut Vec<
             continue;
         }
         let mut roots: Vec<&str> = vec![info.crate_name.as_str()];
-        for deps in &run.deps {
+        for deps in &run.analysis_deps {
             roots.extend(
                 deps.iter()
                     .filter(|&(_, &d)| d == t)

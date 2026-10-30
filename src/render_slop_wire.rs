@@ -1,15 +1,15 @@
 //! The keys each wire type of a target reads or writes, so a drift check
-//! can search the docs for every key. A type is a wire type when it derives
-//! `Serialize` or `Deserialize` or carries a `serde` attribute. A field's or
-//! a variant's key is its `rename`, or its name under the container's
-//! `rename_all`, and each `alias` is a key too; a skipped or flattened field
-//! has no key of its own, and a container's `tag` and `content` are keys.
+//! can search the docs for every key. A type is a wire type as
+//! `Decl::is_wire` says. A field's or a variant's key is its `rename`, or its
+//! name under the container's `rename_all`, and each `alias` is a key too; a
+//! skipped or flattened field has no key of its own, and a container's `tag`
+//! and `content` are keys.
 
 use syn::punctuated::Punctuated;
 use syn::{Meta, Token};
 
 use crate::attrs::string_value;
-use crate::model::{Decl, MemberKind, Shape, path_order};
+use crate::model::{MemberKind, Shape, path_order};
 use crate::render_slop::Outline;
 use crate::render_slop_schema::{Record, WireKeysRecord};
 use crate::typerefs::strip_raw;
@@ -141,19 +141,12 @@ fn renamed(name: &str, rule: &str, variant: bool) -> String {
     }
 }
 
-/// Tells whether a declaration is a wire type.
-fn is_wire(decl: &Decl) -> bool {
-    let derived = (decl.written_derives.iter())
-        .any(|name| matches!(name.rsplit("::").next(), Some("Deserialize" | "Serialize")));
-    derived || decl.meta.attrs.iter().any(|attr| attr.starts_with("serde"))
-}
-
 /// Returns a record for each wire type of the target that has keys, in
 /// path order, its keys sorted.
 pub(crate) fn wire_keys(outline: &Outline<'_>) -> Vec<Record> {
-    let krate = outline.krate;
+    let krate = outline.krate();
     let mut found: Vec<(Vec<String>, Record)> = Vec::new();
-    for (d, decl) in krate.decls.iter().enumerate().filter(|(_, d)| is_wire(d)) {
+    for (d, decl) in krate.decls.iter().enumerate().filter(|(_, d)| d.is_wire()) {
         let container = Serde::of(&decl.meta.attrs);
         let rule = container.rename_all.as_deref();
         let mut keys = container.tags.clone();
