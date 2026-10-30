@@ -17,13 +17,15 @@ fn module_path(krate: &Crate, d: DeclId) -> Vec<String> {
 /// Returns each group's caption: its module and its lead type joined by a
 /// middle dot, such as the module `execute::scheduler` and the type
 /// `Scheduler`, so a sidebar of groups reads as a list of top-level objects.
-/// A caption that still repeats takes ` (2)`, ` (3)`, and so on.
-fn captions(krate: &Crate, groups: &[Group]) -> Vec<String> {
+/// A caption that still repeats takes ` (2)`, ` (3)`, and so on. `leads`
+/// gives each group's lead type.
+fn captions(krate: &Crate, groups: &[Group], leads: &[DeclId]) -> Vec<String> {
     let mut seen: BTreeMap<String, usize> = BTreeMap::new();
     groups
         .iter()
-        .map(|group| {
-            let lead = &krate.decls[group.lead(|d| module_path(krate, d))].name;
+        .zip(leads)
+        .map(|(group, &lead)| {
+            let lead = &krate.decls[lead].name;
             let caption = format!("{} \u{b7} {lead}", group.caption(&krate.title));
             let times = seen.entry(caption.clone()).or_insert(0);
             *times += 1;
@@ -44,10 +46,15 @@ impl Builder<'_> {
         let mut contents = Vec::new();
         let krate = self.krate;
         let modules = groups(&order.sequence, |d| module_path(krate, d));
-        let captions = captions(krate, &modules);
-        for (index, (group, text)) in modules.iter().zip(&captions).enumerate() {
+        let leads: Vec<DeclId> = modules
+            .iter()
+            .map(|group| group.lead(|d| module_path(krate, d)))
+            .collect();
+        let captions = captions(krate, &modules, &leads);
+        for (index, ((group, text), &lead)) in modules.iter().zip(&captions).zip(&leads).enumerate()
+        {
             let id = format!("group.{}", index + 1);
-            contents.push(self.section_item(text, &id, &group.decls));
+            contents.push(self.group_item(text, &id, group, lead));
             self.section_start(&id, text);
             for &decl in &group.decls {
                 self.decl(decl);
@@ -75,6 +82,31 @@ impl Builder<'_> {
         self.nodes.push(Node::Rule);
         self.heading(2, id, text);
     }
+    /// Returns a group's entry in the sidebar: its caption, then its types but
+    /// the lead, which the caption already names. Each child is named from
+    /// the group's own module on, so it does not repeat the parent's name.
+    fn group_item(&self, text: &str, id: &str, group: &Group, lead: DeclId) -> Item {
+        let named = |d: DeclId| {
+            let path = self.krate.decl_path(d);
+            match path.strip_prefix(group.key.as_slice()) {
+                Some(rest) if !group.key.is_empty() => rest.join("::"),
+                _ => path.join("::"),
+            }
+        };
+        Item {
+            inlines: vec![anchor(text, id)],
+            children: group
+                .decls
+                .iter()
+                .filter(|&&d| d != lead)
+                .map(|&d| Item {
+                    inlines: vec![anchor(&named(d), &self.decl_ids[d])],
+                    children: Vec::new(),
+                })
+                .collect(),
+        }
+    }
+
     fn section_item(&self, text: &str, id: &str, decls: &[DeclId]) -> Item {
         Item {
             inlines: vec![anchor(text, id)],
