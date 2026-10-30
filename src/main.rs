@@ -64,6 +64,11 @@ mod layout_rust_decl;
 mod layout_rust_items;
 mod layout_special;
 mod leads;
+mod leads_body;
+mod leads_body_clone;
+mod leads_body_literals;
+#[cfg(test)]
+mod leads_body_tests;
 mod leads_census;
 #[cfg(test)]
 mod leads_census_crates_tests;
