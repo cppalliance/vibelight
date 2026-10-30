@@ -14,7 +14,7 @@ const HTML_LINES: &[&str] = &[
     "`[[...]]` is an attribute that shapes the API or its wire format, such as `[[must_use]]` or `[[serde(rename = \"id\")]]`.",
     "`implements: Trait for Type;` is an impl with no declared type to attach to, such as a blanket impl.",
     "`MACRO` marks a macro definition, an invocation, a derive from another crate, or an attribute macro.",
-    "A doc comment prints as prose, and `backticked` text prints in the code font; a member's comment keeps the fixed layout of its block.",
+    "A doc comment prints as prose, and `backticked` text prints in the code font; a member's comment reflows as one paragraph.",
 ];
 
 /// Returns the HTML legend as list items.

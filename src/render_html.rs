@@ -6,6 +6,7 @@ use std::fmt::Write as _;
 
 use crate::document::{Document, Inline, Item, Link, Node};
 use crate::layout::{Block, Line, Span, span_text};
+use crate::layout_marker::Marker;
 use crate::model::{Loc, TypeRef, ValueRef};
 use crate::render_style::STYLE;
 
@@ -241,7 +242,9 @@ impl Page<'_> {
             if boxed {
                 if open_box {
                     // Inside a box the lines are one text run, so a newline
-                    // joins them and the box's `white-space: pre` keeps it.
+                    // joins them, and the box's `white-space: normal` turns
+                    // that newline, and any blank comment line, into one
+                    // space: the comment reflows as one paragraph.
                     out.push('\n');
                     self.comment_line(out, line);
                 } else {
@@ -291,12 +294,18 @@ impl Page<'_> {
         }
     }
 
-    /// Writes a boxed member comment line's text, whose spacing the box's own
-    /// `white-space: pre` keeps. The box's margin and padding put the text on
-    /// the member's column, so any whitespace the comment marker and the
-    /// source comment left at the start is dropped rather than pushing the
-    /// first word off that column.
+    /// Writes a boxed member comment line's text, which the box's own
+    /// `white-space: normal` reflows with the lines around it. The box's
+    /// margin and padding put the text on the member's column, so any
+    /// whitespace the comment marker and the source comment left at the start
+    /// is dropped rather than pushing the first word off that column.
     fn comment_line(&self, out: &mut String, line: &Line) {
+        // A `cfg` line is a condition, not prose, so it keeps its own line
+        // inside the reflowed paragraph.
+        let cfg = matches!(line.spans.first(), Some(Span::Marker(m)) if *m == Marker::CFG.spaced);
+        if cfg {
+            out.push_str("<span class=\"cfg\">");
+        }
         let mut started = false;
         let mut trimmed: Vec<Span> = Vec::new();
         for span in &line.spans {
@@ -324,6 +333,9 @@ impl Page<'_> {
             }
         }
         self.ticked(out, &trimmed);
+        if cfg {
+            out.push_str("</span>");
+        }
     }
 
     fn list(&self, out: &mut String, items: &[Item], class: &str) {
