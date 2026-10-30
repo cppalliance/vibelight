@@ -107,12 +107,13 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A record with a wire format.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Record
+<pre><code><span class="dim">[[serde(rename_all = "camelCase")]]</span>
+<span class="k">struct</span> Record
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The record's name.</span></div>
-    <span class="src">name</span>: String,
+    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Kept out of the docs.</span></div>
-    <span class="src">cache</span>: u8,
+    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
 
 <span class="k">private:</span>
     <span class="src">count</span>: u8,
@@ -130,9 +131,12 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A level.</span></p>
 </div>
-<pre><code><span class="k">enum</span> Level : Clone, Copy
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="dim">[[repr(u8)]]</span>
+<span class="k">enum</span> Level : Clone, Copy
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The top.</span></div>
+    <span class="dim">[[deprecated(since = "1.2", note = "use High")]]</span>
     <span class="src">Top</span> = 2,
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The bottom.</span></div>
     <span class="src">Low</span> = 0,
@@ -143,7 +147,8 @@ span.src{cursor:default}
 <li><a href="#type.attributes.Level">Level</a></li>
 <li><a href="#type.attributes.Record">Record</a></li>
 </ul>
-<pre><code><span class="k">using</span> Row = <a href="#type.attributes.Record">Record</a>
+<pre><code><span class="dim">[[doc(hidden)]]</span>
+<span class="k">using</span> Row = <a href="#type.attributes.Record">Record</a>
 
 <span class="c"> A hidden helper.</span>
 <span class="src" id="fn.attributes.helper">helper</span>() <span class="dim">[[deprecated]]</span> <span class="dim">[[doc(hidden)]]</span></code></pre>

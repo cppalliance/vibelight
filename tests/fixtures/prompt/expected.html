@@ -117,7 +117,8 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A fully parsed prompt file.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>
@@ -209,7 +210,8 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">One section of a prompt: a heading, ordered blocks, and children.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>
@@ -253,7 +255,8 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">One executable block inside a section: a compiled Lua fence or prose.</span></p>
 </div>
-<pre><code><span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>
     <span class="src">Lua</span>(LuaProgram),
@@ -262,6 +265,7 @@ span.src{cursor:default}
 
 <span class="c">The executor installs it as the following Lua block's lazy </span><code><span class="c">prose</span></code>
 <span class="c">template.</span></div>
+    <span class="dim">[[non_exhaustive]]</span>
     <span class="src">Prose</span>
     {
 <div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">Captured Markdown, trimmed of surrounding blank lines.</span></div>

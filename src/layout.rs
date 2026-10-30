@@ -214,15 +214,23 @@ pub(crate) fn mark_line(
     (line, repeat)
 }
 
-/// Returns the lines printed above a node: its notes, `cfg` lines, and
-/// marks, with the marks' repeats. An attribute does not print here: it
-/// closes the signature it belongs to, where a function's line ends.
-pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc) -> (Vec<Line>, Vec<Repeat>) {
+/// Returns the lines printed above a node: its notes, `cfg` lines, its
+/// attributes when `attrs` is set, each dimmed, and marks, with the marks'
+/// repeats. A function and a field set it off: their attributes close the
+/// line they belong to.
+pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc, attrs: bool) -> (Vec<Line>, Vec<Repeat>) {
     let mut lines = note_lines(&meta.notes, indent, Marker::DOC);
     for cfg in &meta.cfgs {
         lines.push(Line {
             indent,
             spans: vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
+            trailing: None,
+        });
+    }
+    for attr in meta.attrs.iter().filter(|_| attrs) {
+        lines.push(Line {
+            indent,
+            spans: vec![Span::Dim(format!("[[{attr}]]"))],
             trailing: None,
         });
     }
@@ -375,10 +383,10 @@ pub(crate) fn fn_lines(
     wrap::function(&parts, indent, trailing, &krate.refs)
 }
 
-/// Returns the spans that close a signature: its attributes, each dimmed, or
-/// nothing when it has none. The attribute is separated from the return type
-/// by one space.
-fn attributes_end(attrs: &[String]) -> Vec<Span> {
+/// Returns the spans that close a signature or a field: its attributes, each
+/// dimmed, or nothing when it has none. Each attribute is separated from
+/// what comes before by one space.
+pub(crate) fn attributes_end(attrs: &[String]) -> Vec<Span> {
     let mut spans = Vec::new();
     for attr in attrs {
         spans.push(plain(" "));

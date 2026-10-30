@@ -112,7 +112,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Event : Clone, Debug, PartialEq
 {
-    <span class="src">name</span>: String,
+    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
 <span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span></div>
     <span class="src">emit</span>()

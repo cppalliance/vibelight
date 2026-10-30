@@ -33,7 +33,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId, members: MembersBy) -> Block
         attrs: decl.meta.attrs.clone(),
         ..Meta::default()
     };
-    block.lines.extend(above(&cfgs, 0, decl.loc).0);
+    block.lines.extend(above(&cfgs, 0, decl.loc, true).0);
     if let Shape::Alias(target) = &decl.shape {
         block.lines.push(alias_line(decl, target));
         return block;

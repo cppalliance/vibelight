@@ -122,7 +122,8 @@ pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
 
 fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
     let refs = &krate.refs;
-    let (mut lines, mut repeats) = above(&item.meta, 0, item.loc);
+    let attrs_above = !matches!(item.kind, ItemKind::Fn(_));
+    let (mut lines, mut repeats) = above(&item.meta, 0, item.loc, attrs_above);
     // A module has no enclosing type, so the item's own visibility prints
     // above it, where a type's header carries its own.
     if let Some(line) = crate::layout_decl::visibility_line(item.vis, 0) {
@@ -235,7 +236,8 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
             if own != abi {
                 continue;
             }
-            let (mut lines, repeats) = above(&item.meta, 4, item.loc);
+            let attrs_above = !matches!(foreign, Foreign::Fn(_));
+            let (mut lines, repeats) = above(&item.meta, 4, item.loc, attrs_above);
             let name = Span::Name(item.name.clone(), item.loc);
             let trailing = item.meta.trailing.clone();
             let group = match foreign {

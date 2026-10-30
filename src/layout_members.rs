@@ -1,7 +1,8 @@
 //! Lays out the entries between a type's braces: members and variants.
 
 use crate::layout::{
-    Entry, Line, Span, above, code, const_line, fn_lines, key, note_lines, plain, spaced, width,
+    Entry, Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
+    spaced, width,
 };
 use crate::layout_marker::Marker;
 use crate::model::{Crate, Member, MemberKind, Param, TypeRef, Variant, VariantFields};
@@ -9,7 +10,8 @@ use crate::wrap::MAX_WIDTH;
 
 pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
     let refs = &krate.refs;
-    let (mut lines, repeats) = above(&member.meta, 4, member.loc);
+    let attrs_above = matches!(member.kind, MemberKind::Type(_) | MemberKind::Const { .. });
+    let (mut lines, repeats) = above(&member.meta, 4, member.loc, attrs_above);
     let name = Span::Name(member.name.clone(), member.loc);
     match &member.kind {
         MemberKind::Type(text) => {
@@ -53,6 +55,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
             let mut spans = vec![name, plain(": ")];
             spans.extend(code(ty));
             spans.push(plain(","));
+            spans.extend(attributes_end(&member.meta.attrs));
             lines.push(Line {
                 indent: 4,
                 spans,
@@ -81,7 +84,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
 }
 
 pub(crate) fn variant_entry(variant: &Variant, refs: &[TypeRef]) -> Entry {
-    let (mut lines, repeats) = above(&variant.meta, 4, variant.loc);
+    let (mut lines, repeats) = above(&variant.meta, 4, variant.loc, true);
     let name = Span::Name(variant.name.clone(), variant.loc);
     let discriminant = variant
         .discriminant
