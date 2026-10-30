@@ -37,6 +37,8 @@ isProject: false
 
 # vibelight output improvements
 
+Status: this plan is a record of work done, not a current spec. Its switches were replaced by the zero-switch plan (`plans/2026-10-27-zero-switch-redesign.plan.md`), its level order and module sections by the dependency-order plan (`plans/2026-10-27-dependency-order-groups.plan.md`), and its markdown output by the markdown renderer plan (`plans/2026-10-29-markdown-slop-renderer.plan.md`).
+
 Each item below says whether it already exists, where the change would land, and how confident I am in it. The item numbers stay fixed, because the one-time tool plan refers to item 15.
 
 The rule every new item except 15 keeps: moving impls between files never changes the output. Per [vibelight/AGENTS.md](vibelight/AGENTS.md), every output change ships with its updated golden files in the same commit, and the goldens are the specification.

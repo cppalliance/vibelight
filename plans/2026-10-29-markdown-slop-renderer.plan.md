@@ -4,34 +4,34 @@ overview: Replace vibelight's markdown output with a separate JSON-Lines rendere
 todos:
   - id: baseline-html-goldens
     content: Add 41 missing HTML goldens for the 39 regular golden directories plus links/expected.html; make missing HTML a test failure; snapshot runvil HTML
-    status: in_progress
+    status: completed
   - id: collection-facts
     content: Stable BodyId and analysis-only members; body facts and normalized comments for every collected production/test-support body, initializer, and discriminant; manifest/package facts; model-level unit tests, no output change
-    status: pending
+    status: completed
   - id: census
     content: "Immutable AnalysisRun before attach: logical impl ownership, direct-call census including Self:: and Type::assoc, same-package lib edges, lexical method/macro/test hits; model-level unit tests, no output change"
-    status: pending
+    status: completed
   - id: detectors-shapes
     content: Group A syntax detectors returning Vec<Lead> + positive/negative unit tests + glossary lines in vibelight.md; no outline output change yet
-    status: pending
+    status: completed
   - id: detectors-docs
     content: Group B detectors (doc text) returning Vec<Lead> + unit tests + glossary lines in vibelight.md
-    status: pending
+    status: completed
   - id: detectors-census
     content: Group C source-observed census detectors, with context limits explicit, returning Vec<Lead> + unit tests + glossary lines
-    status: pending
+    status: completed
   - id: detectors-body
     content: Group D detectors (body facts) returning Vec<Lead> + unit tests + glossary lines in vibelight.md
-    status: pending
+    status: completed
   - id: detectors-data-structures
     content: Group E detectors (containers and access profiles) returning Vec<Lead> + unit tests + glossary lines in vibelight.md
-    status: pending
+    status: completed
   - id: detectors-comments
     content: Group F detectors (body comments) returning Vec<Lead> + unit tests + glossary lines in vibelight.md
-    status: pending
+    status: completed
   - id: renderer-flip
     content: Compact JSON-Lines render_slop*.rs wired to AnalysisRun; delete old markdown code; update normalization and all hardcoded old-format tests including contextual exclude/stamp cases; rewrite 59 markdown golden files once plus ROOTED; update vibelight.md, README.md, package/AGENTS terminology
-    status: pending
+    status: completed
   - id: dogfood
     content: "Run on runvil: HTML diff empty except index KB, known leads present, every line one record, second run rewrites nothing; manual tool run"
     status: pending
@@ -119,10 +119,13 @@ The file is compact JSON Lines after the existing stamp. Line 1 remains `*Update
 *Updated <stamp>*
 {"k":"vibelight-outline","schema":1,"crate":"runvil_parser","target":"lib","dir":"crates/runvil-internal/parser"}
 {"k":"modules","items":[{"path":"contract","from":18,"to":29},{"path":"contract::args","from":30,"to":44},{"path":"fence","from":45,"to":68}]}
-{"k":"lead","id":"generic-twin","mode":"direct-syntax","subjects":["contract::args::ArgsDecl","contract::models::ModelRoles"],"evidence":"BTreeMap<String,_>; get iter len is_empty; IntoIterator for &; Deserialize","locs":[{"file":"src/contract/args.rs","line":162},{"file":"src/contract/models.rs","line":93}]}
-{"k":"mod","path":"contract::args","loc":{"file":"src/contract/args.rs","line":1},"types":5,"functions":{"private":2},"doc":"Parses the `args` frontmatter key into typed arg declarations.\n\nThe declaration advertises, ..."}
-{"k":"struct","path":"contract::args::ArgDecl","rust":"pub struct ArgDecl { kind: ArgType, optional: bool, default: Option<serde_yaml_ng::Value>, description: Option<String> }","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"loc":{"file":"src/contract/args.rs","line":51},"named_by":["ArgsDecl","ArgsDeclIter"],"reexported_by":["contract","crate"],"getters":"4/4","doc":"The declaration of one prompt arg: its type, whether it is optional, its default, and its description."}
-{"k":"fn","path":"contract::args::ArgDecl::is_optional","sig":"pub fn is_optional(&self) -> bool","attrs":["must_use"],"loc":{"file":"src/contract/args.rs","line":89},"direct_callers":[],"method_name_hits":[],"body":{"statements":1},"doc":"Returns whether a call may omit this arg entirely.\n\nAn omitted arg is absent from the call. An empty string is a supplied value."}
+{"k":"lead","id":"generic-twin","mode":"direct-syntax","subjects":["contract::args::ArgsDecl","contract::models::ModelRoles"],"evidence":"BTreeMap<String,_>; get iter len is_empty; IntoIterator for &; Deserialize","locs":["src/contract/args.rs:162","src/contract/models.rs:93"]}
+{"k":"mod","path":"contract::args","loc":"src/contract/args.rs:1","vis":"public","types":5,"functions":{"private":2}}
+{"k":"doc","path":"contract::args","text":"Parses the `args` frontmatter key into typed arg declarations.\n\nThe declaration advertises, ..."}
+{"k":"struct","path":"contract::args::ArgDecl","rust":"pub struct ArgDecl { kind: ArgType, optional: bool, default: Option<serde_yaml_ng::Value>, description: Option<String> }","loc":"src/contract/args.rs:51","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"named_by":["ArgsDecl","ArgsDeclIter"],"reexported_by":["contract","crate"]}
+{"k":"doc","path":"contract::args::ArgDecl","text":"The declaration of one prompt arg: its type, whether it is optional, its default, and its description."}
+{"k":"fn","path":"contract::args::ArgDecl::is_optional","sig":"pub fn is_optional(&self) -> bool","loc":"src/contract/args.rs:89","attrs":["must_use"],"body":{"statements":1,"tokens":6,"single":"field optional"},"ops":["self.optional"]}
+{"k":"doc","path":"contract::args::ArgDecl::is_optional","text":"Returns whether a call may omit this arg entirely.\n\nAn omitted arg is absent from the call. An empty string is a supplied value."}
 ```
 
 Exact schema, source-link, and determinism rules:
@@ -130,8 +133,8 @@ Exact schema, source-link, and determinism rules:
 - **Header `dir`.** Uses `shown(&chosen.base, &chosen.packages[p].dir)`; omit `dir` when it is `.` so temp directories never enter output.
 - **Header `target`.** Serialize `TargetKind::Lib` as `"lib"`, `Bin` as `"bin"`, and `SingleFile` as `"single-file"`; never infer single-file from `Target.lib == false`.
 - **Module ranges.** The `modules.items` array is sorted by module path. `from` and `to` are 1-based inclusive output-line ranges covering that module's contiguous catalog records, including adjacent `doc` records. Empty modules omit the range.
-- **Locations.** Every source location uses `krate.files[loc.file].rel` with forward slashes. The JSON `loc` object has `file`, `line`, and, in normal linked output, `url` measured by the markdown `LinkBase`. Lead and impl records use a `locs` array.
-- **Golden normalization.** `strip_markdown_links` preserves the stamp line, parses each JSON object, removes structural `url` fields, replaces structural source `line` and body-comment line numbers with sentinel `0`, and serializes keys in renderer order. It never searches arbitrary doc/comment text for `#L`. This preserves existing formatting/attribute invariance without brittle text matching.
+- **Locations.** Every source location uses `krate.files[loc.file].rel` with forward slashes. A location is one string, `<file>:<line>`, or `<stem>:<file>:<line>`, and no record has a `url`. Lead and impl records use a `locs` array.
+- **Golden normalization.** `strip_markdown_links` preserves the stamp line, parses each JSON object, drops the header's `root`, replaces structural source `line` and body-comment line numbers with sentinel `0`, and serializes keys in renderer order. It never searches arbitrary doc/comment text for `#L`. This preserves existing formatting/attribute invariance without brittle text matching.
 - **Shapes and signatures.** A type's complete Rust shape is the one-line `rust` string. Every free, inherent, trait-impl, and trait-default signature is the one-line `sig` string; where clauses stay inline. Parameter docs live in `param_docs`.
 - **Attributes.** Arrays are sorted using existing `name_order`; `test_support:true` marks test-support records.
 - **Docs and comments.** Strings are normalized source-faithful text. Paragraph and source line breaks are retained as JSON `\n`; fenced examples stay exact after LF normalization. Body comments are objects with normalized `text` and source `line`.
@@ -140,8 +143,8 @@ Exact schema, source-link, and determinism rules:
 - **Evidence modes.** Every lead has `mode:"resolved"`, `"direct-syntax"`, or `"lexical"`. Absence leads also include a compact `limits` array, such as `["macros","dynamic-dispatch","external-consumers"]`.
 - **Cross-crate leads.** Print in every involved target's file, with subjects sorted by package, target, and item path.
 - **Canonical schema.** Define a typed `Record` enum tagged by `k`, with one `#[serde(deny_unknown_fields)]` struct per kind. Required fields are non-`Option`; optional fields are `Option` and omitted when empty; arrays and nested objects have typed element structs. This enum, rather than prose key lists, is the canonical required/optional key and value-type matrix. Record variants serialize in the listed output order, and each variant sorts its arrays before construction.
-- **Schema validation.** Add direct `serde` derive and `serde_json` dependencies, pinned by `Cargo.lock` to releases that pass Rust 1.85. Tests parse every line into the typed `Record`, reject unknown/missing keys, CR characters, blank lines, wrong record order, duplicate subjects, unsorted arrays, and invalid module ranges. Validation has two explicit modes: `Raw` requires positive source lines and permits URLs; `NormalizedGolden` requires the line sentinel and forbids structural URLs.
-- **Long-line fallback.** Phase 5 tests `Read` and `Grep` on a 5,000-character line. If either truncates, docs always become a separate `{"k":"doc","path":...,"text":...}` record immediately after the owner. The `doc` kind is already in the schema, so this decision does not alter the grammar.
+- **Schema validation.** Add direct `serde` derive and `serde_json` dependencies, pinned by `Cargo.lock` to releases that pass Rust 1.85. Tests parse every line into the typed `Record`, reject unknown/missing keys, CR characters, blank lines, wrong record order, duplicate subjects, unsorted arrays, and invalid module ranges. Validation has two explicit modes: `Raw` requires positive source lines and `NormalizedGolden` requires the line sentinel 0. A location is one string, `<file>:<line>`, or `<stem>:<file>:<line>`, and no record has a `url`.
+- **Long-line fallback.** Phase 5 tests `Read` and `Grep` on a 5,000-character line. If either truncates, docs always become a separate `{"k":"doc","path":...,"text":...}` record immediately after the owner. The `doc` kind is already in the schema, so this decision does not alter the grammar. A record wider than 900 characters continues in `more` records, which follow it and carry the rest of one array or one string.
 
 ## Comments
 
@@ -165,7 +168,7 @@ Exact schema, source-link, and determinism rules:
 - derived-field: a `span`/`range` field sits beside position fields (`line`, `column`, `offset`), or a collection field sits beside a same-stem `_len`, `_count`, or `is_*` field
 - drop-option: an Option field on a type with a Drop impl
 - fallible-accessor: an Option/Result method whose only `self` field is an Option
-- direct-field-clusters: the graph of direct `self.field` accesses, with hubs removed, has 2 or more groups; this is not alias-aware
+- direct-field-clusters: the graph of direct `self.field` accesses, with hubs removed, has 2 or more groups, and it needs 4 or more methods that reach the fields; this is not alias-aware
 - option-shaped-enum: one unit variant plus one single-value variant
 - same-shape: the existing rule
 - generic-twin: two types are alpha-equivalent after replacing exactly one differing canonical leaf type in fields and matching method signatures
@@ -246,7 +249,7 @@ Exact schema, source-link, and determinism rules:
 - tramp-param: a parameter only passed on, unchanged, to one callee
 - constant-arg: every observed direct call to a private free or associated function passes the same literal, and all direct references are accounted for
 - repeated-literal: the same nonempty string literal of at least 8 characters occurs in 3 or more bodies, or in 2 or more targets
-- repeated-number: the same literal number other than -1, 0, 1, or 2 occurs in 3 or more bodies
+- repeated-number: the same literal number with a magnitude of 10 or more, other than 16, 32, 64, 100, 128, 256, 512, 1000, and 1024, occurs in 3 or more bodies
 - doc-outweighs-body: at least 100 doc words and more than 3 times the normalized body token count
 
 ### Group E: containers and access profiles (`leads_containers.rs`)
@@ -270,13 +273,7 @@ Exact schema, source-link, and determinism rules:
 
 ## tools/vibelight.md changes
 
-The glossary is a nested XML block inside `<slop-lens>`, so every analysis and verification subagent that already extracts the lens receives it:
-
-```text
-<lead-glossary schema="1">
-<id>: <rule>. Wrong when <false positives>. Verify: <what settles it>.
-</lead-glossary>
-```
+The glossary inside `<lead-glossary>` in `tools/vibelight.md`, nested in `<slop-lens>` so every subagent that extracts the lens receives it, is the reference for ids, rules, and form, and `src/leads_tests.rs` keeps it equal to the registry.
 
 Entries are added as each detector group lands in Phase 4. A unit test at every commit requires the registry ids and schema to equal this block. The remaining prose changes in `tools/vibelight.md` land in Phase 5 alongside the renderer flip. Line numbers are today's:
 
@@ -286,8 +283,8 @@ Entries are added as each detector group lands in Phase 4. A unit test at every 
   - compact JSON Lines after the stamp, one self-contained object per line;
   - `k` identifies the schema kind and `path` identifies the owner;
   - `lead` objects first, with summary objects for frequent ids;
-  - `loc` or `locs` objects on every declaration and lead, with `file`, `line`, and optional `url`;
-  - the fact fields: `direct_callers`, `method_name_hits`, `token_hits`, `crates`, `tests`, `named_by`, `reexported_by`, `ops`, `body`, `comments`.
+  - a `loc` string or a `locs` array of strings on every declaration and lead, each `<file>:<line>`, or `<stem>:<file>:<line>`, with no `url`;
+  - the fact fields: `direct_callers`, `crates`, `tests`, `named_by`, `reexported_by`, `ops`, `body`, `comments`.
 - **Line 113, context outlines.** "External items shows their first doc lines" becomes "`external` records show their first doc lines".
 - **Line 187, sizing.** Size calls and split crates using the line ranges in the `modules` record (`<path> L<start>..L<end>`), and name module paths in the Crates entry as today.
 - **Line 191, lens opening.** Replace "its Legend explains the notation" with: every line names its kind and its owner, and lead ids are defined in the glossary below.
@@ -314,7 +311,7 @@ Entries are added as each detector group lands in Phase 4. A unit test at every 
   - Then scan the rest of the catalog for kinds no lead covers: naming against the docs' terms, doc truth, and state invariants.
   - Each candidate records the lead id it came from, when it came from one.
 - **Line 247, drift instructions.** Also search the doc roots for each key in the `wire-keys` records, in both directions.
-- **Line 270, verify instructions.** "through the outline's `Source:` lines" becomes "through each record's `loc` or `locs` object; use `url` when present and otherwise join `file` to the crate directory".
+- **Line 270, verify instructions.** "through the outline's `Source:` lines" becomes "through each record's `loc` or `locs` string; split it from the right into its line and its file, and join the file to the crate directory".
 - **Line 411, Restated.** Mention that analysts start from `k:"lead"` objects and that markdown is contextual to the run.
 - **End of file.** Append a dated note in the file's style: the markdown is one record per line, leads first, and the lens holds the lead glossary.
 

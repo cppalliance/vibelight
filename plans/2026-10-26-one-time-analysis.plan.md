@@ -4,29 +4,31 @@ overview: Refactor vibelight/tools/vibelight.md into a single-purpose tool with 
 todos:
   - id: copy-plan
     content: Copy this plan to vibelight/plans/2026-10-26-one-time-analysis.plan.md per vibelight AGENTS.md
-    status: pending
+    status: completed
   - id: usage-planmode-resolve
     content: Rewrite the description and flavor sentence; Commands become Usage with the new help; add the Plan Mode section in debt-collector's words; add Resolve with target forms, exclusions for repository and description targets only, and expected outline names
-    status: pending
+    status: completed
   - id: outline-section
     content: Add Outline (binary rule requiring --members, the exact command with --follow "**" and --members impl, flag reasons, the stdout file list), delete Setup and Ledger
-    status: pending
+    status: completed
   - id: skeleton-scope
     content: Doc roots alongside the outline run; the skeleton plan with one <scope-context> block replacing scope.md; the pre-dispatch statement
-    status: pending
+    status: completed
   - id: templates
     content: In all four templates and instruction blocks, Plan replaces Scope and Doc roots, add the scope-context grep and the no-raw-content return rule; whole-outline analysis with module splits; sizing rule; slop-lens leads for Fields lists, visibility lines, and Unconnected
-    status: pending
+    status: completed
   - id: finish
     content: The final plan replaces the skeleton and drops <scope-context>; Cleanup Plan verification sentence and Scope bullet; drop the ledger update; Restated; signature
-    status: pending
+    status: completed
   - id: verify
     content: Rebuild vibelight release; leftover-word grep; tag pairs; placeholders; hostile-config command check on runvil's engine crate; one end-to-end run on runvil-engine that also exercises the module-section split
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # vibelight one-time tool
+
+Status: this plan is a record of work done, not a current spec. Its switches were replaced by the zero-switch plan (`plans/2026-10-27-zero-switch-redesign.plan.md`), its level order and module sections by the dependency-order plan (`plans/2026-10-27-dependency-order-groups.plan.md`), and its markdown output by the markdown renderer plan (`plans/2026-10-29-markdown-slop-renderer.plan.md`).
 
 Change one file: [vibelight/tools/vibelight.md](vibelight/tools/vibelight.md). The analysis, drift, verify, and refine pipeline stays, along with its shell merges into `findings.md` and `verified.md` and the Cleanup Plan template.
 

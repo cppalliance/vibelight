@@ -4,65 +4,67 @@ overview: "Self-contained plan for a fresh agent: improve vibelight's outlines f
 todos:
   - id: preflight
     content: "Preflight: read the files listed under Reading order; vibelight tree clean apart from the user's untracked tools/ folder (never stage it); HEAD af499b8 or re-verify line references; baseline cargo test green; copy this plan to vibelight/plans/YYYY-MM-DD-analysis-outline-upgrades.plan.md and commit it"
-    status: pending
+    status: completed
   - id: headroom
     content: "Phase 0, no output change: in collect.rs move is_public and sort_marks to attrs.rs and delimiter_range and tokens_span to macros.rs, dropping imports left unused; in model.rs move Impl, Special, and SpecialKind to model_impl.rs, re-exported; in document.rs move the Builder methods at 275-440 (section_item, link, mark, code, decl, module, other_impls) to document_sections.rs; at least 30 free lines in each of the three files; all tests pass unchanged"
-    status: pending
+    status: completed
   - id: stamp
     content: "Phase 1: UTC stamp first in every file (md line 1; html line-1 comment plus the first element of main); stamp.rs with SOURCE_DATE_EPOCH, clock expect, RFC 3339 Z, and a mask of every timestamp in a stamp line; the stamp passes through pipeline::outline to both renderers; placeholder in check mode; write only when masked content changed; check on masked text; is_outline accepts both forms; pin the epoch in the three test helpers; prepend stamps to every golden (subagent sweep); amend the Determinism hard rule and text and rules 58 and 59"
-    status: pending
+    status: completed
   - id: comment-attach
     content: "Phase 2: impl note groups with // impl headers, each group storing the index of its trait's base-list entry so the header is rendered at layout time from the routed base; commented use groups kept together; comments inside braces attach to the next name; comments-groups fixture; amend rule 20 and the use row of the construct table"
-    status: pending
+    status: completed
   - id: backticks
     content: "Phase 3: keep backticks in doc comments (intra-doc links become backticked names, link targets still dropped); update affected goldens, the flatten.rs unit tests, and its module doc; amend the links bullet of rule 20"
-    status: pending
+    status: completed
   - id: labels-receivers
     content: "Phase 4: Vis in model.rs with the conversion in attrs.rs; internal: sections in type and module blocks; vis on Decl and Module; is_static_fn matches only Receiver::None; visibility fixture; amend rules 5, 7, 8, 12, 14, 34"
-    status: pending
+    status: completed
   - id: surface-declared
     content: "Phase 5a: surface.rs walks pub mod and pub use; entries for directly declared public items, re-exported types and aliases, and re-exported modules; fn, const, and static entries link to their module; Public surface section with a contents entry; surface fixture; every golden with public items gains the section (subagent sweep); new rule; amend rules 31, 35, 36"
-    status: pending
+    status: completed
   - id: surface-values
     content: "Phase 5b: the surface's own lookup for re-exported fns, consts, and statics (following chains with a cycle guard), glob expansion with its own path walk, exported macro names recorded on the crate, and external re-exports by path; failed lookups listed by path; the surface fixture grows; amend the phase 5a rule"
-    status: pending
+    status: completed
   - id: attributes
     content: "Phase 6: allowlisted [[...]] lines (non_exhaustive, must_use, deprecated, repr, track_caller, doc(hidden), serde), sorted, read from the cfg_attr-expanded list; tuple and struct-variant fields stay out; Meta.attrs via ..Default::default(), and the declaration Meta copy at layout_decl.rs:22 carries it; attributes fixture (the arrangement tests cover it automatically); amend rule 21"
-    status: pending
+    status: completed
   - id: unconnected
     content: "Phase 7a: Unconnected counts names used by module items; Order stores each declaration's namers (declarations and modules) for phase 11; update the affected goldens; amend rules 24, 26, 27"
-    status: pending
+    status: completed
   - id: test-support
     content: "Phase 7b: Decl.test_support set by a pass right after collect, with the same check answering for module items and modules; Test support section; (test support) marks in Public surface; test-support fixture; amend rules 32, 33, 35, 36"
-    status: pending
+    status: completed
   - id: impl-members
     content: "Phase 8: record each inherent impl's member names and list them after each impl link in the Source line (Builder::decl, links on only); update the links golden; amend rules 44, 45"
-    status: pending
+    status: completed
   - id: legend
     content: "Phase 9: fixed Legend section (after the H1 and crate docs in both formats, so the parity test sees the same heading order) describing every convention; update every golden (subagent sweep); amend rules 31, 35, 36"
-    status: pending
+    status: completed
   - id: kill-list
     content: "Phase 10: kill-list switch and kill_list key (full, counts, off); one options struct from the settings through the pipeline into document::build, which phases 11, 13, and 14 extend; args.txt support in the goldens harness; kill-list fixture; amend rules 37, 56, 57"
-    status: pending
+    status: completed
   - id: facts-lines
     content: "Phase 11: facts flag and key; Node::Para; Counts line; Used by line read from the namers phase 7a stores in Order; Same shapes section; a legend line for the facts lines; facts fixture; new rules; amend rules 35, 36, 56, 57"
-    status: pending
+    status: completed
   - id: external-items
     content: "Phase 12: External items section under facts, with a map of each foreign declaration's first doc line built before the per-crate loop in pipeline.rs; facts fixture plus a garden workspaces test; new rule; amend rules 35, 36, 54"
-    status: pending
+    status: completed
   - id: module-order
     content: "Phase 13: order switch and key (levels, modules); module groups holding every declaration; a Levels index with Test support and Unconnected groups; Other impls kept; legend line; order-modules fixture; new rule; amend rules 32 to 36, 56, 57"
-    status: pending
+    status: completed
   - id: profile
     content: "Phase 14: profile switch and key (analysis) changing defaults only (links off, kill list counts, facts on, order modules); profile fixture, a CLI test without the no-source-links switch showing the profile turns links off, and a config test that explicit settings win; new rule; amend rules 56, 57"
-    status: pending
+    status: completed
   - id: docs-dogfood-gates
     content: "Phase 15: README (switch forms, profile, precedence, stamp behavior, stdout wording, the three-keys wording, every output change, a note to regenerate committed outlines with this release); dogfood like for like on the reference snapshot source, plus a robustness pass on the live runvil; fmt, clippy, test, package list"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # vibelight: analysis upgrades and UTC stamps
+
+Status: this plan is a record of work done, not a current spec. Its switches were replaced by the zero-switch plan (`plans/2026-10-27-zero-switch-redesign.plan.md`), its level order and module sections by the dependency-order plan (`plans/2026-10-27-dependency-order-groups.plan.md`), and its markdown output by the markdown renderer plan (`plans/2026-10-29-markdown-slop-renderer.plan.md`).
 
 ## Context for a fresh start
 

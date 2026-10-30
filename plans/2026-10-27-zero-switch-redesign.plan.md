@@ -3,38 +3,38 @@ name: Vibelight zero-switch redesign
 overview: "Move the smarts into the vibelight binary. Plain `vibelight` at a repo root finds or scaffolds vibelight.toml and .vibelight/, picks the relevant crates itself, and writes analysis markdown plus browsing HTML with fixed settings and almost no switches. Phase 2 renders the markdown as Rust instead of C++. The agent prompt shrinks to: run vibelight, read the index, analyze."
 todos:
   - id: copy-plan
-    content: Copy this plan to vibelight/plans/2026-10-26-zero-switch-redesign.plan.md per vibelight AGENTS.md
-    status: in_progress
+    content: Copy this plan to vibelight/plans/2026-10-27-zero-switch-redesign.plan.md per vibelight AGENTS.md
+    status: completed
   - id: p1-cli-config
     content: "Phase 1: CLI becomes `vibelight [<crate paths>...] [-o <dir>]`; config keys become workspace, crates, follow, exclude, out; delete every other switch and key with their precedence code and tests"
-    status: pending
+    status: completed
   - id: p1-scaffold
     content: "Phase 1: with no config and no paths, find the root, seed crates with the dev-crate exclusion rules (reason comments), write vibelight.toml, .vibelight/, .vibelight/html/, .vibelight/.gitignore; note lines on stderr"
-    status: pending
+    status: completed
   - id: p1-formats
     content: "Phase 1: fixed per-format Options (markdown = facts, modules, kill-list counts, members impl, links; HTML = levels, full kill list, no facts, members name, links, no Legend); pipeline builds blocks and order per format"
-    status: pending
+    status: completed
   - id: p1-index-stale
     content: "Phase 1: write .vibelight/index.md (each outline, crate dir, selected or followed, size); remove --check/--check-html; remove stale outlines from vibelight's own folders"
-    status: pending
+    status: completed
   - id: p1-tests
     content: "Phase 1: harness writes into fixture copies so links are stable; drop args.txt switch fixtures and precedence tests; parity test removed; arrangement tests HTML-only with links stripped; regenerate and hand-read every golden diff"
-    status: pending
+    status: completed
   - id: p1-docs-tool
     content: "Phase 1: README rewrite (Run, vibelight.toml, scaffold, md vs html); vibelight.md runs plain `vibelight`, reads the index, binary check by behavior, drops Resolve rules and flags"
-    status: pending
+    status: completed
   - id: p2-model
     content: "Phase 2: lossless model additions (type text as written, receiver as written, visibility as written, derived vs hand-written traits, trait impl generics and unsafe, re-export rename) with every golden unchanged"
-    status: pending
+    status: completed
   - id: p2-rust-layout
     content: "Phase 2: Rust layout modules for markdown only; C++ blocks still drive order, ids, naming graph, External items; markdown Legend cut to vibelight's own markers; AGENTS.md rendering rule split"
-    status: pending
+    status: completed
   - id: p2-goldens
     content: "Phase 2: regenerate and hand-read all markdown goldens; HTML goldens must stay byte-identical"
-    status: pending
+    status: completed
   - id: verify
     content: Each phase - cargo fmt --check, clippy --all-targets --locked, test --locked, release build; garden temp-copy scaffold run; final plain `vibelight` run at runvil root; leave uncommitted
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -168,5 +168,6 @@ Both phases ran, uncommitted. `cargo fmt --check`, `cargo clippy --all-targets -
 - **Goldens hold no links.** Instead of writing each fixture's output inside a copy, the tests strip source links before comparing, since a link depends on where the output goes. The `links` fixture checks the links, and a new test checks that stripping leaves none behind.
 - **Named crates are never excluded.** A crate named on the command line is outlined even when the config excludes it, and the unmatched-glob note is left out for such runs; the config's `follow` and `exclude` still apply to followed crates. A single `.rs` file ignores the config's globs.
 - **The folder holds the last run.** Stale outlines are removed in both formats, so a run that names one crate leaves only that crate; the prompt uses `-o` for one-off crates.
-- **Small changes not in the plan.** `pub(in crate)`, `pub(in self)`, and `pub(in super)` print as rustfmt writes them, which the narrow rustfmt arrangement test caught. The `Counts:` line says `Default/From/Drop impl` for the C++ "special member". The `profile` fixture and the six `args.txt` files went to the cabinet trash, `exclude_cli.rs` merged into `exclude.rs`, and new HTML goldens pin the level order, the name order, and the full kill list.
+- **Small changes not in the plan.** `pub(in crate)`, `pub(in self)`, and `pub(in super)` print as rustfmt writes them, which the narrow rustfmt arrangement test caught. The `Counts:` line says `Default/From/Drop impl` for the C++ "special member". The `profile` fixture and the six `args.txt` files went to the cabinet trash, `exclude_cli.rs` merged into `exclude.rs`, and new HTML goldens pin the level order, the name order, and the full kill list. The fallback root is the nearest folder at or above the current one that holds a `Cargo.toml`, and a first run notes only the config file and the `.gitignore`.
 - **Runvil.** The first plain run took 2.5 seconds, wrote 48 outlines in each format plus the index, and seeded the same seven exclusions as the hand-made list. `git status` there shows only `vibelight.toml` and `.vibelight/.gitignore`.
+- **Later changes.** Phase 2 and the fixed options were superseded by the dependency-order, reading-revision, and markdown renderer plans, and the config keys `boilerplate` and `quiet` came later, in commit `ca47e37`.

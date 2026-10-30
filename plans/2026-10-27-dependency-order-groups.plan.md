@@ -4,31 +4,31 @@ overview: Replace the level order with a dependency order in which a type follow
 todos:
   - id: copy-plan
     content: Copy this plan to vibelight/plans/2026-10-27-dependency-order-groups.plan.md
-    status: pending
+    status: completed
   - id: goldens-first
     content: "Hand-write the order goldens first: rename order-levels to order-nesting, update order-cycles, add the order-groups fixture with md and html goldens"
-    status: pending
+    status: completed
   - id: order-dfs
     content: "order.rs: replace levels with Order.sequence using the owner-then-parts rule, with unit tests; split to order_graph.rs if over 500 lines"
-    status: pending
+    status: completed
   - id: groups
     content: "New groups.rs: module key, runs, lone-type folding, captions, with unit tests"
-    status: pending
+    status: completed
   - id: document
     content: settings.rs OrderBy::Groups, document_sections.rs grouped, document.rs Node::Rule, document_modules.rs drop levels_index
-    status: pending
+    status: completed
   - id: render
     content: render_html.rs and render_style.rs print the hr; render_md.rs handles Node::Rule
-    status: pending
+    status: completed
   - id: docs
     content: legend.rs line, README two bullets, ROOTED golden in workspaces.rs
-    status: pending
+    status: completed
   - id: regen-check
     content: Regenerate remaining goldens, check each keeps the same set of type sections, read every diff
-    status: pending
+    status: completed
   - id: verify
     content: fmt, clippy, test, 1.85 check, package, release build, runvil engine spot check
-    status: pending
+    status: completed
 isProject: false
 ---
 

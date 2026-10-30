@@ -4,19 +4,19 @@ overview: "Two changes to the HTML output only, for the architect's taste review
 todos:
   - id: split
     content: In layout_decl::body, route fields and enum variants into a data set of visibility sections, leaving the existing sections for everything else
-    status: pending
+    status: completed
   - id: access
     content: "Rewrite join_sections to walk the data sections then the member sections with one running access state: a label prints only when a section's visibility differs from the access in effect, starting from the keyword's default"
-    status: pending
+    status: completed
   - id: captions
     content: "Caption each HTML group as module plus lead type, such as 'execute::scheduler · EffectTable', with an ordinal only if a caption still repeats"
-    status: pending
+    status: completed
   - id: goldens
     content: Regenerate only the HTML goldens after each change, read each diff, and confirm no other file changed
-    status: pending
+    status: completed
   - id: docs
     content: Update the HTML legend line and the README passages that describe the HTML, so they match the output
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -65,7 +65,7 @@ The keyword sets the starting access (`class` is private, `struct`, `union`, and
 - A visibility that has both data and members can show its label twice.
 
 ```
-class Scheduler          struct Run               class Probe
+class Scheduler          class Run                class Probe
 {                        {                        {
     queue: ...           internal:                    state: State
     ...8 fields              id: RunId

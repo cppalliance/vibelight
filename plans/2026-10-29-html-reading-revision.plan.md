@@ -4,32 +4,34 @@ overview: "Revise vibelight's HTML output so a person reviewing architecture can
 todos:
   - id: marker
     content: Add Span::Marker and move every comment marker into it, leaving all markdown goldens byte-identical
-    status: pending
+    status: completed
   - id: prose
     content: Add render_prose with paragraph, bullet, heading, blank-line, and fence rules, and call it for a block's leading doc run
-    status: pending
+    status: completed
   - id: ticks
     content: Make render_html's span path line-aware and wrap matched backtick runs in code font, with unclosed ticks left literal
-    status: pending
+    status: completed
   - id: style
     content: Add the prose measure and spacing to the style sheet and extend its test
-    status: pending
+    status: completed
   - id: legend
     content: Add legend::html_items, turn the HTML legend on, and select it by notation
-    status: pending
+    status: completed
   - id: index
     content: Add index::render_html and write html/index.html from the pipeline
-    status: pending
+    status: completed
   - id: toggle
     content: Emit each run of member comment lines in a div.mc, add the CSS-only show/hide toggle, and keep the pre's newlines honest
-    status: pending
+    status: completed
   - id: goldens
     content: Regenerate and read every expected.html diff, then update the README's HTML and folder sections
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Vibelight HTML: a reading revision
+
+Note: items 6 and 7 and the legend count were revised by later commits, so the show/hide toggle, the comment box, the legend, and the index page differ from the wording below (the legend has more lines than the six to eight planned, each member comment reflows as one paragraph in a borderless box, and the index page lists the size of each markdown outline); `src/render_style.rs`, `src/render_html.rs`, and `src/index.rs` are the truth.
 
 ## What changes and what does not
 

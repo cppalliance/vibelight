@@ -4,32 +4,34 @@ overview: "Create vibelight/tools/vibelight.md, a compact tool with debt-collect
 todos:
   - id: copy-plan
     content: Copy this plan to vibelight/plans/2026-10-25-vibelight-agent-tool.plan.md
-    status: pending
+    status: completed
   - id: head
     content: Write the frontmatter and the hoarding-office flavor block, with image 1 at the end of the block
-    status: pending
+    status: completed
   - id: commands-setup
     content: "Write Commands (help, setup, scan, scan all, scan <crates>, mark; no question tools) and Setup: finding the binary by feature, adding only missing pieces, workspace plus exclude config, ignore entries, AGENTS.md lines"
-    status: pending
+    status: completed
   - id: scan
     content: "Write Scan: the non-markdown writes first (setup files, refresh, analysis copy), read stamps, compare with vibelight/.scanned.md, stop when nothing changed, diffs from the recorded commit, scope.md, doc roots, then enter Plan mode; image 2"
-    status: pending
+    status: completed
   - id: dispatch
     content: Write the Sub-Agent Dispatch rule and the Analysis, Drift, Verify, and Refine templates
-    status: pending
+    status: completed
   - id: judgment
     content: "Write Analysis and Judgment: slop-lens, the analysis, drift, and verify blocks, the coverage check, and reconcile into draft-plan.md; image 3"
-    status: pending
+    status: completed
   - id: plan-template
     content: "Write Cleanup Plan: the refine block, reviewing the refiner's diff, recording vibelight/.scanned.md, rules, the seven-section template, answering open questions; then Restated, image 4, and the credit line"
-    status: pending
+    status: completed
   - id: verify
     content: "Rebuild vibelight from the checkout, run the static checks, then the end-to-end tests: runvil (setup, mark, incremental, refreshed by someone else, narrowed, started in Plan mode) and a fresh single-package repo"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # vibelight.md agent tool
+
+Status: this plan is a record of work done, not a current spec. Its switches were replaced by the zero-switch plan (`plans/2026-10-27-zero-switch-redesign.plan.md`), its level order and module sections by the dependency-order plan (`plans/2026-10-27-dependency-order-groups.plan.md`), and its markdown output by the markdown renderer plan (`plans/2026-10-29-markdown-slop-renderer.plan.md`).
 
 ## Basis
 
