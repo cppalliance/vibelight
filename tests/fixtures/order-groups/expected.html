@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -136,10 +139,8 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> App
 {
     <span class="src">a_core</span>: <a href="#type.order_groups.engine.Core">engine::Core</a>,
-
-    <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>,
-
-    <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
+<span class="gap"></span>    <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>,
+<span class="gap"></span>    <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
 }</code></pre>
 <h3 id="type.order_groups.engine.Core">engine::Core</h3>
 <div class="doc mc-doc">
@@ -148,8 +149,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Core
 {
     <span class="src">a_plan</span>: <a href="#type.order_groups.engine.Plan">Plan</a>,
-
-    <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
+<span class="gap"></span>    <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
 }</code></pre>
 <h3 id="type.order_groups.engine.Plan">engine::Plan</h3>
 <div class="doc mc-doc">

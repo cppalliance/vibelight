@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -110,25 +113,16 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Run
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The name of the run.</span></div>
-    <span class="src">name</span>: String,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The limit, when there is one.</span></div>
-    <span class="src">limit</span>: Option&lt;u32&gt;,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">When the run started.</span></div>
-    <span class="src">started</span>: chrono::DateTime&lt;chrono::Utc&gt;,
-
-<span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The name of the run.</span></div>    <span class="src">name</span>: String,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The limit, when there is one.</span></div>    <span class="src">limit</span>: Option&lt;u32&gt;,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">When the run started.</span></div>    <span class="src">started</span>: chrono::DateTime&lt;chrono::Utc&gt;,
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">chat</span>: <a href="#type.facts.ChatDispatch">ChatDispatch</a>,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The largest run.</span></div>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u32 = 9
-
-    <span class="src">Run</span>()
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts a run.</span></div>
-    <span class="k">static</span> <span class="src">start</span>(name: String) -&gt; <a href="#type.facts.Run">Run</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops it.</span></div>
-    <span class="src">stop</span>() <span class="k">mut</span>
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The largest run.</span></div>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u32 = 9
+<span class="gap"></span>    <span class="src">Run</span>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts a run.</span></div>    <span class="k">static</span> <span class="src">start</span>(name: String) -&gt; <a href="#type.facts.Run">Run</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops it.</span></div>    <span class="src">stop</span>() <span class="k">mut</span>
 }</code></pre>
 <h3 id="type.facts.ChatDispatch">ChatDispatch</h3>
 <div class="doc mc-doc">
@@ -136,10 +130,8 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">enum</span> ChatDispatch
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Send a message.</span></div>
-    <span class="src">Send</span>(String),
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stop the chat.</span></div>
-    <span class="src">Stop</span>,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Send a message.</span></div>    <span class="src">Send</span>(String),
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stop the chat.</span></div>    <span class="src">Stop</span>,
 }</code></pre>
 <h3 id="type.facts.ToolCallDispatch">ToolCallDispatch</h3>
 <div class="doc mc-doc">
@@ -147,10 +139,8 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">enum</span> ToolCallDispatch
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Run a tool.</span></div>
-    <span class="src">Send</span>(String),
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Halt.</span></div>
-    <span class="src">Stop</span>,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Run a tool.</span></div>    <span class="src">Send</span>(String),
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Halt.</span></div>    <span class="src">Stop</span>,
 }</code></pre>
 <hr>
 <h2 id="unconnected">Unconnected types</h2>
@@ -161,8 +151,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Point
 {
     <span class="src">x</span>: i32,
-
-    <span class="src">y</span>: i32,
+<span class="gap"></span>    <span class="src">y</span>: i32,
 }</code></pre>
 <h3 id="type.facts.Size">Size</h3>
 <div class="doc mc-doc">
@@ -171,8 +160,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Size
 {
     <span class="src">x</span>: i32,
-
-    <span class="src">y</span>: i32,
+<span class="gap"></span>    <span class="src">y</span>: i32,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.facts">facts</h3>

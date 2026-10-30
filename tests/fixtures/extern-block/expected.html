@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -91,20 +94,15 @@ span.src{cursor:default}
 <h3 id="mod.extern_block">extern_block</h3>
 <pre><code><span class="k">extern</span> "C"
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The last error.</span></div>
-    <span class="k">static</span> <span class="src">errno</span>: i32
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Absolute value.</span></div>
-    <span class="src">abs</span>(x: i32) -&gt; i32
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Exits the process.</span></div>
-    <span class="src">exit</span>(code: i32) -&gt; !
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The last error.</span></div>    <span class="k">static</span> <span class="src">errno</span>: i32
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Absolute value.</span></div>    <span class="src">abs</span>(x: i32) -&gt; i32
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Exits the process.</span></div>    <span class="src">exit</span>(code: i32) -&gt; !
 }
-
-<span class="k">extern</span> "system"
+<span class="gap"></span><span class="k">extern</span> "system"
 {
     <span class="src">GetTickCount</span>() -&gt; u32
 }
-
-<span class="k">extern</span> "C"
+<span class="gap"></span><span class="k">extern</span> "C"
 {
     <span class="src">secret</span>() -&gt; u8
 }</code></pre>

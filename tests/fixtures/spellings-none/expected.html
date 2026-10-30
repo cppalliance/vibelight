@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -100,10 +103,8 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Line : Debug
 {
     <span class="src">start</span>: <a href="#type.spellings_none.Point">crate::Point</a>,
-
-    <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the label; see </span><code><span class="c">std::option::Option</span></code><span class="c">.</span></div>
-    <span class="src">label</span>&lt;T: Clone&gt;(fallback: T) -&gt; Option&lt;T&gt;
+<span class="gap"></span>    <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the label; see </span><code><span class="c">std::option::Option</span></code><span class="c">.</span></div>    <span class="src">label</span>&lt;T: Clone&gt;(fallback: T) -&gt; Option&lt;T&gt;
 }</code></pre>
 <h3 id="type.spellings_none.Point">Point</h3>
 <div class="doc mc-doc">
@@ -112,8 +113,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Point : Clone, Debug, Display, PartialEq
 {
     <span class="src">label</span>: Option&lt;String&gt;,
-
-    <span class="src">tags</span>: Vec&lt;String&gt;,
+<span class="gap"></span>    <span class="src">tags</span>: Vec&lt;String&gt;,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.spellings_none">spellings_none</h3>

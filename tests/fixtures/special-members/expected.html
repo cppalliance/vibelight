@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -114,11 +117,9 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">count</span>: u32,
-
-<span class="k">public:</span>
+<span class="gap"></span><span class="k">public:</span>
     <span class="src">Counter</span>() = <span class="k">default</span>
-
-    <span class="src">count</span>() -&gt; u32
+<span class="gap"></span>    <span class="src">count</span>() -&gt; u32
 }</code></pre>
 <h3 id="type.special_members.Derived">Derived</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> derive: serde::Serialize</p>
@@ -128,8 +129,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Derived
 {
     <span class="src">value</span>: u8,
-
-    <span class="src">Derived</span>() = <span class="k">default</span>
+<span class="gap"></span>    <span class="src">Derived</span>() = <span class="k">default</span>
 }</code></pre>
 <h3 id="type.special_members.Handle">Handle</h3>
 <div class="doc mc-doc">
@@ -147,10 +147,8 @@ span.src{cursor:default}
 <pre><code><span class="k">enum</span> Mode
 {
     <span class="src">On</span>,
-
-    <span class="src">Off</span>,
-
-    <span class="src">Mode</span>() = <span class="k">default</span>
+<span class="gap"></span>    <span class="src">Off</span>,
+<span class="gap"></span>    <span class="src">Mode</span>() = <span class="k">default</span>
 }</code></pre>
 <h3 id="type.special_members.Name">Name</h3>
 <div class="doc mc-doc">
@@ -164,8 +162,7 @@ span.src{cursor:default}
 <pre><code><span class="k">class</span> Scheduler
 {
     <span class="src">jobs</span>: Vec&lt;u32&gt;,
-
-    <span class="src">~Scheduler</span>()
+<span class="gap"></span>    <span class="src">~Scheduler</span>()
 }</code></pre>
 <h3 id="type.special_members.Written">Written</h3>
 <div class="doc mc-doc">
@@ -174,17 +171,12 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Written
 {
     <span class="src">value</span>: u8,
-
-    <span class="src">Written</span>()
+<span class="gap"></span>    <span class="src">Written</span>()
     <span class="src">Written</span>(str&amp;)
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts from a byte.</span></div>
-    <span class="src">Written</span>(u8&amp;)
-
-    <span class="src">~Written</span>()
-
-    <span class="k">static</span> <span class="src">new</span>() -&gt; Self
-
-    <span class="src">get</span>() -&gt; u8
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts from a byte.</span></div>    <span class="src">Written</span>(u8&amp;)
+<span class="gap"></span>    <span class="src">~Written</span>()
+<span class="gap"></span>    <span class="k">static</span> <span class="src">new</span>() -&gt; Self
+<span class="gap"></span>    <span class="src">get</span>() -&gt; u8
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.special_members">special_members</h3>

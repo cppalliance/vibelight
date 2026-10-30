@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -104,8 +107,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">trait</span> Describe
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns a description.</span></div>
-    <span class="src">describe</span>() -&gt; String
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns a description.</span></div>    <span class="src">describe</span>() -&gt; String
 }</code></pre>
 <h3 id="type.impls.Holder">Holder</h3>
 <div class="doc mc-doc">
@@ -115,10 +117,8 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">item</span>: T&amp; 'a,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the held item.</span></div>
-    <span class="src">item</span>() -&gt; T&amp; 'a
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the held item.</span></div>    <span class="src">item</span>() -&gt; T&amp; 'a
 }</code></pre>
 <h3 id="type.impls.Render">Render</h3>
 <div class="doc mc-doc">
@@ -126,8 +126,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">trait</span> Render
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Renders to a string.</span></div>
-    <span class="src">render</span>() -&gt; String
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Renders to a string.</span></div>    <span class="src">render</span>() -&gt; String
 }</code></pre>
 <h3 id="type.impls.Widget">Widget</h3>
 <div class="doc mc-doc">
@@ -137,12 +136,9 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">id</span>: u32,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a widget.</span></div>
-    <span class="k">static</span> <span class="src">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the identifier.</span></div>
-    <span class="src">id</span>() -&gt; u32
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a widget.</span></div>    <span class="k">static</span> <span class="src">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the identifier.</span></div>    <span class="src">id</span>() -&gt; u32
 }</code></pre>
 <h2 id="impls">Other impls</h2>
 <ul class="impls">

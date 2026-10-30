@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -105,10 +108,8 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Config
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A computed value.</span></div>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">DOUBLE</span>: u32 = Self::VERSION * 2
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The version.</span></div>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">VERSION</span>: u32 = 3
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A computed value.</span></div>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">DOUBLE</span>: u32 = Self::VERSION * 2
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The version.</span></div>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">VERSION</span>: u32 = 3
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.consts">consts</h3>
@@ -119,21 +120,16 @@ span.src{cursor:default}
 <p><span class="c">A long value that does not fit.</span></p>
 </div>
 <pre><code><span class="k">constexpr</span> <span class="src" id="const.consts.GREETING">GREETING</span>: str&amp;
-
-<span class="c"> The default limit.</span>
+<span class="gap"></span><span class="c"> The default limit.</span>
 <span class="k">constexpr</span> <span class="src" id="const.consts.LIMIT">LIMIT</span>: usize = 64
-
-<span class="c"> A value with a macro call.</span>
+<span class="gap"></span><span class="c"> A value with a macro call.</span>
  <span class="c"><b class="m">MACRO</b></span><span class="c"> concat!</span>
 <span class="k">constexpr</span> <span class="src" id="const.consts.NAME">NAME</span>: str&amp;
-
-<span class="c"> A counter.</span>
+<span class="gap"></span><span class="c"> A counter.</span>
 <span class="k">static</span> <span class="src" id="static.consts.COUNTER">COUNTER</span>: AtomicUsize = AtomicUsize::new(0)
-
-<span class="c"> A mutable static.</span>
+<span class="gap"></span><span class="c"> A mutable static.</span>
 <span class="k">static</span> <span class="k">mut</span> <span class="src" id="static.consts.STATE">STATE</span>: u8 = 0
-
- <span class="c">private</span>
+<span class="gap"></span> <span class="c">private</span>
 <span class="k">constexpr</span> <span class="src" id="const.consts.PRIVATE">PRIVATE</span>: u8 = 1</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> concat!</p>
 </main>

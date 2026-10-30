@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -101,22 +104,16 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">enum</span> Event
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because a field has a comment.</span></div>
-    <span class="src">Started</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because a field has a comment.</span></div>    <span class="src">Started</span>
     {
-<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run identifier.</span></div>
-        id: u64,
-
-        name: String,
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run identifier.</span></div>        id: u64,
+<span class="gap"></span>        name: String,
     },
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because its one-line form is too wide.</span></div>
-    <span class="src">Finished</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because its one-line form is too wide.</span></div>    <span class="src">Finished</span>
     {
         identifier: u64,
-
-        summary: String,
-
-        duration_in_milliseconds: u128,
+<span class="gap"></span>        summary: String,
+<span class="gap"></span>        duration_in_milliseconds: u128,
     },
 }</code></pre>
 <h3 id="type.enums.Level">Level</h3>
@@ -126,12 +123,9 @@ span.src{cursor:default}
 <pre><code><span class="k">enum</span> Level
 {
     <span class="src">Low</span>,
-
-    <span class="src">High</span>,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the highest level.</span></div>
-    <span class="k">static</span> <span class="src">max</span>() -&gt; <a href="#type.enums.Level">Level</a>
-
-<span class="k">private:</span>
+<span class="gap"></span>    <span class="src">High</span>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the highest level.</span></div>    <span class="k">static</span> <span class="src">max</span>() -&gt; <a href="#type.enums.Level">Level</a>
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">rank</span>() -&gt; u8
 }</code></pre>
 <h3 id="type.enums.Shape">Shape</h3>
@@ -140,14 +134,10 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">enum</span> Shape
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A unit variant.</span></div>
-    <span class="src">Unit</span>,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A tuple variant.</span></div>
-    <span class="src">Tuple</span>(u8, String),
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A struct-like variant.</span></div>
-    <span class="src">Named</span> { x: i32, y: i32 },
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A variant with a discriminant.</span></div>
-    <span class="src">Valued</span> = 4,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A unit variant.</span></div>    <span class="src">Unit</span>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A tuple variant.</span></div>    <span class="src">Tuple</span>(u8, String),
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A struct-like variant.</span></div>    <span class="src">Named</span> { x: i32, y: i32 },
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A variant with a discriminant.</span></div>    <span class="src">Valued</span> = 4,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.enums">enums</h3>

@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -136,22 +139,17 @@ span.src{cursor:default}
 <p><span class="c">The highest reading.</span></p>
 </div>
 <pre><code><span class="k">constexpr</span> <span class="src" id="const.value_links.tools.LIMIT">LIMIT</span>: u32 = 8
-
-<span class="c"> A running total.</span>
+<span class="gap"></span><span class="c"> A running total.</span>
 <span class="k">static</span> <span class="src" id="static.value_links.tools.TOTAL">TOTAL</span>: u32 = 0
-
-<span class="c"> A Windows backend.</span>
+<span class="gap"></span><span class="c"> A Windows backend.</span>
  <span class="c">windows</span>
 <span class="src" id="fn.value_links.tools.backend">backend</span>() -&gt; u8
-
-<span class="c"> The Unix backend.</span>
+<span class="gap"></span><span class="c"> The Unix backend.</span>
  <span class="c">unix</span>
 <span class="src" id="fn.value_links.tools.backend-2">backend</span>() -&gt; u8
-
-<span class="c"> Reads the gauge, never above </span><code><span class="c"><a href="#const.value_links.tools.LIMIT">LIMIT</a></span></code><span class="c"> and counted in </span><code><span class="c"><a href="#static.value_links.tools.TOTAL">TOTAL</a></span></code><span class="c">.</span>
+<span class="gap"></span><span class="c"> Reads the gauge, never above </span><code><span class="c"><a href="#const.value_links.tools.LIMIT">LIMIT</a></span></code><span class="c"> and counted in </span><code><span class="c"><a href="#static.value_links.tools.TOTAL">TOTAL</a></span></code><span class="c">.</span>
 <span class="src" id="fn.value_links.tools.measure">measure</span>() -&gt; u32
-
-<span class="c"> Draws a </span><code><span class="c"><a href="#type.value_links.tools.Shape">Shape</a></span></code><span class="c">, which shares its name.</span>
+<span class="gap"></span><span class="c"> Draws a </span><code><span class="c"><a href="#type.value_links.tools.Shape">Shape</a></span></code><span class="c">, which shares its name.</span>
 <span class="src" id="fn.value_links.tools.Shape">Shape</span>()</code></pre>
 </main>
 </body>

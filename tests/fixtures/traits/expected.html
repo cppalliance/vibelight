@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -103,8 +106,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">trait</span> Convert&lt;T&gt; <span class="k">where</span> T: Clone
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts a value.</span></div>
-    <span class="src">convert</span>(value: T) -&gt; T
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts a value.</span></div>    <span class="src">convert</span>(value: T) -&gt; T
 }</code></pre>
 <h3 id="type.traits.Lender">Lender</h3>
 <div class="doc mc-doc">
@@ -112,10 +114,8 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">trait</span> Lender
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The borrowed item.</span></div>
-    <span class="k">using</span> <span class="src">Loan</span>&lt;'a&gt; where Self: 'a
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Lends an item.</span></div>
-    <span class="src">lend</span>() <span class="k">mut</span> -&gt; Self::Loan&lt;'_&gt;
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The borrowed item.</span></div>    <span class="k">using</span> <span class="src">Loan</span>&lt;'a&gt; where Self: 'a
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Lends an item.</span></div>    <span class="src">lend</span>() <span class="k">mut</span> -&gt; Self::Loan&lt;'_&gt;
 }</code></pre>
 <h3 id="type.traits.Observer">Observer</h3>
 <div class="doc mc-doc">
@@ -123,18 +123,12 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">trait</span> Observer : Send, Sync
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The item type.</span></div>
-    <span class="k">using</span> <span class="src">Item</span>: Clone
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The most items kept.</span></div>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: usize = 64
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a default observer.</span></div>
-    <span class="k">static</span> <span class="src">make</span>() -&gt; Self <span class="k">where</span> Self: Sized
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ends the run.</span></div>
-    <span class="src">finish</span>(self) -&gt; u32 <span class="k">where</span> Self: Sized
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Clears the buffer.</span></div>
-    <span class="src">flush</span>() <span class="k">mut</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Records one event.</span></div>
-    <span class="src">record</span>(event: str&amp;)
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The item type.</span></div>    <span class="k">using</span> <span class="src">Item</span>: Clone
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The most items kept.</span></div>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: usize = 64
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a default observer.</span></div>    <span class="k">static</span> <span class="src">make</span>() -&gt; Self <span class="k">where</span> Self: Sized
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ends the run.</span></div>    <span class="src">finish</span>(self) -&gt; u32 <span class="k">where</span> Self: Sized
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Clears the buffer.</span></div>    <span class="src">flush</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Records one event.</span></div>    <span class="src">record</span>(event: str&amp;)
 }</code></pre>
 <h3 id="type.traits.Zeroable">Zeroable</h3>
 <div class="doc mc-doc">

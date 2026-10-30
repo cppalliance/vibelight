@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -121,16 +124,11 @@ span.src{cursor:default}
 <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>
-    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The required H1 title.</span></div>
-    <span class="src">title</span>: String,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered live Lua and prose blocks from the H1.</span></div>
-    <span class="src">h1_blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Top-level sections (H2s) in file order.</span></div>
-    <span class="src">sections</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-
-<span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The required H1 title.</span></div>    <span class="src">title</span>: String,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered live Lua and prose blocks from the H1.</span></div>    <span class="src">h1_blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Top-level sections (H2s) in file order.</span></div>    <span class="src">sections</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
+<span class="gap"></span><span class="k">public:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Parses the full source text of a prompt file into a </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c"> and</span>
 <span class="c">returns the events reported during parsing alongside the result.</span>
 
@@ -173,33 +171,24 @@ span.src{cursor:default}
 <span class="c">- </span><code><span class="c">Lua</span></code><span class="c"> when a Lua block in the H1 or in a section fails to compile as</span>
 <span class="c">Lua.</span>
 <span class="c">- </span><code><span class="c">Internal</span></code><span class="c"> when the parser fails through no fault of the prompt: one</span>
-<span class="c">of its own invariants breaks, or the Lua compiler cannot start.</span></div>
-    <span class="k">static</span> <span class="src">parse</span>(input: str&amp;, execution: str&amp;) -&gt;
+<span class="c">of its own invariants breaks, or the Lua compiler cannot start.</span></div>    <span class="k">static</span> <span class="src">parse</span>(input: str&amp;, execution: str&amp;) -&gt;
         (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;)
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the parsed frontmatter.</span></div>
-    <span class="src">frontmatter</span>() -&gt; <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the prompt's title, the text of its required H1 heading.</span></div>
-    <span class="src">title</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-
-<span class="k">internal:</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the parsed frontmatter.</span></div>    <span class="src">frontmatter</span>() -&gt; <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the prompt's title, the text of its required H1 heading.</span></div>    <span class="src">title</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
+<span class="gap"></span><span class="k">internal:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The entry-point section: the first top-level section in file order;</span>
-<span class="c">the Engine reaches it through </span><code><span class="c">crate::detail::entry</span></code><span class="c">.</span></div>
-    <span class="src">entry</span>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
-<span class="c">reaches them through </span><code><span class="c">crate::detail::h1_blocks</span></code><span class="c">.</span></div>
-    <span class="src">h1_blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the top-level H2 sections in file order; the Engine reaches</span>
-<span class="c">them through </span><code><span class="c">crate::detail::sections</span></code><span class="c">.</span></div>
-    <span class="src">sections</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
-
-<span class="k">private:</span>
+<span class="c">the Engine reaches it through </span><code><span class="c">crate::detail::entry</span></code><span class="c">.</span></div>    <span class="src">entry</span>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
+<span class="c">reaches them through </span><code><span class="c">crate::detail::h1_blocks</span></code><span class="c">.</span></div>    <span class="src">h1_blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the top-level H2 sections in file order; the Engine reaches</span>
+<span class="c">them through </span><code><span class="c">crate::detail::sections</span></code><span class="c">.</span></div>    <span class="src">sections</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
+<span class="gap"></span><span class="k">private:</span>
     <span class="k">static</span> <span class="src">parse_body</span>(
         frontmatter: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
         shared: Arc&lt;str&gt;&amp;,
         frontmatter_lines: u32,
         emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
-
-    <span class="k">static</span> <span class="src">parse_inner</span>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
+<span class="gap"></span>    <span class="k">static</span> <span class="src">parse_inner</span>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
 }</code></pre>
 <h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
 <div class="doc mc-doc">
@@ -214,42 +203,26 @@ span.src{cursor:default}
 <span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
 {
 <span class="k">internal:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>
-    <span class="src">name</span>: String,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading level, 2 through 6.</span></div>
-    <span class="src">level</span>: u8,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered lua/prose blocks for this section.</span></div>
-    <span class="src">blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Child sections nested under this one (deeper heading levels).</span></div>
-    <span class="src">children</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Pre-parsed bullet items for list-only sections (no lua blocks).</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>    <span class="src">name</span>: String,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading level, 2 through 6.</span></div>    <span class="src">level</span>: u8,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered lua/prose blocks for this section.</span></div>    <span class="src">blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Child sections nested under this one (deeper heading levels).</span></div>    <span class="src">children</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Pre-parsed bullet items for list-only sections (no lua blocks).</span>
 
-<span class="c">Empty for non-list sections.</span></div>
-    <span class="src">items</span>: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The section's own raw Markdown, without its heading line or children.</span></div>
-    <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered Lua and prose blocks of this section.</span></div>
-    <span class="src">blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the child sections nested under this one.</span></div>
-    <span class="src">children</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic trailing Lua fence when the last block is Lua and not the sole</span>
-<span class="c">leading prologue (a section that is only one Lua block has no epilog).</span></div>
-    <span class="src">epilog</span>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the pre-parsed bullet items for a list-only section.</span></div>
-    <span class="src">items</span>() -&gt; [<a href="#type.runvil_parser.BodyText">BodyText</a>]&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the heading level (2 through 6).</span></div>
-    <span class="src">level</span>() -&gt; u8 <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The section's own raw Markdown: from just after its heading line to the next</span>
-<span class="c">heading of any level, leading blank lines and trailing whitespace trimmed.</span></div>
-    <span class="src">markdown</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the heading text (the section's address).</span></div>
-    <span class="src">name</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic leading Lua fence when the first block is Lua.</span></div>
-    <span class="src">prologue</span>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Text of the last prose block, or </span><code>""</code><span class="c"> when the section has none.</span></div>
-    <span class="src">prose</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
+<span class="c">Empty for non-list sections.</span></div>    <span class="src">items</span>: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The section's own raw Markdown, without its heading line or children.</span></div>    <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered Lua and prose blocks of this section.</span></div>    <span class="src">blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the child sections nested under this one.</span></div>    <span class="src">children</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic trailing Lua fence when the last block is Lua and not the sole</span>
+<span class="c">leading prologue (a section that is only one Lua block has no epilog).</span></div>    <span class="src">epilog</span>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the pre-parsed bullet items for a list-only section.</span></div>    <span class="src">items</span>() -&gt; [<a href="#type.runvil_parser.BodyText">BodyText</a>]&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the heading level (2 through 6).</span></div>    <span class="src">level</span>() -&gt; u8 <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The section's own raw Markdown: from just after its heading line to the next</span>
+<span class="c">heading of any level, leading blank lines and trailing whitespace trimmed.</span></div>    <span class="src">markdown</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the heading text (the section's address).</span></div>    <span class="src">name</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic leading Lua fence when the first block is Lua.</span></div>    <span class="src">prologue</span>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Text of the last prose block, or </span><code>""</code><span class="c"> when the section has none.</span></div>    <span class="src">prose</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
 }</code></pre>
 <h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
 <div class="doc mc-doc">
@@ -258,18 +231,15 @@ span.src{cursor:default}
 <pre><code><span class="dim">[[non_exhaustive]]</span>
 <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>
-    <span class="src">Lua</span>(LuaProgram),
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Author prose: the pending Markdown accumulated since the nearest</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>    <span class="src">Lua</span>(LuaProgram),
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Author prose: the pending Markdown accumulated since the nearest</span>
 <span class="c">preceding heading, </span><code><span class="c">lua</span></code><span class="c"> fence, or thematic break.</span>
 
 <span class="c">The executor installs it as the following Lua block's lazy </span><code><span class="c">prose</span></code>
-<span class="c">template.</span></div>
-    <span class="dim">[[non_exhaustive]]</span>
+<span class="c">template.</span></div>    <span class="dim">[[non_exhaustive]]</span>
     <span class="src">Prose</span>
     {
-<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">Captured Markdown, trimmed of surrounding blank lines.</span></div>
-        text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">Captured Markdown, trimmed of surrounding blank lines.</span></div>        text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
     },
 }</code></pre>
 <hr>

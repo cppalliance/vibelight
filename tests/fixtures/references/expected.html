@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -117,8 +120,7 @@ span.src{cursor:default}
 <pre><code><span class="k">trait</span> Source
 {
     <span class="src">name</span>() -&gt; str&amp;
-
-    <span class="src">read</span>(buf: [u8] mut&amp;) <span class="k">mut</span> -&gt; usize
+<span class="gap"></span>    <span class="src">read</span>(buf: [u8] mut&amp;) <span class="k">mut</span> -&gt; usize
 }</code></pre>
 <h3 id="type.references.Table">Table</h3>
 <div class="doc mc-doc">
@@ -132,51 +134,30 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Views&lt;'a, T&gt;
 {
     <span class="src">shared</span>: T&amp; 'a,
-
-    <span class="src">unique</span>: T mut&amp; 'a,
-
-    <span class="src">name</span>: str&amp; 'static,
-
-    <span class="src">items</span>: [T&amp; 'a]&amp; 'a,
-
-    <span class="src">read</span>: T*,
-
-    <span class="src">write</span>: T mut*,
-
-    <span class="src">shown</span>: dyn Display&amp; 'a,
-
-    <span class="src">check</span>: Box&lt;dyn Fn(str&amp;) -&gt; usize&gt;,
-
-    <span class="src">callback</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
-
-    <span class="src">both</span>: (dyn Display + Send)&amp; 'a,
-
-    <span class="src">wrapped</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
-
-    <span class="src">raw_call</span>: (dyn Fn() -&gt; bool)*,
-
-    <span class="src">step</span>: (fn(u8) -&gt; u8)&amp; 'a,
-
-    <span class="src">clear</span>() <span class="k">mut</span>
-
-    <span class="src">get</span>() -&gt; T&amp;
-
-    <span class="src">into_name</span>(self) -&gt; str&amp; 'static
-
-    <span class="src">lookup</span>(
+<span class="gap"></span>    <span class="src">unique</span>: T mut&amp; 'a,
+<span class="gap"></span>    <span class="src">name</span>: str&amp; 'static,
+<span class="gap"></span>    <span class="src">items</span>: [T&amp; 'a]&amp; 'a,
+<span class="gap"></span>    <span class="src">read</span>: T*,
+<span class="gap"></span>    <span class="src">write</span>: T mut*,
+<span class="gap"></span>    <span class="src">shown</span>: dyn Display&amp; 'a,
+<span class="gap"></span>    <span class="src">check</span>: Box&lt;dyn Fn(str&amp;) -&gt; usize&gt;,
+<span class="gap"></span>    <span class="src">callback</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
+<span class="gap"></span>    <span class="src">both</span>: (dyn Display + Send)&amp; 'a,
+<span class="gap"></span>    <span class="src">wrapped</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
+<span class="gap"></span>    <span class="src">raw_call</span>: (dyn Fn() -&gt; bool)*,
+<span class="gap"></span>    <span class="src">step</span>: (fn(u8) -&gt; u8)&amp; 'a,
+<span class="gap"></span>    <span class="src">clear</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">get</span>() -&gt; T&amp;
+<span class="gap"></span>    <span class="src">into_name</span>(self) -&gt; str&amp; 'static
+<span class="gap"></span>    <span class="src">lookup</span>(
         keys: Vec&lt;str&amp; 'a&gt;&amp;,
         table: std::collections::BTreeMap&lt;String, T mut&amp; 'a&gt;&amp;) <span class="k">mut</span> -&gt;
         Option&lt;T mut&amp; 'a&gt;
-
-    <span class="src">poll</span>(self: Pin&lt;Self mut&amp;&gt;)
-
-    <span class="src">rename</span>(mut self, name: str&amp; 'static) -&gt; Self
-
-    <span class="src">render</span>(out: impl Write mut&amp;, items: [Box&lt;dyn Display&gt;]&amp;)
-
-    <span class="src">same</span>(other: Self&amp;) -&gt; bool
-
-    <span class="src">set</span>(value: T) <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">poll</span>(self: Pin&lt;Self mut&amp;&gt;)
+<span class="gap"></span>    <span class="src">rename</span>(mut self, name: str&amp; 'static) -&gt; Self
+<span class="gap"></span>    <span class="src">render</span>(out: impl Write mut&amp;, items: [Box&lt;dyn Display&gt;]&amp;)
+<span class="gap"></span>    <span class="src">same</span>(other: Self&amp;) -&gt; bool
+<span class="gap"></span>    <span class="src">set</span>(value: T) <span class="k">mut</span>
 }</code></pre>
 <h2 id="impls">Other impls</h2>
 <ul class="impls">
@@ -195,17 +176,13 @@ span.src{cursor:default}
 <p><span class="c">The default name.</span></p>
 </div>
 <pre><code><span class="k">constexpr</span> <span class="src" id="const.references.NAME">NAME</span>: str&amp; = "views"
-
-<span class="c"> Raw bytes behind a reference.</span>
+<span class="gap"></span><span class="c"> Raw bytes behind a reference.</span>
 <span class="k">static</span> <span class="src" id="static.references.BYTES">BYTES</span>: [u8]&amp; = &amp;[1, 2]
-
-<span class="c"> Applies a function to a string.</span>
+<span class="gap"></span><span class="c"> Applies a function to a string.</span>
 <span class="src" id="fn.references.apply">apply</span>&lt;F&gt;(text: String mut&amp;, f: F) -&gt; usize <span class="k">where</span> F: Fn(String mut&amp;) -&gt; usize
-
-<span class="c"> Finds the first item.</span>
+<span class="gap"></span><span class="c"> Finds the first item.</span>
 <span class="src" id="fn.references.first">first</span>&lt;'a&gt;(items: [str&amp; 'a]&amp; 'a) -&gt; Option&lt;str&amp; 'a&gt;
-
-<span class="c"> Picks an item with a closure that returns a reference.</span>
+<span class="gap"></span><span class="c"> Picks an item with a closure that returns a reference.</span>
 <span class="src" id="fn.references.pick">pick</span>&lt;'a, T&gt;(choose: impl Fn(T&amp;) -&gt; T&amp; 'a, items: [T]&amp; 'a) -&gt; Option&lt;T&amp; 'a&gt;</code></pre>
 </main>
 </body>

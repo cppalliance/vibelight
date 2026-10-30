@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -113,16 +116,11 @@ span.src{cursor:default}
 <pre><code><span class="k">class</span> Cursor
 {
     <span class="src">text</span>: String,
-
-    <span class="src">pos</span>: usize,
-
-    <span class="k">static</span> <span class="src">new</span>(text: String) -&gt; <a href="#type.struct_class.Cursor">Cursor</a>
-
-    <span class="src">bump</span>() <span class="k">mut</span>
-
-    <span class="src">into_text</span>(self) -&gt; String
-
-    <span class="src">peek</span>() -&gt; Option&lt;char&gt;
+<span class="gap"></span>    <span class="src">pos</span>: usize,
+<span class="gap"></span>    <span class="k">static</span> <span class="src">new</span>(text: String) -&gt; <a href="#type.struct_class.Cursor">Cursor</a>
+<span class="gap"></span>    <span class="src">bump</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">into_text</span>(self) -&gt; String
+<span class="gap"></span>    <span class="src">peek</span>() -&gt; Option&lt;char&gt;
 }</code></pre>
 <h3 id="type.struct_class.Mixed">Mixed</h3>
 <div class="doc mc-doc">
@@ -131,8 +129,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Mixed
 {
     <span class="src">open</span>: u8,
-
-<span class="k">private:</span>
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">closed</span>: u8,
 }</code></pre>
 <h3 id="type.struct_class.Toggle">Toggle</h3>
@@ -142,10 +139,8 @@ span.src{cursor:default}
 <pre><code><span class="k">enum</span> Toggle
 {
     <span class="src">On</span>,
-
-    <span class="src">Off</span>,
-
-<span class="k">private:</span>
+<span class="gap"></span>    <span class="src">Off</span>,
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">flip</span>() <span class="k">mut</span>
 }</code></pre>
 <h3 id="type.struct_class.Wrapper">Wrapper</h3>

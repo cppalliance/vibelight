@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -103,8 +106,7 @@ span.src{cursor:default}
     <span class="k">where</span> K: Ord + Clone + std::fmt::Debug + Send + Sync, V: Clone + Send
 {
     <span class="src">keys</span>: Vec&lt;K&gt;,
-
-    <span class="src">values</span>: Vec&lt;V&gt;,
+<span class="gap"></span>    <span class="src">values</span>: Vec&lt;V&gt;,
 }</code></pre>
 <h3 id="type.long_lines.Registry">Registry</h3>
 <div class="doc mc-doc">
@@ -117,10 +119,8 @@ span.src{cursor:default}
         S: std::hash::BuildHasher + Default
 {
     <span class="src">keys</span>: Vec&lt;K&gt;,
-
-    <span class="src">state</span>: S,
-
-    <span class="src">values</span>: Vec&lt;V&gt;,
+<span class="gap"></span>    <span class="src">state</span>: S,
+<span class="gap"></span>    <span class="src">values</span>: Vec&lt;V&gt;,
 }</code></pre>
 <h3 id="type.long_lines.Wide">Wide</h3>
 <div class="doc mc-doc">
@@ -128,38 +128,28 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Wide
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">This doc comment line is deliberately longer than eighty columns so it shows comments never wrap.</span></div>
-    <span class="src">a_field_with_a_very_long_type</span>: std::collections::BTreeMap&lt;String, std::collections::BTreeSet&lt;u64&gt;&gt;,
-
-    <span class="k">static</span> <span class="src">exactly_at_80</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
-
-    <span class="k">static</span> <span class="src">fits_with_comment</span>(value: u64) -&gt; u64 <span class="c">// a trailing comment that pushes past eighty</span>
-
-    <span class="k">static</span> <span class="src">huge</span>(
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">This doc comment line is deliberately longer than eighty columns so it shows comments never wrap.</span></div>    <span class="src">a_field_with_a_very_long_type</span>: std::collections::BTreeMap&lt;String, std::collections::BTreeSet&lt;u64&gt;&gt;,
+<span class="gap"></span>    <span class="k">static</span> <span class="src">exactly_at_80</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
+<span class="gap"></span>    <span class="k">static</span> <span class="src">fits_with_comment</span>(value: u64) -&gt; u64 <span class="c">// a trailing comment that pushes past eighty</span>
+<span class="gap"></span>    <span class="k">static</span> <span class="src">huge</span>(
         an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap&lt;String, Vec&lt;u64&gt;&gt;)
-
-    <span class="k">static</span> <span class="src">long_first_line</span>(
+<span class="gap"></span>    <span class="k">static</span> <span class="src">long_first_line</span>(
         argument_number_one: u64,
         argument_number_two: u64) -&gt; u64
-
-    <span class="k">static</span> <span class="src">one_over_limit</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
-
-    <span class="k">static</span> <span class="src">tail_also_breaks</span>(
+<span class="gap"></span>    <span class="k">static</span> <span class="src">one_over_limit</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
+<span class="gap"></span>    <span class="k">static</span> <span class="src">tail_also_breaks</span>(
         argument_number_one: u64,
         argument_number_two: u64) -&gt;
         std::collections::BTreeMap&lt;String, Vec&lt;u64&gt;&gt;
-
-    <span class="src">register</span>(
+<span class="gap"></span>    <span class="src">register</span>(
         name_of_the_thing: str&amp;,
         handler_for_the_thing: Box&lt;dyn Fn(u32)&gt;,
         priority: u8) <span class="k">mut</span>
-
-    <span class="src">register_bounded</span>&lt;T&gt;(
+<span class="gap"></span>    <span class="src">register_bounded</span>&lt;T&gt;(
         name: str&amp;,
         value: T) <span class="k">mut</span>
         <span class="k">where</span> T: Clone + Send + Sync + std::fmt::Debug + std::hash::Hash
-
-    <span class="src">route</span>&lt;R, L&gt;(
+<span class="gap"></span>    <span class="src">route</span>&lt;R, L&gt;(
         read: R,
         load: L)
         <span class="k">where</span>

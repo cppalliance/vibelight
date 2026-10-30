@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -119,8 +122,7 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Engine
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model it talks to.</span></div>
-    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model it talks to.</span></div>    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
 }</code></pre>
 <h3 id="type.test_support.Model">Model</h3>
 <div class="doc mc-doc">
@@ -146,10 +148,8 @@ span.src{cursor:default}
 <pre><code> <span class="c">any(test, feature = "test-support")</span>
 <span class="k">struct</span> ScriptedChat
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model the script stands in for.</span></div>
-    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Where it records.</span></div>
-    <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model the script stands in for.</span></div>    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Where it records.</span></div>    <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
 }</code></pre>
 <hr>
 <h2 id="unconnected">Unconnected types</h2>

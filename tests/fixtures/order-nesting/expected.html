@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -134,8 +137,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Run
 {
     <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
-
-    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
+<span class="gap"></span>    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
 }</code></pre>
 <h3 id="type.order_nesting.Step">Step</h3>
 <div class="doc mc-doc">
@@ -144,10 +146,8 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Step
 {
     <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
-
-    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
-
-    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
+<span class="gap"></span>    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
+<span class="gap"></span>    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Trace">Trace</h3>
 <div class="doc mc-doc">
@@ -174,8 +174,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Fork
 {
     <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
-
-    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
+<span class="gap"></span>    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Left">Left</h3>
 <div class="doc mc-doc">
@@ -206,10 +205,8 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Runs a job.</span></div>
-    <span class="src">run</span>(job: <a href="#type.order_nesting.Job">Job</a>)
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Runs a job.</span></div>    <span class="src">run</span>(job: <a href="#type.order_nesting.Job">Job</a>)
 }</code></pre>
 <h3 id="type.order_nesting.Store">Store</h3>
 <div class="doc mc-doc">

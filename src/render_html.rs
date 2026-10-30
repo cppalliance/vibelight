@@ -218,12 +218,13 @@ impl Page<'_> {
     /// own box.
     ///
     /// A blank line is never written into the flow as its own text. The one
-    /// the layout puts between members becomes the box's own margin when a
-    /// comment line follows it, so it leaves with the box when the box is
-    /// hidden; before a code line it is written as one newline. A newline is
-    /// written before a box and never after it, because a box is a block and
-    /// ends its own line: that is what leaves two members adjacent once their
-    /// comments are hidden.
+    /// the layout puts between members becomes a gap, an empty block that is
+    /// as tall as the blank line while comments show and half that while they
+    /// are hidden. A gap before a comment box is empty while comments show,
+    /// since the box's own margin already spaces it. A newline is written
+    /// before a box and never after it, because a box is a block and ends its
+    /// own line: that leaves nothing behind once a box is hidden, so the
+    /// first member sits directly under the brace.
     fn code_lines(&self, out: &mut String, lines: &[Line]) {
         let mut first = true;
         let mut open_box = false;
@@ -247,9 +248,7 @@ impl Page<'_> {
                     if !first && !after_box {
                         out.push('\n');
                     }
-                    // The blanks seen become the box's own margin, so the gap
-                    // they stood for is hidden with the box.
-                    //
+                    gaps(out, blanks, "gap gap-box");
                     // The box's left edge sits one padding-width left of the
                     // member's column, so the comment's text starts exactly
                     // where the declaration's text does. `ch` is the code
@@ -270,10 +269,7 @@ impl Page<'_> {
                 continue;
             }
             if open_box {
-                // The box is an inline-block, so it does not end its own line
-                // the way a block does: a newline after it is what keeps the
-                // next code line clear of the box.
-                out.push_str("</div>\n");
+                out.push_str("</div>");
                 open_box = false;
                 after_box = true;
             }
@@ -284,9 +280,7 @@ impl Page<'_> {
             if !first && !after_box {
                 out.push('\n');
             }
-            for _ in 0..blanks {
-                out.push('\n');
-            }
+            gaps(out, blanks, "gap");
             blanks = 0;
             after_box = false;
             self.line(out, line);
@@ -395,6 +389,14 @@ fn source_link(link: &Link) -> String {
         attr(&link.target),
         escape(&link.text)
     )
+}
+
+/// Writes `count` gaps of one class: the empty blocks that stand for the
+/// blank lines of a block, so the style sheet sets their height.
+fn gaps(out: &mut String, count: usize, class: &str) {
+    for _ in 0..count {
+        let _ = write!(out, "<span class=\"{class}\"></span>");
+    }
 }
 
 /// Returns how many of a block's leading lines are doc comment lines, the

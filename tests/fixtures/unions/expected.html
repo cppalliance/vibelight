@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -100,12 +103,9 @@ span.src{cursor:default}
 <pre><code><span class="dim">[[repr(C)]]</span>
 <span class="k">union</span> Bits
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As an integer.</span></div>
-    <span class="src">int</span>: u32,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As a float.</span></div>
-    <span class="src">float</span>: f32,
-
-<span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As an integer.</span></div>    <span class="src">int</span>: u32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As a float.</span></div>    <span class="src">float</span>: f32,
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">raw</span>: [u8; 4],
 }</code></pre>
 <h3 id="type.unions.Hidden">Hidden</h3>
@@ -116,8 +116,7 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">b</span>: i8,
-
-    <span class="src">a</span>: u8,
+<span class="gap"></span>    <span class="src">a</span>: u8,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.unions">unions</h3>

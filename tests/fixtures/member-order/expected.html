@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -114,12 +117,9 @@ span.src{cursor:default}
 <pre><code><span class="k">trait</span> Grouped
 {
     <span class="k">using</span> <span class="src">Out</span>
-
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8
-
-    <span class="k">static</span> <span class="src">build</span>() -&gt; Self
-
-    <span class="src">member</span>()
+<span class="gap"></span>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8
+<span class="gap"></span>    <span class="k">static</span> <span class="src">build</span>() -&gt; Self
+<span class="gap"></span>    <span class="src">member</span>()
 }</code></pre>
 <h3 id="type.member_order.Order">Order</h3>
 <div class="doc mc-doc">
@@ -128,10 +128,8 @@ span.src{cursor:default}
 <pre><code><span class="k">enum</span> Order
 {
     <span class="src">Zulu</span>,
-
-    <span class="src">Alpha</span>,
-
-    <span class="src">Mike</span>,
+<span class="gap"></span>    <span class="src">Alpha</span>,
+<span class="gap"></span>    <span class="src">Mike</span>,
 }</code></pre>
 <h3 id="type.member_order.Scrambled">Scrambled</h3>
 <div class="doc mc-doc">
@@ -140,26 +138,17 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Scrambled
 {
     <span class="src">zeta</span>: u8,
-
-    <span class="src">alpha</span>: u8,
-
-    <span class="src">Alpha</span>: u8,
-
-<span class="k">private:</span>
+<span class="gap"></span>    <span class="src">alpha</span>: u8,
+<span class="gap"></span>    <span class="src">Alpha</span>: u8,
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">beta</span>: u8,
-
-<span class="k">public:</span>
+<span class="gap"></span><span class="k">public:</span>
     <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
-
-    <span class="k">static</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
-
-    <span class="src">Apply</span>()
-
-    <span class="src">apply</span>()
-
-    <span class="src">zed</span>()
-
-<span class="k">private:</span>
+<span class="gap"></span>    <span class="k">static</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
+<span class="gap"></span>    <span class="src">Apply</span>()
+<span class="gap"></span>    <span class="src">apply</span>()
+<span class="gap"></span>    <span class="src">zed</span>()
+<span class="gap"></span><span class="k">private:</span>
     <span class="k">static</span> <span class="src">hidden</span>()
 }</code></pre>
 <h3 id="type.member_order.Triple">Triple</h3>

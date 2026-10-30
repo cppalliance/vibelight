@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -110,8 +113,7 @@ span.src{cursor:default}
 <li><a href="#type.kill_list.Event">Event</a></li>
 </ul>
 <pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> constant!</span>
-
-<span class="c"> Defines a constant.</span>
+<span class="gap"></span><span class="c"> Defines a constant.</span>
  <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! constant</span></code></pre>
 <p class="mark" id="macro.3"><b class="m">MACRO</b> constant!</p>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> macro_rules! constant</p>

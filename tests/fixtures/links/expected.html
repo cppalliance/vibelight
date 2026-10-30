@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -118,10 +121,8 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Engine
 {
     <a class="src" href="../../src/lib.rs#L7">speed</a>: u32,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts the engine.</span></div>
-    <a class="src" href="../../src/lib.rs#L12">start</a>()
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops the engine.</span></div>
-    <a class="src" href="../../src/parts.rs#L5">stop</a>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts the engine.</span></div>    <a class="src" href="../../src/lib.rs#L12">start</a>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops the engine.</span></div>    <a class="src" href="../../src/parts.rs#L5">stop</a>()
 }</code></pre>
 <h3 id="type.links.parts.Gauge">parts::Gauge</h3>
 <p class="source">Source: <a href="../../src/parts.rs#L12">src/parts.rs:12</a></p>
@@ -131,8 +132,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Gauge
 {
     <a class="src" href="../../src/parts.rs#L13">reading</a>: Option&lt;u32&gt;,
-
-    <a class="src" href="../../src/parts.rs#L14">spare</a>: std::option::Option&lt;u32&gt;,
+<span class="gap"></span>    <a class="src" href="../../src/parts.rs#L14">spare</a>: std::option::Option&lt;u32&gt;,
 }</code></pre>
 <h3 id="type.links.parts.Part">parts::Part</h3>
 <p class="source">Source: <a href="../../src/parts.rs#L9">src/parts.rs:9</a></p>

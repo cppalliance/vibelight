@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -102,23 +105,16 @@ span.src{cursor:default}
 <span class="c"> Docs for Config.</span>
 <span class="k">struct</span> Config
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Directly above the field.</span></div>
-    <span class="src">first</span>: u8,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Separated from the field by a blank line.</span></div>
-    <span class="src">second</span>: u8, <span class="c">// Trailing comment on the same line.</span>
-
-    <span class="src">third</span>: u8,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes commented parameters.</span></div>
-    <span class="k">static</span> <span class="src">build</span>(
-<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The first input.</span></div>
-        first: u8,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Directly above the field.</span></div>    <span class="src">first</span>: u8,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Separated from the field by a blank line.</span></div>    <span class="src">second</span>: u8, <span class="c">// Trailing comment on the same line.</span>
+<span class="gap"></span>    <span class="src">third</span>: u8,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes commented parameters.</span></div>    <span class="k">static</span> <span class="src">build</span>(
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The first input.</span></div>        first: u8,
         second: u8) -&gt; <a href="#type.comments_attach.Config">Config</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Holds a comment inside its type.</span></div>
-    <span class="src">typed</span>(
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Holds a comment inside its type.</span></div>    <span class="src">typed</span>(
         <span class="c">/* the count */</span>
         items: Vec&lt;u32&gt;)
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Nothing follows this comment in the struct.</span></div>
-}</code></pre>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Nothing follows this comment in the struct.</span></div>}</code></pre>
 <h3 id="type.comments_attach.Holder">Holder</h3>
 <div class="doc mc-doc">
 <p><span class="c">A field whose type holds a comment.</span></p>
@@ -135,8 +131,7 @@ span.src{cursor:default}
 <li><a href="#type.comments_attach.Holder">Holder</a></li>
 </ul>
 <pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! noop</span>
-
-<span class="c"> Holds a string with comment-like text.</span>
+<span class="gap"></span><span class="c"> Holds a string with comment-like text.</span>
 <span class="k">constexpr</span> <span class="src" id="const.comments_attach.PATTERN">PATTERN</span>: str&amp; = "// not a comment"</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! noop</p>
 </main>

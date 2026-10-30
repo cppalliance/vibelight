@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -101,34 +104,20 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">chains</span>: Vec&lt;u32&gt;,
-
-    <span class="src">tasks</span>: Vec&lt;u32&gt;,
-
-    <span class="src">queue</span>: Vec&lt;u32&gt;,
-
-    <span class="src">pending</span>: Vec&lt;u32&gt;,
-
-    <span class="src">issued</span>: Vec&lt;u32&gt;,
-
-    <span class="src">spare</span>: u8,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>
-    <span class="k">static</span> <span class="src">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Admits queued tasks.</span></div>
-    <span class="src">admit</span>() <span class="k">mut</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Applies an answer.</span></div>
-    <span class="src">apply</span>() <span class="k">mut</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the tasks.</span></div>
-    <span class="src">count_tasks</span>() -&gt; usize
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Issues an effect.</span></div>
-    <span class="src">issue</span>() <span class="k">mut</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the chains.</span></div>
-    <span class="src">len</span>() -&gt; usize
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts a task.</span></div>
-    <span class="src">spawn</span>() <span class="k">mut</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Forgets the issued effects.</span></div>
-    <span class="src">withdraw</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">tasks</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">queue</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">pending</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">issued</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">spare</span>: u8,
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Admits queued tasks.</span></div>    <span class="src">admit</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Applies an answer.</span></div>    <span class="src">apply</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the tasks.</span></div>    <span class="src">count_tasks</span>() -&gt; usize
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Issues an effect.</span></div>    <span class="src">issue</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the chains.</span></div>    <span class="src">len</span>() -&gt; usize
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts a task.</span></div>    <span class="src">spawn</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Forgets the issued effects.</span></div>    <span class="src">withdraw</span>() <span class="k">mut</span>
 }</code></pre>
 <h3 id="type.field_index.Small">Small</h3>
 <div class="doc mc-doc">
@@ -138,14 +127,10 @@ span.src{cursor:default}
 {
 <span class="k">private:</span>
     <span class="src">a</span>: u8,
-
-    <span class="src">b</span>: u8,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns both.</span></div>
-    <span class="src">both</span>() -&gt; u8
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the first.</span></div>
-    <span class="src">first</span>() -&gt; u8
+<span class="gap"></span>    <span class="src">b</span>: u8,
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns both.</span></div>    <span class="src">both</span>() -&gt; u8
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the first.</span></div>    <span class="src">first</span>() -&gt; u8
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.field_index">field_index</h3>

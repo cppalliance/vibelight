@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -105,18 +108,14 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Settings : Clone, Debug
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Only with a feature.</span>
-<span class="c">feature = "extra"</span></div>
-    <span class="src">extra</span>: u32,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">feature = "fast"</span>
-<span class="c">unix</span></div>
-    <span class="src">both</span>: u8,
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Also gated, with its own cfg.</span>
+<span class="c">feature = "extra"</span></div>    <span class="src">extra</span>: u32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">feature = "fast"</span>
+<span class="c">unix</span></div>    <span class="src">both</span>: u8,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Also gated, with its own cfg.</span>
 <span class="c">feature = "methods"</span>
-<span class="c">windows</span></div>
-    <span class="src">doubly</span>()
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Gated by the impl's cfg.</span>
-<span class="c">feature = "methods"</span></div>
-    <span class="src">gated</span>()
+<span class="c">windows</span></div>    <span class="src">doubly</span>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Gated by the impl's cfg.</span>
+<span class="c">feature = "methods"</span></div>    <span class="src">gated</span>()
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.cfg_attr">cfg_attr</h3>

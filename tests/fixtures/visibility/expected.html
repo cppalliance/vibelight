@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -121,12 +124,9 @@ span.src{cursor:default}
 <pre><code><span class="k">class</span> Inner
 {
 <span class="k">internal:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>
-    <span class="src">id</span>: u32,
-
-<span class="k">private:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen only here.</span></div>
-    <span class="src">state</span>: u8,
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>    <span class="src">id</span>: u32,
+<span class="gap"></span><span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen only here.</span></div>    <span class="src">state</span>: u8,
 }</code></pre>
 <h3 id="type.visibility.Mixed">Mixed</h3>
 <div class="doc mc-doc">
@@ -134,30 +134,18 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Mixed
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>
-    <span class="src">name</span>: String,
-
-<span class="k">internal:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>
-    <span class="src">size</span>: usize,
-
-<span class="k">private:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A private field.</span></div>
-    <span class="src">secret</span>: u8,
-
-<span class="k">public:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>
-    <span class="k">static</span> <span class="src">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes the name out.</span></div>
-    <span class="src">into_name</span>(self) -&gt; String
-
-<span class="k">internal:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Grows it.</span></div>
-    <span class="src">grow</span>() <span class="k">mut</span>
-
-<span class="k">private:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>
-    <span class="src">check</span>() -&gt; bool
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>    <span class="src">name</span>: String,
+<span class="gap"></span><span class="k">internal:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>    <span class="src">size</span>: usize,
+<span class="gap"></span><span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A private field.</span></div>    <span class="src">secret</span>: u8,
+<span class="gap"></span><span class="k">public:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes the name out.</span></div>    <span class="src">into_name</span>(self) -&gt; String
+<span class="gap"></span><span class="k">internal:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Grows it.</span></div>    <span class="src">grow</span>() <span class="k">mut</span>
+<span class="gap"></span><span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>    <span class="src">check</span>() -&gt; bool
 }</code></pre>
 <h3 id="type.visibility.Mode">Mode</h3>
 <div class="doc mc-doc">
@@ -167,8 +155,7 @@ span.src{cursor:default}
 <span class="k">enum</span> Mode
 {
     <span class="src">Fast</span>,
-
-    <span class="src">Slow</span>,
+<span class="gap"></span>    <span class="src">Slow</span>,
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.visibility">visibility</h3>
@@ -187,40 +174,30 @@ span.src{cursor:default}
 <p><span class="c">Visible everywhere.</span></p>
 </div>
 <pre><code><span class="src" id="fn.visibility.outer.open">open</span>()
-
-<span class="k">extern</span> "C"
+<span class="gap"></span><span class="k">extern</span> "C"
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a stream.</span></div>
-    <span class="src">ext_open</span>() -&gt; i32
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a stream.</span></div>    <span class="src">ext_open</span>() -&gt; i32
 }
-
-<span class="c"> Visible in the crate, through a path.</span>
+<span class="gap"></span><span class="c"> Visible in the crate, through a path.</span>
  <span class="c">internal</span>
 <span class="k">constexpr</span> <span class="src" id="const.visibility.outer.LIMIT">LIMIT</span>: u8 = 4
-
-<span class="c"> A shared counter.</span>
+<span class="gap"></span><span class="c"> A shared counter.</span>
  <span class="c">internal</span>
 <span class="k">static</span> <span class="src" id="static.visibility.outer.COUNT">COUNT</span>: u8 = 0
-
-<span class="c"> Visible in the parent module.</span>
+<span class="gap"></span><span class="c"> Visible in the parent module.</span>
  <span class="c">internal</span>
 <span class="src" id="fn.visibility.outer.parent">parent</span>()
-
-<span class="c"> Visible in the crate.</span>
+<span class="gap"></span><span class="c"> Visible in the crate.</span>
  <span class="c">internal</span>
 <span class="src" id="fn.visibility.outer.shared">shared</span>()
-
-<span class="k">extern</span> "C"
+<span class="gap"></span><span class="k">extern</span> "C"
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Shares a stream.</span></div>
-    <span class="src">ext_share</span>() -&gt; i32
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Shares a stream.</span></div>    <span class="src">ext_share</span>() -&gt; i32
 }
-
-<span class="c"> Visible only here.</span>
+<span class="gap"></span><span class="c"> Visible only here.</span>
  <span class="c">private</span>
 <span class="src" id="fn.visibility.outer.hidden">hidden</span>()
-
-<span class="c"> Also visible only here.</span>
+<span class="gap"></span><span class="c"> Also visible only here.</span>
  <span class="c">private</span>
 <span class="src" id="fn.visibility.outer.own">own</span>()</code></pre>
 </main>

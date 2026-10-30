@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -113,11 +116,9 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Event : Clone, Debug, PartialEq
 {
     <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
-<span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span></div>
-    <span class="src">emit</span>()
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span></div>
-}</code></pre>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
+<span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span></div>    <span class="src">emit</span>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span></div>}</code></pre>
 <p class="mark" id="macro.2"><b class="m">MACRO</b> attribute: tracing::instrument</p>
 <p class="mark" id="macro.3"><b class="m">MACRO</b> forward_methods!</p>
 <h3 id="type.macros.Started">Started</h3>
@@ -127,8 +128,7 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Started
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
-<span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span></div>
-}</code></pre>
+<span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span></div>}</code></pre>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> events!</p>
 <p class="mark" id="macro.5"><b class="m">MACRO</b> lifecycle_constants!</p>
 <h2 id="modules">Modules</h2>
@@ -138,17 +138,13 @@ span.src{cursor:default}
 <li><a href="#type.macros.Started">Started</a></li>
 </ul>
 <pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
-
-<span class="c"> Defines the events.</span>
+<span class="gap"></span><span class="c"> Defines the events.</span>
  <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! events</span>
-
- <span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span>
-
-<span class="c"> A value with a macro.</span>
+<span class="gap"></span> <span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span>
+<span class="gap"></span><span class="c"> A value with a macro.</span>
  <span class="c"><b class="m">MACRO</b></span><span class="c"> stringify!</span>
 <span class="k">constexpr</span> <span class="src" id="const.macros.NAME">NAME</span>: str&amp;
-
-<span class="c"> The entry point.</span>
+<span class="gap"></span><span class="c"> The entry point.</span>
  <span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tokio::main</span>
 <span class="k">async</span> <span class="src" id="fn.macros.main">main</span>()</code></pre>
 <p class="mark" id="macro.6"><b class="m">MACRO</b> events!</p>

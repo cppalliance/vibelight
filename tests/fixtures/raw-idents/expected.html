@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -107,18 +110,13 @@ span.src{cursor:default}
 </div>
 <pre><code><span class="k">struct</span> Keywords
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw field.</span></div>
-    <span class="src">r#type</span>: u8,
-
-    <span class="src">r#match</span>: u8,
-
-<span class="k">private:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw field.</span></div>    <span class="src">r#type</span>: u8,
+<span class="gap"></span>    <span class="src">r#match</span>: u8,
+<span class="gap"></span><span class="k">private:</span>
     <span class="src">kind</span>: u8,
-
-<span class="k">public:</span>
+<span class="gap"></span><span class="k">public:</span>
     <span class="k">static</span> <span class="src">r#async</span>()
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw method.</span></div>
-    <span class="src">r#as</span>() -&gt; u8
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw method.</span></div>    <span class="src">r#as</span>() -&gt; u8
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.raw_idents">raw_idents</h3>

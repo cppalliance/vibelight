@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -92,8 +95,7 @@ span.src{cursor:default}
 <pre><code><span class="k">using</span> MAX = <a class="cross" href="origin.html#const.origin.gauge.LIMIT">relay::LIMIT</a>
 <span class="k">using</span> <a class="cross" href="origin.html#fn.origin.gauge.measure">relay::measure</a>
 <span class="k">using</span> <a class="cross" href="origin.html#static.origin.gauge.TOTAL">relay::TOTAL</a>
-
-<span class="c"> Takes a reading with </span><code><span class="c"><a class="cross" href="origin.html#fn.origin.gauge.measure">measure</a></span></code><span class="c">, which relay re-exports from origin.</span>
+<span class="gap"></span><span class="c"> Takes a reading with </span><code><span class="c"><a class="cross" href="origin.html#fn.origin.gauge.measure">measure</a></span></code><span class="c">, which relay re-exports from origin.</span>
 <span class="src" id="fn.front.sample">sample</span>() -&gt; u32</code></pre>
 </main>
 </body>

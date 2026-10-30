@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -123,10 +126,8 @@ span.src{cursor:default}
     : Display
     , <a href="#type.comments_groups.traits.Persist">traits::Persist</a>
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a handle.</span></div>
-    <span class="k">static</span> <span class="src">open</span>() -&gt; <a href="#type.comments_groups.Handle">Handle</a>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reads a byte.</span></div>
-    <span class="src">get</span>() -&gt; u8
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a handle.</span></div>    <span class="k">static</span> <span class="src">open</span>() -&gt; <a href="#type.comments_groups.Handle">Handle</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reads a byte.</span></div>    <span class="src">get</span>() -&gt; u8
 }</code></pre>
 <h3 id="type.comments_groups.traits.Persist">traits::Persist</h3>
 <div class="doc mc-doc">
@@ -153,13 +154,11 @@ span.src{cursor:default}
 </ul>
 <pre><code><span class="c"> The key type.</span>
 <span class="k">using</span> <a href="#type.comments_groups.store.Key">store::Key</a>
-
-<span class="c"> Store operations, for scripts.</span>
+<span class="gap"></span><span class="c"> Store operations, for scripts.</span>
 <span class="k">using</span> <a href="#fn.comments_groups.store.read">store::read</a>
 <span class="c"> Writes replace the old value.</span>
 <span class="k">using</span> <a href="#fn.comments_groups.store.write">store::write</a>
-
-<span class="k">using</span> <a href="#type.comments_groups.store.Value">store::Value</a> <span class="c">// The value type.</span></code></pre>
+<span class="gap"></span><span class="k">using</span> <a href="#type.comments_groups.store.Value">store::Value</a> <span class="c">// The value type.</span></code></pre>
 <h3 id="mod.comments_groups.store">store</h3>
 <div class="doc mc-doc">
 <p><span class="c">Keys and values.</span></p>
@@ -172,8 +171,7 @@ span.src{cursor:default}
 <p><span class="c">Reads a value.</span></p>
 </div>
 <pre><code><span class="src" id="fn.comments_groups.store.read">read</span>()
-
-<span class="c"> Writes a value.</span>
+<span class="gap"></span><span class="c"> Writes a value.</span>
 <span class="src" id="fn.comments_groups.store.write">write</span>()</code></pre>
 <h3 id="mod.comments_groups.traits">traits</h3>
 <ul>

@@ -44,7 +44,10 @@ span.src{cursor:default}
 .toggle:checked~nav .button .on{display:inline}
 .toggle:checked~nav .button .off{display:none}
 .toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.mc{display:inline-block;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
+.gap{display:block;height:1.45em}
+.gap-box{height:0}
+.toggle:checked~main .gap{height:.725em}
+.mc{display:block;width:fit-content;white-space:pre;background:var(--box);border-radius:4px;padding:.2rem .9rem;margin:.45rem 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:calc(100% - 1rem)}
 </style>
 </head>
 <body>
@@ -99,26 +102,16 @@ span.src{cursor:default}
 <pre><code><span class="k">struct</span> Node
 {
     <span class="k">static</span> <span class="src">none</span>()
-
-    <span class="src">boxed</span>(self: Box&lt;Self&gt;)
-
-    <span class="src">consume</span>(self)
-
-    <span class="src">consume_mut</span>(mut self)
-
-    <span class="src">counted</span>(self: Rc&lt;Self&gt;)
-
-    <span class="src">exclusive</span>() <span class="k">mut</span>
-
-    <span class="src">explicit</span>() -&gt; u8
-
-    <span class="src">explicit_mut</span>() <span class="k">mut</span>
-
-    <span class="src">lifetime</span>&lt;'a&gt;() -&gt; str&amp; 'a
-
-    <span class="src">pinned</span>(self: Pin&lt;Self mut&amp;&gt;)
-
-    <span class="src">shared</span>() -&gt; u8
+<span class="gap"></span>    <span class="src">boxed</span>(self: Box&lt;Self&gt;)
+<span class="gap"></span>    <span class="src">consume</span>(self)
+<span class="gap"></span>    <span class="src">consume_mut</span>(mut self)
+<span class="gap"></span>    <span class="src">counted</span>(self: Rc&lt;Self&gt;)
+<span class="gap"></span>    <span class="src">exclusive</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">explicit</span>() -&gt; u8
+<span class="gap"></span>    <span class="src">explicit_mut</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src">lifetime</span>&lt;'a&gt;() -&gt; str&amp; 'a
+<span class="gap"></span>    <span class="src">pinned</span>(self: Pin&lt;Self mut&amp;&gt;)
+<span class="gap"></span>    <span class="src">shared</span>() -&gt; u8
 }</code></pre>
 <h2 id="modules">Modules</h2>
 <h3 id="mod.receivers">receivers</h3>
