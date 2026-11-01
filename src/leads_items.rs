@@ -403,8 +403,9 @@ pub(crate) fn escapes(run: &AnalysisRun<'_>, item: ItemId) -> bool {
 
 /// Tells whether a function is an access seam: its body is one call to a
 /// function of the run, or one method call on a parameter whose type's
-/// inherent method of that name the catalog holds, and that callee is
-/// less visible than the function, which opens it to wider callers.
+/// inherent method of that name the catalog holds, and the function can
+/// be named from strictly more places than that callee, which opens the
+/// callee to wider callers.
 pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<'_>) -> bool {
     let t = func.item.target;
     let Some(b) = run.body_of(func.item) else {
@@ -444,7 +445,7 @@ pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<
         }
         Some(Single::Field(_)) | None => None,
     };
-    callee.is_some_and(|callee| func.vis.rank() < callee.vis.rank())
+    callee.is_some_and(|callee| run.strictly_wider(func.item, callee.item))
 }
 
 /// Tells whether a body builds an `Err` or matches an `Err` arm.

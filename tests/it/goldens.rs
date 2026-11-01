@@ -141,4 +141,5 @@ goldens! {
     unparsable => "unparsable",
     value_links => "value-links",
     visibility => "visibility",
+    visibility_scopes => "visibility-scopes",
 }

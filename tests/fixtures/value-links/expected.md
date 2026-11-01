@@ -1,6 +1,7 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"value_links","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":31,"to":37},{"path":"relay","from":38,"to":41},{"path":"tools","from":42,"to":57}]}
+{"k":"modules","items":[{"path":"crate","from":32,"to":38},{"path":"relay","from":39,"to":42},{"path":"tools","from":43,"to":58}]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["tools"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["tools::Shape::sides"],"evidence":"no hit of `sides` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["tools::backend"],"evidence":"1 production hits of `backend` outside macros, none a resolved or unique qualified path to it","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["tools::backend"],"evidence":"1 production hits of `backend` outside macros, none a resolved or unique qualified path to it","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}

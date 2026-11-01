@@ -257,6 +257,26 @@ fn a_string_that_names_a_kind_or_a_state_is_stringly_typed_but_not_on_the_wire()
 }
 
 #[test]
+fn a_pub_mod_on_the_surface_is_a_lead_and_one_off_it_is_not() {
+    finds(
+        "pub-mod-surface",
+        "pub mod api { pub fn run() {} }\n",
+        &["api"],
+        "mod api { pub fn run() {} }\npub use api::run;\n",
+    );
+}
+
+#[test]
+fn a_restricted_visibility_spelled_narrower_than_it_reaches_is_a_lead() {
+    finds(
+        "visibility-spelling",
+        "pub mod a {\n    pub(super) fn f() {}\n    pub mod b {\n        pub(in crate::a) fn g() {}\n    }\n}\n",
+        &["a::b::g", "a::f"],
+        "pub mod a {\n    pub(crate) fn f() {}\n    pub mod b {\n        pub(super) fn g() {}\n        pub mod c {\n            pub(in crate::a) fn h() {}\n        }\n    }\n}\n",
+    );
+}
+
+#[test]
 fn sibling_modules_that_import_each_other_form_a_cycle() {
     finds(
         "module-cycle",

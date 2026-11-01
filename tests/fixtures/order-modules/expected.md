@@ -1,18 +1,23 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"order_modules","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":18,"to":23},{"path":"engine","from":24,"to":31},{"path":"plan","from":32,"to":41}]}
+{"k":"modules","items":[{"path":"crate","from":23,"to":28},{"path":"engine","from":29,"to":36},{"path":"plan","from":37,"to":48}]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["engine"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["plan"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"module-cycle","mode":"resolved","subjects":["engine","plan"],"evidence":"`engine` uses `plan`; `plan` uses `engine`","locs":["src/lib.rs:0","src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["engine::Runner"],"evidence":"no hit of `Runner` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
-{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["engine::start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["plan::FakeStep"],"evidence":"no hit of `FakeStep` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["plan::launch"],"evidence":"no hit of `launch` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["plan::Plan::steps"],"evidence":"no hit of `steps` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["engine::Runner::plan"],"evidence":"0 struct literals of `Runner` set it, and no `.plan` access or pattern reads it","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["plan::Plan::steps"],"evidence":"0 struct literals of `Plan` set it, and no `.steps` access or pattern reads it","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
+{"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["engine::start"],"evidence":"2 observed uses, all inside `order_modules`; no other target of the run writes `start`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"surface","path":"engine","kind":"mod"}
 {"k":"surface","path":"engine::Runner","kind":"struct"}
 {"k":"surface","path":"engine::start","kind":"fn"}
 {"k":"surface","path":"Orphan","kind":"struct"}
 {"k":"surface","path":"plan","kind":"mod"}
 {"k":"surface","path":"plan::FakeStep","kind":"struct","test_support":true}
+{"k":"surface","path":"plan::launch","kind":"fn"}
 {"k":"surface","path":"plan::Plan","kind":"struct"}
 {"k":"surface","path":"plan::Step","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
@@ -27,9 +32,9 @@
 {"k":"doc","path":"engine::Runner","text":"A runner."}
 {"k":"field","path":"engine::Runner::plan","rust":"pub plan: crate::plan::Plan","loc":"src/lib.rs:0"}
 {"k":"doc","path":"engine::Runner::plan","text":"Its plan."}
-{"k":"fn","path":"engine::start","sig":"pub fn start()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"engine::start","sig":"pub fn start()","loc":"src/lib.rs:0","direct_callers":["plan::launch"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"engine::start","text":"Starts the engine."}
-{"k":"mod","path":"plan","loc":"src/lib.rs:0","vis":"public","types":3}
+{"k":"mod","path":"plan","loc":"src/lib.rs:0","vis":"public","types":3,"functions":{"public":1}}
 {"k":"doc","path":"plan","text":"Plans runs."}
 {"k":"struct","path":"plan::Plan","rust":"pub struct Plan { pub steps: Vec<Step> }","loc":"src/lib.rs:0","named_by":["engine::Runner"]}
 {"k":"doc","path":"plan::Plan","text":"A plan."}
@@ -37,5 +42,7 @@
 {"k":"doc","path":"plan::Plan::steps","text":"Its steps."}
 {"k":"struct","path":"plan::Step","rust":"pub struct Step","loc":"src/lib.rs:0","named_by":["plan::Plan"]}
 {"k":"doc","path":"plan::Step","text":"One step."}
+{"k":"fn","path":"plan::launch","sig":"pub fn launch()","loc":"src/lib.rs:0","body":{"statements":1,"tokens":12,"single":"call crate::engine::start"}}
+{"k":"doc","path":"plan::launch","text":"Starts the engine for a plan, a call that closes a cycle no `use`\nitem writes."}
 {"k":"struct","path":"plan::FakeStep","rust":"pub struct FakeStep","loc":"src/lib.rs:0","cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
 {"k":"doc","path":"plan::FakeStep","text":"A step for tests and benches."}

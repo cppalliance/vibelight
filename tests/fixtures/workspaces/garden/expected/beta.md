@@ -1,6 +1,7 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"beta","target":"lib","dir":"crates/beta"}
-{"k":"modules","items":[{"path":"crate","from":8,"to":10},{"path":"parts","from":11,"to":16}]}
+{"k":"modules","items":[{"path":"crate","from":9,"to":11},{"path":"parts","from":12,"to":17}]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["parts"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"surface","path":"Gauge","kind":"struct","item":"parts::Gauge"}
 {"k":"surface","path":"parts","kind":"mod"}
 {"k":"surface","path":"parts::Gauge","kind":"struct"}

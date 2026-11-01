@@ -1,19 +1,21 @@
 //! The detectors of placement and visibility: one path for a module and a
 //! function, or one name for several kinds of type, a type's inherent
 //! impls across many files, a module that holds one item or only impls, a
-//! `pub` item no path from its library's root reaches, `non_exhaustive` off
-//! every surface, and modules whose `use` items import from each other.
+//! `pub` item no path from its library's root reaches, a `pub mod` on the
+//! surface, `non_exhaustive` off every surface, modules that use each
+//! other's items, and a restricted visibility spelled narrower than it is.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
+use crate::leads_census_scope::module_name;
 use crate::leads_words::words;
 use crate::macros;
-use crate::model::{Crate, DeclKind, FileId, ItemKind, ModId, Shape, ValueRef, Vis};
+use crate::model::{Crate, DeclKind, FileId, ItemKind, MemberKind, ModId, Shape, ValueRef, Vis};
+use crate::order_graph::strongly_connected;
 use crate::root::TargetKind;
-use crate::surface::module_at;
 use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
 
@@ -30,6 +32,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
         }
         hidden_non_exhaustive(run, t, krate, out);
         module_cycle(run, t, krate, out);
+        visibility_spelling(run, t, krate, out);
     }
 }
 
@@ -144,6 +147,9 @@ fn pub_off_surface(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec
             let evidence = "`pub`, but no public path from the crate root reaches it";
             let lead = Lead::new("pub-off-surface", Mode::Resolved, evidence).item(run, at);
             out.push(lead.limits(&["macros"]));
+        } else if matches!(item, ItemRef::Module(_)) {
+            let evidence = "`pub mod` on the surface: its `pub` items reach users by its path";
+            out.push(Lead::new("pub-mod-surface", Mode::Resolved, evidence).item(run, at));
         }
     }
 }
@@ -180,55 +186,37 @@ fn hidden_non_exhaustive(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &m
     }
 }
 
-/// Tells whether one of two modules holds the other.
-fn nested(krate: &Crate, a: ModId, b: ModId) -> bool {
-    let (x, y) = (&krate.modules[a].path, &krate.modules[b].path);
-    x.starts_with(y) || y.starts_with(x)
-}
-
-/// `module-cycle`: modules of a target, none inside another, whose `use`
-/// items import from each other, directly or around a longer cycle. A
-/// `use` imports from the module its path names, or from the module that
-/// holds the item it names.
+/// `module-cycle`: modules of a target, none inside another, that use each
+/// other's items, directly or around a longer cycle, as the module graph
+/// of the observed uses shows. The lead is lexical when an edge of the
+/// cycle rests only on qualified paths of the census.
 fn module_cycle(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Lead>) {
+    let graph = &run.graph[t];
     let n = krate.modules.len();
-    let mut edges: Vec<BTreeSet<ModId>> = vec![BTreeSet::new(); n];
-    for (a, module) in krate.modules.iter().enumerate() {
-        for u in module.uses.iter().filter(|u| !u.global) {
-            let named = module_at(krate, a, &u.path, false);
-            let holder = (u.name.is_some())
-                .then(|| u.path.split_last())
-                .flatten()
-                .and_then(|(_, up)| module_at(krate, a, up, false));
-            if let Some(b) = named.or(holder) {
-                if b != a && !nested(krate, a, b) {
-                    edges[a].insert(b);
-                }
-            }
-        }
-    }
-    let reach: Vec<BTreeSet<ModId>> = (0..n).map(|a| reachable(&edges, a)).collect();
-    let mut seen = vec![false; n];
-    for a in 0..n {
-        if seen[a] {
-            continue;
-        }
-        let cycle: Vec<ModId> = (0..n)
-            .filter(|&b| b == a || (reach[a].contains(&b) && reach[b].contains(&a)))
-            .collect();
-        for &b in &cycle {
-            seen[b] = true;
-        }
+    let edges: Vec<BTreeSet<ModId>> = (graph.iter())
+        .map(|to| to.keys().copied().collect())
+        .collect();
+    let nodes: Vec<ModId> = (0..n).collect();
+    for mut cycle in strongly_connected(n, &edges, &nodes) {
         if cycle.len() < 2 {
             continue;
         }
+        cycle.sort_unstable();
         let name = |m: ModId| krate.modules[m].path.join("::");
         let mut uses = Vec::new();
+        let mut lexical = false;
         for &x in &cycle {
-            let into = edges[x].iter().filter(|y| cycle.contains(y));
-            uses.extend(into.map(|&y| format!("`{}` uses `{}`", name(x), name(y))));
+            for (&y, edge) in graph[x].iter().filter(|(y, _)| cycle.contains(y)) {
+                uses.push(format!("`{}` uses `{}`", name(x), name(y)));
+                lexical |= !edge.resolved;
+            }
         }
-        let mut lead = Lead::new("module-cycle", Mode::DirectSyntax, uses.join("; "));
+        let mode = if lexical {
+            Mode::Lexical
+        } else {
+            Mode::Resolved
+        };
+        let mut lead = Lead::new("module-cycle", mode, uses.join("; "));
         for m in cycle {
             lead = lead.item(
                 run,
@@ -242,18 +230,71 @@ fn module_cycle(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Le
     }
 }
 
-/// Returns the modules that module `from` reaches through `edges`.
-fn reachable(edges: &[BTreeSet<ModId>], from: ModId) -> BTreeSet<ModId> {
-    let mut seen = BTreeSet::new();
-    let mut stack = vec![from];
-    while let Some(m) = stack.pop() {
-        for &next in &edges[m] {
-            if seen.insert(next) {
-                stack.push(next);
+/// `visibility-spelling`: a restricted visibility whose spelling says less
+/// than it reaches. A `pub(super)` in a module directly under the crate
+/// root reaches the whole crate, which `pub(crate)` says, and a
+/// `pub(in path)` that names the declaring module, its parent, or the root
+/// says what `pub(self)`, `pub(super)`, or `pub(crate)` says.
+fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Lead>) {
+    let mut nodes: Vec<(ItemRef, Vis, ModId, String)> = Vec::new();
+    for (d, decl) in krate.decls.iter().enumerate() {
+        nodes.push((
+            ItemRef::Decl(d),
+            decl.vis,
+            decl.module,
+            decl.meta.vis.clone(),
+        ));
+        for (k, member) in decl.members.iter().enumerate() {
+            if matches!(member.kind, MemberKind::Field(_)) {
+                let spelled = member.meta.vis.clone();
+                nodes.push((ItemRef::Own(d, k), member.vis, decl.module, spelled));
             }
         }
     }
-    seen
+    for (m, module) in krate.modules.iter().enumerate() {
+        if let (Some(parent), Vis::Super | Vis::In(_)) = (module.parent, module.vis) {
+            let spelled = spelled_vis(krate, module.vis);
+            nodes.push((ItemRef::Module(m), module.vis, parent, spelled));
+        }
+        for (k, item) in module.items.iter().enumerate() {
+            let at = ItemRef::Value(ValueRef { module: m, item: k });
+            nodes.push((at, item.vis, m, item.meta.vis.clone()));
+        }
+    }
+    for (i, imp) in krate.impls.iter().enumerate() {
+        for (k, member) in imp.members.iter().enumerate() {
+            let spelled = member.meta.vis.clone();
+            nodes.push((ItemRef::Inherent(i, k), member.vis, imp.module, spelled));
+        }
+    }
+    for (item, vis, from, spelled) in nodes {
+        let parent = krate.parent_module(from);
+        let canonical = match vis {
+            Vis::Super if parent == Some(0) => "pub(crate)",
+            Vis::In(m) if m == from => "pub(self)",
+            Vis::In(m) if Some(m) == parent => "pub(super)",
+            Vis::In(0) => "pub(crate)",
+            _ => continue,
+        };
+        let evidence = format!(
+            "`{spelled}` in `{}` reaches what `{canonical}` says",
+            module_name(run, t, from)
+        );
+        let at = ItemId { target: t, item };
+        out.push(Lead::new("visibility-spelling", Mode::DirectSyntax, evidence).item(run, at));
+    }
+}
+
+/// Spells a module's visibility from its kind, since a `mod` line keeps no
+/// spelling of its own: `pub(in path)` names its module from the root.
+fn spelled_vis(krate: &Crate, vis: Vis) -> String {
+    match vis {
+        Vis::Public => "pub".to_owned(),
+        Vis::Crate => "pub(crate)".to_owned(),
+        Vis::Super => "pub(super)".to_owned(),
+        Vis::In(m) => format!("pub(in crate::{})", krate.modules[m].path.join("::")),
+        Vis::Private => String::new(),
+    }
 }
 
 /// Returns the functions that module `p` of a crate holds or re-exports

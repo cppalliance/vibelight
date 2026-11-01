@@ -1,7 +1,9 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"visibility","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":17,"to":47},{"path":"outer","from":48,"to":67}]}
+{"k":"modules","items":[{"path":"crate","from":19,"to":49},{"path":"outer","from":50,"to":69}]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["outer"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"hidden-non-exhaustive","mode":"resolved","subjects":["Mode"],"evidence":"`#[non_exhaustive]` off every surface; publish_allowed is false","locs":["src/lib.rs:0"],"limits":["macros"]}
+{"k":"lead","id":"visibility-spelling","mode":"direct-syntax","subjects":["outer::parent"],"evidence":"`pub(super)` in `outer` reaches what `pub(crate)` says","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Hidden"],"evidence":"no hit of `Hidden` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Inner"],"evidence":"no hit of `Inner` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Mixed::into_name"],"evidence":"no hit of `into_name` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

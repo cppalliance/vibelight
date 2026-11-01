@@ -1,8 +1,10 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"comments_groups","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":29,"to":45},{"path":"store","from":46,"to":55},{"path":"traits","from":56,"to":59}]}
+{"k":"modules","items":[{"path":"crate","from":31,"to":47},{"path":"store","from":48,"to":57},{"path":"traits","from":58,"to":61}]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Handle","traits::Persist"],"evidence":"one impl in the run: `impl traits::Persist for Handle`","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-impls","macros"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["traits"],"evidence":"holds only `Persist`","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["store"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["traits"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Handle::get"],"evidence":"no hit of `get` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Handle::open"],"evidence":"no hit of `open` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["traits::Persist::save"],"evidence":"no hit of `save` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

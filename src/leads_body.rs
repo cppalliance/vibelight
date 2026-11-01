@@ -161,7 +161,7 @@ fn forwarder(
         };
         let evidence = match &facts.single {
             Some(Single::Call(_)) => match pure_call(run, funcs, func.item, b, facts) {
-                Some(to) if func.vis.rank() < to.vis.rank() => {
+                Some(to) if run.strictly_wider(func.item, to.item) => {
                     found.insert(func.item);
                     continue;
                 }

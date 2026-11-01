@@ -1,6 +1,7 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"order_cycles","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":21,"to":28},{"path":"net","from":29,"to":34}]}
+{"k":"modules","items":[{"path":"crate","from":22,"to":29},{"path":"net","from":30,"to":35}]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["net"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Left::right"],"evidence":"no hit of `right` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["net::Ping::pong"],"evidence":"no hit of `pong` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["net::Pong::ping"],"evidence":"no hit of `ping` in the scanned sources beyond its 2 declarations","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

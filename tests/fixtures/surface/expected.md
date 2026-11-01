@@ -1,9 +1,12 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"surface","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":41,"to":60},{"path":"api","from":61,"to":64},{"path":"api::v1","from":65,"to":70},{"path":"detail","from":71,"to":76},{"path":"detail::tools","from":77,"to":80},{"path":"prelude","from":81,"to":86},{"path":"values","from":87,"to":95},{"path":"values::inner","from":96,"to":98}]}
+{"k":"modules","items":[{"path":"crate","from":44,"to":63},{"path":"api","from":64,"to":67},{"path":"api::v1","from":68,"to":73},{"path":"detail","from":74,"to":79},{"path":"detail::tools","from":80,"to":83},{"path":"prelude","from":84,"to":89},{"path":"values","from":90,"to":98},{"path":"values::inner","from":99,"to":101}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["detail::tools"],"evidence":"holds only `Tool`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["values::inner"],"evidence":"holds only `deep`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["detail::helper"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/lib.rs:0"],"limits":["macros"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["api"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["api::v1"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["detail::tools"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["api::v1::send"],"evidence":"no hit of `send` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["api::VERSION"],"evidence":"no hit of `VERSION` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["CALLS"],"evidence":"no hit of `CALLS` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

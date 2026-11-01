@@ -1,14 +1,16 @@
 //! The census detectors of reach: an item away from its users, a library
-//! item that no other target of the run names, and a `pub(crate)` item
-//! that only its own module names. No compiler warns about a visibility
+//! item that no other target of the run names, and an item whose observed
+//! uses need less reach than it has. No compiler warns about a visibility
 //! wider than the uses need, or about an item away from its users.
 
+use crate::access::{Access, covers, encloses, join, reexported, spell, written};
 use crate::analysis::AnalysisRun;
-use crate::analysis_uses::{Use, UseKind};
+use crate::analysis_uses::UseKind;
 use crate::census::{Context, SourceId};
 use crate::leads::{Lead, Mode};
 use crate::leads_census_place::defined_away;
-use crate::leads_census_scope::{Candidate, Kind, Scope, consumers, in_macro, module_name};
+use crate::leads_census_scope::{Candidate, Kind, Scope, consumers, in_macro};
+use crate::model::{ItemKind, Vis};
 use crate::root::TargetKind;
 
 /// Finds the group's leads on placement and visibility.
@@ -24,7 +26,7 @@ pub(crate) fn find(
         }
         defined_away(run, c, out);
         no_observed_external_use(run, c, out);
-        no_observed_outside_module_use(run, c, out);
+        visibility_slack(run, c, out);
     }
 }
 
@@ -72,44 +74,90 @@ fn no_observed_external_use(run: &AnalysisRun<'_>, c: &Candidate<'_>, out: &mut 
     );
 }
 
-/// `no-observed-outside-module-use`: an item written `pub(crate)`,
-/// `pub(super)`, or `pub(in path)` whose name the run declares once and
-/// whose every hit is in its own file, a file that holds only its module,
-/// outside macros. A declaration that a signature names stays out, since a
-/// wider item's signature may expose it.
-fn no_observed_outside_module_use(run: &AnalysisRun<'_>, c: &Candidate<'_>, out: &mut Vec<Lead>) {
+/// `visibility-slack`: a declaration, function, constant, static, or
+/// associated function or constant whose observed uses need less reach
+/// than it has. The need is the lowest module that holds the item's own
+/// module and every use, widened to the reach of each re-export of it.
+/// Every use must be in its own target's tree, and every hit of its name,
+/// which the run declares once, in a file that the need holds whole. A
+/// library's surface item, a `pub` item of a library, which
+/// `pub-off-surface` names, and a declaration that a signature names stay
+/// out. The lead is lexical when only qualified paths of the census widen
+/// the need.
+fn visibility_slack(run: &AnalysisRun<'_>, c: &Candidate<'_>, out: &mut Vec<Lead>) {
     let t = c.item.target;
-    let listed = !matches!(c.kind, Kind::Variant | Kind::TraitItem);
+    let krate = &run.krates[t];
+    let listed = matches!(
+        c.kind,
+        Kind::Decl(_) | Kind::Function | Kind::Value | Kind::Associated
+    );
+    let lib = run.targets[t].kind == TargetKind::Lib;
     let unique = run.census.declared(&c.name) == 1;
-    if !listed || !c.vis.is_restricted() || !unique || in_macro(run, &c.name) {
+    let open = run.on_surface(c.item) || (lib && c.vis == Vis::Public);
+    if !listed || !unique || open || in_macro(run, &c.name) {
         return;
     }
-    let Some(loc) = run.loc(c.item) else {
+    let Some(reach) = run.access_of(c.item) else {
         return;
     };
-    let krate = &run.krates[t];
-    let alone = matches!(run.scopes[t][loc.file].as_slice(), [(_, m)] if *m == c.module);
-    if !alone || krate.modules[c.module].file != loc.file {
-        return;
-    }
-    let source = run.census.tree_source(t, loc.file);
-    let hits = run.census.token_hits(&c.name);
-    if run.census.count(&c.name).uses() == 0 || hits.iter().any(|hit| hit.source != source) {
-        return;
-    }
     let uses = consumers(run, c.item);
-    let outside =
-        |u: &&Use| run.census.sources[u.source].target != Some(t) || u.module != Some(c.module);
     let signed = uses.iter().any(|u| u.kind == UseKind::Signature);
-    if uses.iter().any(outside) || (signed && matches!(c.kind, Kind::Decl(_))) {
+    if uses.is_empty() || (signed && matches!(c.kind, Kind::Decl(_))) {
         return;
     }
+    let mut need = Access::Within(c.module);
+    let mut resolved = need;
+    for u in &uses {
+        let source = &run.census.sources[u.source];
+        if source.target != Some(t) || source.context == Context::Doctest {
+            return;
+        }
+        let at = Access::Within(u.module.unwrap_or(0));
+        need = join(krate, need, at);
+        if !matches!(u.kind, UseKind::Qualified(_)) {
+            resolved = join(krate, resolved, at);
+        }
+    }
+    for (m, module) in krate.modules.iter().enumerate() {
+        for item in &module.items {
+            if let ItemKind::Reexport { text, .. } = &item.kind {
+                if reexported(krate, m, text) == Some(c.item.item) {
+                    need = join(krate, need, written(krate, item.vis, m));
+                }
+            }
+        }
+    }
+    let Access::Within(holder) = need else {
+        return;
+    };
+    if need == reach || !covers(krate, reach, need) {
+        return;
+    }
+    for hit in run.census.token_hits(&c.name) {
+        let source = &run.census.sources[hit.source];
+        let tree = source.target == Some(t) && source.context != Context::Doctest;
+        let Some(f) = source.file.filter(|_| tree) else {
+            return;
+        };
+        if !(run.scopes[t][f].iter()).all(|&(_, m)| encloses(krate, holder, m)) {
+            return;
+        }
+    }
+    let mode = if covers(krate, resolved, need) {
+        Mode::Resolved
+    } else {
+        Mode::Lexical
+    };
+    let reaches = spell(krate, reach, c.module);
+    let written = if reaches == c.meta.vis {
+        format!("`{reaches}`")
+    } else {
+        format!("`{}` reaches `{reaches}`", c.meta.vis)
+    };
     let evidence = format!(
-        "`{}`, but every hit of `{}` is in `{}`",
-        c.meta.vis,
-        c.name,
-        module_name(run, t, c.module)
+        "{written}, but every observed use is inside what `{}` reaches",
+        spell(krate, need, c.module)
     );
-    let lead = Lead::new("no-observed-outside-module-use", Mode::Lexical, evidence);
-    out.push(lead.item(run, c.item).limits(&["generated-code", "macros"]));
+    let lead = Lead::new("visibility-slack", mode, evidence).item(run, c.item);
+    out.push(lead.limits(&["generated-code", "macros", "method-calls"]));
 }

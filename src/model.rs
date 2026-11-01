@@ -79,12 +79,6 @@ pub(crate) enum Vis {
 }
 
 impl Vis {
-    /// Tells whether the visibility is `pub(crate)`, `pub(super)`, or
-    /// `pub(in path)`.
-    pub(crate) fn is_restricted(self) -> bool {
-        matches!(self, Vis::Crate | Vis::Super | Vis::In(_))
-    }
-
     /// Ranks the visibility for a coarse order: 0 for `pub`, 1 for a
     /// restricted visibility, and 2 for private.
     pub(crate) fn rank(self) -> u8 {

@@ -1,7 +1,8 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"comments_impls","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":10,"to":23},{"path":"parts","from":24,"to":27}]}
+{"k":"modules","items":[{"path":"crate","from":11,"to":24},{"path":"parts","from":25,"to":28}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["parts"],"evidence":"holds only `Part`","locs":["src/parts.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["parts"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/parts.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["parts::Part"],"evidence":"no hit of `Part` in the scanned sources beyond its 1 declaration","locs":["src/parts.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"surface","path":"Engine","kind":"struct"}

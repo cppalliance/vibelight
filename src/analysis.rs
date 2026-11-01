@@ -21,7 +21,8 @@ use crate::model_body::BodyId;
 use crate::root::{Target, TargetKind};
 use crate::source::SourceFile;
 use crate::{
-    access, analysis_items, analysis_paths, attach, census_sources, modtree, spellings, surface,
+    access, analysis_items, analysis_paths, attach, census_sources, modtree, module_graph,
+    spellings, surface,
 };
 
 /// What analysis knows of one target of the run.
@@ -218,6 +219,8 @@ pub(crate) struct AnalysisRun<'a> {
     /// For each target, how far each of its modules, declarations, and
     /// module values can be named from.
     pub(crate) accesses: Vec<access::Accesses>,
+    /// For each target, which of its modules use items of which others.
+    pub(crate) graph: module_graph::Graph,
     /// For each target, the outside items its declarations write in more
     /// than one way, with the self types of the impls that belong to its
     /// declarations left out, as after attach.
@@ -287,6 +290,7 @@ impl<'a> AnalysisRun<'a> {
             summaries: krates.iter().map(analysis_items::summaries).collect(),
             surfaces,
             accesses,
+            graph: Vec::new(),
             spellings,
             boilerplate: boilerplate.to_vec(),
         };
@@ -297,6 +301,7 @@ impl<'a> AnalysisRun<'a> {
             }
         }
         run.uses = run.observe();
+        run.graph = module_graph::build(&run);
         run
     }
 }

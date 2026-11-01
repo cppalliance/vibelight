@@ -4,6 +4,7 @@
 //! detectors that read one type's fields or variants; its siblings hold the
 //! rest.
 
+use crate::access::{covers, narrowed};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
@@ -289,8 +290,8 @@ fn fallible_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec
 
 /// `field-and-accessor`: a field that is not private beside a method that
 /// reaches only that field and is named after it, or `get_` and its name,
-/// when the field is at least as visible as the method. A narrower field
-/// behind a wider getter is the common read-only view.
+/// when the field can be named from everywhere the method can. A narrower
+/// field behind a wider getter is the common read-only view.
 fn field_and_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
     for func in &catalog.funcs {
         let (FnKind::Inherent, Some(d), [read]) = (func.kind, func.decl, func.self_fields) else {
@@ -301,8 +302,15 @@ fn field_and_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Ve
             continue;
         }
         let at = ItemId::decl(func.item.target, d);
+        let krate = &run.krates[at.target];
+        let method = run.access_of(func.item);
+        let field_reach = |vis: Vis| {
+            (run.access_of(at)).and_then(|base| narrowed(krate, base, vis, krate.decls[d].module))
+        };
         let field = (catalog.fields_of(at, None)).find(|f| {
-            f.named && f.name == *read && f.vis != Vis::Private && f.vis.rank() <= func.vis.rank()
+            let reach = field_reach(f.vis);
+            let covered = matches!((reach, method), (Some(a), Some(b)) if covers(krate, a, b));
+            f.named && f.name == *read && f.vis != Vis::Private && covered
         });
         if let Some(field) = field {
             let evidence = format!("`{} {}` and `fn {}`", field.meta.vis, field.name, func.name);

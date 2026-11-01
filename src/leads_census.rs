@@ -29,7 +29,7 @@ pub(crate) const IDS: &[&str] = &[
     "no-observed-field-read",
     "defined-away-from-observed-users",
     "no-observed-external-use",
-    "no-observed-outside-module-use",
+    "visibility-slack",
     "no-observed-reexport-use",
     "one-observed-caller",
     "guarded-error-path",

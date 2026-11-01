@@ -25,6 +25,12 @@ pub mod plan {
     /// One step.
     pub struct Step;
 
+    /// Starts the engine for a plan, a call that closes a cycle no `use`
+    /// item writes.
+    pub fn launch() {
+        crate::engine::start();
+    }
+
     /// A step for tests and benches.
     #[cfg(any(test, feature = "test-support"))]
     pub struct FakeStep;

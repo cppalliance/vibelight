@@ -215,8 +215,8 @@ Look for these kinds:
 - **Vestiges:** items the code or docs show are never produced or used (`no-observed-name-use` and `no-observed-path-use` are leads), compatibility shims inside crates that version together, test knobs in production types (`test-knob` and `test-only-observed-use` are leads), and words left from an earlier design.
 - **Reuse:** an existing type or helper whose fields or logic sibling code repeats.
 - **Naming:** getters and setters that disagree, collisions with std or prelude names, one word for several things or several words for one, names that contradict the docs' defined terms, and stutter.
-- **Placement:** items defined away from every user (`defined-away-from-observed-users` is a lead), module names that contradict their contents, and functions in one impl file that reach only the fields another file's functions use (`direct-impl-field-split` is a lead).
-- **Visibility:** public items that nothing outside their crate, or outside their module, uses and no document promises, which `pub(crate)`, `pub(super)`, or private would hold, and `pub` fields and re-exports that only widen the surface. `no-observed-external-use` and `no-observed-outside-module-use` are leads, and the `surface` records and `pub-off-surface` leads show what the crate offers. The absence leads read bodies and test code, but they see a method call only as a bare name hit shared by every method of that name, and the fact fields do not see method calls at all, so a candidate that is a function or field names the member, and its verifier still searches the whole workspace, `tests/`, examples, and benches included, before confirming a removal or a narrowing. In a binary, or a crate whose only users are in the repository, narrowing is reversible. In a library that outside code may use, narrowing a published item is a hard-to-reverse remedy.
+- **Placement:** items defined away from every user (`defined-away-from-observed-users` is a lead), module names that contradict their contents, functions in one impl file that reach only the fields another file's functions use (`direct-impl-field-split` is a lead), and modules that use each other's items (`module-cycle` is a lead).
+- **Visibility:** public items that nothing outside their crate, or outside their module, uses and no document promises, which `pub(crate)`, `pub(super)`, or private would hold, and `pub` fields and re-exports that only widen the surface. `no-observed-external-use` and `visibility-slack` are leads, `visibility-spelling` marks a restricted visibility spelled narrower than it reaches, and the `surface` records and the `pub-off-surface` and `pub-mod-surface` leads show what the crate offers. The absence leads read bodies and test code, but they see a method call only as a bare name hit shared by every method of that name, and the fact fields do not see method calls at all, so a candidate that is a function or field names the member, and its verifier still searches the whole workspace, `tests/`, examples, and benches included, before confirming a removal or a narrowing. In a binary, or a crate whose only users are in the repository, narrowing is reversible. In a library that outside code may use, narrowing a published item is a hard-to-reverse remedy.
 - **Doc comments:** comments that are out of date, restate the signature, contradict the code, narrate the implementation instead of stating the contract, repeat a rule that belongs once at module level, or note a papercut instead of fixing it, and places that lack the one line that would stop a reader from proposing a wrong change. Keep real constraints, ordering requirements, and workarounds, and follow the repository's own comment conventions.
 - **Drift:** docs that state what the code no longer does, code the docs describe wrongly, docs that claim a complete list and miss entries, and documents that contradict each other where the code settles which is right.
 
@@ -350,15 +350,21 @@ Look for these kinds:
 - **pub-off-surface**: A `pub` module, declaration, or module value of a library, outside test support, that no public path from the crate root reaches; a trait named `Sealed` is left out, and re-exports that macros write go unseen.
   - Wrong when: a macro or another crate's glob reaches it.
   - Verify: search the crate's re-exports and its dependents; if nothing reaches it, `pub(crate)` states what it is.
+- **pub-mod-surface**: A `pub mod` below the root of a library, outside test support, that the surface reaches, so every `pub` item inside it reaches users by the module's path rather than by a re-export that the crate root lists.
+  - Wrong when: the module is a deliberate public namespace, such as a `prelude` or a versioned `v1`.
+  - Verify: list what users need from the module; if the root can re-export those items, make the module private and re-export them.
 - **hidden-non-exhaustive**: A `non_exhaustive` type or variant that is on no surface of the run; whether its package may be published is shown, and is never proof that it is.
   - Wrong when: a macro re-exports it or the crate plans to export it.
   - Verify: check the public paths and how the package ships; if no outside crate can name it, the attribute only costs matches inside the crate.
 - **stringly-typed**: A `String` or `str` field or parameter named kind, type, mode, status, role, or state, outside wire types.
   - Wrong when: the set of values is open, such as names a user writes.
   - Verify: list the values the code compares against; if the set is closed, an enum fits.
-- **module-cycle**: Modules of one target, none inside another, whose `use` items import from each other, directly or around a longer cycle.
+- **module-cycle**: Modules of one target, none inside another, whose production code uses each other's items, directly or around a longer cycle, through resolved references, body paths, or unique qualified paths; the lead is lexical when an edge rests only on qualified paths.
   - Wrong when: the two modules are halves of one concept that the crate keeps in two files on purpose.
-  - Verify: read the imports; move the shared items into one module, or merge the modules.
+  - Verify: read the uses the evidence names; move the shared items into one module, or merge the modules.
+- **visibility-spelling**: A restricted visibility whose spelling says less than it reaches: a `pub(super)` in a module directly under the crate root, which reaches the whole crate as `pub(crate)` says, or a `pub(in path)` that names the declaring module, its parent, or the root, which says what `pub(self)`, `pub(super)`, or `pub(crate)` says.
+  - Wrong when: the module is about to move deeper and the spelling names the audience it will have.
+  - Verify: read who uses the item; write the spelling of its real reach, or narrow it to what its users need.
 
 #### Doc text
 
@@ -431,9 +437,9 @@ Look for these kinds:
 - **no-observed-external-use**: A declaration or module value on the surface of a library whose package does not allow publishing, without `doc(hidden)`, whose consuming uses are all in its own crate and whose name no other target, package test, bench, example, or doc test writes; a declaration that a signature names is left out, since the signature may expose it.
   - Wrong when: a crate outside the run, such as an excluded member of the workspace, uses it.
   - Verify: search the whole repository; if only its own crate uses it, `pub(crate)` states what it is.
-- **no-observed-outside-module-use**: An item written `pub(crate)`, `pub(super)`, or `pub(in path)` whose name the run declares once and whose every hit is in its own file, a file that holds only its module, outside macros; a declaration that a signature names is left out.
-  - Wrong when: generated code, or a macro that expands in another module, names it.
-  - Verify: search the crate for the name; if only its own module uses it, make it private.
+- **visibility-slack**: A declaration, function, constant, static, or associated function or constant, off a library's surface and not a library's `pub` item, whose observed uses all sit in its own target inside a module narrower than its reach, with its name declared once in the run, every hit of it in files that the module holds whole, outside macros, and every re-export of it reaching no further; a declaration that a signature names is left out, and method calls go unseen.
+  - Wrong when: a macro, generated code, or a method call through dot syntax reaches it from outside that module.
+  - Verify: search the crate for the name; if every use sits inside the module the evidence names, narrow the visibility to the spelling it gives.
 - **no-observed-reexport-use**: A `pub use` of one name in a binary, or in a library whose package does not allow publishing, when no qualified path imports the name through the re-exporting module, no glob import of production code reads that module, no test code writes the name, and the name is no declaration that a signature names.
   - Wrong when: a crate outside the run, or a glob import in test code, goes through it.
   - Verify: search for imports through the re-exporting path; if none exists, remove the `pub use`.

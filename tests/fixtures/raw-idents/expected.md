@@ -1,7 +1,8 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"raw_idents","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":16,"to":26},{"path":"r#impl","from":27,"to":30}]}
+{"k":"modules","items":[{"path":"crate","from":17,"to":27},{"path":"r#impl","from":28,"to":31}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["r#impl"],"evidence":"holds only `Inner`","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["r#impl"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["r#fn"],"evidence":"no hit of `fn` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["r#impl::Inner"],"evidence":"no hit of `Inner` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Keywords::r#as"],"evidence":"no hit of `as` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

@@ -36,9 +36,11 @@ pub(crate) const IDS: &[&str] = &[
     "impl-spread",
     "single-item-module",
     "pub-off-surface",
+    "pub-mod-surface",
     "hidden-non-exhaustive",
     "stringly-typed",
     "module-cycle",
+    "visibility-spelling",
 ];
 
 /// The ids whose leads rest on what the run does not observe.
@@ -377,11 +379,12 @@ fn wrapper_name_family(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut V
                 .chain(siblings.iter().flat_map(|name| &names[name]))
                 .map(|func| func.item)
                 .collect();
-            let widest = bases.iter().map(|func| func.vis.rank()).min();
             let private_half = |name: &str| {
                 IMPL_SUFFIXES.iter().any(|suffix| name.ends_with(suffix))
                     && (names[name].iter()).all(|func| {
-                        Some(func.vis.rank()) > widest && called_within(run, func, &family)
+                        let inside =
+                            (bases.iter()).any(|base| run.strictly_wider(base.item, func.item));
+                        inside && called_within(run, func, &family)
                     })
             };
             let open: Vec<&str> = siblings.into_iter().filter(|n| !private_half(n)).collect();

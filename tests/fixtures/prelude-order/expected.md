@@ -1,7 +1,12 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"prelude_order","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":26,"to":27},{"path":"alpha","from":28,"to":33},{"path":"beta","from":34,"to":39},{"path":"own","from":40,"to":47},{"path":"plain","from":48,"to":51},{"path":"starred","from":52,"to":55}]}
+{"k":"modules","items":[{"path":"crate","from":31,"to":32},{"path":"alpha","from":33,"to":38},{"path":"beta","from":39,"to":44},{"path":"own","from":45,"to":52},{"path":"plain","from":53,"to":56},{"path":"starred","from":57,"to":60}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["plain"],"evidence":"holds only `Report`","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["alpha"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["beta"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["own"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["plain"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["starred"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["own::Owned"],"evidence":"no hit of `Owned` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["own::Owned::value"],"evidence":"no hit of `value` in the scanned sources beyond its 2 declarations","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["plain::Report"],"evidence":"no hit of `Report` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

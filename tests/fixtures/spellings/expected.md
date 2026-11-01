@@ -1,8 +1,11 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"spellings","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":40,"to":61},{"path":"bare","from":62,"to":66},{"path":"debug","from":67,"to":76},{"path":"other","from":77,"to":84}]}
+{"k":"modules","items":[{"path":"crate","from":43,"to":64},{"path":"bare","from":65,"to":69},{"path":"debug","from":70,"to":79},{"path":"other","from":80,"to":87}]}
 {"k":"lead","id":"prelude-name","mode":"direct-syntax","subjects":["Duration"],"evidence":"named like `std::time::Duration`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["bare"],"evidence":"holds only `Label`","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["bare"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["debug"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["other"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"doc-echo","mode":"direct-syntax","subjects":["Timer"],"evidence":"every content word of \"A timer that names its laps.\" is in its name, signature, or types","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["debug::Gauge"],"evidence":"no hit of `Gauge` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Timer::next"],"evidence":"no hit of `next` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

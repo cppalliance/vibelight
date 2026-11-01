@@ -1,9 +1,14 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"order_groups","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":37,"to":44},{"path":"engine","from":45,"to":50},{"path":"engine::sched","from":51,"to":54},{"path":"engine::sched::deep","from":55,"to":58},{"path":"store","from":59,"to":62},{"path":"util","from":63,"to":66}]}
+{"k":"modules","items":[{"path":"crate","from":42,"to":49},{"path":"engine","from":50,"to":55},{"path":"engine::sched","from":56,"to":59},{"path":"engine::sched::deep","from":60,"to":63},{"path":"store","from":64,"to":67},{"path":"util","from":68,"to":71}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["engine::sched::deep"],"evidence":"holds only `Slot`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["store"],"evidence":"holds only `Db`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["util"],"evidence":"holds only `Spare`","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["engine"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["engine::sched"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["engine::sched::deep"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["store"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["util"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["App"],"evidence":"no hit of `App` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["App::a_core"],"evidence":"no hit of `a_core` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["App::b_db"],"evidence":"no hit of `b_db` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

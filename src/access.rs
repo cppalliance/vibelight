@@ -2,8 +2,9 @@
 //! of a crate can be named from, through the modules around it and every
 //! re-export that names it.
 
-use crate::analysis_items::is_value;
-use crate::model::{Crate, DeclId, ItemKind, ModId, Text, ValueRef, Vis};
+use crate::analysis::AnalysisRun;
+use crate::analysis_items::{ItemId, ItemRef, is_value};
+use crate::model::{Crate, DeclId, DeclKind, ItemKind, ModId, Text, ValueRef, Vis};
 use crate::surface::module_at;
 use crate::typerefs::strip_raw;
 
@@ -68,6 +69,12 @@ pub(crate) fn covers(krate: &Crate, outer: Access, inner: Access) -> bool {
     }
 }
 
+/// Returns `base` narrowed by a visibility written in module `m`, or
+/// `None` when they share no module.
+pub(crate) fn narrowed(krate: &Crate, base: Access, vis: Vis, m: ModId) -> Option<Access> {
+    narrow(krate, base, written(krate, vis, m))
+}
+
 /// Returns the narrower of two accesses, or `None` when neither reaches
 /// everywhere the other does.
 fn narrow(krate: &Crate, a: Access, b: Access) -> Option<Access> {
@@ -94,6 +101,78 @@ pub(crate) fn join(krate: &Crate, a: Access, b: Access) -> Access {
         at = krate.parent_module(m);
     }
     Access::Within(0)
+}
+
+/// Writes an access the way Rust spells the visibility that gives it to a
+/// node of module `from`: `pub`, `pub(crate)`, `pub(self)` for `from`
+/// itself, `pub(super)` for its parent, and `pub(in crate::path)` for any
+/// other module.
+pub(crate) fn spell(krate: &Crate, access: Access, from: ModId) -> String {
+    match access {
+        Access::World => "pub".to_owned(),
+        Access::Within(0) => "pub(crate)".to_owned(),
+        Access::Within(m) if m == from => "pub(self)".to_owned(),
+        Access::Within(m) if krate.parent_module(from) == Some(m) => "pub(super)".to_owned(),
+        Access::Within(m) => format!("pub(in crate::{})", krate.modules[m].path.join("::")),
+    }
+}
+
+/// Returns the one item of the crate that a re-export written in module
+/// `m` names; a glob names none.
+pub(crate) fn reexported(krate: &Crate, m: ModId, text: &Text) -> Option<ItemRef> {
+    match target(krate, m, text)? {
+        Target::Module(t) => Some(ItemRef::Module(t)),
+        Target::Decl(d) => Some(ItemRef::Decl(d)),
+        Target::Value(at) => Some(ItemRef::Value(at)),
+        Target::Glob(_) => None,
+    }
+}
+
+impl AnalysisRun<'_> {
+    /// Returns how far an item can be named from: a module's, a
+    /// declaration's, or a module value's access, a variant's or a trait
+    /// item's declaration's, and a field's or an impl member's access
+    /// narrowed by its own visibility, from its declaration or from
+    /// anywhere for an impl of an outside type.
+    pub(crate) fn access_of(&self, item: ItemId) -> Option<Access> {
+        let t = item.target;
+        let (krate, accesses) = (self.krates.get(t)?, self.accesses.get(t)?);
+        let within = |base: Access, vis: Vis, m: ModId| narrow(krate, base, written(krate, vis, m));
+        match item.item {
+            ItemRef::Module(m) => Some(accesses.modules[m]),
+            ItemRef::Decl(d) | ItemRef::Variant(d, _) => Some(accesses.decls[d]),
+            ItemRef::Value(at) => Some(accesses.value(at)),
+            ItemRef::Own(d, k) => {
+                let decl = &krate.decls[d];
+                if decl.kind == DeclKind::Trait {
+                    return Some(accesses.decls[d]);
+                }
+                within(accesses.decls[d], decl.members.get(k)?.vis, decl.module)
+            }
+            ItemRef::Inherent(i, k) => {
+                let imp = &krate.impls[i];
+                let base = self.attached[t][i].map_or(Access::World, |d| accesses.decls[d]);
+                within(base, imp.members.get(k)?.vis, imp.module)
+            }
+            ItemRef::TraitImpl(i, _) => {
+                Some(self.attached[t][i].map_or(Access::World, |d| accesses.decls[d]))
+            }
+        }
+    }
+
+    /// Tells whether item `wide` can be named from strictly more places
+    /// than item `narrow` of the same target; an item of another target
+    /// counts as named from anywhere.
+    pub(crate) fn strictly_wider(&self, wide: ItemId, narrow: ItemId) -> bool {
+        if wide.target != narrow.target {
+            return false;
+        }
+        let krate = &self.krates[wide.target];
+        match (self.access_of(wide), self.access_of(narrow)) {
+            (Some(a), Some(b)) => a != b && covers(krate, a, b),
+            _ => false,
+        }
+    }
 }
 
 /// Returns how far every module, declaration, and module value of a crate

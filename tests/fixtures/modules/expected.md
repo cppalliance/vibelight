@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"modules","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":24,"to":25},{"path":"files","from":26,"to":29},{"path":"inline","from":30,"to":33},{"path":"inline::deeper","from":34,"to":36},{"path":"nested","from":37,"to":38},{"path":"nested::child","from":39,"to":42},{"path":"only_modules","from":43,"to":43},{"path":"only_modules::a","from":44,"to":46},{"path":"only_modules::b","from":47,"to":49},{"path":"renamed","from":50,"to":53}]}
+{"k":"modules","items":[{"path":"crate","from":27,"to":28},{"path":"files","from":29,"to":32},{"path":"inline","from":33,"to":36},{"path":"inline::deeper","from":37,"to":39},{"path":"nested","from":40,"to":41},{"path":"nested::child","from":42,"to":45},{"path":"only_modules","from":46,"to":46},{"path":"only_modules::a","from":47,"to":49},{"path":"only_modules::b","from":50,"to":52},{"path":"renamed","from":53,"to":56}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["files"],"evidence":"holds only `InFile`","locs":["src/files.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["inline::deeper"],"evidence":"holds only `Deepest`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["nested"],"evidence":"holds only `mod child`","locs":["src/nested/mod.rs:0"]}
@@ -12,6 +12,9 @@
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["only_modules::b"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/only_modules/b.rs:0"],"limits":["macros"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["only_modules::b::B"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/only_modules/b.rs:0"],"limits":["macros"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["renamed::LOADED"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/custom-name.rs:0"],"limits":["macros"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["files"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/files.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["inline"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
+{"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["inline::deeper"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["files::InFile"],"evidence":"no hit of `InFile` in the scanned sources beyond its 1 declaration","locs":["src/files.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["inline::deeper::Deepest"],"evidence":"no hit of `Deepest` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["inline::Inside"],"evidence":"no hit of `Inside` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}

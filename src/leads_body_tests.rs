@@ -53,6 +53,13 @@ fn a_body_that_only_passes_its_parameters_on_or_reads_a_private_field_forwards()
 }
 
 #[test]
+fn a_call_is_a_seam_only_when_the_caller_reaches_strictly_further() {
+    let source = "pub(crate) fn helper(x: u8) -> u8 { x }\npub fn api(x: u8) -> u8 { helper(x) }\n\
+                  mod inner { pub fn open(x: u8) -> u8 { super::helper(x) } }\n";
+    assert_eq!(lib(source, "forwarder"), ["inner::open"]);
+}
+
+#[test]
 fn bodies_of_one_token_shape_are_clones() {
     let even = "pub fn total_even(items: &[u32]) -> u32 {\n\
          let mut sum = 0;\n\

@@ -32,13 +32,14 @@ pub(crate) enum Mode {
 }
 
 /// The blind spots a lead may name, sorted.
-pub(crate) const LIMITS: [&str; 6] = [
+pub(crate) const LIMITS: [&str; 7] = [
     "cfg-selection",
     "dynamic-dispatch",
     "external-consumers",
     "external-impls",
     "generated-code",
     "macros",
+    "method-calls",
 ];
 
 /// The most leads of one id in one module that print one by one.

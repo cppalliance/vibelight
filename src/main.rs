@@ -134,6 +134,7 @@ mod model_impl;
 mod model_macro;
 mod modtree;
 mod modtree_paths;
+mod module_graph;
 mod order;
 mod order_graph;
 mod pipeline;

@@ -184,7 +184,7 @@ fn an_item_that_only_another_module_uses_and_nothing_ties_is_defined_away() {
 }
 
 #[test]
-fn a_pub_item_that_only_its_own_module_writes_has_no_observed_outside_module_use() {
+fn an_item_whose_uses_need_less_reach_than_it_has_is_slack() {
     let inner = (
         "src/inner.rs",
         "pub(crate) fn visible() -> u8 { narrow() }\npub(crate) fn narrow() -> u8 { 1 }\n",
@@ -193,11 +193,22 @@ fn a_pub_item_that_only_its_own_module_writes_has_no_observed_outside_module_use
     let positive = lib("inner::visible()");
     let negative = lib("inner::visible() + inner::narrow()");
     finds_in(
-        "no-observed-outside-module-use",
+        "visibility-slack",
         &[MANIFEST, ("src/lib.rs", &positive), inner],
         &["inner::narrow"],
         &[MANIFEST, ("src/lib.rs", &negative), inner],
     );
+    let sibling = (
+        "src/a.rs",
+        "pub mod b { pub(crate) fn helper() -> u8 { 1 } }\n\
+         pub mod c { pub fn run() -> u8 { super::b::helper() } }\n",
+    );
+    let root = ("src/lib.rs", "mod a;\npub fn api() -> u8 { a::c::run() }\n");
+    with_leads(&[MANIFEST, root, sibling], |_, leads| {
+        let lead = leads.iter().find(|l| l.id == "visibility-slack").unwrap();
+        assert!(lead.evidence.ends_with("inside what `pub(super)` reaches"));
+        assert_eq!(lead.mode, Mode::Resolved);
+    });
 }
 
 #[test]

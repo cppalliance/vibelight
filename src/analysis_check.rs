@@ -97,6 +97,7 @@ impl AnalysisRun<'_> {
             self.summaries.len(),
             self.surfaces.len(),
             self.accesses.len(),
+            self.graph.len(),
             self.spellings.len(),
             self.census.tree.len(),
         ];
