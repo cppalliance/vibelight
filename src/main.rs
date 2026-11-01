@@ -124,6 +124,23 @@ mod leads_types;
 mod leads_types_shape;
 mod leads_words;
 mod legend;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "the macro look-through calls it")
+)]
+mod macro_match;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "the macro look-through calls it")
+)]
+mod macro_rules;
+#[cfg(test)]
+mod macro_tests;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "the macro look-through calls it")
+)]
+mod macro_transcribe;
 mod macros;
 mod manifest;
 mod manifest_facts;
