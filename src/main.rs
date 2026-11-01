@@ -129,7 +129,10 @@ mod legend;
 mod macro_expand;
 #[cfg(test)]
 mod macro_expand_tests;
+mod macro_fragment;
 mod macro_match;
+#[cfg(test)]
+mod macro_match_tests;
 mod macro_rules;
 #[cfg(test)]
 mod macro_tests;

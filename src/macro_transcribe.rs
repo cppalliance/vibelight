@@ -7,7 +7,8 @@ use std::collections::BTreeSet;
 
 use proc_macro2::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
-use crate::macro_match::{Bindings, Capture, Fragment, Kind};
+use crate::macro_fragment::Kind;
+use crate::macro_match::{Bindings, Capture, Fragment};
 use crate::macro_rules::{Budget, Failure, normalized, repetition};
 
 /// One element of a transcriber.
@@ -167,7 +168,7 @@ impl<'a> Writer<'a> {
     fn fragment(&mut self, fragment: &Fragment, out: &mut Vec<TokenTree>) -> Result<(), Failure> {
         spend(self.budget, &fragment.tokens)?;
         let tokens = fragment.tokens.iter().cloned();
-        if fragment.kind == Kind::Expr {
+        if matches!(fragment.kind, Kind::Expr | Kind::Expr2021) {
             self.push(Group::new(Delimiter::None, tokens.collect()).into(), out)
         } else {
             out.extend(tokens);

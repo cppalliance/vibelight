@@ -3,7 +3,7 @@
 //! invocations into items.
 
 use proc_macro2::{Delimiter, TokenStream, TokenTree};
-use syn::{Expr, Fields, ImplItem, Item, Pat, Stmt};
+use syn::{Expr, Fields, ImplItem, Item, Member, Pat, Stmt};
 
 use crate::macro_rules::{Budget, Failure, MacroRules, expand_items};
 use crate::macros::path_text;
@@ -88,7 +88,7 @@ const FIELDS: &str = "macro_rules! fields {
 }";
 
 /// Parses a `macro_rules!` definition from its source.
-fn rules(source: &str) -> MacroRules {
+pub(crate) fn rules(source: &str) -> MacroRules {
     let definition: syn::ItemMacro = syn::parse_str(source).unwrap();
     MacroRules::parse(&definition.mac.tokens).unwrap()
 }
@@ -99,13 +99,13 @@ fn tokens(source: &str) -> TokenStream {
 }
 
 /// Applies `rules` to the tokens of `input` with a fresh budget.
-fn apply(rules: &MacroRules, input: &str) -> Result<TokenStream, Failure> {
+pub(crate) fn apply(rules: &MacroRules, input: &str) -> Result<TokenStream, Failure> {
     rules.apply(&tokens(input), &mut Budget::new())
 }
 
 /// Asserts that `rules` turn `input` into the tokens of `expected`, spacing
 /// aside.
-fn expands(rules: &MacroRules, input: &str, expected: &str) {
+pub(crate) fn expands(rules: &MacroRules, input: &str, expected: &str) {
     let output = apply(rules, input).unwrap();
     assert_eq!(words(output), words(tokens(expected)), "{input}");
 }
@@ -148,7 +148,12 @@ fn the_events_macro_stamps_the_coordinates_on_every_variant() {
             /// Prompt parsing began.
             ParseStarted {},
             RunStarted {},
-            TaskAbandoned { task: TaskId, reason: AbandonReason },
+            TaskAbandoned {
+                /// The task that stopped.
+                task: TaskId,
+                #[serde(default, skip_serializing_if = \"Option::is_none\")]
+                reason: Option<AbandonReason>,
+            },
         }";
     let items = expand_items(&rules(EVENTS), &tokens(input), &|_| None).unwrap();
     let [Item::Enum(event), Item::Impl(accessors)] = items.as_slice() else {
@@ -175,6 +180,10 @@ fn the_events_macro_stamps_the_coordinates_on_every_variant() {
         ("TaskAbandoned".to_owned(), 0, fields(&["task", "reason"])),
     ];
     assert_eq!(variants, expected);
+    let payload: Vec<Vec<String>> = (event.variants[2].fields.iter().skip(3))
+        .map(|field| field.attrs.iter().map(|a| path_text(a.path())).collect())
+        .collect();
+    assert_eq!(payload, [["doc"], ["serde"]]);
     let paths = [
         "Event::ParseStarted",
         "Event::RunStarted",
@@ -199,7 +208,20 @@ fn the_events_macro_stamps_the_coordinates_on_every_variant() {
             .cases
             .iter()
             .map(|case| match case {
-                Pat::Struct(variant) => path_text(&variant.path),
+                Pat::Struct(variant) => {
+                    let bound: Vec<String> = (variant.fields.iter())
+                        .map(|field| match &field.member {
+                            Member::Named(name) => name.to_string(),
+                            Member::Unnamed(_) => String::new(),
+                        })
+                        .collect();
+                    assert_eq!(
+                        bound,
+                        [method.sig.ident.to_string()],
+                        "an arm binds its field"
+                    );
+                    path_text(&variant.path)
+                }
                 _ => String::new(),
             })
             .collect();
@@ -222,16 +244,16 @@ fn every_fragment_kind_matches_a_typical_input() {
         ("pat", "Some(1 | 2) | None"),
         ("pat_param", "(first, ..)"),
         ("path", "std::vec::Vec<u8>"),
-        ("stmt", "let x = y;"),
+        ("stmt", "let x = y"),
         ("tt", "[a, b]"),
         ("ty", "&'a mut [Option<u8>]"),
         ("vis", "pub(crate)"),
     ];
     for (kind, input) in cases {
         let rules = rules(&format!(
-            "macro_rules! m {{ ($x:{kind} # end) => {{ $x }}; }}"
+            "macro_rules! m {{ ($x:{kind} , end) => {{ $x }}; }}"
         ));
-        let output = apply(&rules, &format!("{input} # end")).unwrap();
+        let output = apply(&rules, &format!("{input} , end")).unwrap();
         let trees: Vec<TokenTree> = output.clone().into_iter().collect();
         let invisible = matches!(trees.as_slice(),
             [TokenTree::Group(group)] if group.delimiter() == Delimiter::None);

@@ -6,9 +6,10 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use proc_macro2::{Delimiter, Spacing, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, TokenStream, TokenTree};
 
-use crate::macro_rules::{Budget, Failure, Op, alone, fragment_len, normalized, repetition};
+use crate::macro_fragment::{Kind, fragment_len};
+use crate::macro_rules::{Budget, Failure, Op, alone, normalized, repetition};
 
 /// One element of a matcher.
 pub(crate) enum Matcher {
@@ -30,48 +31,6 @@ pub(crate) struct Repeat {
     op: Op,
     /// Every metavariable the body binds, at any depth.
     names: Vec<String>,
-}
-
-/// What a fragment `$name:kind` matches; `expr_2021` reads as `expr`.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Kind {
-    Block,
-    Expr,
-    Ident,
-    Item,
-    Lifetime,
-    Literal,
-    Meta,
-    Pat,
-    PatParam,
-    Path,
-    Stmt,
-    Tt,
-    Ty,
-    Vis,
-}
-
-impl Kind {
-    /// Returns the kind a fragment specifier names.
-    fn named(name: &str) -> Option<Self> {
-        Some(match name {
-            "block" => Self::Block,
-            "expr" | "expr_2021" => Self::Expr,
-            "ident" => Self::Ident,
-            "item" => Self::Item,
-            "lifetime" => Self::Lifetime,
-            "literal" => Self::Literal,
-            "meta" => Self::Meta,
-            "pat" => Self::Pat,
-            "pat_param" => Self::PatParam,
-            "path" => Self::Path,
-            "stmt" => Self::Stmt,
-            "tt" => Self::Tt,
-            "ty" => Self::Ty,
-            "vis" => Self::Vis,
-            _ => return None,
-        })
-    }
 }
 
 /// The token trees one fragment consumed, and its kind.
@@ -115,7 +74,7 @@ fn level(stream: &TokenStream, names: &mut Vec<String>) -> Result<Vec<Matcher>, 
             TokenTree::Group(group) => {
                 Matcher::Group(group.delimiter(), level(&group.stream(), names)?)
             }
-            TokenTree::Punct(dollar) if dollar.as_char() == '$' => {
+            TokenTree::Punct(dollar) if dollar.as_char() == '$' && at < trees.len() => {
                 let (element, used) = metavariable(&trees[at..], names)?;
                 at += used;
                 element
@@ -171,7 +130,7 @@ pub(crate) fn matches(
         log: Vec::new(),
         budget,
     };
-    let found = search.level(matcher, tokens)?;
+    let found = search.level(matcher, &normalized(tokens.to_vec()))?;
     Ok(found.then(|| bindings(search.log)))
 }
 
@@ -277,13 +236,14 @@ impl<'m> Search<'m, '_> {
                     .then_some(1),
                 Matcher::Group(delimiter, inner) => match tokens.get(state.pos) {
                     Some(TokenTree::Group(group)) if group.delimiter() == *delimiter => {
-                        let inside: Vec<TokenTree> = group.stream().into_iter().collect();
+                        let inside = normalized(group.stream().into_iter().collect());
+                        self.budget.steps(inside.len())?;
                         self.level(inner, &inside)?.then_some(1)
                     }
                     _ => None,
                 },
                 Matcher::Fragment(name, kind) => {
-                    self.fragment(name, *kind, tokens.get(state.pos..).unwrap_or_default())
+                    self.fragment(name, *kind, tokens.get(state.pos..).unwrap_or_default())?
                 }
                 Matcher::Repeat(rep) => {
                     let outer = state.frame.take();
@@ -312,7 +272,8 @@ impl<'m> Search<'m, '_> {
     /// when the operator allows it and any separator is there, keeping the
     /// end of the repetition as a choice, or else past the end. Returns false
     /// when neither is possible. An iteration that took no tokens is the
-    /// last, so a body that matches nothing cannot loop.
+    /// last unless a separator follows it, so a body that matches nothing
+    /// cannot loop.
     fn decide(
         &mut self,
         state: &mut State<'m>,
@@ -322,7 +283,8 @@ impl<'m> Search<'m, '_> {
         progressed: bool,
     ) -> Result<bool, Failure> {
         let may_end = at.count > 0 || at.rep.op != Op::Many;
-        let may_go_on = progressed && (at.count == 0 || at.rep.op != Op::Maybe);
+        let moves = progressed || !at.rep.sep.is_empty();
+        let may_go_on = moves && (at.count == 0 || at.rep.op != Op::Maybe);
         let start = if may_go_on {
             self.separator(&at, tokens)?
         } else {
@@ -385,9 +347,16 @@ impl<'m> Search<'m, '_> {
     /// returns how many trees it took, or `None` when none starts there.
     /// The capture's last punctuation turns alone, since what it joined
     /// stays behind.
-    fn fragment(&mut self, name: &'m str, kind: Kind, tokens: &[TokenTree]) -> Option<usize> {
-        let len = fragment_len(kind, tokens)?;
-        let mut taken = tokens.get(..len)?.to_vec();
+    fn fragment(
+        &mut self,
+        name: &'m str,
+        kind: Kind,
+        tokens: &[TokenTree],
+    ) -> Result<Option<usize>, Failure> {
+        let Some(len) = fragment_len(kind, tokens, self.budget)? else {
+            return Ok(None);
+        };
+        let mut taken = tokens[..len].to_vec();
         if let Some(TokenTree::Punct(last)) = taken.last_mut() {
             *last = alone(last);
         }
@@ -398,20 +367,21 @@ impl<'m> Search<'m, '_> {
                 kind,
             },
         ));
-        Some(len)
+        Ok(Some(len))
     }
 }
 
 /// Tells whether the input token `got` is the matcher's literal token
-/// `want`: the same identifier, literal text, or punctuation, joint to the
-/// next token when `want` is.
+/// `want`: the same identifier, literal text, or punctuation with the same
+/// spacing. Both sides are normalized, so a punctuation is joint exactly
+/// when it is not the last of a token rustc lexes as one, and a lone `:`
+/// never matches half of a `::`.
 fn same(want: &TokenTree, got: &TokenTree) -> bool {
     match (want, got) {
         (TokenTree::Ident(want), TokenTree::Ident(got)) => want == got,
         (TokenTree::Literal(want), TokenTree::Literal(got)) => want.to_string() == got.to_string(),
         (TokenTree::Punct(want), TokenTree::Punct(got)) => {
-            want.as_char() == got.as_char()
-                && (want.spacing() == Spacing::Alone || got.spacing() == Spacing::Joint)
+            want.as_char() == got.as_char() && want.spacing() == got.spacing()
         }
         _ => false,
     }
