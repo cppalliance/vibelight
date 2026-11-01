@@ -7,7 +7,6 @@
 use std::collections::BTreeMap;
 
 use crate::analysis_items::ItemRef;
-use crate::leads_items::impl_module;
 use crate::leads_words::split_param;
 use crate::model::{
     self, DeclId, DeclKind, Member, MemberKind, Meta, ModId, Param, Shape, VariantFields,
@@ -32,7 +31,7 @@ pub(crate) fn impl_owner(outline: &Outline<'_>, i: usize) -> (ModId, Vec<String>
         let decl = &krate.decls[d];
         return (decl.module, krate.decl_path(d), decl.test_support);
     }
-    let m = impl_module(krate, i);
+    let m = krate.impls[i].module;
     let owner = krate.impls[i].self_text.rust_visible(&krate.refs);
     (m, vec![owner], krate.modules[m].test_support)
 }

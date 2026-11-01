@@ -275,8 +275,7 @@ fn nodes<'a>(run: &AnalysisRun<'a>, t: usize, krate: &'a Crate, docs: &mut Vec<D
             for (v, variant) in variants.iter().enumerate() {
                 let place = (at(ItemRef::Variant(d, v)), Vec::new(), variant.loc);
                 let node = Node::Variant(d, v);
-                let public = (decl.module, Vis::Public);
-                docs.extend(doc(run, place, node, public, &variant.meta));
+                docs.extend(doc(run, place, node, held, &variant.meta));
             }
         }
     }

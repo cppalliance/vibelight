@@ -79,7 +79,7 @@ impl Collector<'_> {
         let api = attrs::api(&u.attrs, file);
         let trailing = self.trailing(here, &placed.trailing);
         let loc = loc(here, u.use_token.span);
-        let vis = attrs::vis(&u.vis);
+        let vis = self.vis(here, &u.vis);
         let (raw_doc, lints) = self.attr_facts(here, &u.attrs);
         for (index, entry) in named.into_iter().enumerate() {
             let mut meta = Meta {

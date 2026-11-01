@@ -210,8 +210,15 @@ impl<'a> Catalog<'a> {
                 Shape::Tuple(params) => {
                     for (k, param) in params.iter().enumerate() {
                         let ty = Ty::of(run, t, &param.text, Some(at));
-                        let vis = vis_of(&param.meta.vis);
-                        field(None, k.to_string(), false, ty, vis, decl.loc, &param.meta);
+                        field(
+                            None,
+                            k.to_string(),
+                            false,
+                            ty,
+                            param.vis,
+                            decl.loc,
+                            &param.meta,
+                        );
                     }
                 }
                 Shape::Enum(variants) => {
@@ -229,7 +236,7 @@ impl<'a> Catalog<'a> {
                                 None => (k.to_string(), Ty::of(run, t, &param.text, Some(at))),
                             };
                             let (loc, meta) = (variant.loc, &param.meta);
-                            field(Some(v), name, named, ty, Vis::Public, loc, meta);
+                            field(Some(v), name, named, ty, decl.vis, loc, meta);
                         }
                     }
                 }
@@ -350,30 +357,11 @@ fn args(run: &AnalysisRun<'_>, t: usize, sig: &Sig, own: Option<ItemId>) -> Vec<
         .collect()
 }
 
-/// Returns a visibility from how it is written.
-fn vis_of(written: &str) -> Vis {
-    match written {
-        "pub" => Vis::Public,
-        "" | "pub(self)" => Vis::Private,
-        _ => Vis::Internal,
-    }
-}
-
-/// Returns the module an impl is written in: where its self type's first
-/// name is written, or its trait's.
-pub(crate) fn impl_module(krate: &Crate, i: usize) -> ModId {
-    let imp = &krate.impls[i];
-    let first = imp.self_text.refs().next();
-    first
-        .or_else(|| imp.trait_.as_ref().and_then(|base| base.path_ref))
-        .map_or(0, |r| krate.refs[r].module)
-}
-
 /// Returns the module of impl `i` of target `t`: its declaration's, or the
 /// one it is written in for an impl of no declaration of the run.
 pub(crate) fn impl_home(run: &AnalysisRun<'_>, t: usize, i: usize) -> ModId {
     let krate = &run.krates[t];
-    run.attached[t][i].map_or_else(|| impl_module(krate, i), |d| krate.decls[d].module)
+    run.attached[t][i].map_or(krate.impls[i].module, |d| krate.decls[d].module)
 }
 
 /// Returns what impl `i` of target `t` implements, as a compared name such
@@ -456,7 +444,7 @@ pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<
         }
         Some(Single::Field(_)) | None => None,
     };
-    callee.is_some_and(|callee| func.vis < callee.vis)
+    callee.is_some_and(|callee| func.vis.rank() < callee.vis.rank())
 }
 
 /// Tells whether a body builds an `Err` or matches an `Err` arm.

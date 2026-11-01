@@ -116,6 +116,7 @@ impl Collector<'_> {
         self.attribute_names_mark(&attributes, Holder::Impl(id), loc);
         self.impls.push(Impl {
             loc,
+            module: here.module,
             header,
             self_text,
             self_ref,
@@ -309,7 +310,7 @@ impl Collector<'_> {
         let file = &self.files[here.file];
         Member {
             name: parts.ident.to_string(),
-            vis: parts.vis.map_or(Vis::Public, attrs::vis),
+            vis: parts.vis.map_or(Vis::Public, |vis| self.vis(here, vis)),
             kind: parts.kind,
             meta: Meta {
                 notes,

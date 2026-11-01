@@ -9,7 +9,6 @@ use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
 use crate::analysis_uses::{Use, UseKind};
 use crate::census::{Context, Form, NameCount};
-use crate::leads_items::impl_module;
 use crate::leads_types::leaf;
 use crate::model::{
     DeclId, DeclKind, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Receiver, Shape,
@@ -162,7 +161,7 @@ pub(crate) fn candidates<'a>(run: &AnalysisRun<'a>) -> Vec<Candidate<'a>> {
                     kind,
                     vis: member.vis,
                     meta: &member.meta,
-                    module: impl_module(krate, i),
+                    module: krate.impls[i].module,
                     decl,
                     holder: Some(i),
                     support: support || is_test_support(&member.meta.cfgs),

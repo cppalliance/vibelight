@@ -9,7 +9,6 @@ use crate::census::{Context, SourceId};
 use crate::leads::{Lead, Mode};
 use crate::leads_census_place::defined_away;
 use crate::leads_census_scope::{Candidate, Kind, Scope, consumers, in_macro, module_name};
-use crate::model::Vis;
 use crate::root::TargetKind;
 
 /// Finds the group's leads on placement and visibility.
@@ -82,7 +81,7 @@ fn no_observed_outside_module_use(run: &AnalysisRun<'_>, c: &Candidate<'_>, out:
     let t = c.item.target;
     let listed = !matches!(c.kind, Kind::Variant | Kind::TraitItem);
     let unique = run.census.declared(&c.name) == 1;
-    if !listed || c.vis != Vis::Internal || !unique || in_macro(run, &c.name) {
+    if !listed || !c.vis.is_restricted() || !unique || in_macro(run, &c.name) {
         return;
     }
     let Some(loc) = run.loc(c.item) else {

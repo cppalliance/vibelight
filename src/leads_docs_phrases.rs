@@ -194,7 +194,7 @@ fn visibility_excuse(run: &AnalysisRun<'_>, doc: &Doc<'_>, out: &mut Vec<Lead>) 
 fn vis_word(vis: Vis) -> &'static str {
     match vis {
         Vis::Public => "pub",
-        Vis::Internal => "pub(crate)",
+        Vis::Crate | Vis::Super | Vis::In(_) => "pub(crate)",
         Vis::Private => "private",
     }
 }

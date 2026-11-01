@@ -78,7 +78,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
 pub(crate) fn visibility_line(vis: Vis, indent: usize) -> Option<Line> {
     let text = match vis {
         Vis::Public => return None,
-        Vis::Internal => "internal",
+        Vis::Crate | Vis::Super | Vis::In(_) => "internal",
         Vis::Private => "private",
     };
     Some(Line {

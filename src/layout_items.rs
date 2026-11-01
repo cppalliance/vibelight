@@ -10,9 +10,7 @@ use crate::layout_decl::{BodyParts, body};
 use crate::layout_groups::{Entry, empty_sections, join_groups, section, sort_entries};
 use crate::layout_marker::Marker;
 use crate::macros;
-use crate::model::{
-    Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, Vis, name_order,
-};
+use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, name_order};
 
 /// Builds a module's trailing block: the public items, then the internal
 /// and private ones, each section grouped as re-exports, macro marks,
@@ -23,7 +21,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let mut sections = empty_sections(6);
     let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut unsupported = Vec::new();
-    let mut use_groups: BTreeMap<(Vis, usize), Vec<Entry>> = BTreeMap::new();
+    let mut use_groups: BTreeMap<(usize, usize), Vec<Entry>> = BTreeMap::new();
     for (index, item) in module.items.iter().enumerate() {
         let at = ValueRef {
             module: id,
@@ -33,7 +31,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
             group: Some(set), ..
         } = item.kind
         {
-            let entries = use_groups.entry((item.vis, set)).or_default();
+            let entries = use_groups.entry((section(item.vis), set)).or_default();
             entries.push(entry(item, at));
             continue;
         }
@@ -54,7 +52,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         };
         sections[section(item.vis)][group].push(entry(item, at));
     }
-    for ((vis, _), mut entries) in use_groups {
+    for ((at_section, _), mut entries) in use_groups {
         sort_entries(&mut entries, &krate.refs);
         let merged = Entry {
             name: entries[0].name.clone(),
@@ -64,7 +62,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 .flat_map(|e| e.repeats.drain(..))
                 .collect(),
         };
-        sections[section(vis)][0].push(merged);
+        sections[at_section][0].push(merged);
     }
     for group in sections.iter_mut().flatten() {
         sort_entries(group, &krate.refs);

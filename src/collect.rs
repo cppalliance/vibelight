@@ -102,6 +102,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
             uses: Vec::new(),
             dangling: Vec::new(),
             vis: Vis::Public,
+            parent: source.decl.map(|(parent, _)| parent),
             test_support: false,
             raw_doc: None,
             lints: Vec::new(),
@@ -249,8 +250,35 @@ impl Collector<'_> {
             notes.push(Note::Plain(vec![text]));
         }
         let cfgs = attrs::cfgs(&m.attrs, file);
-        self.mod_lines
-            .insert(child, (notes, cfgs, attrs::vis(&m.vis)));
+        let vis = self.vis(here, &m.vis);
+        self.mod_lines.insert(child, (notes, cfgs, vis));
+    }
+
+    /// Returns a visibility written in `here`'s module, with the module a
+    /// `pub(in path)` names.
+    pub(crate) fn vis(&self, here: &Here, vis: &syn::Visibility) -> Vis {
+        attrs::vis(vis, |path| self.module_named(here.module, path))
+    }
+
+    /// Returns the module that the path of a `pub(in path)` written in
+    /// module `from` names: a path from `crate`, `self`, or `super`.
+    fn module_named(&self, from: ModId, path: &syn::Path) -> Option<ModId> {
+        let mut target: Vec<String> = Vec::new();
+        for (k, segment) in path.segments.iter().enumerate() {
+            let word = segment.ident.to_string();
+            match word.as_str() {
+                "crate" if k == 0 => {}
+                "self" if k == 0 => target.clone_from(&self.modules[from].path),
+                "super" => {
+                    if k == 0 {
+                        target.clone_from(&self.modules[from].path);
+                    }
+                    target.pop()?;
+                }
+                _ => target.push(word),
+            }
+        }
+        self.modules.iter().position(|m| m.path == target)
     }
 
     /// Adds a `// UNSUPPORTED` entry to the module's trailing block. It also

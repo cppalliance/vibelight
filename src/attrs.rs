@@ -4,7 +4,7 @@
 
 use syn::{AttrStyle, Attribute, Expr, ExprLit, Lit, MacroDelimiter, Meta, MetaList, Visibility};
 
-use crate::model::{Vis, name_order};
+use crate::model::{ModId, Vis, name_order};
 use crate::source::SourceFile;
 
 /// Tells whether a `cfg` on the item is test-only: `test`, or an `all(...)`
@@ -83,15 +83,17 @@ pub(crate) fn sort_marks(marks: &mut Vec<String>) {
     marks.dedup();
 }
 
-/// Returns the section a visibility prints in: `pub` is public;
-/// `pub(crate)`, `pub(super)`, and `pub(in path)` are internal; and
-/// `pub(self)` or no keyword is private.
-pub(crate) fn vis(vis: &Visibility) -> Vis {
+/// Returns a visibility as written. `resolve` finds the module that the
+/// path of a `pub(in path)` names; a path it cannot resolve reads as
+/// `pub(crate)`, since rustc rejects one that names no ancestor.
+pub(crate) fn vis(vis: &Visibility, resolve: impl FnOnce(&syn::Path) -> Option<ModId>) -> Vis {
     match vis {
         Visibility::Public(_) => Vis::Public,
-        Visibility::Restricted(r) if r.path.is_ident("self") => Vis::Private,
-        Visibility::Restricted(_) => Vis::Internal,
         Visibility::Inherited => Vis::Private,
+        Visibility::Restricted(r) if r.path.is_ident("self") => Vis::Private,
+        Visibility::Restricted(r) if r.path.is_ident("crate") => Vis::Crate,
+        Visibility::Restricted(r) if r.path.is_ident("super") => Vis::Super,
+        Visibility::Restricted(r) => resolve(&r.path).map_or(Vis::Crate, Vis::In),
     }
 }
 
@@ -155,6 +157,24 @@ mod tests {
         let file = SourceFile::new("a.rs".into(), text);
         let item: syn::ItemStruct = syn::parse_str(&file.text).unwrap();
         (item.attrs, file)
+    }
+
+    #[test]
+    fn every_visibility_spelling_maps_to_its_own_kind() {
+        let of = |text: &str| {
+            let item: syn::ItemStruct = syn::parse_str(&format!("{text} struct A;")).unwrap();
+            vis(&item.vis, |path| (path.segments.len() == 2).then_some(7))
+        };
+        assert_eq!(of("pub"), Vis::Public);
+        assert_eq!(of(""), Vis::Private);
+        assert_eq!(of("pub(self)"), Vis::Private);
+        assert_eq!(of("pub(in self)"), Vis::Private);
+        assert_eq!(of("pub(crate)"), Vis::Crate);
+        assert_eq!(of("pub(in crate)"), Vis::Crate);
+        assert_eq!(of("pub(super)"), Vis::Super);
+        assert_eq!(of("pub(in super)"), Vis::Super);
+        assert_eq!(of("pub(in crate::a)"), Vis::In(7));
+        assert_eq!(of("pub(in crate::a::b)"), Vis::Crate);
     }
 
     #[test]

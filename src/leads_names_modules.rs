@@ -9,7 +9,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
-use crate::leads_items::impl_module;
 use crate::leads_words::words;
 use crate::macros;
 use crate::model::{Crate, DeclKind, FileId, ItemKind, ModId, Shape, ValueRef, Vis};
@@ -87,7 +86,7 @@ fn single_item_module(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut 
         }
     }
     for i in 0..krate.impls.len() {
-        impls[impl_module(krate, i)] += 1;
+        impls[krate.impls[i].module] += 1;
     }
     for (m, module) in krate.modules.iter().enumerate().skip(1) {
         let own: BTreeSet<String> = module

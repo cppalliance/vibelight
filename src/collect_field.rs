@@ -8,7 +8,7 @@ use syn::{Field, FieldsNamed, FieldsUnnamed};
 use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::comments::place_comments;
-use crate::model::{DeclId, Holder, Member, MemberKind, Meta, Note, Param, Text};
+use crate::model::{DeclId, Holder, Member, MemberKind, Meta, Note, Param, Text, Vis};
 use crate::typerefs::range_of;
 
 impl Collector<'_> {
@@ -45,7 +45,7 @@ impl Collector<'_> {
             let (raw_doc, lints) = self.attr_facts(here, &field.attrs);
             members.push(Member {
                 name: ident.to_string(),
-                vis: attrs::vis(&field.vis),
+                vis: self.vis(here, &field.vis),
                 kind: MemberKind::Field(ty),
                 meta: Meta {
                     notes,
@@ -96,6 +96,7 @@ impl Collector<'_> {
                     lints,
                     ..Meta::default()
                 },
+                vis: self.vis(here, &field.vis),
             });
         }
         params
@@ -137,6 +138,7 @@ impl Collector<'_> {
                     lints,
                     ..Meta::default()
                 },
+                vis: Vis::Public,
             });
         }
         params

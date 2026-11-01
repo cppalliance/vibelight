@@ -9,7 +9,7 @@ use crate::attrs;
 use crate::collect::{Collector, Here, loc};
 use crate::collect_body_code::Code;
 use crate::comments::{Placed, place_comments};
-use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text};
+use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text, Vis};
 use crate::model_body::BodyKind;
 use crate::typerefs::range_of;
 
@@ -40,9 +40,10 @@ impl Collector<'_> {
             raw_doc,
             lints,
         };
+        let vis = self.vis(&here, &f.vis);
         self.modules[here.module].items.push(Item {
             name: f.sig.ident.to_string(),
-            vis: attrs::vis(&f.vis),
+            vis,
             kind: ItemKind::Fn(sig),
             meta,
             loc,
@@ -153,6 +154,7 @@ impl Collector<'_> {
                 lints,
                 ..Meta::default()
             },
+            vis: Vis::Private,
         }
     }
 }

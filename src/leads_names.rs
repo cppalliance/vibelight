@@ -377,11 +377,12 @@ fn wrapper_name_family(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut V
                 .chain(siblings.iter().flat_map(|name| &names[name]))
                 .map(|func| func.item)
                 .collect();
-            let widest = bases.iter().map(|func| func.vis).min();
+            let widest = bases.iter().map(|func| func.vis.rank()).min();
             let private_half = |name: &str| {
                 IMPL_SUFFIXES.iter().any(|suffix| name.ends_with(suffix))
-                    && (names[name].iter())
-                        .all(|func| Some(func.vis) > widest && called_within(run, func, &family))
+                    && (names[name].iter()).all(|func| {
+                        Some(func.vis.rank()) > widest && called_within(run, func, &family)
+                    })
             };
             let open: Vec<&str> = siblings.into_iter().filter(|n| !private_half(n)).collect();
             if open.is_empty() {

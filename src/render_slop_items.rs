@@ -89,7 +89,7 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
     {
         let slot = match item.vis {
             Vis::Public => &mut functions.public,
-            Vis::Internal => &mut functions.internal,
+            Vis::Crate | Vis::Super | Vis::In(_) => &mut functions.internal,
             Vis::Private => &mut functions.private,
         };
         *slot.get_or_insert(0) += 1;
@@ -102,7 +102,7 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
         vis: (m != 0).then(|| {
             match module.vis {
                 Vis::Public => "public",
-                Vis::Internal => "internal",
+                Vis::Crate | Vis::Super | Vis::In(_) => "internal",
                 Vis::Private => "private",
             }
             .to_owned()

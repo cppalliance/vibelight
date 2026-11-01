@@ -301,8 +301,9 @@ fn field_and_accessor(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Ve
             continue;
         }
         let at = ItemId::decl(func.item.target, d);
-        let field = (catalog.fields_of(at, None))
-            .find(|f| f.named && f.name == *read && f.vis != Vis::Private && f.vis <= func.vis);
+        let field = (catalog.fields_of(at, None)).find(|f| {
+            f.named && f.name == *read && f.vis != Vis::Private && f.vis.rank() <= func.vis.rank()
+        });
         if let Some(field) = field {
             let evidence = format!("`{} {}` and `fn {}`", field.meta.vis, field.name, func.name);
             let lead = Lead::new("field-and-accessor", Mode::DirectSyntax, evidence);

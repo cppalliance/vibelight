@@ -43,13 +43,10 @@ pub(crate) fn empty_sections(per_section: usize) -> Sections {
     std::array::from_fn(|_| (0..per_section).map(|_| Vec::new()).collect())
 }
 
-/// Returns the index of a visibility's section.
+/// Returns the index of a visibility's section: public, internal, or
+/// private.
 pub(crate) fn section(vis: Vis) -> usize {
-    match vis {
-        Vis::Public => 0,
-        Vis::Internal => 1,
-        Vis::Private => 2,
-    }
+    usize::from(vis.rank())
 }
 
 /// Joins a type body's data sections, then its member sections, each set in
@@ -61,26 +58,22 @@ pub(crate) fn section(vis: Vis) -> usize {
 /// as a C++ header does. Only a type uses this: a module has no enclosing
 /// brace, so its items carry their own visibility line instead.
 pub(crate) fn join_sections(data: Sections, members: Sections, default: Vis, block: &mut Block) {
-    let labels = [
-        (Vis::Public, "public:"),
-        (Vis::Internal, "internal:"),
-        (Vis::Private, "private:"),
-    ];
-    let mut current = default;
+    let labels = ["public:", "internal:", "private:"];
+    let mut current = section(default);
     for set in [data, members] {
-        for ((vis, label), groups) in labels.into_iter().zip(set) {
+        for ((index, label), groups) in labels.into_iter().enumerate().zip(set) {
             if groups.iter().all(Vec::is_empty) {
                 continue;
             }
             if !block.lines.is_empty() {
                 block.lines.push(Line::default());
             }
-            if vis != current {
+            if index != current {
                 block.lines.push(Line {
                     spans: vec![key(label)],
                     ..Line::default()
                 });
-                current = vis;
+                current = index;
             }
             join_groups(groups, block);
         }

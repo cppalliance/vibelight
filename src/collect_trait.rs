@@ -280,7 +280,7 @@ impl Collector<'_> {
         attrs::sort_marks(&mut cfgs);
         Some(Member {
             name: ident.to_string(),
-            vis: attrs::vis(vis),
+            vis: self.vis(here, vis),
             kind,
             meta: Meta {
                 notes,

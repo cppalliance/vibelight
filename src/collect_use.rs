@@ -161,9 +161,10 @@ impl Collector<'_> {
             raw_doc,
             lints,
         };
+        let vis = self.vis(here, vis);
         self.modules[here.module].items.push(Item {
             name,
-            vis: attrs::vis(vis),
+            vis,
             kind,
             meta,
             loc,
@@ -318,9 +319,10 @@ impl Collector<'_> {
                 raw_doc,
                 lints,
             };
+            let vis = self.vis(here, vis);
             self.modules[here.module].items.push(Item {
                 name,
-                vis: attrs::vis(vis),
+                vis,
                 kind: ItemKind::Foreign {
                     abi: abi.clone(),
                     item: foreign,

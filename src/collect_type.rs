@@ -313,7 +313,7 @@ impl Collector<'_> {
         Head {
             kind,
             name: ident.to_string(),
-            vis: attrs::vis(vis),
+            vis: self.vis(here, vis),
             loc,
             generics: generics_text,
             where_clause,

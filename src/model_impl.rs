@@ -57,6 +57,9 @@ pub(crate) struct ImplNotes {
 pub(crate) struct Impl {
     /// The `impl` line.
     pub(crate) loc: Loc,
+    /// The module the impl is written in, which its members' restricted
+    /// visibilities are relative to.
+    pub(crate) module: ModId,
     /// The header as written, from `unsafe` or `impl` to the brace.
     pub(crate) header: String,
     /// The self type as written.
@@ -120,10 +123,9 @@ impl Decl {
 }
 
 impl Crate {
-    /// Returns the module whose path is a module's without its last
-    /// segment, or `None` for the root.
+    /// Returns the module whose `mod` item declares module `m`, or `None`
+    /// for the root.
     pub(crate) fn parent_module(&self, m: ModId) -> Option<ModId> {
-        let (_, up) = self.modules[m].path.split_last()?;
-        self.modules.iter().position(|module| module.path == up)
+        self.modules[m].parent
     }
 }

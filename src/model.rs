@@ -61,15 +61,39 @@ pub(crate) struct Meta {
     pub(crate) lints: Vec<String>,
 }
 
-/// How far a node is visible, which picks the section it prints in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// A node's visibility as written, with the module a `pub(in path)` names.
+/// It has no order: how far two visibilities reach depends on the modules
+/// that declare them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Vis {
     /// `pub`.
     Public,
-    /// `pub(crate)`, `pub(super)`, or `pub(in path)`.
-    Internal,
-    /// `pub(self)` or no keyword.
+    /// `pub(crate)` or `pub(in crate)`.
+    Crate,
+    /// `pub(super)` or `pub(in super)`.
+    Super,
+    /// `pub(in path)` for any other path, with the module it names.
+    In(ModId),
+    /// `pub(self)`, `pub(in self)`, or no keyword.
     Private,
+}
+
+impl Vis {
+    /// Tells whether the visibility is `pub(crate)`, `pub(super)`, or
+    /// `pub(in path)`.
+    pub(crate) fn is_restricted(self) -> bool {
+        matches!(self, Vis::Crate | Vis::Super | Vis::In(_))
+    }
+
+    /// Ranks the visibility for a coarse order: 0 for `pub`, 1 for a
+    /// restricted visibility, and 2 for private.
+    pub(crate) fn rank(self) -> u8 {
+        match self {
+            Vis::Public => 0,
+            Vis::Crate | Vis::Super | Vis::In(_) => 1,
+            Vis::Private => 2,
+        }
+    }
 }
 
 /// How a function takes its object.
@@ -111,6 +135,9 @@ pub(crate) struct Sig {
 pub(crate) struct Param {
     pub(crate) text: Text,
     pub(crate) meta: Meta,
+    /// A tuple field's visibility; a parameter is private and a variant's
+    /// field is public.
+    pub(crate) vis: Vis,
 }
 
 /// One entry inside a type's block.
@@ -350,6 +377,8 @@ pub(crate) struct Module {
     pub(crate) dangling: Vec<Note>,
     /// The visibility on the `mod` line; the root module is public.
     pub(crate) vis: Vis,
+    /// The module whose `mod` item declares this one; `None` for the root.
+    pub(crate) parent: Option<ModId>,
     /// Whether it, or a module around it, is test support.
     pub(crate) test_support: bool,
     /// The raw doc text of the `mod` line, then of the module's inner docs.
