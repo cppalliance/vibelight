@@ -25,6 +25,7 @@ pub(crate) struct Loc {
 
 pub(crate) use crate::model_body::{BodyName, BodyOwner};
 pub(crate) use crate::model_impl::{Impl, ImplLoc, ImplNotes, Special, SpecialKind};
+pub(crate) use crate::model_macro::{Holder, MacroKind, MacroUse};
 pub(crate) use crate::text::{CrossRef, Reach, Res, Seg, Text, TypeRef, ValueRef, Where, Written};
 
 /// One comment printed above a node.
@@ -358,34 +359,6 @@ pub(crate) struct Module {
     /// The bytes of `file` that hold the module's items: the whole file, or
     /// the inside of an inline module's braces; empty for a missing file.
     pub(crate) scope: Range<usize>,
-}
-
-/// The kind of a macro, in kill list order.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum MacroKind {
-    Definition,
-    Invocation,
-    Derive,
-    Attribute,
-}
-
-/// Where a macro mark is shown.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Holder {
-    Decl(DeclId),
-    Module(ModId),
-    Impl(usize),
-}
-
-/// One kill list entry.
-#[derive(Clone, Debug)]
-pub(crate) struct MacroUse {
-    pub(crate) kind: MacroKind,
-    /// The mark text, such as `macro_rules! name`, `name!`, or
-    /// `derive: Clone, Debug`.
-    pub(crate) text: String,
-    pub(crate) holder: Holder,
-    pub(crate) loc: Loc,
 }
 
 /// A problem reported on stderr.

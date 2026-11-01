@@ -1,9 +1,9 @@
 //! Lays out declaration blocks: headers and bodies.
 
 use crate::layout::{
-    Block, Line, Sections, Span, above, code, empty_sections, join_sections, key, mark_line,
-    note_lines, plain, section, sort_entries, where_parts,
+    Block, Line, Span, above, code, key, mark_line, note_lines, plain, where_parts,
 };
+use crate::layout_groups::{Sections, empty_sections, join_sections, section, sort_entries};
 use crate::layout_head::header_lines;
 use crate::layout_marker::Marker;
 use crate::layout_members::{member_entry, variant_entry};

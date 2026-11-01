@@ -1,7 +1,8 @@
 //! Lays out the C++ special members that standard traits become, as one
 //! packed group.
 
-use crate::layout::{Entry, Line, Span, code, key, note_lines, plain};
+use crate::layout::{Line, Span, code, key, note_lines, plain};
+use crate::layout_groups::Entry;
 use crate::layout_marker::Marker;
 use crate::model::{Special, SpecialKind, TypeRef, name_order};
 

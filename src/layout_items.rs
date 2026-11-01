@@ -3,10 +3,11 @@
 use std::collections::BTreeMap;
 
 use crate::layout::{
-    Block, Entry, Line, Span, above, code, const_line, empty_sections, fn_lines, join_groups, key,
-    line_text, mark_line, note_lines, plain, section, sort_entries,
+    Block, Line, Span, above, code, const_line, fn_lines, key, line_text, mark_line, note_lines,
+    plain,
 };
 use crate::layout_decl::{BodyParts, body};
+use crate::layout_groups::{Entry, empty_sections, join_groups, section, sort_entries};
 use crate::layout_marker::Marker;
 use crate::macros;
 use crate::model::{

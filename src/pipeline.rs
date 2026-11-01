@@ -21,7 +21,7 @@ use crate::spellings::Entry;
 use crate::{
     analysis, attach, collect, collect_check, document, index, layout_decl, leads, manifest,
     modtree, order, render_html, render_slop, render_slop_lists, resolve, resolve_run, spellings,
-    surface, test_support,
+    test_support,
 };
 
 /// What a run would write and what it reports.
@@ -80,20 +80,15 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     outcome.spelled = analyzed.spelled;
     outcome.notes = analyzed.notes;
     let mut docs: Vec<Built> = Vec::new();
-    for (krate, &(p, target)) in krates.iter_mut().zip(&targets) {
+    for ((krate, &(p, _)), surface) in krates.iter_mut().zip(&targets).zip(&analyzed.surfaces) {
         let others = attach::attach(krate);
         let krate: &Crate = krate;
         let spellings = spellings::find(krate);
-        let surface = if target.kind == TargetKind::Lib {
-            surface::walk(krate)
-        } else {
-            Vec::new()
-        };
         let parts = Parts {
             krate,
             others: &others,
             spellings: &spellings,
-            surface: &surface,
+            surface,
             crate_dir: &chosen.packages[p].input.dir,
         };
         docs.push(parts.build(&html)?);
@@ -155,6 +150,8 @@ struct Analyzed {
     spelled: usize,
     /// A note for each `quiet` entry that drops no lead.
     notes: Vec<String>,
+    /// Each target's public surface, empty for a target that is no library.
+    surfaces: Vec<Vec<crate::surface::Entry>>,
 }
 
 /// Builds the run's analysis view from its resolved, unattached crates and
@@ -227,6 +224,7 @@ fn analyze(
         texts,
         spelled,
         notes: found.notes,
+        surfaces: run.surfaces.clone(),
     })
 }
 

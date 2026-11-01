@@ -1,9 +1,9 @@
 //! Lays out the entries between a type's braces: members and variants.
 
 use crate::layout::{
-    Entry, Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
-    spaced, width,
+    Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain, width,
 };
+use crate::layout_groups::{Entry, spaced};
 use crate::layout_marker::Marker;
 use crate::model::{Crate, Member, MemberKind, Param, TypeRef, Variant, VariantFields};
 use crate::wrap::MAX_WIDTH;
