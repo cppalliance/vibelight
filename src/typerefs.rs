@@ -236,7 +236,7 @@ impl Slicer<'_> {
                     comment: false,
                     may_be_value: false,
                     res: None,
-                    written: Some(Written {
+                    written: (self.file.origin.is_none()).then(|| Written {
                         loc: Loc {
                             file: self.file_id,
                             line: self.file.line_of(item.range.start),

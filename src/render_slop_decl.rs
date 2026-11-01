@@ -77,6 +77,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
     let rust = shape(decl, &krate.refs);
     let loc = outline.own(decl.loc);
     let eff = facts.eff(item);
+    let via = outline.via(decl.loc);
     let meta = &decl.meta;
     let comment_text = comment(&meta.notes, meta.trailing.as_ref());
     let dangling = comment(&decl.dangling, None);
@@ -87,6 +88,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
                 rust,
                 loc,
                 eff,
+                via,
                 cfgs: some(meta.cfgs.clone()),
                 attrs: some(meta.attrs.clone()),
                 derives: some(decl.written_derives.clone()),
@@ -111,6 +113,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             rust,
             loc,
             eff,
+            via,
             cfgs: some(meta.cfgs.clone()),
             attrs: some(meta.attrs.clone()),
             attributes: some(decl.attributes.clone()),
@@ -128,6 +131,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             rust,
             loc,
             eff,
+            via,
             impl_header: None,
             cfgs: some(meta.cfgs.clone()),
             attrs: some(meta.attrs.clone()),
@@ -282,7 +286,10 @@ pub(crate) fn impls(outline: &mut Outline<'_>) {
     }
     for ((path, header), list) in groups {
         let (module, _, test_support) = impl_owner(outline, list[0]);
-        let mut at: Vec<model::Loc> = list.iter().map(|&i| krate.impls[i].loc).collect();
+        let via = list.iter().find_map(|&i| outline.via(krate.impls[i].loc));
+        let mut at: Vec<model::Loc> = (list.iter())
+            .map(|&i| krate.real_loc(krate.impls[i].loc))
+            .collect();
         let rel = |loc: &model::Loc| krate.files[loc.file].rel.clone();
         at.sort_by(|a, b| rel(a).cmp(&rel(b)).then(a.line.cmp(&b.line)));
         at.dedup();
@@ -308,6 +315,7 @@ pub(crate) fn impls(outline: &mut Outline<'_>) {
             path: shown.clone(),
             rust: header,
             locs: at.iter().map(|&loc| outline.own(loc)).collect(),
+            via,
             attributes: some(attributes),
             macros: some(macros),
             test_support: flag(test_support),

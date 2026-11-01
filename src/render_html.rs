@@ -94,6 +94,9 @@ pub(crate) fn render(
                     if !source.members.is_empty() {
                         let _ = write!(out, " ({})", escape(&source.members.join(", ")));
                     }
+                    if let Some(via) = &source.via {
+                        let _ = write!(out, " written by <code>{}</code>", escape(via));
+                    }
                 }
                 out.push_str("</p>\n");
             }

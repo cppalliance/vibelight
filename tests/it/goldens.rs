@@ -14,13 +14,20 @@ use crate::support::{fixtures, has_ext, input_of, outputs_with_streams};
 const WARNS: [&str; 2] = ["spellings", "unparsable"];
 
 /// The other fixtures whose runs warn on purpose, with every line of it.
-const WARNINGS: [(&str, &[&str]); 2] = [
+const WARNINGS: [(&str, &[&str]); 3] = [
     (
         "base-lists",
         &[
             "warning: 1 type names unresolved, 0 ambiguous; they stay plain",
             "warning: 2 items written more than one way; see spelling records",
             "2 warnings",
+        ],
+    ),
+    (
+        "macro-expansion",
+        &[
+            "warning: src/lib.rs:12: macro `markers!` not expanded: no rule matched",
+            "1 warning",
         ],
     ),
     (
@@ -112,6 +119,7 @@ goldens! {
     impls => "impls",
     kill_list => "kill-list",
     long_lines => "long-lines",
+    macro_expansion => "macro-expansion",
     macros => "macros",
     member_order => "member-order",
     member_order_impl => "member-order-impl",

@@ -12,7 +12,7 @@ use crate::analysis_items::{ItemId, ItemRef, is_value};
 use crate::analysis_paths::{Edge, PathKind};
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
-use crate::model::{DeclKind, Reach, ValueRef};
+use crate::model::{DeclKind, Module, Reach, ValueRef};
 use crate::model_body::{BodyKind, Owner};
 use crate::root::TargetKind;
 use crate::surface;
@@ -255,8 +255,10 @@ impl AnalysisRun<'_> {
                 }
             }
             for (f, modules) in self.scopes[t].iter().enumerate() {
+                let origin = krate.files[f].origin.as_ref().map(|origin| origin.module);
                 for (range, m) in modules {
-                    let fits = krate.modules.get(*m).is_some_and(|module| module.file == f)
+                    let home = |module: &Module| module.file == f || origin == Some(*m);
+                    let fits = krate.modules.get(*m).is_some_and(home)
                         && range.end <= krate.files[f].text.len()
                         && self.module_at(t, f, range.start) == Some(*m);
                     if !fits {

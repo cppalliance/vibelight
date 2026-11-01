@@ -86,12 +86,15 @@ impl<'a> Outline<'a> {
         &self.target.run.krates[self.target.target]
     }
 
-    /// Returns a source line of target `target` as this outline writes it.
+    /// Returns a source line of target `target` as this outline writes it,
+    /// in a real file: a line an expansion wrote is its invocation's.
     pub(crate) fn loc(&self, target: usize, loc: model::Loc) -> Loc {
         let run = self.target.run;
+        let krate = &run.krates[target];
+        let loc = krate.real_loc(loc);
         Loc {
             stem: (target != self.target.target).then(|| run.targets[target].stem.clone()),
-            file: run.krates[target].files[loc.file].rel.replace('\\', "/"),
+            file: krate.files[loc.file].rel.replace('\\', "/"),
             line: loc.line,
         }
     }
@@ -101,11 +104,20 @@ impl<'a> Outline<'a> {
         self.loc(self.target.target, loc)
     }
 
+    /// Returns the macro whose invocation wrote a location of this outline's
+    /// target, such as `events!`, or `None` for a location in a real file.
+    pub(crate) fn via(&self, loc: model::Loc) -> Option<String> {
+        self.krate().via(loc.file).map(str::to_owned)
+    }
+
     /// Adds a catalog record of module `module`, written at `at`, with its
-    /// doc text, when it has one, in a `doc` record after it.
+    /// doc text, when it has one, in a `doc` record after it. A record an
+    /// expansion wrote sorts at its invocation.
     pub(crate) fn push(&mut self, module: ModId, at: model::Loc, record: Record, doc: Doc<'_>) {
+        let krate = self.krate();
+        let at = krate.real_loc(at);
         let rank = Rank::Item {
-            file: self.krate().files[at.file].rel.replace('\\', "/"),
+            file: krate.files[at.file].rel.replace('\\', "/"),
             line: at.line,
         };
         self.push_ranked(rank, module, record, doc);

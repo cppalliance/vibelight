@@ -15,7 +15,7 @@ use crate::census::{Census, Context, Form, QualifiedPathHit, Scan, Source, Token
 use crate::census_docs::{doc_texts, doctests};
 use crate::census_lex::lex;
 use crate::macros;
-use crate::model::{Crate, FileId, ItemKind, MemberKind, ModId, Seg, Shape, VariantFields};
+use crate::model::{Crate, FileId, ItemKind, Loc, MemberKind, ModId, Seg, Shape, VariantFields};
 use crate::root::TargetKind;
 use crate::source::SourceFile;
 
@@ -52,6 +52,10 @@ pub(crate) fn build(
                 line: 1,
                 scan: Scan::Lexed,
             };
+            if file.origin.is_some() {
+                add(&mut census, source, Some(""), &[], None);
+                continue;
+            }
             let tree = (file, scopes[t][f].as_slice());
             add(
                 &mut census,
@@ -214,7 +218,8 @@ fn line_column(file: &SourceFile, offset: usize) -> LineColumn {
 /// Counts how many items of the run declare each name: declarations, their
 /// variants and named variant fields, the members of declarations and
 /// impls, modules, and module items other than re-exports and macro
-/// invocations. Each declaration writes its name once.
+/// invocations. Each declaration writes its name once, and a node that an
+/// expansion writes, in no scanned text, counts for nothing.
 fn declarations(krates: &[Crate]) -> BTreeMap<String, usize> {
     let mut out: BTreeMap<String, usize> = BTreeMap::new();
     let mut add = |name: &str| {
@@ -228,7 +233,8 @@ fn declarations(krates: &[Crate]) -> BTreeMap<String, usize> {
         }
     };
     for krate in krates {
-        for decl in &krate.decls {
+        let real = |loc: Loc| krate.files[loc.file].origin.is_none();
+        for decl in krate.decls.iter().filter(|d| real(d.loc)) {
             add(&decl.name);
             let Shape::Enum(variants) = &decl.shape else {
                 continue;
@@ -249,10 +255,12 @@ fn declarations(krates: &[Crate]) -> BTreeMap<String, usize> {
             .iter()
             .flat_map(|i| i.members.iter().chain(&i.trait_members));
         for member in krate.decls.iter().flat_map(|d| &d.members).chain(impls) {
-            if !matches!(
-                member.kind,
-                MemberKind::Mark(_) | MemberKind::Unsupported(_)
-            ) {
+            if real(member.loc)
+                && !matches!(
+                    member.kind,
+                    MemberKind::Mark(_) | MemberKind::Unsupported(_)
+                )
+            {
                 add(&member.name);
             }
         }
@@ -260,7 +268,7 @@ fn declarations(krates: &[Crate]) -> BTreeMap<String, usize> {
             if let Some(name) = module.path.last() {
                 add(name);
             }
-            for item in &module.items {
+            for item in module.items.iter().filter(|i| real(i.loc)) {
                 let declares = match &item.kind {
                     ItemKind::Mark(text) => macros::definition_name(text).is_some(),
                     ItemKind::Reexport { .. } | ItemKind::Unsupported(_) => false,

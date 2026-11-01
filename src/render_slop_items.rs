@@ -45,6 +45,14 @@ impl Place<'_> {
     pub(crate) fn support(&self) -> Option<bool> {
         flag(self.test_support || is_test_support(&self.meta.cfgs))
     }
+
+    /// Returns the macro whose invocation wrote a module item, or `None`
+    /// for a member, whose record is not top-level.
+    fn via(&self, outline: &Outline<'_>) -> Option<String> {
+        matches!(self.item, ItemRef::Value(_))
+            .then(|| outline.via(self.loc))
+            .flatten()
+    }
 }
 
 /// Returns a path below the crate root: a module's, then a name.
@@ -146,6 +154,7 @@ fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
                 path: place.path.clone(),
                 rust: rust.clone(),
                 loc: outline.own(place.loc),
+                via: outline.via(place.loc),
                 cfgs: some(meta.cfgs.clone()),
                 test_support: place.support(),
                 comment: comment(&meta.notes, meta.trailing.as_ref()),
@@ -176,6 +185,7 @@ fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
                 rust: extern_item(abi, name, item, meta, &krate.refs),
                 loc: outline.own(place.loc),
                 eff: outline.facts.eff(place.item),
+                via: outline.via(place.loc),
                 cfgs: some(meta.cfgs.clone()),
                 attrs: some(meta.attrs.clone()),
                 lints: some(meta.lints.clone()),
@@ -259,6 +269,7 @@ pub(crate) fn push_fn(outline: &mut Outline<'_>, place: &Place<'_>, sig: &Sig) {
         sig: sig_text(sig, &meta.vis, &krate.refs),
         loc: outline.own(place.loc),
         eff: facts.eff(place.item),
+        via: place.via(outline),
         impl_header: place.impl_header.clone(),
         cfgs: some(meta.cfgs.clone()),
         attrs: some(meta.attrs.clone()),
@@ -300,6 +311,7 @@ pub(crate) fn push_value(
         value: value.and_then(literal),
         loc: outline.own(place.loc),
         eff: facts.eff(place.item),
+        via: place.via(outline),
         impl_header: place.impl_header.clone(),
         cfgs: some(meta.cfgs.clone()),
         attrs: some(meta.attrs.clone()),
@@ -372,6 +384,9 @@ fn macros(outline: &mut Outline<'_>) {
             path: shown.clone(),
             rust: mark.text.clone(),
             loc: outline.own(mark.loc),
+            via: matches!(mark.holder, Holder::Module(_))
+                .then(|| outline.via(mark.loc))
+                .flatten(),
             cfgs: some(meta.cfgs.clone()),
             attrs: some(meta.attrs.clone()),
             test_support: flag(test_support || is_test_support(&meta.cfgs)),

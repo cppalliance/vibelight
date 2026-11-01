@@ -113,6 +113,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
         let member_link: &dyn Fn(Loc) -> String = &|loc| {
+            let loc = krate.real_loc(loc);
             page.link_base
                 .target(&krate.files[loc.file].rel, Some(loc.line))
         };

@@ -10,7 +10,9 @@
 //! use it. The body facts are `body`, `ops`, and `comments`. `eff` spells
 //! how far a declaration or a module item reaches, from its own module,
 //! only when a re-export makes that differ from its module's reach
-//! narrowed by its own visibility.
+//! narrowed by its own visibility. `via` names the macro, such as
+//! `events!`, whose invocation wrote a top-level record's item; the record's
+//! location is the invocation's.
 
 use std::collections::BTreeMap;
 
@@ -62,6 +64,8 @@ pub(crate) struct TypeRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
@@ -97,6 +101,8 @@ pub(crate) struct TraitRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
@@ -130,6 +136,8 @@ pub(crate) struct AliasRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     /// The header of the trait impl that holds it.
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
@@ -238,6 +246,8 @@ pub(crate) struct FnRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     /// The header of the trait impl that holds it.
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
@@ -284,6 +294,8 @@ pub(crate) struct ValueRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
     #[serde(skip_serializing_if = "absent")]
@@ -317,6 +329,8 @@ pub(crate) struct ExternRecord {
     pub(crate) loc: Loc,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) eff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
@@ -336,6 +350,8 @@ pub(crate) struct UseRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -351,6 +367,8 @@ pub(crate) struct ImplRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) locs: Vec<Loc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) attributes: Option<Vec<String>>,
     /// The macros the impl's body invokes.
@@ -372,6 +390,8 @@ pub(crate) struct MacroRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) via: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]

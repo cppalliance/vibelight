@@ -1,9 +1,11 @@
 //! The leads of a run: what the detector groups find in the analysis view,
 //! for an analyst to confirm or extinguish in the source. A lead is never a
 //! finding. It says how its evidence was found and, when it rests on
-//! something the run does not observe, what the run cannot see. The config's
-//! `quiet` entries drop leads, and then more than [`SUMMARY_ABOVE`] leads of
-//! one id in one module become one summary lead.
+//! something the run does not observe, what the run cannot see. A location
+//! that an expansion wrote moves to its invocation, and the evidence names
+//! the macro. A twin or repeat lead inside one expansion is dropped, the
+//! config's `quiet` entries drop leads, and then more than
+//! [`SUMMARY_ABOVE`] leads of one id in one module become one summary lead.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -90,7 +92,26 @@ pub(crate) struct Lead {
     /// subjects and locations are in.
     pub(crate) target_files: Vec<usize>,
     pub(crate) summary: Option<Summary>,
+    /// The one expansion, by target and virtual file, that wrote every
+    /// location of the lead; `None` when a real file holds one, or when
+    /// the locations come from more than one expansion.
+    expansion: Option<(usize, FileId)>,
 }
+
+/// The leads that find twins or repeats, which one expansion's uniform
+/// output makes by design, so a lead of them whose every location one
+/// expansion wrote is dropped.
+const TWINS: [&str; 9] = [
+    "same-shape",
+    "contained-shape",
+    "generic-twin",
+    "mirror-enum",
+    "spelling-table",
+    "param-clump",
+    "body-clone",
+    "repeated-literal",
+    "repeated-number",
+];
 
 impl Lead {
     /// Starts a lead with no subject.
@@ -104,6 +125,7 @@ impl Lead {
             limits: Vec::new(),
             target_files: Vec::new(),
             summary: None,
+            expansion: None,
         }
     }
 
@@ -156,9 +178,32 @@ impl Lead {
         (alone && shared).then_some((first.target, first.module))
     }
 
-    /// Sorts the lead's lists, drops repeats, and names the targets it
-    /// prints in.
+    /// Moves each location an expansion wrote to its invocation, naming the
+    /// macro once in the evidence, sorts the lead's lists, drops repeats,
+    /// and names the targets it prints in.
     fn settle(&mut self, run: &AnalysisRun<'_>) {
+        let mut expanded = BTreeSet::new();
+        let mut vias = BTreeSet::new();
+        let mut real = false;
+        for loc in &mut self.locs {
+            match &run.krates[loc.target].files[loc.file].origin {
+                Some(origin) => {
+                    expanded.insert((loc.target, loc.file));
+                    vias.insert(origin.via.clone());
+                    loc.file = origin.loc.file;
+                    loc.line = origin.loc.line;
+                }
+                None => real = true,
+            }
+        }
+        if !real && expanded.len() == 1 {
+            self.expansion = expanded.first().copied();
+        }
+        for via in vias {
+            self.evidence += "; written by `";
+            self.evidence += &via;
+            self.evidence.push('`');
+        }
         self.subjects.sort_by(|a, b| subject_order(run, a, b));
         self.subjects
             .dedup_by(|a, b| (a.target, &a.path) == (b.target, &b.path));
@@ -266,6 +311,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, quiet: &[String]) -> Found {
     for lead in &mut found {
         lead.settle(run);
     }
+    found.retain(|lead| lead.expansion.is_none() || !TWINS.contains(&lead.id));
     fold(&mut found);
     let (quieted, notes) = leads_quiet::apply(&mut found, quiet, run.krates.len());
     let mut leads = summarize(run, found);

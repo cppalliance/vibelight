@@ -18,12 +18,14 @@ pub(crate) struct Link {
 }
 
 /// One link of a `Source:` line: the definition or an impl block, with the
-/// names of the members an inherent impl adds.
+/// names of the members an inherent impl adds, and the macro whose
+/// invocation wrote it, such as `events!`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct SourceLink {
     pub(crate) link: Link,
     /// Sorted; empty for the definition, a trait impl, and a module.
     pub(crate) members: Vec<String>,
+    pub(crate) via: Option<String>,
 }
 
 /// One piece of inline content.

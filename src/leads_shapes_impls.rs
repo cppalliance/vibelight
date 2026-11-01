@@ -144,7 +144,8 @@ fn direct_impl_field_split(
                 .filter(|f| fields.contains(f))
                 .collect();
             if let (Some(loc), false) = (run.loc(func.item), reached.is_empty()) {
-                let file = files.entry(loc.file).or_default();
+                let real = run.krates[func.item.target].real_loc(loc);
+                let file = files.entry(real.file).or_default();
                 file.0.extend(reached);
                 file.1.push(func.item);
             }

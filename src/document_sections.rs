@@ -121,14 +121,23 @@ impl Builder<'_> {
         }
     }
 
+    /// Returns the link to a source line, in a real file: a line an
+    /// expansion wrote links to its invocation.
     pub(crate) fn link(&self, loc: Loc, with_line: bool) -> Option<Link> {
         let base = self.links?;
+        let loc = self.krate.real_loc(loc);
         let rel = &self.krate.files[loc.file].rel;
         let line = with_line.then_some(loc.line);
         Some(Link {
             text: base.text(rel, line),
             target: base.target(rel, line),
         })
+    }
+
+    /// Returns the macro, such as `events!`, whose invocation wrote a
+    /// location, or `None` for a location in a real file.
+    fn via(&self, loc: Loc) -> Option<String> {
+        self.krate.via(loc.file).map(str::to_owned)
     }
 
     fn mark(&mut self, label: &'static str, text: &str, loc: Option<Loc>) {
@@ -165,20 +174,28 @@ impl Builder<'_> {
         let id = self.decl_ids[d].clone();
         self.heading(3, &id, &self.decl_heading(d));
         if self.links.is_some() {
-            let mut impls = decl.impl_locs.clone();
+            let krate = self.krate;
+            let mut impls: Vec<(Loc, Vec<String>, Option<String>)> = (decl.impl_locs.iter())
+                .map(|i| (krate.real_loc(i.loc), i.members.clone(), self.via(i.loc)))
+                .collect();
             impls.sort_by(|a, b| {
-                self.krate.files[a.loc.file]
-                    .rel
-                    .cmp(&self.krate.files[b.loc.file].rel)
-                    .then(a.loc.line.cmp(&b.loc.line))
+                (krate.files[a.0.file].rel.cmp(&krate.files[b.0.file].rel))
+                    .then(a.0.line.cmp(&b.0.line))
             });
-            impls.dedup_by(|a, b| a.loc == b.loc);
-            let mut links = plain_links(self.link(decl.loc, true));
-            links.extend(impls.into_iter().filter_map(|i| {
-                self.link(i.loc, true).map(|link| SourceLink {
-                    link,
-                    members: i.members,
-                })
+            impls.dedup_by(|later, kept| {
+                let same = later.0 == kept.0;
+                if same {
+                    kept.1.append(&mut later.1);
+                    kept.1.sort();
+                    kept.1.dedup();
+                    kept.2 = kept.2.take().or(later.2.take());
+                }
+                same
+            });
+            let mut links = plain_links(self.link(decl.loc, true), self.via(decl.loc));
+            links.extend(impls.into_iter().filter_map(|(loc, members, via)| {
+                self.link(loc, true)
+                    .map(|link| SourceLink { link, members, via })
             }));
             self.nodes.push(Node::Source(links));
         }
@@ -269,7 +286,7 @@ impl Builder<'_> {
                     false,
                 ),
             };
-            self.nodes.push(Node::Source(plain_links(link)));
+            self.nodes.push(Node::Source(plain_links(link, None)));
         }
         let docs = if m == 0 {
             docs_block(&[], &module.cfgs)
@@ -314,20 +331,21 @@ impl Builder<'_> {
         }
         for (block, loc) in blocks {
             if self.links.is_some() {
-                let link = self.link(loc, true);
-                self.nodes.push(Node::Source(plain_links(link)));
+                let (link, via) = (self.link(loc, true), self.via(loc));
+                self.nodes.push(Node::Source(plain_links(link, via)));
             }
             self.code(block);
         }
     }
 }
 
-/// Returns a `Source:` line's links that list no members.
-fn plain_links(link: Option<Link>) -> Vec<SourceLink> {
-    link.into_iter()
-        .map(|link| SourceLink {
-            link,
-            members: Vec::new(),
-        })
-        .collect()
+/// Returns a `Source:` line's links that list no members, with the macro
+/// that wrote the node, if one did.
+fn plain_links(link: Option<Link>, via: Option<String>) -> Vec<SourceLink> {
+    let link = link.map(|link| SourceLink {
+        link,
+        members: Vec::new(),
+        via,
+    });
+    link.into_iter().collect()
 }

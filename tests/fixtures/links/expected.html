@@ -62,6 +62,7 @@ span.src{cursor:default}
 <ul>
 <li><a href="#type.links.Dial">Dial</a></li>
 <li><a href="#type.links.Engine">Engine</a></li>
+<li><a href="#type.links.Needle">Needle</a></li>
 <li><a href="#type.links.parts.Gauge">parts::Gauge</a></li>
 <li><a href="#type.links.parts.Part">parts::Part</a></li>
 </ul>
@@ -94,14 +95,16 @@ span.src{cursor:default}
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
 <li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment reflows as one paragraph.</li>
 </ul>
-<p class="kill"><b class="m">MACROS:</b> 1 definition</p>
+<p class="kill"><b class="m">MACROS:</b> 1 definition, 1 invocation</p>
 <ul class="kill">
-<li><b class="m">MACRO</b> <code>macro_rules! noop</code>, in <a href="#macro.1">links</a> <span class="src">(source: <a href="../../src/lib.rs#L15">src/lib.rs:15</a>)</span></li>
+<li><b class="m">MACRO</b> <code>macro_rules! needle</code>, in <a href="#macro.1">links</a> <span class="src">(source: <a href="../../src/lib.rs#L15">src/lib.rs:15</a>)</span></li>
+<li><b class="m">MACRO</b> <code>needle!</code>, in <a href="#macro.2">links</a> <span class="src">(source: <a href="../../src/lib.rs#L30">src/lib.rs:30</a>)</span></li>
 </ul>
 <h2 id="surface">Public surface</h2>
 <ul class="surface">
 <li><a href="#type.links.Dial">Dial</a></li>
 <li><a href="#type.links.Engine">Engine</a></li>
+<li><a href="#type.links.Needle">Needle</a></li>
 </ul>
 <hr>
 <h2 id="unconnected">Unconnected types</h2>
@@ -125,6 +128,12 @@ span.src{cursor:default}
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts the engine.</span></div>    <a class="src" href="../../src/lib.rs#L12">start</a>()
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops the engine.</span></div>    <a class="src" href="../../src/parts.rs#L5">stop</a>()
 }</code></pre>
+<h3 id="type.links.Needle">Needle</h3>
+<p class="source">Source: <a href="../../src/lib.rs#L30">src/lib.rs:30</a> written by <code>needle!</code></p>
+<div class="doc mc-doc">
+<p><span class="c">A needle the macro writes.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Needle</code></pre>
 <h3 id="type.links.parts.Gauge">parts::Gauge</h3>
 <p class="source">Source: <a href="../../src/parts.rs#L12">src/parts.rs:12</a></p>
 <div class="doc mc-doc">
@@ -151,9 +160,12 @@ span.src{cursor:default}
 <ul>
 <li><a href="#type.links.Dial">Dial</a></li>
 <li><a href="#type.links.Engine">Engine</a></li>
+<li><a href="#type.links.Needle">Needle</a></li>
 </ul>
-<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! noop</span></code></pre>
-<p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! noop <span class="src">(source: <a href="../../src/lib.rs#L15">src/lib.rs:15</a>)</span></p>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! needle</span>
+<span class="gap"></span> <span class="c"><b class="m">MACRO</b></span><span class="c"> needle!</span></code></pre>
+<p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! needle <span class="src">(source: <a href="../../src/lib.rs#L15">src/lib.rs:15</a>)</span></p>
+<p class="mark" id="macro.2"><b class="m">MACRO</b> needle! <span class="src">(source: <a href="../../src/lib.rs#L30">src/lib.rs:30</a>)</span></p>
 <h3 id="mod.links.parts">parts</h3>
 <p class="source">Source: <a href="../../src/parts.rs">src/parts.rs</a></p>
 <div class="doc mc-doc">

@@ -49,7 +49,7 @@ impl Builder<'_> {
                     path,
                     heading,
                     id,
-                    loc: m.loc,
+                    loc: krate.real_loc(m.loc),
                 }
             })
             .collect();

@@ -213,15 +213,24 @@ fn root(roots: &mut [usize], d: usize) -> usize {
 
 /// `repeated-doc-text`: one normalized shingle of [`SHINGLE_WORDS`] words
 /// in the docs of two or more nodes; the docs of one path and kind of node,
-/// such as one function under two `cfg`s, are one site. Docs linked by
-/// shared shingles form one lead with every site; its evidence is the
-/// longest passage that the shingle shared by the most sites extends to.
+/// such as one function under two `cfg`s, are one site, and so are the
+/// identical docs that one expansion writes. Docs linked by shared
+/// shingles form one lead with every site; its evidence is the longest
+/// passage that the shingle shared by the most sites extends to.
 fn repeated_doc_text(run: &AnalysisRun<'_>, docs: &Docs<'_>, out: &mut Vec<Lead>) {
     let terms: Vec<Vec<(String, usize)>> = (docs.all.iter())
         .map(|doc| shingle_terms(&doc.prose))
         .collect();
-    let sites: Vec<(usize, Vec<String>, u8)> = (docs.all.iter())
-        .map(|doc| (doc.item.target, doc.path(run), doc.node.rank()))
+    let sites: Vec<(usize, Vec<String>, u8)> = (docs.all.iter().zip(&terms))
+        .map(|(doc, terms)| {
+            let file = &run.krates[doc.item.target].files[doc.loc.file];
+            if file.origin.is_some() {
+                let words = terms.iter().map(|t| t.0.as_str()).collect::<Vec<_>>();
+                let stamp = vec![format!("#{}", doc.loc.file), words.join(" ")];
+                return (doc.item.target, stamp, doc.node.rank());
+            }
+            (doc.item.target, doc.path(run), doc.node.rank())
+        })
         .collect();
     let mut index: BTreeMap<u64, Vec<(usize, usize)>> = BTreeMap::new();
     for (d, list) in terms.iter().enumerate() {

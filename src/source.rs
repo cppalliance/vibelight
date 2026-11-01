@@ -1,18 +1,40 @@
-//! Holds each source file's text and turns spans into normalized slices.
+//! Holds each source file's text and turns spans into normalized slices. A
+//! virtual file holds the items one macro invocation expands into, printed
+//! as Rust, and its origin names the invocation.
 
 use std::ops::Range;
 
 use proc_macro2::{LineColumn, Span};
 
+use crate::model::{Loc, ModId};
+
 /// One `.rs` file: its crate-relative path and its text with LF line endings.
 #[derive(Debug)]
 pub(crate) struct SourceFile {
-    /// The path relative to the crate directory, with forward slashes.
+    /// The path relative to the crate directory, with forward slashes; a
+    /// virtual file has its invoking file's.
     pub(crate) rel: String,
     /// The text, with CRLF turned into LF and any byte-order mark removed.
     pub(crate) text: String,
+    /// The invocation that wrote a virtual file; `None` for a real one.
+    pub(crate) origin: Option<Origin>,
     /// The byte offset where each line starts.
     line_starts: Vec<usize>,
+}
+
+/// Where a virtual file's items are written: the invocation's line in a
+/// real file, the module that holds it, and the macro, such as `events!`.
+#[derive(Clone, Debug)]
+pub(crate) struct Origin {
+    pub(crate) loc: Loc,
+    pub(crate) module: ModId,
+    pub(crate) via: String,
+}
+
+/// Returns where a location is written in a real file: its own place, or
+/// the invocation that wrote its virtual file.
+pub(crate) fn real(files: &[SourceFile], loc: Loc) -> Loc {
+    (files[loc.file].origin.as_ref()).map_or(loc, |origin| origin.loc)
 }
 
 impl SourceFile {
@@ -25,6 +47,7 @@ impl SourceFile {
         SourceFile {
             rel,
             text,
+            origin: None,
             line_starts,
         }
     }

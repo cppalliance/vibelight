@@ -1,7 +1,8 @@
-//! The model of impl blocks and the special members they become.
+//! The model of impl blocks and the special members they become, and where
+//! a crate's locations are written.
 
 use crate::model::{
-    Base, Crate, Decl, DeclId, Loc, Member, MemberKind, ModId, Note, RefId, Sig, Text,
+    Base, Crate, Decl, DeclId, FileId, Loc, Member, MemberKind, ModId, Note, RefId, Sig, Text,
 };
 
 /// The standard trait behind a C++ special member function, a constructor
@@ -127,5 +128,17 @@ impl Crate {
     /// for the root.
     pub(crate) fn parent_module(&self, m: ModId) -> Option<ModId> {
         self.modules[m].parent
+    }
+
+    /// Returns where a location is written in a real file: its own place,
+    /// or the macro invocation that wrote its virtual file.
+    pub(crate) fn real_loc(&self, loc: Loc) -> Loc {
+        crate::source::real(&self.files, loc)
+    }
+
+    /// Returns the macro, such as `events!`, that wrote a virtual file, or
+    /// `None` for a real file.
+    pub(crate) fn via(&self, file: FileId) -> Option<&str> {
+        (self.files[file].origin.as_ref()).map(|origin| origin.via.as_str())
     }
 }

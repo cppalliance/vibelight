@@ -7,17 +7,17 @@ use std::path::Path;
 use proc_macro2::Span;
 use syn::{Attribute, Generics, Item, ItemMod};
 
-use crate::attrs;
 use crate::comments::{NoteCx, Placed, Pool, place_comments};
-use crate::macros;
+use crate::macro_expand::Expansions;
 use crate::model::{
     BodyName, Crate, Decl, FileId, Item as ModItem, ItemKind, Loc, MacroUse, Meta, ModId, Module,
     Note, TypeRef, Vis, Warning,
 };
 use crate::model_body::{AttrPath, Body};
 use crate::modtree::{ModSource, Tree};
-use crate::source::{Comment, SourceFile};
+use crate::source::{Comment, SourceFile, real};
 use crate::typerefs::{Slicer, range_of, strip_raw};
+use crate::{attrs, macro_expand, macros};
 
 /// Where the node being collected lives.
 #[derive(Clone)]
@@ -59,16 +59,21 @@ pub(crate) struct Collector<'a> {
     children: BTreeMap<(ModId, usize), ModId>,
     /// Module-level invocations and the identifiers their tokens hold.
     pub(crate) invocations: Vec<(ModId, String, BTreeSet<String>)>,
+    /// The items the crate's own `macro_rules!` invocations expand into.
+    pub(crate) expansions: &'a Expansions,
 }
 
-/// Collects every module of a walked tree into a crate model.
+/// Collects every module of a walked tree into a crate model, with the
+/// items each of the crate's own item-position `macro_rules!` invocations
+/// expands into collected from a virtual file into the invoking module.
 pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> Crate {
     let Tree {
-        files,
+        mut files,
         modules: sources,
-        warnings,
+        mut warnings,
         test_files,
     } = tree;
+    let expansions = macro_expand::expand(&mut files, &sources, &mut warnings);
     let mut collector = Collector {
         files: &files,
         crate_dir,
@@ -87,6 +92,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         mod_lines: BTreeMap::new(),
         children: BTreeMap::new(),
         invocations: Vec::new(),
+        expansions: &expansions,
     };
     for (id, source) in sources.iter().enumerate() {
         collector.modules.push(Module {
@@ -198,7 +204,8 @@ impl Collector<'_> {
         self.modules[id].dangling = dangling;
     }
 
-    fn item(&mut self, here: &Here, index: usize, item: &Item, placed: Placed) {
+    /// Collects one module item, `index` among its module's items.
+    pub(crate) fn item(&mut self, here: &Here, index: usize, item: &Item, placed: Placed) {
         match item {
             Item::Const(c) => self.item_const(here, c, placed),
             Item::Enum(e) => self.item_enum(here, e, placed),
@@ -358,7 +365,9 @@ impl Collector<'_> {
         }
     }
 
+    /// Warns about a location, named where it is written in a real file.
     pub(crate) fn warn(&mut self, loc: Loc, message: String) {
+        let loc = real(self.files, loc);
         self.warnings.push(Warning {
             file: self.files[loc.file].rel.clone(),
             line: loc.line,

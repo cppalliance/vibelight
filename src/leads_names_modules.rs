@@ -44,7 +44,9 @@ fn impl_spread(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Lea
         let inherent: Vec<usize> = (impls.iter().copied())
             .filter(|&i| krate.impls[i].trait_.is_none())
             .collect();
-        let files: BTreeSet<FileId> = inherent.iter().map(|&i| krate.impls[i].loc.file).collect();
+        let files: BTreeSet<FileId> = (inherent.iter())
+            .map(|&i| krate.real_loc(krate.impls[i].loc).file)
+            .collect();
         if files.len() < SPREAD_FROM {
             continue;
         }

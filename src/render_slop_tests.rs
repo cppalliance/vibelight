@@ -420,8 +420,8 @@ fn every_markdown_golden_meets_the_schema() {
     let found = goldens();
     assert_eq!(
         found.len(),
-        60,
-        "53 targets, links, and six workspace outlines"
+        61,
+        "54 targets, links, and six workspace outlines"
     );
     for (path, mode) in found {
         let text = fs::read_to_string(&path).unwrap();

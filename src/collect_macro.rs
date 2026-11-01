@@ -1,15 +1,18 @@
 //! Collects macro items: module-level definitions and invocations, the
+//! items an invocation of the crate's own `macro_rules!` expands into, the
 //! end marks an invocation gives the declarations it names, and the
 //! attribute macros of a node.
 
+use std::ops::Range;
+
 use syn::{Attribute, ItemMacro};
 
-use crate::attrs;
 use crate::collect::{Collector, Here, loc};
-use crate::comments::Placed;
-use crate::macros;
+use crate::comments::{Placed, place_comments};
+use crate::macro_expand::{self, Expansion};
 use crate::model::{Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, Vis};
 use crate::typerefs::{range_of, strip_raw};
+use crate::{attrs, macros};
 
 impl Collector<'_> {
     pub(crate) fn item_macro(&mut self, here: &Here, m: &ItemMacro, placed: Placed) {
@@ -70,13 +73,42 @@ impl Collector<'_> {
             meta,
             loc,
         });
+        let expansions = self.expansions;
+        let key = (here.file, macro_expand::key(&self.files[here.file], m));
+        if let Some(expansion) = expansions.get(&key) {
+            self.expanded(here, expansion);
+        }
+    }
+
+    /// Collects the items an invocation expands into, from their virtual
+    /// file, into the invoking module.
+    fn expanded(&mut self, here: &Here, expansion: &Expansion) {
+        let inside = Here {
+            module: here.module,
+            file: expansion.file,
+            generics: Vec::new(),
+        };
+        let files = self.files;
+        let file = &files[expansion.file];
+        let children: Vec<Range<usize>> = (expansion.items.iter())
+            .map(|item| range_of(item, file))
+            .collect();
+        let pool = &mut self.pools[expansion.file];
+        let (placed, _) = place_comments(pool, file, 0..file.text.len(), &children);
+        for (index, (item, placed)) in expansion.items.iter().zip(placed).enumerate() {
+            self.item(&inside, index, item, placed);
+        }
     }
 
     /// Gives each declaration named by a module-level invocation in its
-    /// module a mark at the end of its block.
+    /// module a mark at the end of its block, except the declarations that
+    /// an expansion writes.
     pub(crate) fn finish_invocations(&mut self) {
+        let files = self.files;
         for (module, text, idents) in std::mem::take(&mut self.invocations) {
-            for decl in self.decls.iter_mut().filter(|d| d.module == module) {
+            let named = (self.decls.iter_mut())
+                .filter(|d| d.module == module && files[d.loc.file].origin.is_none());
+            for decl in named {
                 if idents.contains(&strip_raw(&decl.name)) && !decl.end_marks.contains(&text) {
                     decl.end_marks.push(text.clone());
                 }

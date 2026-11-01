@@ -12,8 +12,8 @@ impl Engine {
     pub fn start(&self) {}
 }
 
-macro_rules! noop {
-    () => {};
+macro_rules! needle {
+    () => { #[doc = "A needle the macro writes."] pub struct Needle; };
 }
 
 impl Clone for Box<Engine> {
@@ -26,3 +26,5 @@ impl Clone for Box<Engine> {
 pub struct Dial {
     pub limit: std::option::Option<u32>,
 }
+
+needle!();

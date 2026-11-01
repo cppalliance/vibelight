@@ -147,12 +147,18 @@ pub(crate) fn bodies_by_item(items: &[Option<ItemRef>]) -> BTreeMap<ItemRef, Bod
 }
 
 /// Returns, for each file of a crate, the modules it holds with their
-/// bytes; an outer module comes before the modules inside it.
+/// bytes; an outer module comes before the modules inside it, and a
+/// virtual file is all its invoking module's.
 pub(crate) fn scopes(krate: &Crate) -> Scopes {
     let mut out: Scopes = vec![Vec::new(); krate.files.len()];
     for (m, module) in krate.modules.iter().enumerate() {
         if !module.scope.is_empty() {
             out[module.file].push((module.scope.clone(), m));
+        }
+    }
+    for (f, file) in krate.files.iter().enumerate() {
+        if let (Some(origin), false) = (&file.origin, file.text.is_empty()) {
+            out[f].push((0..file.text.len(), origin.module));
         }
     }
     for list in &mut out {
