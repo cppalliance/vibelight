@@ -28,10 +28,11 @@ impl Group {
         }
     }
 
-    /// Returns the declaration that leads the group: the first one that
-    /// belongs to the group's own module, since a lone type from another
-    /// module can open the group. `module_of` gives the path of the module
-    /// that holds a declaration.
+    /// Returns the declaration that leads the group: the first member whose
+    /// module names the group, falling back to the first member. A group is
+    /// keyed for the run it prints first, so the search finds the member the
+    /// caption names. `module_of` gives the path of the module that holds a
+    /// declaration.
     pub(crate) fn lead(&self, module_of: impl Fn(DeclId) -> Vec<String>) -> DeclId {
         self.decls
             .iter()
@@ -50,7 +51,10 @@ impl Group {
 /// modules share their first two segments. A run of one declaration joins
 /// the group before it, and one that opens the sequence joins the group
 /// after it, so no group is a single type unless the sequence has no run of
-/// two. `module_of` gives the path of the module that holds a declaration.
+/// two. A group that absorbs a run from the start of the sequence takes that
+/// run's key, so its key always names the module of the declaration it
+/// prints first. `module_of` gives the path of the module that holds a
+/// declaration.
 pub(crate) fn groups(sequence: &[DeclId], module_of: impl Fn(DeclId) -> Vec<String>) -> Vec<Group> {
     let mut runs: Vec<Group> = Vec::new();
     for &d in sequence {
@@ -77,6 +81,7 @@ pub(crate) fn groups(sequence: &[DeclId], module_of: impl Fn(DeclId) -> Vec<Stri
             (_, false) => {
                 let mut group = run;
                 if let Some(first) = leading.take() {
+                    group.key = first.key;
                     let mut decls = first.decls;
                     decls.extend(group.decls);
                     group.decls = decls;
@@ -95,9 +100,9 @@ pub(crate) fn groups(sequence: &[DeclId], module_of: impl Fn(DeclId) -> Vec<Stri
 mod tests {
     use super::*;
 
-    /// Groups declarations `0..` whose module paths are given.
-    fn split(modules: &[&str]) -> Vec<(String, Vec<usize>)> {
-        let paths: Vec<Vec<String>> = modules
+    /// Returns the module paths named by `modules`, for declarations `0..`.
+    fn paths(modules: &[&str]) -> Vec<Vec<String>> {
+        modules
             .iter()
             .map(|m| {
                 m.split("::")
@@ -105,11 +110,27 @@ mod tests {
                     .map(str::to_owned)
                     .collect()
             })
-            .collect();
+            .collect()
+    }
+
+    /// Groups declarations `0..` whose module paths are given.
+    fn split(modules: &[&str]) -> Vec<(String, Vec<usize>)> {
+        let paths = paths(modules);
         let sequence: Vec<usize> = (0..modules.len()).collect();
         groups(&sequence, |d| paths[d].clone())
             .into_iter()
             .map(|g| (g.caption("crate"), g.decls))
+            .collect()
+    }
+
+    /// Returns the lead of each group of declarations `0..` whose module
+    /// paths are given.
+    fn leads(modules: &[&str]) -> Vec<usize> {
+        let paths = paths(modules);
+        let sequence: Vec<usize> = (0..modules.len()).collect();
+        groups(&sequence, |d| paths[d].clone())
+            .into_iter()
+            .map(|g| g.lead(|d| paths[d].clone()))
             .collect()
     }
 
@@ -166,11 +187,25 @@ mod tests {
 
     #[test]
     fn a_lone_type_that_opens_the_sequence_joins_the_group_after_it() {
-        assert_eq!(
-            split(&["", "net", "net", "", ""]),
-            [group("net", &[0, 1, 2]), group("crate", &[3, 4])]
-        );
-        assert_eq!(split(&["x", "y", "z", "z"]), [group("z", &[0, 1, 2, 3])]);
+        // The group the opening run joins takes that run's key, so the
+        // caption names the module of the type the group prints first. An
+        // empty key still names the crate.
+        assert_eq!(split(&["x", "net", "net"]), [group("x", &[0, 1, 2])]);
+        assert_eq!(split(&["", "net", "net"]), [group("crate", &[0, 1, 2])]);
+        assert_eq!(split(&["x", "y", "z", "z"]), [group("x", &[0, 1, 2, 3])]);
+    }
+
+    #[test]
+    fn a_group_that_absorbs_the_opening_run_leads_with_it() {
+        assert_eq!(leads(&["x", "y", "z", "z"]), [0]);
+        assert_eq!(leads(&["", "net", "net"]), [0]);
+    }
+
+    #[test]
+    fn a_lone_type_that_joins_the_group_before_it_leads_only_its_own_module() {
+        // The lone `b` joins a group keyed `a`, so the group still leads with
+        // the first type of `a` and not the foreign one it prints last.
+        assert_eq!(leads(&["a", "a", "b"]), [0]);
     }
 
     #[test]
