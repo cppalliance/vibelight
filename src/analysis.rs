@@ -20,7 +20,9 @@ use crate::model::{Crate, CrossRef, DeclId, RefId};
 use crate::model_body::BodyId;
 use crate::root::{Target, TargetKind};
 use crate::source::SourceFile;
-use crate::{analysis_items, analysis_paths, attach, census_sources, modtree, spellings, surface};
+use crate::{
+    access, analysis_items, analysis_paths, attach, census_sources, modtree, spellings, surface,
+};
 
 /// What analysis knows of one target of the run.
 #[derive(Debug)]
@@ -213,8 +215,9 @@ pub(crate) struct AnalysisRun<'a> {
     /// For each target, its public surface; empty for a target that is not
     /// a library.
     pub(crate) surfaces: Vec<Vec<surface::Entry>>,
-    /// For each target, the items its surface names.
-    pub(crate) surface_items: Vec<BTreeSet<ItemRef>>,
+    /// For each target, how far each of its modules, declarations, and
+    /// module values can be named from.
+    pub(crate) accesses: Vec<access::Accesses>,
     /// For each target, the outside items its declarations write in more
     /// than one way, with the self types of the impls that belong to its
     /// declarations left out, as after attach.
@@ -259,17 +262,7 @@ impl<'a> AnalysisRun<'a> {
                 }
             })
             .collect();
-        let surface_items = surfaces
-            .iter()
-            .enumerate()
-            .map(|(t, entries)| {
-                if lib(t) {
-                    analysis_items::surface_items(&krates[t], entries)
-                } else {
-                    BTreeSet::new()
-                }
-            })
-            .collect();
+        let accesses = krates.iter().map(access::accesses).collect();
         let spellings = krates
             .iter()
             .zip(&attached)
@@ -293,7 +286,7 @@ impl<'a> AnalysisRun<'a> {
             census,
             summaries: krates.iter().map(analysis_items::summaries).collect(),
             surfaces,
-            surface_items,
+            accesses,
             spellings,
             boilerplate: boilerplate.to_vec(),
         };

@@ -4,9 +4,10 @@
 //! each file, doc summaries, and the items on each library's surface.
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::ops::Range;
 
+use crate::access::Access;
 use crate::analysis::AnalysisRun;
 use crate::census::NameCount;
 use crate::census_docs::summary;
@@ -15,7 +16,7 @@ use crate::model::{
     Module, Shape, ValueRef, Variant, Vis,
 };
 use crate::model_body::{Body, BodyId, BodyKind, Owner};
-use crate::surface;
+use crate::root::TargetKind;
 use crate::typerefs::strip_raw;
 
 /// For each file of a crate, the modules it holds with their bytes, by
@@ -206,54 +207,6 @@ pub(crate) fn summaries(krate: &Crate) -> BTreeMap<ItemRef, String> {
         .collect()
 }
 
-/// Returns the items that a library's surface entries name: the root
-/// module, modules, declarations, and module values. A value is found by
-/// the entry's name in the entry's module, or through a public re-export
-/// of that name.
-pub(crate) fn surface_items(krate: &Crate, entries: &[surface::Entry]) -> BTreeSet<ItemRef> {
-    let mut reexported: BTreeMap<String, Vec<ValueRef>> = BTreeMap::new();
-    for item in krate.modules.iter().flat_map(|m| &m.items) {
-        if let ItemKind::Reexport { text, .. } = &item.kind {
-            if let Some(at) = text.refs().next().and_then(|r| krate.refs[r].value()) {
-                reexported
-                    .entry(strip_raw(&item.name))
-                    .or_default()
-                    .push(at);
-            }
-        }
-    }
-    let mut out = BTreeSet::from([ItemRef::Module(0)]);
-    for entry in entries {
-        match &entry.kind {
-            surface::Kind::Module(m) => {
-                out.insert(ItemRef::Module(*m));
-            }
-            surface::Kind::Decl(d) => {
-                out.insert(ItemRef::Decl(*d));
-            }
-            surface::Kind::Function(m) | surface::Kind::Value(m) => {
-                let Some(name) = entry.path.last().map(|n| strip_raw(n)) else {
-                    continue;
-                };
-                let own = krate.modules[*m]
-                    .items
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, item)| is_value(&item.kind) && strip_raw(&item.name) == name)
-                    .map(|(k, _)| ValueRef {
-                        module: *m,
-                        item: k,
-                    });
-                let through = reexported.get(&name).into_iter().flatten().copied();
-                let through = through.filter(|at| at.module == *m);
-                out.extend(own.chain(through).map(ItemRef::Value));
-            }
-            surface::Kind::Macro(_) | surface::Kind::Unlinked(_) => {}
-        }
-    }
-    out
-}
-
 impl<'a> AnalysisRun<'a> {
     /// Returns the logical members of declaration `d` of target `t`: its
     /// own fields or trait items, then the members of each impl that
@@ -403,28 +356,40 @@ impl<'a> AnalysisRun<'a> {
             .map(String::as_str)
     }
 
-    /// Tells whether a library's users can name an item: one its surface
-    /// names, a variant or a trait's item of such a declaration, a public
-    /// field or inherent member of one, or a member of a trait impl that
-    /// belongs to one. Nothing of a target that is not a library is.
+    /// Tells whether a library's users can name an item: a module,
+    /// declaration, or module value whose access is anywhere, a variant or a
+    /// trait's item of such a declaration, a public field or inherent member
+    /// of one, or a member of a trait impl that belongs to one. Nothing of a
+    /// target that is not a library is.
     pub(crate) fn on_surface(&self, item: ItemId) -> bool {
-        let Some(set) = self.surface_items.get(item.target) else {
+        let t = item.target;
+        if self
+            .targets
+            .get(t)
+            .is_none_or(|target| target.kind != TargetKind::Lib)
+        {
             return false;
-        };
-        let krate = &self.krates[item.target];
-        let shown = |d: Option<DeclId>| d.is_some_and(|d| set.contains(&ItemRef::Decl(d)));
+        }
+        let krate = &self.krates[t];
+        let accesses = &self.accesses[t];
+        let world = |access: Access| access == Access::World;
+        let shown = |d: Option<DeclId>| d.is_some_and(|d| world(accesses.decls[d]));
         let public = |member: Option<&Member>| member.is_some_and(|m| m.vis == Vis::Public);
         match item.item {
-            ItemRef::Module(_) | ItemRef::Decl(_) | ItemRef::Value(_) => set.contains(&item.item),
+            ItemRef::Module(m) => world(accesses.modules[m]),
+            ItemRef::Decl(d) => world(accesses.decls[d]),
+            ItemRef::Value(at) => {
+                is_value(&krate.modules[at.module].items[at.item].kind) && world(accesses.value(at))
+            }
             ItemRef::Variant(d, _) => shown(Some(d)),
             ItemRef::Own(d, k) => {
                 let trait_item = krate.decls[d].kind == DeclKind::Trait;
                 shown(Some(d)) && (trait_item || public(krate.decls[d].members.get(k)))
             }
             ItemRef::Inherent(i, k) => {
-                shown(self.attached[item.target][i]) && public(krate.impls[i].members.get(k))
+                shown(self.attached[t][i]) && public(krate.impls[i].members.get(k))
             }
-            ItemRef::TraitImpl(i, _) => shown(self.attached[item.target][i]),
+            ItemRef::TraitImpl(i, _) => shown(self.attached[t][i]),
         }
     }
 

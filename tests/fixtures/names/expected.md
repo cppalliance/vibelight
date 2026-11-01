@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
 {"k":"vibelight-outline","schema":1,"crate":"names","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":29,"to":51},{"path":"api","from":52,"to":56},{"path":"api::inner","from":57,"to":61},{"path":"model","from":62,"to":67}]}
+{"k":"modules","items":[{"path":"crate","from":28,"to":50},{"path":"api","from":51,"to":55},{"path":"api::inner","from":56,"to":60},{"path":"model","from":61,"to":66}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Catalog","Catalog::fifth","Catalog::first","Catalog::fourth","Catalog::second","Catalog::third","Pairs","Twin","Wrapper"],"evidence":"no hit of `Catalog` in the scanned sources beyond its 1 declaration; no hit of `fifth` in the scanned sources beyond its 1 declaration; no hit of `first` in the scanned sources beyond its 1 declaration; no hit of `fourth` in the scanned sources beyond its 1 declaration; no hit of `second` in the scanned sources beyond its 1 declaration; no hit of `third` in the scanned sources beyond its 1 declaration; no hit of `Pairs` in the scanned sources ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":10}
 {"k":"more","path":"Catalog","id":"no-observed-name-use","field":"evidence","part":2,"text":"beyond its 1 declaration; no hit of `Twin` in the scanned sources beyond its 2 declarations; no hit of `Wrapper` in the scanned sources beyond its 1 declaration"}
 {"k":"more","path":"Catalog","id":"no-observed-name-use","field":"locs","part":3,"items":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"]}
@@ -23,7 +23,6 @@
 {"k":"surface","path":"model::Record","kind":"struct"}
 {"k":"surface","path":"model::Shared","kind":"struct"}
 {"k":"surface","path":"Pairs","kind":"alias"}
-{"k":"surface","path":"Twin","kind":"struct"}
 {"k":"surface","path":"Twin","kind":"struct"}
 {"k":"surface","path":"Wrapper","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}

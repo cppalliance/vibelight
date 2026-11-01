@@ -35,11 +35,12 @@ impl Builder<'_> {
         for entry in surface {
             let mut text = entry.path.join("::");
             let id = match &entry.kind {
-                Kind::Module(m) | Kind::Value(m) => Some(&self.mod_ids[*m]),
+                Kind::Module(m) => Some(&self.mod_ids[*m]),
+                Kind::Value(at) => Some(&self.mod_ids[at.module]),
                 Kind::Decl(d) => Some(&self.decl_ids[*d]),
-                Kind::Function(m) => {
+                Kind::Function(at) => {
                     text.push_str("()");
-                    Some(&self.mod_ids[*m])
+                    Some(&self.mod_ids[at.module])
                 }
                 Kind::Macro(m) => {
                     text.push('!');

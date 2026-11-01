@@ -249,7 +249,7 @@ pub(crate) enum SurfaceKind {
 }
 
 /// One path a user of a library can name.
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
 pub(crate) struct SurfaceRecord {
     pub(crate) path: String,

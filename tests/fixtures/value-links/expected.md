@@ -17,7 +17,7 @@
 {"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["relay::TOTAL"],"evidence":"`pub use crate::tools::TOTAL`, but no observed path imports `TOTAL` through `relay`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["Shape"],"evidence":"`pub use tools::Shape`, but no observed path imports `Shape` through `value_links`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"surface","path":"backend","kind":"fn","item":"tools::backend"}
-{"k":"surface","path":"GRAND_TOTAL","kind":"value","item":"tools::GRAND_TOTAL"}
+{"k":"surface","path":"GRAND_TOTAL","kind":"value","item":"tools::TOTAL"}
 {"k":"surface","path":"LIMIT","kind":"value","item":"tools::LIMIT"}
 {"k":"surface","path":"measure","kind":"fn","item":"tools::measure"}
 {"k":"surface","path":"Shape","kind":"struct","item":"tools::Shape"}

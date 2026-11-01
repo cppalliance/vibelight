@@ -9,7 +9,7 @@
 {"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["OldThing"],"evidence":"`pub use OldThing = inner::Thing`, but no observed path imports `OldThing` through `reexports`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["Other"],"evidence":"`pub use inner::Other`, but no observed path imports `Other` through `reexports`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"lead","id":"no-observed-reexport-use","mode":"lexical","subjects":["Thing"],"evidence":"`pub use inner::Thing`, but no observed path imports `Thing` through `reexports`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
-{"k":"surface","path":"assist","kind":"fn","item":"inner::assist"}
+{"k":"surface","path":"assist","kind":"fn","item":"inner::helper"}
 {"k":"surface","path":"Extra","kind":"struct","item":"inner::Other"}
 {"k":"surface","path":"helper","kind":"fn","item":"inner::helper"}
 {"k":"surface","path":"OldThing","kind":"struct","item":"inner::Thing"}

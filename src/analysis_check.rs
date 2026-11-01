@@ -6,18 +6,69 @@
 
 use std::collections::BTreeSet;
 
+use crate::access::Access;
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, is_value};
 use crate::analysis_paths::{Edge, PathKind};
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
-use crate::model::{DeclKind, Reach};
+use crate::model::{DeclKind, Reach, ValueRef};
 use crate::model_body::{BodyKind, Owner};
 use crate::root::TargetKind;
 use crate::surface;
 use crate::typerefs::strip_raw;
 
 impl AnalysisRun<'_> {
+    /// Checks that the items a library's surface paths name are exactly
+    /// its modules below the root, declarations, and module values whose
+    /// access is anywhere, and that each is on the surface.
+    fn check_surface(&self, t: usize) -> Result<(), String> {
+        let krate = &self.krates[t];
+        let accesses = &self.accesses[t];
+        let named: BTreeSet<ItemRef> = (self.surfaces[t].iter())
+            .filter_map(|entry| match entry.kind {
+                surface::Kind::Module(m) => Some(ItemRef::Module(m)),
+                surface::Kind::Decl(d) => Some(ItemRef::Decl(d)),
+                surface::Kind::Function(at) | surface::Kind::Value(at) => Some(ItemRef::Value(at)),
+                surface::Kind::Macro(_) | surface::Kind::Unlinked(_) => None,
+            })
+            .collect();
+        let world = |access: Access| access == Access::World;
+        let mut open: BTreeSet<ItemRef> = (1..krate.modules.len())
+            .filter(|&m| world(accesses.modules[m]))
+            .map(ItemRef::Module)
+            .collect();
+        open.extend(
+            (0..krate.decls.len())
+                .filter(|&d| world(accesses.decls[d]))
+                .map(ItemRef::Decl),
+        );
+        for (m, module) in krate.modules.iter().enumerate() {
+            for (k, item) in module.items.iter().enumerate() {
+                let at = ValueRef { module: m, item: k };
+                if is_value(&item.kind) && world(accesses.value(at)) {
+                    open.insert(ItemRef::Value(at));
+                }
+            }
+        }
+        if let Some(item) = named.symmetric_difference(&open).next() {
+            return Err(format!(
+                "the surface of {} and its accesses disagree on {item:?}",
+                krate.name
+            ));
+        }
+        if open
+            .iter()
+            .any(|&item| !self.on_surface(ItemId { target: t, item }))
+        {
+            return Err(format!(
+                "an item anywhere in {} is not on its surface",
+                krate.name
+            ));
+        }
+        Ok(())
+    }
+
     /// Checks the view's invariants.
     ///
     /// # Errors
@@ -45,7 +96,7 @@ impl AnalysisRun<'_> {
             self.scopes.len(),
             self.summaries.len(),
             self.surfaces.len(),
-            self.surface_items.len(),
+            self.accesses.len(),
             self.spellings.len(),
             self.census.tree.len(),
         ];
@@ -237,21 +288,8 @@ impl AnalysisRun<'_> {
             }
         }
         if self.targets[t].kind == TargetKind::Lib {
-            let decls = self.surfaces[t]
-                .iter()
-                .filter_map(|entry| match entry.kind {
-                    surface::Kind::Decl(d) => Some(ItemId::decl(t, d)),
-                    _ => None,
-                });
-            let items = self.surface_items[t]
-                .iter()
-                .map(|&item| ItemId { target: t, item });
-            for id in decls.chain(items) {
-                if self.name(id).is_none() || !self.on_surface(id) {
-                    return Err(format!("a surface item of {} is not on it", krate.name));
-                }
-            }
-        } else if !self.surfaces[t].is_empty() || !self.surface_items[t].is_empty() {
+            self.check_surface(t)?;
+        } else if !self.surfaces[t].is_empty() {
             return Err(format!("{} has a surface but is no library", krate.name));
         }
         for entry in &self.spellings[t] {

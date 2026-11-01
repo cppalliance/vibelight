@@ -1,7 +1,7 @@
 //! Finds a library's public surface: every item a user of the crate can
 //! name, by the path they name it with.
 
-use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Text, Vis, path_order};
+use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Text, ValueRef, Vis, path_order};
 use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
 
@@ -21,10 +21,10 @@ pub(crate) enum Kind {
     Module(ModId),
     Decl(DeclId),
     /// A function, which links to the module that declares it.
-    Function(ModId),
+    Function(ValueRef),
     /// A constant, a static, or an extern type, which links to the module
     /// that declares it.
-    Value(ModId),
+    Value(ValueRef),
     /// A `#[macro_export]` macro, which links to the module that defines
     /// it.
     Macro(ModId),
@@ -38,10 +38,10 @@ enum Found {
     Decl(DeclId),
     Module(ModId),
     /// A function, with whether it is test support.
-    Function(ModId, bool),
+    Function(ValueRef, bool),
     /// A constant, a static, or an extern type, with whether it is test
     /// support.
-    Value(ModId, bool),
+    Value(ValueRef, bool),
 }
 
 /// Walks from the crate root through public modules and public re-exports,
@@ -100,19 +100,20 @@ impl Walk<'_> {
                 self.module(child, &joined(prefix, &name));
             }
         }
-        for item in &krate.modules[m].items {
+        for (k, item) in krate.modules[m].items.iter().enumerate() {
             if item.vis != Vis::Public {
                 continue;
             }
+            let at = ValueRef { module: m, item: k };
             let support = is_test_support(&item.meta.cfgs);
             let kind = match &item.kind {
                 ItemKind::Fn(_)
                 | ItemKind::Foreign {
                     item: Foreign::Fn(_),
                     ..
-                } => Kind::Function(m),
+                } => Kind::Function(at),
                 ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => {
-                    Kind::Value(m)
+                    Kind::Value(at)
                 }
                 ItemKind::Reexport { text, .. } => {
                     self.reexport(m, prefix, &item.name, text, support);
@@ -270,20 +271,19 @@ fn lookup(
     {
         return Some(Found::Decl(d));
     }
-    for item in krate.modules[m]
-        .items
-        .iter()
-        .filter(|i| strip_raw(&i.name) == name)
+    for (k, item) in
+        (krate.modules[m].items.iter().enumerate()).filter(|(_, i)| strip_raw(&i.name) == name)
     {
         let support = krate.modules[m].test_support || is_test_support(&item.meta.cfgs);
+        let at = ValueRef { module: m, item: k };
         match &item.kind {
             ItemKind::Fn(_)
             | ItemKind::Foreign {
                 item: Foreign::Fn(_),
                 ..
-            } => return Some(Found::Function(m, support)),
+            } => return Some(Found::Function(at, support)),
             ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => {
-                return Some(Found::Value(m, support));
+                return Some(Found::Value(at, support));
             }
             ItemKind::Reexport { text, .. } => {
                 let next = text.0.iter().find_map(|seg| match seg {

@@ -1,5 +1,8 @@
 //! Command-line entry point: writes a markdown and an HTML outline per target.
 
+mod access;
+#[cfg(test)]
+mod access_tests;
 mod analysis;
 mod analysis_check;
 mod analysis_items;

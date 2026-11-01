@@ -55,11 +55,12 @@ pub(crate) fn leads(outline: &Outline<'_>, leads: &[Lead]) -> Vec<Record> {
 }
 
 /// Returns a record for each path a user of the library can name, in path
-/// order; a target that is no library has none.
+/// order, with one record for the `cfg` twins a path names alike; a target
+/// that is no library has none.
 pub(crate) fn surface(outline: &Outline<'_>) -> Vec<Record> {
     let krate = outline.krate();
     let AnalysisTarget { run, target: t } = outline.target;
-    run.surfaces[t]
+    let mut records: Vec<SurfaceRecord> = run.surfaces[t]
         .iter()
         .map(|entry| {
             let path = entry.path.join("::");
@@ -76,19 +77,28 @@ pub(crate) fn surface(outline: &Outline<'_>) -> Vec<Record> {
                     };
                     (kind, krate.decl_path(*d).join("::"))
                 }
-                Kind::Function(m) => (SurfaceKind::Fn, under(&krate.modules[*m].path, name)),
-                Kind::Value(m) => (SurfaceKind::Value, under(&krate.modules[*m].path, name)),
+                Kind::Function(at) => (SurfaceKind::Fn, value_path(krate, *at)),
+                Kind::Value(at) => (SurfaceKind::Value, value_path(krate, *at)),
                 Kind::Macro(m) => (SurfaceKind::Macro, under(&krate.modules[*m].path, name)),
                 Kind::Unlinked(text) => (SurfaceKind::External, text.clone()),
             };
-            Record::Surface(SurfaceRecord {
+            SurfaceRecord {
                 item: (item != path).then_some(item),
                 path,
                 kind,
                 test_support: flag(entry.test_support),
-            })
+            }
         })
-        .collect()
+        .collect();
+    records.dedup();
+    records.into_iter().map(Record::Surface).collect()
+}
+
+/// Returns the path of a module value below the crate root, by the name its
+/// own module declares it under.
+fn value_path(krate: &model::Crate, at: model::ValueRef) -> String {
+    let module = &krate.modules[at.module];
+    under(&module.path, &module.items[at.item].name)
 }
 
 /// What the declarations do with one outside item.
