@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"order_cycles","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":22,"to":29},{"path":"net","from":30,"to":35}]}
+{"k":"vibelight-outline","schema":2,"crate":"order_cycles","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":22,"to":29},{"path":"net","vis":"pub","from":30,"to":35}]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["net"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Left::right"],"evidence":"no hit of `right` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["net::Ping::pong"],"evidence":"no hit of `pong` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -19,7 +19,7 @@
 {"k":"surface","path":"net::Pong","kind":"struct"}
 {"k":"surface","path":"Right","kind":"struct"}
 {"k":"surface","path":"Root","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"crate","text":"Cycles at level 1 and below."}
 {"k":"struct","path":"Root","rust":"pub struct Root { pub ping: net::Ping }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Root","text":"Names the cycle below it."}
@@ -27,7 +27,7 @@
 {"k":"doc","path":"Left","text":"Half of a cycle that nothing else names."}
 {"k":"struct","path":"Right","rust":"pub struct Right { pub left: Option<Box<Left>> }","loc":"src/lib.rs:0","named_by":["Left"]}
 {"k":"doc","path":"Right","text":"The other half."}
-{"k":"mod","path":"net","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"net","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"net","text":"A cycle below level 1."}
 {"k":"struct","path":"net::Ping","rust":"pub struct Ping { pub pong: Option<Box<Pong>> }","loc":"src/lib.rs:0","named_by":["net::Pong","Root"]}
 {"k":"doc","path":"net::Ping","text":"Names Pong."}

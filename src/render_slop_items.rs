@@ -4,16 +4,20 @@
 //! outline does not know. The function and value records of members are
 //! built here too.
 
+use std::collections::BTreeMap;
+
+use crate::access::spelled;
 use crate::analysis_items::ItemRef;
 use crate::leads_words::split_param;
 use crate::macros;
 use crate::model::{
-    self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, Vis, name_order,
+    self, Foreign, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, Vis,
+    name_order,
 };
 use crate::render_slop::{Doc, Outline, Rank};
 use crate::render_slop_catalog::{
     ExternRecord, FnRecord, MacroRecord, ModRecord, ParamDoc, UnsupportedRecord, UseRecord,
-    ValueRecord, VisCounts,
+    ValueRecord,
 };
 use crate::render_slop_decl::impl_owner;
 use crate::render_slop_facts::{comment, flag, module_path, some};
@@ -80,38 +84,45 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
         file: module.file,
         line: 1,
     });
-    let types = krate.decls.iter().filter(|d| d.module == m).count();
-    let mut functions = VisCounts::default();
-    for item in module
-        .items
-        .iter()
-        .filter(|i| matches!(i.kind, ItemKind::Fn(_)))
-    {
-        let slot = match item.vis {
-            Vis::Public => &mut functions.public,
-            Vis::Crate | Vis::Super | Vis::In(_) => &mut functions.internal,
-            Vis::Private => &mut functions.private,
-        };
-        *slot.get_or_insert(0) += 1;
+    let mut counts = [0; 4];
+    let mut mix: BTreeMap<String, usize> = BTreeMap::new();
+    let mut count = |slot: usize, vis: Vis| {
+        counts[slot] += 1;
+        *mix.entry(spelled(krate, vis)).or_default() += 1;
+    };
+    for decl in krate.decls.iter().filter(|d| d.module == m) {
+        count(0, decl.vis);
     }
-    let any = functions.public.is_some() || functions.internal.is_some();
+    for item in &module.items {
+        let slot = match &item.kind {
+            ItemKind::Foreign {
+                item: Foreign::Type,
+                ..
+            } => 0,
+            ItemKind::Fn(_)
+            | ItemKind::Foreign {
+                item: Foreign::Fn(_),
+                ..
+            } => 1,
+            ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => 2,
+            ItemKind::Reexport { .. } => 3,
+            ItemKind::Mark(_) | ItemKind::Unsupported(_) => continue,
+        };
+        count(slot, item.vis);
+    }
+    let [types, functions, values, reexports] = counts.map(|n| (n > 0).then_some(n));
     let path = module_path(krate, m);
     let record = ModRecord {
         path: path.clone(),
         loc: outline.own(loc),
-        vis: (m != 0).then(|| {
-            match module.vis {
-                Vis::Public => "public",
-                Vis::Crate | Vis::Super | Vis::In(_) => "internal",
-                Vis::Private => "private",
-            }
-            .to_owned()
-        }),
         cfgs: some(module.cfgs.clone()),
         lints: some(module.lints.clone()),
         test_support: flag(module.test_support),
-        types: (types > 0).then_some(types),
-        functions: (any || functions.private.is_some()).then_some(functions),
+        types,
+        functions,
+        values,
+        reexports,
+        mix: (!mix.is_empty()).then_some(mix),
         comment: comment(&module.docs, None),
         dangling: comment(&module.dangling, None),
     };
@@ -164,6 +175,7 @@ fn item_record(outline: &mut Outline<'_>, place: &Place<'_>, kind: &ItemKind) {
                 path: place.path.clone(),
                 rust: extern_item(abi, name, item, meta, &krate.refs),
                 loc: outline.own(place.loc),
+                eff: outline.facts.eff(place.item),
                 cfgs: some(meta.cfgs.clone()),
                 attrs: some(meta.attrs.clone()),
                 lints: some(meta.lints.clone()),
@@ -246,6 +258,7 @@ pub(crate) fn push_fn(outline: &mut Outline<'_>, place: &Place<'_>, sig: &Sig) {
         path: place.path.clone(),
         sig: sig_text(sig, &meta.vis, &krate.refs),
         loc: outline.own(place.loc),
+        eff: facts.eff(place.item),
         impl_header: place.impl_header.clone(),
         cfgs: some(meta.cfgs.clone()),
         attrs: some(meta.attrs.clone()),
@@ -286,6 +299,7 @@ pub(crate) fn push_value(
         rust: head,
         value: value.and_then(literal),
         loc: outline.own(place.loc),
+        eff: facts.eff(place.item),
         impl_header: place.impl_header.clone(),
         cfgs: some(meta.cfgs.clone()),
         attrs: some(meta.attrs.clone()),

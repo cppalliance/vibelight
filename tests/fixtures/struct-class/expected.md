@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"struct_class","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"struct_class","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":15,"to":33}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Bare","Mixed","Mixed::open","Toggle::Off","Toggle::On","Wrapper"],"evidence":"no hit of `Bare` in the scanned sources beyond its 1 declaration; no hit of `Mixed` in the scanned sources beyond its 1 declaration; no hit of `open` in the scanned sources beyond its 1 declaration; no hit of `Off` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `Wrapper` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
 {"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Toggle"],"evidence":"1 production hits of `Toggle` outside macros, none a resolved or unique qualified path to it","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
@@ -12,7 +12,7 @@
 {"k":"surface","path":"Mixed","kind":"struct"}
 {"k":"surface","path":"Toggle","kind":"enum"}
 {"k":"surface","path":"Wrapper","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"mix":{"pub":5}}
 {"k":"doc","path":"crate","text":"Struct versus class."}
 {"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub open: u8, closed: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed","text":"Public and private members."}

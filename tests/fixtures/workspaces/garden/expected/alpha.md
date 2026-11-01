@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"alpha","target":"lib","dir":"crates/alpha"}
+{"k":"vibelight-outline","schema":2,"crate":"alpha","target":"lib","dir":"crates/alpha"}
 {"k":"modules","items":[{"path":"crate","from":19,"to":33}]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Reads","::facade::Panel"],"evidence":"one impl in the run: `impl alpha::Reads for Panel`","locs":["src/lib.rs:0","facade:src/lib.rs:0","facade:src/lib.rs:0"],"limits":["external-impls","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Meter::gauge"],"evidence":"no hit of `gauge` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -16,7 +16,7 @@
 {"k":"external","path":"b::parts::Valve","uses":1,"named_by":["Meter"],"summary":"A valve."}
 {"k":"external","path":"delta::Stray","uses":1,"named_by":["Meter"]}
 {"k":"external","path":"gamma::Vendored","uses":1,"named_by":["Meter"]}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Alpha: a crate that names types of its dependencies."}
 {"k":"struct","path":"Meter","rust":"pub struct Meter { pub gauge: Gauge, pub valve: b::parts::Valve, pub stray: delta::Stray, pub vendored: gamma::Vendored }","loc":"src/lib.rs:0","reexported_by":["::facade"],"crates":["facade"]}
 {"k":"doc","path":"Meter","text":"A meter that reads a gauge of beta."}

@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"field_index","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"field_index","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":11,"to":38}]}
 {"k":"lead","id":"direct-field-clusters","mode":"direct-syntax","subjects":["Scheduler"],"evidence":"issued, pending by apply, issue, withdraw; queue, tasks by admit, count_tasks, spawn; hubs chains","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Scheduler::admit","Scheduler::apply","Scheduler::count_tasks","Scheduler::issue","Scheduler::spawn","Scheduler::withdraw","Small::both"],"evidence":"no hit of `admit` in the scanned sources beyond its 1 declaration; no hit of `apply` in the scanned sources beyond its 1 declaration; no hit of `count_tasks` in the scanned sources beyond its 1 declaration; no hit of `issue` in the scanned sources beyond its 1 declaration; no hit of `spawn` in the scanned sources beyond its 1 declaration; no hit of `withdraw` in the scanned sources beyond its 1 declaration; no hit of `both` in the scanned ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":7}
@@ -8,7 +8,7 @@
 {"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["Small"],"evidence":"1 production hits of `Small` outside macros, none a resolved or unique qualified path to it","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"surface","path":"Scheduler","kind":"struct"}
 {"k":"surface","path":"Small","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Which functions reach each field."}
 {"k":"struct","path":"Scheduler","rust":"pub struct Scheduler { chains: Vec<u32>, tasks: Vec<u32>, queue: Vec<u32>, pending: Vec<u32>, issued: Vec<u32>, spare: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Scheduler","text":"A scheduler whose fields its functions reach in groups."}

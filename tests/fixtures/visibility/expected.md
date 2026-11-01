@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"visibility","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":19,"to":49},{"path":"outer","from":50,"to":69}]}
+{"k":"vibelight-outline","schema":2,"crate":"visibility","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":19,"to":49},{"path":"outer","vis":"pub","from":50,"to":69}]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["outer"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"hidden-non-exhaustive","mode":"resolved","subjects":["Mode"],"evidence":"`#[non_exhaustive]` off every surface; publish_allowed is false","locs":["src/lib.rs:0"],"limits":["macros"]}
 {"k":"lead","id":"visibility-spelling","mode":"direct-syntax","subjects":["outer::parent"],"evidence":"`pub(super)` in `outer` reaches what `pub(crate)` says","locs":["src/lib.rs:0"]}
@@ -16,7 +16,7 @@
 {"k":"surface","path":"outer","kind":"mod"}
 {"k":"surface","path":"outer::ext_open","kind":"fn"}
 {"k":"surface","path":"outer::open","kind":"fn"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"mix":{"pub":3,"pub(crate)":1,"pub(self)":1}}
 {"k":"doc","path":"crate","text":"Visibility sections: public, internal, and private."}
 {"k":"struct","path":"Mixed","rust":"pub struct Mixed { pub name: String, pub(crate) size: usize, secret: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Mixed","text":"A struct with every section."}
@@ -47,7 +47,7 @@
 {"k":"doc","path":"Mode","text":"An enum seen only in the crate."}
 {"k":"alias","path":"Count","rust":"type Count = u32","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Count","text":"A type alias seen only here."}
-{"k":"mod","path":"outer","loc":"src/lib.rs:0","vis":"public","functions":{"public":1,"internal":2,"private":2}}
+{"k":"mod","path":"outer","loc":"src/lib.rs:0","functions":7,"values":2,"mix":{"pub":2,"pub(crate)":4,"pub(self)":2,"pub(super)":1}}
 {"k":"doc","path":"outer","text":"Module items in every section."}
 {"k":"fn","path":"outer::open","sig":"pub fn open()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"outer::open","text":"Visible everywhere."}

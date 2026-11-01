@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"value_links","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":32,"to":38},{"path":"relay","from":39,"to":42},{"path":"tools","from":43,"to":58}]}
+{"k":"vibelight-outline","schema":2,"crate":"value_links","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":33,"to":39},{"path":"relay","from":40,"to":43},{"path":"tools","vis":"pub","from":44,"to":59}]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["tools"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["tools::Shape::sides"],"evidence":"no hit of `sides` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-path-use","mode":"resolved","subjects":["tools::backend"],"evidence":"1 production hits of `backend` outside macros, none a resolved or unique qualified path to it","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
@@ -29,18 +29,19 @@
 {"k":"surface","path":"tools::Shape","kind":"struct"}
 {"k":"surface","path":"tools::Shape","kind":"fn"}
 {"k":"surface","path":"tools::TOTAL","kind":"value"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0"}
+{"k":"deps","path":"relay","uses":[{"path":"tools","n":2}]}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","reexports":5,"mix":{"pub":5}}
 {"k":"doc","path":"crate","text":"Links to functions, constants, and statics."}
 {"k":"use","path":"measure","rust":"pub use relay::measure","loc":"src/lib.rs:0"}
 {"k":"use","path":"LIMIT","rust":"pub use tools::LIMIT","loc":"src/lib.rs:0"}
 {"k":"use","path":"Shape","rust":"pub use tools::Shape","loc":"src/lib.rs:0"}
 {"k":"use","path":"GRAND_TOTAL","rust":"pub use tools::TOTAL as GRAND_TOTAL","loc":"src/lib.rs:0"}
 {"k":"use","path":"backend","rust":"pub use tools::backend","loc":"src/lib.rs:0"}
-{"k":"mod","path":"relay","loc":"src/lib.rs:0","vis":"private"}
+{"k":"mod","path":"relay","loc":"src/lib.rs:0","reexports":2,"mix":{"pub":2}}
 {"k":"doc","path":"relay","text":"Passes values on."}
 {"k":"use","path":"relay::TOTAL","rust":"pub use crate::tools::TOTAL","loc":"src/lib.rs:0"}
 {"k":"use","path":"relay::measure","rust":"pub use crate::tools::measure","loc":"src/lib.rs:0"}
-{"k":"mod","path":"tools","loc":"src/lib.rs:0","vis":"public","types":1,"functions":{"public":4}}
+{"k":"mod","path":"tools","loc":"src/lib.rs:0","types":1,"functions":4,"values":2,"mix":{"pub":7}}
 {"k":"doc","path":"tools","text":"Defines the values."}
 {"k":"const","path":"tools::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"tools::LIMIT","text":"The highest reading."}

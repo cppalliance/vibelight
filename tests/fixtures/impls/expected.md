@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"impls","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"impls","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":12,"to":49}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Describe::describe"],"evidence":"no hit of `describe` in the scanned sources beyond its 2 declarations","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Render::render"],"evidence":"no hit of `render` in the scanned sources beyond its 5 declarations","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -9,7 +9,7 @@
 {"k":"surface","path":"Holder","kind":"struct"}
 {"k":"surface","path":"Render","kind":"trait"}
 {"k":"surface","path":"Widget","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Impl blocks of every kind."}
 {"k":"struct","path":"Widget","rust":"pub struct Widget { id: u32 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Widget","text":"A type with split impls and trait impls."}

@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"spellings_none","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"spellings_none","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":16,"to":28}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Line::end"],"evidence":"no hit of `end` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Line::label"],"evidence":"no hit of `label` in the scanned sources beyond its 2 declarations","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -13,7 +13,7 @@
 {"k":"lead","id":"no-observed-field-read","mode":"lexical","subjects":["Point::tags"],"evidence":"0 struct literals of `Point` set it, and no `.tags` access or pattern reads it","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"surface","path":"Line","kind":"struct"}
 {"k":"surface","path":"Point","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Spellings: each item from outside the crate is written one way, so the\noutline has no Spellings section. A derive name is never counted, so a\nderived Debug beside `fmt::Debug` in an impl is still one way."}
 {"k":"struct","path":"Point","rust":"pub struct Point { pub label: Option<String>, pub tags: Vec<String> }","loc":"src/lib.rs:0","derives":["Clone","Debug","PartialEq"],"named_by":["Line"]}
 {"k":"doc","path":"Point","text":"A point whose standard names each have one spelling."}

@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"special_members","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"special_members","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":21,"to":56}]}
 {"k":"lead","id":"redundant-constructor","mode":"direct-syntax","subjects":["Written","Written::new"],"evidence":"`new()` beside a written Default, and neither calls the other","locs":["src/lib.rs:0","src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Derived","Mode","Mode::Off","Mode::On","Written::get","Written::new"],"evidence":"no hit of `Derived` in the scanned sources beyond its 1 declaration; no hit of `Mode` in the scanned sources beyond its 1 declaration; no hit of `Off` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `new` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
@@ -18,7 +18,7 @@
 {"k":"surface","path":"Scheduler","kind":"struct"}
 {"k":"surface","path":"Written","kind":"struct"}
 {"k":"wire-keys","path":"Derived","keys":["value"],"loc":"src/lib.rs:0"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":7}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":7,"mix":{"pub":7}}
 {"k":"doc","path":"crate","text":"Special members: the standard traits that become C++ constructors and\ndestructors."}
 {"k":"struct","path":"Derived","rust":"pub struct Derived { pub value: u8 }","loc":"src/lib.rs:0","derives":["Default","serde::Serialize"]}
 {"k":"doc","path":"Derived","text":"The one derivable special member, and a derive from another crate."}

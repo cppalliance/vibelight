@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"comments_impls","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":11,"to":24},{"path":"parts","from":25,"to":28}]}
+{"k":"vibelight-outline","schema":2,"crate":"comments_impls","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":11,"to":24},{"path":"parts","vis":"pub","from":25,"to":28}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["parts"],"evidence":"holds only `Part`","locs":["src/parts.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["parts"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/parts.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Engine::start"],"evidence":"no hit of `start` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -8,7 +8,7 @@
 {"k":"surface","path":"Engine","kind":"struct"}
 {"k":"surface","path":"parts","kind":"mod"}
 {"k":"surface","path":"parts::Part","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"crate","text":"Comments on impls and modules."}
 {"k":"struct","path":"Engine","rust":"pub struct Engine","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Engine","text":"The type."}
@@ -22,7 +22,7 @@
 {"k":"fn","path":"Engine::clone","sig":"fn clone(&self) -> Engine","loc":"src/lib.rs:0","impl":"impl Clone for Engine","body":{"statements":1,"tokens":3}}
 {"k":"impl","path":"Box<Engine>","rust":"impl Default for Box<Engine>","locs":["src/lib.rs:0"],"comment":"// Above an impl that goes to Other impls."}
 {"k":"fn","path":"Box<Engine>::default","sig":"fn default() -> Self","loc":"src/lib.rs:0","impl":"impl Default for Box<Engine>","body":{"statements":1,"tokens":9,"single":"call Box::new"}}
-{"k":"mod","path":"parts","loc":"src/parts.rs:0","vis":"public","types":1,"comment":"// An ordinary comment on a mod line."}
+{"k":"mod","path":"parts","loc":"src/parts.rs:0","types":1,"mix":{"pub":1},"comment":"// An ordinary comment on a mod line."}
 {"k":"doc","path":"parts","text":"The outer doc of the module.\nThe inner doc of the module."}
 {"k":"struct","path":"parts::Part","rust":"pub struct Part","loc":"src/parts.rs:0"}
 {"k":"doc","path":"parts::Part","text":"A part."}

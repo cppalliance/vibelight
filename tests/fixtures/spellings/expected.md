@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"spellings","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":43,"to":64},{"path":"bare","from":65,"to":69},{"path":"debug","from":70,"to":79},{"path":"other","from":80,"to":87}]}
+{"k":"vibelight-outline","schema":2,"crate":"spellings","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":43,"to":64},{"path":"bare","vis":"pub","from":65,"to":69},{"path":"debug","vis":"pub","from":70,"to":79},{"path":"other","vis":"pub","from":80,"to":87}]}
 {"k":"lead","id":"prelude-name","mode":"direct-syntax","subjects":["Duration"],"evidence":"named like `std::time::Duration`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["bare"],"evidence":"holds only `Label`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["bare"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
@@ -40,7 +40,7 @@
 {"k":"spelling","path":"std::time::Duration","spellings":[{"text":"::std::time::Duration","count":1,"locs":["src/lib.rs:0"]},{"text":"core::time::Duration","count":1,"locs":["src/lib.rs:0"]},{"text":"std::time::Duration","count":1,"locs":["src/lib.rs:0"]}]}
 {"k":"wire-keys","path":"Clock","keys":["alarm","label","snooze","step"],"loc":"src/lib.rs:0"}
 {"k":"wire-keys","path":"Timer","keys":["laps","names","period"],"loc":"src/lib.rs:0"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Spellings: items from outside the crate written in more than one way."}
 {"k":"struct","path":"Clock","rust":"pub struct Clock { pub alarm: Option<u8>, pub label: String, pub snooze: Option<u8>, pub step: core::time::Duration }","loc":"src/lib.rs:0","derives":["Serialize"],"named_by":["Timer"]}
 {"k":"doc","path":"Clock","text":"A clock with an optional alarm."}
@@ -62,12 +62,12 @@
 {"k":"fn","path":"Wrapper::is_empty","sig":"pub fn is_empty(&self) -> bool","loc":"src/lib.rs:0","body":{"statements":1,"tokens":9,"single":"method is_empty"},"ops":["self.inner.is_empty"]}
 {"k":"struct","path":"Duration","rust":"pub struct Duration","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Duration","text":"The crate's own Duration, so the standard one has no bare spelling to\nprefer."}
-{"k":"mod","path":"bare","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"bare","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"bare","text":"The standard Display written bare after a use."}
 {"k":"struct","path":"bare::Label","rust":"pub struct Label","loc":"src/lib.rs:0"}
 {"k":"doc","path":"bare::Label","text":"A label that shows itself through the standard Display."}
 {"k":"impl","path":"bare::Label","rust":"impl Display for Label","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"debug","loc":"src/lib.rs:0","vis":"public","types":3}
+{"k":"mod","path":"debug","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"debug","text":"Debug by derive and by hand. A derive name is never counted."}
 {"k":"struct","path":"debug::Gauge","rust":"pub struct Gauge","loc":"src/lib.rs:0","derives":["Debug"]}
 {"k":"doc","path":"debug::Gauge","text":"A gauge that derives Debug, which adds no spelling."}
@@ -77,7 +77,7 @@
 {"k":"struct","path":"debug::Knob","rust":"pub struct Knob","loc":"src/lib.rs:0"}
 {"k":"doc","path":"debug::Knob","text":"A knob that writes Debug with its full path."}
 {"k":"impl","path":"debug::Knob","rust":"impl std::fmt::Debug for Knob","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"other","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"other","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"other","text":"Another crate's Display, which never merges with the standard one."}
 {"k":"struct","path":"other::Badge","rust":"pub struct Badge","loc":"src/lib.rs:0"}
 {"k":"doc","path":"other::Badge","text":"A badge that shows itself through the other crate's Display."}

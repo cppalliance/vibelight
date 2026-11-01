@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"functions","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"functions","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":15,"to":35}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["all_qualifiers","apply","callback","merge","parse","peek","render","square","wait"],"evidence":"no hit of `all_qualifiers` in the scanned sources beyond its 1 declaration; no hit of `apply` in the scanned sources beyond its 1 declaration; no hit of `callback` in the scanned sources beyond its 1 declaration; no hit of `merge` in the scanned sources beyond its 1 declaration; no hit of `parse` in the scanned sources beyond its 1 declaration; no hit of `peek` in the scanned sources beyond its 1 declaration; no hit of `render` in the scanned sources ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":9}
 {"k":"more","path":"all_qualifiers","id":"no-observed-name-use","field":"evidence","part":2,"text":"beyond its 1 declaration; no hit of `square` in the scanned sources beyond its 1 declaration; no hit of `wait` in the scanned sources beyond its 1 declaration"}
@@ -12,7 +12,7 @@
 {"k":"surface","path":"render","kind":"fn"}
 {"k":"surface","path":"square","kind":"fn"}
 {"k":"surface","path":"wait","kind":"fn"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","functions":{"public":9,"private":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","functions":10,"mix":{"pub":9,"pub(self)":1}}
 {"k":"doc","path":"crate","text":"Functions and signatures."}
 {"k":"fn","path":"square","sig":"pub const fn square(x: u32) -> u32","loc":"src/lib.rs:0","body":{"statements":1,"tokens":5},"ops":["x"]}
 {"k":"doc","path":"square","text":"Computes at compile time."}

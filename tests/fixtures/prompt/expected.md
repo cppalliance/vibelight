@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"runvil_parser","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":26,"to":41},{"path":"parse","from":42,"to":43},{"path":"prompt","from":44,"to":113}]}
+{"k":"vibelight-outline","schema":2,"crate":"runvil_parser","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":27,"to":42},{"path":"parse","from":43,"to":44},{"path":"prompt","from":45,"to":114}]}
 {"k":"lead","id":"field-and-accessor","mode":"direct-syntax","subjects":["prompt::Prompt::h1_blocks"],"evidence":"`pub(crate) h1_blocks` and `fn h1_blocks`","locs":["src/prompt.rs:0","src/prompt.rs:0"]}
 {"k":"lead","id":"field-and-accessor","mode":"direct-syntax","subjects":["prompt::Prompt::sections"],"evidence":"`pub(crate) sections` and `fn sections`","locs":["src/prompt.rs:0","src/prompt.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["parse"],"evidence":"holds only 1 impls","locs":["src/parse.rs:0"]}
@@ -20,10 +20,11 @@
 {"k":"surface","path":"ParseError","kind":"struct"}
 {"k":"surface","path":"Prompt","kind":"struct","item":"prompt::Prompt"}
 {"k":"surface","path":"Section","kind":"struct","item":"prompt::Section"}
+{"k":"deps","path":"parse","uses":[{"path":"prompt","n":3}]}
 {"k":"external","path":"runvil_lua::LuaProgram","uses":3,"named_by":["prompt::Block","prompt::Section"]}
 {"k":"external","path":"runvil_types::emitter::Emitter","uses":2,"named_by":["prompt::Prompt"]}
 {"k":"external","path":"runvil_types::event::Event","uses":1,"named_by":["prompt::Prompt"]}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"reexports":4,"mix":{"pub":8,"pub(crate)":1}}
 {"k":"doc","path":"crate","text":"Prompt file parser.\n\nA prompt is one markdown file: YAML frontmatter, a required H1, optional H1\nblocks, then H2 sections.\nH1 and section content are alternating sequences of exact `lua` fences and\nprose ([`Block`]). Sections nest recursively (H3 under H2, H4 under H3, and\nso on through H6). Classic prologue/prose/epilog is exactly `[Lua, Prose, Lua]`.\n\nThe parser turns bytes into a [`Prompt`] tree without executing any of it."}
 {"k":"use","path":"Block","rust":"pub use prompt::Block","loc":"src/lib.rs:0"}
 {"k":"use","path":"Prompt","rust":"pub use prompt::Prompt","loc":"src/lib.rs:0"}
@@ -39,9 +40,9 @@
 {"k":"doc","path":"Error","text":"The crate's internal error."}
 {"k":"alias","path":"Result","rust":"pub(crate) type Result<T> = std::result::Result<T, Error>","loc":"src/lib.rs:0","named_by":["prompt::Prompt"]}
 {"k":"doc","path":"Result","text":"The crate's result type."}
-{"k":"mod","path":"parse","loc":"src/parse.rs:0","vis":"private"}
+{"k":"mod","path":"parse","loc":"src/parse.rs:0"}
 {"k":"doc","path":"parse","text":"Parses a prompt's source into a [`Prompt`]: frontmatter, H1, and sections."}
-{"k":"mod","path":"prompt","loc":"src/prompt.rs:0","vis":"private","types":3}
+{"k":"mod","path":"prompt","loc":"src/prompt.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"prompt","text":"Holds the parsed prompt tree: [`Prompt`], its [`Section`]s, and their [`Block`]s.\n\nCode outside the Engine reads a prompt's title and frontmatter; the tree\nbelow them is the Engine's, reached through [`crate::detail`].\n\nConstruction happens in the parsing modules; this module holds the value\ntypes and the invariant-preserving operations on them."}
 {"k":"impl","path":"prompt::Prompt","rust":"impl Prompt","locs":["src/parse.rs:0","src/prompt.rs:0"]}
 {"k":"fn","path":"prompt::Prompt::parse","sig":"pub fn parse(input: &str, execution: &str) -> (std::result::Result<Prompt, ParseError>, Vec<Event>)","loc":"src/parse.rs:0","body":{"statements":6,"tokens":98},"ops":["execution","input"]}
@@ -50,7 +51,7 @@
 {"k":"more","path":"prompt::Prompt::parse","field":"text","part":3,"text":"opening line closes with any other line.\n  Lookalike: a line outside every fence looks like a `lua` opening\n  line, such as one in an indented code block. The first violation in\n  source order fails the parse at its line, before any Lua compiles.\n  Lines inside the body of another fenced code block are never\n  inspected, so a document can show a Lua fence as an example.\n- `List` when a section made up only of list items has an empty item.\n- `Lua` when a Lua block in the H1 or in a section fails to compile as\n  Lua.\n- `Internal` when the parser fails through no fault of the prompt: one\n  of its own invariants breaks, or the Lua compiler cannot start."}
 {"k":"fn","path":"prompt::Prompt::parse_inner","sig":"fn parse_inner(input: &str, emitter: &Emitter) -> Result<Prompt>","loc":"src/parse.rs:0","direct_callers":["prompt::Prompt::parse"],"body":{"statements":6,"tokens":277,"tries":3,"nones":2},"ops":["emitter","input"],"comments":[{"text":"// The location is relative to the frontmatter block, which starts","line":0},{"text":"// on file line 2 (line 1 is the opening `---` delimiter).","line":0},{"text":"// Everything past the frontmatter postdates the prompt's name, so a","line":0},{"text":"// failure from here on is stamped with it (and its span's position).","line":0}]}
 {"k":"fn","path":"prompt::Prompt::parse_body","sig":"fn parse_body(frontmatter: Frontmatter, shared: &Arc<str>, frontmatter_lines: u32, emitter: &Emitter) -> Result<Prompt>","loc":"src/parse.rs:0","direct_callers":["prompt::Prompt::parse_inner"],"body":{"statements":14,"tokens":419,"tries":5,"errs":4,"macros":["format"]},"ops":["emitter","frontmatter","frontmatter_lines","shared"],"comments":[{"text":"// Everything before the H1 is preface and has no prompt semantics.","line":0},{"text":"// Sections are headings after the H1 at level 2 or deeper.","line":0}]}
-{"k":"enum","path":"prompt::Block","rust":"pub enum Block { Lua(LuaProgram), #[non_exhaustive] Prose { text: BodyText } }","loc":"src/prompt.rs:0","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"named_by":["prompt::Prompt","prompt::Section"],"reexported_by":["crate"]}
+{"k":"enum","path":"prompt::Block","rust":"pub enum Block { Lua(LuaProgram), #[non_exhaustive] Prose { text: BodyText } }","loc":"src/prompt.rs:0","eff":"pub","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"named_by":["prompt::Prompt","prompt::Section"],"reexported_by":["crate"]}
 {"k":"doc","path":"prompt::Block","text":"One executable block inside a section: a compiled Lua fence or prose."}
 {"k":"variant","path":"prompt::Block::Lua","rust":"Lua(LuaProgram)","loc":"src/prompt.rs:0"}
 {"k":"doc","path":"prompt::Block::Lua","text":"An exact `lua` fence compiled at parse time."}
@@ -58,7 +59,7 @@
 {"k":"doc","path":"prompt::Block::Prose","text":"Author prose: the pending Markdown accumulated since the nearest\npreceding heading, `lua` fence, or thematic break.\n\nThe executor installs it as the following Lua block's lazy `prose`\ntemplate."}
 {"k":"field","path":"prompt::Block::Prose::text","rust":"text: BodyText","loc":"src/prompt.rs:0"}
 {"k":"doc","path":"prompt::Block::Prose::text","text":"Captured Markdown, trimmed of surrounding blank lines."}
-{"k":"struct","path":"prompt::Section","rust":"pub struct Section { pub(crate) name: String, pub(crate) level: u8, pub(crate) blocks: Vec<Block>, pub(crate) children: Vec<Section>, pub(crate) items: Vec<BodyText>, pub(crate) markdown: BodyText }","loc":"src/prompt.rs:0","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"named_by":["prompt::Prompt"],"reexported_by":["crate"]}
+{"k":"struct","path":"prompt::Section","rust":"pub struct Section { pub(crate) name: String, pub(crate) level: u8, pub(crate) blocks: Vec<Block>, pub(crate) children: Vec<Section>, pub(crate) items: Vec<BodyText>, pub(crate) markdown: BodyText }","loc":"src/prompt.rs:0","eff":"pub","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"named_by":["prompt::Prompt"],"reexported_by":["crate"]}
 {"k":"doc","path":"prompt::Section","text":"One section of a prompt: a heading, ordered blocks, and children."}
 {"k":"field","path":"prompt::Section::name","rust":"pub(crate) name: String","loc":"src/prompt.rs:0"}
 {"k":"doc","path":"prompt::Section::name","text":"The heading text (the section's address)."}
@@ -91,7 +92,7 @@
 {"k":"doc","path":"prompt::Section::prose","text":"Text of the last prose block, or `\"\"` when the section has none."}
 {"k":"fn","path":"prompt::Section::epilog","sig":"pub fn epilog(&self) -> Option<&LuaProgram>","loc":"src/prompt.rs:0","attrs":["must_use"],"body":{"statements":1,"tokens":45,"nones":2},"ops":["self.blocks.as_slice"]}
 {"k":"doc","path":"prompt::Section::epilog","text":"Classic trailing Lua fence when the last block is Lua and not the sole\nleading prologue (a section that is only one Lua block has no epilog)."}
-{"k":"struct","path":"prompt::Prompt","rust":"pub struct Prompt { pub(crate) frontmatter: Frontmatter, pub(crate) title: String, pub(crate) h1_blocks: Vec<Block>, pub(crate) sections: Vec<Section> }","loc":"src/prompt.rs:0","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"reexported_by":["crate"]}
+{"k":"struct","path":"prompt::Prompt","rust":"pub struct Prompt { pub(crate) frontmatter: Frontmatter, pub(crate) title: String, pub(crate) h1_blocks: Vec<Block>, pub(crate) sections: Vec<Section> }","loc":"src/prompt.rs:0","eff":"pub","attrs":["non_exhaustive"],"derives":["Clone","Debug","Eq","PartialEq"],"reexported_by":["crate"]}
 {"k":"doc","path":"prompt::Prompt","text":"A fully parsed prompt file."}
 {"k":"field","path":"prompt::Prompt::frontmatter","rust":"pub(crate) frontmatter: Frontmatter","loc":"src/prompt.rs:0"}
 {"k":"doc","path":"prompt::Prompt::frontmatter","text":"The parsed YAML frontmatter."}

@@ -1,18 +1,20 @@
 //! The records an outline prints before its catalog: the target's leads,
-//! its public surface, the outside items its declarations name, and the
-//! outside items they write in more than one way.
+//! its public surface, which modules use which others, the outside items
+//! its declarations name, and the outside items they write in more than
+//! one way.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
 use crate::leads::{self, Lead};
-use crate::model::{self, DeclKind, Text, path_order};
+use crate::model::{self, DeclKind, ModId, Text, path_order};
 use crate::prelude::is_standard;
 use crate::render_slop::{AnalysisTarget, Outline};
 use crate::render_slop_facts::{flag, module_path, some, sorted_paths, subject, texts_by_decl};
 use crate::render_slop_items::under;
 use crate::render_slop_schema::{
-    ExternalRecord, LeadRecord, Mode, Record, Spelling, SpellingRecord, SurfaceKind, SurfaceRecord,
+    Dep, DepsRecord, ExternalRecord, LeadRecord, Mode, Record, Spelling, SpellingRecord,
+    SurfaceKind, SurfaceRecord,
 };
 use crate::spellings;
 use crate::surface::Kind;
@@ -99,6 +101,35 @@ pub(crate) fn surface(outline: &Outline<'_>) -> Vec<Record> {
 fn value_path(krate: &model::Crate, at: model::ValueRef) -> String {
     let module = &krate.modules[at.module];
     under(&module.path, &module.items[at.item].name)
+}
+
+/// Returns a record for each module of the target, in `order`, that uses
+/// items of another module, as the module graph holds them.
+pub(crate) fn deps(outline: &Outline<'_>, order: &[ModId]) -> Vec<Record> {
+    let AnalysisTarget { run, target: t } = outline.target;
+    let krate = outline.krate();
+    let modules = &krate.modules;
+    let mut out = Vec::new();
+    for &m in order {
+        let mut edges: Vec<(ModId, usize)> = (run.graph[t][m].iter())
+            .map(|(&to, edge)| (to, edge.items))
+            .collect();
+        if edges.is_empty() {
+            continue;
+        }
+        edges.sort_by(|a, b| path_order(&modules[a.0].path, &modules[b.0].path));
+        let uses = (edges.into_iter())
+            .map(|(to, n)| Dep {
+                path: module_path(krate, to),
+                n,
+            })
+            .collect();
+        out.push(Record::Deps(DepsRecord {
+            path: module_path(krate, m),
+            uses,
+        }));
+    }
+    out
 }
 
 /// What the declarations do with one outside item.

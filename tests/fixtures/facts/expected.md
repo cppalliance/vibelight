@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"facts","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"facts","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":25,"to":61}]}
 {"k":"lead","id":"option-shaped-enum","mode":"direct-syntax","subjects":["ChatDispatch"],"evidence":"`Stop` beside `Send(String)`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"option-shaped-enum","mode":"direct-syntax","subjects":["ToolCallDispatch"],"evidence":"`Stop` beside `Send(String)`","locs":["src/lib.rs:0"]}
@@ -22,7 +22,7 @@
 {"k":"surface","path":"ToolCallDispatch","kind":"enum"}
 {"k":"external","path":"chrono::DateTime","uses":1,"named_by":["Run"]}
 {"k":"external","path":"chrono::Utc","uses":2,"named_by":["crate","Run"]}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"functions":1,"mix":{"pub":6}}
 {"k":"doc","path":"crate","text":"Facts about each declaration: what it holds, what names it, and which\ntypes share a shape."}
 {"k":"enum","path":"ChatDispatch","rust":"pub enum ChatDispatch { Send(String), Stop }","loc":"src/lib.rs:0","named_by":["Run"]}
 {"k":"doc","path":"ChatDispatch","text":"A chat request."}

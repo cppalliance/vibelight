@@ -1,12 +1,12 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"receivers","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"receivers","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":9,"to":26}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["free","Node::boxed","Node::consume","Node::consume_mut","Node::counted","Node::exclusive","Node::explicit","Node::explicit_mut","Node::lifetime","Node::none","Node::pinned","Node::shared"],"evidence":"no hit of `free` in the scanned sources beyond its 1 declaration; no hit of `boxed` in the scanned sources beyond its 1 declaration; no hit of `consume` in the scanned sources beyond its 1 declaration; no hit of `consume_mut` in the scanned sources beyond its 1 declaration; no hit of `counted` in the scanned sources beyond its 1 declaration; no hit of `exclusive` in the scanned sources beyond its 1 declaration; no hit of `explicit` in the ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
 {"k":"more","path":"free","id":"no-observed-name-use","field":"evidence","part":2,"text":"scanned sources beyond its 1 declaration; no hit of `explicit_mut` in the scanned sources beyond its 1 declaration; no hit of `lifetime` in the scanned sources beyond its 1 declaration; no hit of `none` in the scanned sources beyond its 1 declaration; no hit of `pinned` in the scanned sources beyond its 1 declaration; no hit of `shared` in the scanned sources beyond its 1 declaration"}
 {"k":"more","path":"free","id":"no-observed-name-use","field":"locs","part":3,"items":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"]}
 {"k":"surface","path":"free","kind":"fn"}
 {"k":"surface","path":"Node","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Receivers."}
 {"k":"struct","path":"Node","rust":"pub struct Node","loc":"src/lib.rs:0","named_by":["crate"]}
 {"k":"doc","path":"Node","text":"Every receiver form."}

@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"doc_forms","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"doc_forms","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":12,"to":21}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Attribute"],"evidence":"no hit of `Attribute` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Block"],"evidence":"no hit of `Block` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -9,7 +9,7 @@
 {"k":"surface","path":"Block","kind":"struct"}
 {"k":"surface","path":"Mixed","kind":"struct"}
 {"k":"surface","path":"Starred","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Doc comment forms."}
 {"k":"struct","path":"Block","rust":"pub struct Block","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Block","text":"A block doc comment\nover two lines."}

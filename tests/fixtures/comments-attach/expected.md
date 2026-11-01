@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"comments_attach","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"comments_attach","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":15,"to":31}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Config::build"],"evidence":"no hit of `build` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Config::typed"],"evidence":"no hit of `typed` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -12,7 +12,7 @@
 {"k":"surface","path":"Config","kind":"struct"}
 {"k":"surface","path":"Holder","kind":"struct"}
 {"k":"surface","path":"PATTERN","kind":"value"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"values":1,"mix":{"pub":3}}
 {"k":"doc","path":"crate","text":"Where comments attach."}
 {"k":"struct","path":"Config","rust":"pub struct Config { pub first: u8, pub second: u8, pub third: u8 }","loc":"src/lib.rs:0","comment":"// Attached to the struct below.","dangling":"// Nothing follows this comment in the struct."}
 {"k":"doc","path":"Config","text":"Docs for Config."}

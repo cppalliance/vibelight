@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"cfg_test","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"cfg_test","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":11,"to":26}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Kept::get","Mode","Mode::Debug","Mode::On","Probe","Probe::check","production_only"],"evidence":"no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `Mode` in the scanned sources beyond its 1 declaration; no hit of `Debug` in the scanned sources beyond its 1 declaration; no hit of `On` in the scanned sources beyond its 1 declaration; no hit of `Probe` in the scanned sources beyond its 1 declaration; no hit of `check` in the scanned sources beyond its 1 declaration; no hit of `production_only` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":7}
 {"k":"lead","id":"no-observed-construction","mode":"resolved","subjects":["Mode::Debug"],"evidence":"no observed path builds `Mode::Debug`; 0 patterns or comparisons match it","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -8,7 +8,7 @@
 {"k":"surface","path":"Mode","kind":"enum"}
 {"k":"surface","path":"Probe","kind":"trait"}
 {"k":"surface","path":"production_only","kind":"fn"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"functions":1,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Test-only items are skipped."}
 {"k":"struct","path":"Kept","rust":"pub struct Kept { pub value: u32 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Kept","text":"Kept."}

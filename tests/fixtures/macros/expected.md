@@ -1,12 +1,12 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"macros","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"macros","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":9,"to":27}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["NAME"],"evidence":"no hit of `NAME` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"surface","path":"Event","kind":"struct"}
 {"k":"surface","path":"main","kind":"fn"}
 {"k":"surface","path":"NAME","kind":"value"}
 {"k":"surface","path":"Started","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":1,"values":1,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Macros of every kind."}
 {"k":"macro","path":"events","rust":"macro_rules! events","loc":"src/lib.rs:0"}
 {"k":"doc","path":"events","text":"Defines the events."}

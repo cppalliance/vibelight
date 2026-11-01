@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"prelude_order","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":31,"to":32},{"path":"alpha","from":33,"to":38},{"path":"beta","from":39,"to":44},{"path":"own","from":45,"to":52},{"path":"plain","from":53,"to":56},{"path":"starred","from":57,"to":60}]}
+{"k":"vibelight-outline","schema":2,"crate":"prelude_order","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":32,"to":33},{"path":"alpha","vis":"pub","from":34,"to":39},{"path":"beta","vis":"pub","from":40,"to":45},{"path":"own","vis":"pub","from":46,"to":53},{"path":"plain","vis":"pub","from":54,"to":57},{"path":"starred","vis":"pub","from":58,"to":61}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["plain"],"evidence":"holds only `Report`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["alpha"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["beta"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
@@ -28,21 +28,22 @@
 {"k":"surface","path":"plain::Report","kind":"struct"}
 {"k":"surface","path":"starred","kind":"mod"}
 {"k":"surface","path":"starred::Starred","kind":"struct"}
+{"k":"deps","path":"starred","uses":[{"path":"own","n":2}]}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0"}
 {"k":"doc","path":"crate","text":"Prelude order: a bare name is the prelude's unless the module declares\nit, imports it, or a glob brings it in."}
-{"k":"mod","path":"alpha","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"alpha","loc":"src/lib.rs:0","types":2,"mix":{"pub":1,"pub(self)":1}}
 {"k":"doc","path":"alpha","text":"The first module with a private Result alias."}
 {"k":"struct","path":"alpha::AlphaError","rust":"pub struct AlphaError","loc":"src/lib.rs:0","named_by":["alpha::Result"]}
 {"k":"doc","path":"alpha::AlphaError","text":"Alpha's error."}
 {"k":"alias","path":"alpha::Result","rust":"type Result<T> = std::result::Result<T, AlphaError>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"alpha::Result","text":"The results of alpha."}
-{"k":"mod","path":"beta","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"beta","loc":"src/lib.rs:0","types":2,"mix":{"pub":1,"pub(self)":1}}
 {"k":"doc","path":"beta","text":"The second module with a private Result alias."}
 {"k":"struct","path":"beta::BetaError","rust":"pub struct BetaError","loc":"src/lib.rs:0","named_by":["beta::Result"]}
 {"k":"doc","path":"beta::BetaError","text":"Beta's error."}
 {"k":"alias","path":"beta::Result","rust":"type Result<T> = std::result::Result<T, BetaError>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"beta::Result","text":"The results of beta."}
-{"k":"mod","path":"own","loc":"src/lib.rs:0","vis":"public","types":3}
+{"k":"mod","path":"own","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"own","text":"A module that declares its own Result and uses it."}
 {"k":"struct","path":"own::OwnError","rust":"pub struct OwnError","loc":"src/lib.rs:0","named_by":["own::Result"]}
 {"k":"doc","path":"own::OwnError","text":"The error of this module."}
@@ -50,11 +51,11 @@
 {"k":"doc","path":"own::Result","text":"The results of this module."}
 {"k":"struct","path":"own::Owned","rust":"pub struct Owned { pub value: Result<u8> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"own::Owned","text":"A value in this module's Result."}
-{"k":"mod","path":"plain","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"plain","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"plain","text":"A module that names the prelude Result and imports nothing."}
 {"k":"struct","path":"plain::Report","rust":"pub struct Report { pub outcome: Result<u8, String> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"plain::Report","text":"A report whose outcome is the standard Result."}
-{"k":"mod","path":"starred","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"starred","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"starred","text":"A module whose glob import brings in the Result of own."}
 {"k":"struct","path":"starred::Starred","rust":"pub struct Starred { pub value: Result<u16> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"starred::Starred","text":"A value in the Result that the glob brings in."}

@@ -76,6 +76,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
     let reexported_by = facts.reexported_by(item);
     let rust = shape(decl, &krate.refs);
     let loc = outline.own(decl.loc);
+    let eff = facts.eff(item);
     let meta = &decl.meta;
     let comment_text = comment(&meta.notes, meta.trailing.as_ref());
     let dangling = comment(&decl.dangling, None);
@@ -85,6 +86,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
                 path: path.clone(),
                 rust,
                 loc,
+                eff,
                 cfgs: some(meta.cfgs.clone()),
                 attrs: some(meta.attrs.clone()),
                 derives: some(decl.written_derives.clone()),
@@ -108,6 +110,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             path: path.clone(),
             rust,
             loc,
+            eff,
             cfgs: some(meta.cfgs.clone()),
             attrs: some(meta.attrs.clone()),
             attributes: some(decl.attributes.clone()),
@@ -124,6 +127,7 @@ fn decl_record(outline: &mut Outline<'_>, d: DeclId) {
             path: path.clone(),
             rust,
             loc,
+            eff,
             impl_header: None,
             cfgs: some(meta.cfgs.clone()),
             attrs: some(meta.attrs.clone()),

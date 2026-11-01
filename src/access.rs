@@ -117,6 +117,19 @@ pub(crate) fn spell(krate: &Crate, access: Access, from: ModId) -> String {
     }
 }
 
+/// Spells a visibility from its kind, the same wherever it is written:
+/// `pub`, `pub(crate)`, `pub(super)`, `pub(in crate::path)`, and
+/// `pub(self)` for no keyword.
+pub(crate) fn spelled(krate: &Crate, vis: Vis) -> String {
+    match vis {
+        Vis::Public => "pub".to_owned(),
+        Vis::Crate => "pub(crate)".to_owned(),
+        Vis::Super => "pub(super)".to_owned(),
+        Vis::In(m) => format!("pub(in crate::{})", krate.modules[m].path.join("::")),
+        Vis::Private => "pub(self)".to_owned(),
+    }
+}
+
 /// Returns the one item of the crate that a re-export written in module
 /// `m` names; a glob names none.
 pub(crate) fn reexported(krate: &Crate, m: ModId, text: &Text) -> Option<ItemRef> {

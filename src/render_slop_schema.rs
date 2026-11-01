@@ -19,12 +19,13 @@ use crate::render_slop_catalog::{
 use crate::render_slop_split::Node;
 
 /// The schema version the outline header carries.
-pub(crate) const SCHEMA: u32 = 1;
+pub(crate) const SCHEMA: u32 = 2;
 
 /// One line of an outline after the stamp, tagged by its kind. The kinds
 /// print in this order: the header, the modules, the leads, the surface,
-/// the external items, the spellings, the wire keys, and then the catalog,
-/// module by module, where a `doc` record follows the record it belongs to.
+/// the module dependencies, the external items, the spellings, the wire
+/// keys, and then the catalog, module by module, where a `doc` record
+/// follows the record it belongs to.
 /// A `more` record follows the record it continues, or another `more`
 /// record of that record.
 #[derive(Debug, Serialize)]
@@ -39,6 +40,8 @@ pub(crate) enum Record {
     Lead(LeadRecord),
     #[serde(rename = "surface")]
     Surface(SurfaceRecord),
+    #[serde(rename = "deps")]
+    Deps(DepsRecord),
     #[serde(rename = "external")]
     External(ExternalRecord),
     #[serde(rename = "spelling")]
@@ -123,19 +126,26 @@ pub(crate) struct Header {
     pub(crate) quieted: Option<usize>,
 }
 
-/// The second record: the output lines each module's catalog records take.
+/// The second record: the module tree, with the output lines each module's
+/// catalog records take.
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
 pub(crate) struct Modules {
     pub(crate) items: Vec<ModuleRange>,
 }
 
-/// One module's 1-based, inclusive output-line range; left out for a
-/// module with no record.
+/// One module of the module tree: its written visibility, left out when it
+/// has no keyword and for the root, how far it reaches when that is less
+/// than written, spelled from its parent, and its 1-based, inclusive
+/// output-line range, left out for a module with no record.
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
 pub(crate) struct ModuleRange {
     pub(crate) path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) vis: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) from: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -259,6 +269,23 @@ pub(crate) struct SurfaceRecord {
     pub(crate) item: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) test_support: Option<bool>,
+}
+
+/// The other modules of the target whose items one module uses, none of
+/// them inside the other, sorted by path.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
+pub(crate) struct DepsRecord {
+    pub(crate) path: String,
+    pub(crate) uses: Vec<Dep>,
+}
+
+/// One module that a module uses, with how many of its items it uses.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
+pub(crate) struct Dep {
+    pub(crate) path: String,
+    pub(crate) n: usize,
 }
 
 /// An item of another crate that the declarations name.

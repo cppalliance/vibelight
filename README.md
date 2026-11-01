@@ -154,16 +154,17 @@ A section shows up only when it has something in it. Only the HTML file links ty
 The markdown has no sections. After the stamp, every line is one record, in this order:
 
 - **Header:** a `vibelight-outline` record with the schema version, the crate's name, the kind of target (`lib`, `bin`, or `single-file`), `dir`, the crate's folder below the base of the run (left out for the base itself), `root`, the crate's folder from the markdown folder, and `quieted`, how many leads the config's `quiet` entries dropped from the file, when there are any.
-- **Modules:** a `modules` record with each module's range of lines in the file, so a reader can open one module at a time.
+- **Modules:** a `modules` record that is the module tree: each module's `path`, its written `vis` (left out for the root and for no keyword), its `eff` when the modules around it let it reach less than written, and its range of lines in the file, so a reader can open one module at a time.
 - **Leads:** one `lead` record per place that looks like slop, with its `id`, its `subjects`, its `evidence`, its `locs`, and a `mode` that says whether the evidence is resolved, direct syntax, or lexical. A lead that rests on something vibelight did not see also lists its `limits`, the blind spots that could make it wrong. More than 5 leads of one id in one module become one summary record with a `module` and a `count` that names every site.
 - **Surface:** for a library, one `surface` record per public path, with its kind and, when the path is a re-export, the item it names.
+- **Dependencies:** one `deps` record per module whose production code uses items of other modules of the target, with `uses`, each such module's `path` and `n`, how many of its items are used, sorted by path. A module and a module inside it never depend on each other.
 - **External:** one `external` record per item of another crate that the declarations name, with how often and by what, and its doc summary when that crate is in the run.
 - **Spellings:** one `spelling` record per outside item written more than one way (see [Spellings](#spellings)).
 - **Wire keys:** one `wire-keys` record per `serde` type, with the keys it reads or writes after renames and aliases.
-- **The catalog:** every declaration, module by module in path order. A module's own `mod` record comes first, then its `use` records for re-exports, then every other record in source order. The other kinds are `struct`, `enum`, `union`, `trait`, `alias`, `fn`, `const`, `static`, `extern`, `impl`, `macro`, and `unsupported`, plus a `field` or `variant` record for each field or variant with a doc or comment of its own. The `mod` record names `vis` (left out for the crate root), `types` (how many structs, enums, unions, traits, and aliases it declares), and `functions` (how many free functions it has at each visibility, as `public`, `internal`, and `private`), the last two left out at 0.
+- **The catalog:** every declaration, module by module in path order. A module's own `mod` record comes first, then its `use` records for re-exports, then every other record in source order. The other kinds are `struct`, `enum`, `union`, `trait`, `alias`, `fn`, `const`, `static`, `extern`, `impl`, `macro`, and `unsupported`, plus a `field` or `variant` record for each field or variant with a doc or comment of its own. The `mod` record counts what the module declares, each count left out at 0: `types` (structs, enums, unions, traits, and aliases), `functions`, `values` (constants and statics), and `reexports`, with extern items counted by their kind. `mix` counts the same items by written visibility, with `pub(self)` for no keyword, such as `{"pub":2,"pub(crate)":3,"pub(self)":4}`.
 - **Docs:** a `doc` record right after the record it documents, with the same `path`.
 
-Catalog records carry the facts vibelight observes across the run, each left out when there is nothing to say: `named_by`, the declarations and modules whose signatures name a type; `reexported_by`, the modules that re-export it; `crates`, the other targets of the run whose code names it by path; `tests`, the kinds of test, bench, example, build, and doc test code that name it by path; `direct_callers`, the bodies whose direct calls by path resolve to a function; `body`, what a body holds, with no code; `ops`, the fields and parameters a body uses and the methods it calls on them; and `comments`, the comments inside a body. A `body` record holds `statements` and `tokens`; `loops` and `loop_depth` (shown above 1); `tries` (`?` operators), `errs` and `nones` (paths ending in `Err` and `None`); `awaits`; `panics`; `macros`, the sorted names of the macros the body invokes; `single`, what a one-statement body does; every field after `tokens` is left out at 0 or empty. A missing fact is never proof: vibelight sees no macro expansion, generated code, dynamic dispatch, or code outside the run. Method-call syntax such as `section.level()` never fills `crates`, `tests`, or `direct_callers`, and the absence leads see it only as a bare name hit shared by every method of that name. The lead ids, such as `same-shape`, `direct-field-clusters`, `direct-impl-field-split`, and `no-observed-name-use`, are defined in the lead glossary of [`tools/vibelight.md`](tools/vibelight.md).
+Catalog records carry the facts vibelight observes across the run, each left out when there is nothing to say: `eff`, how far a declaration or module item reaches when a re-export makes that further than its module's reach narrowed by its own visibility; `named_by`, the declarations and modules whose signatures name a type; `reexported_by`, the modules that re-export it; `crates`, the other targets of the run whose code names it by path; `tests`, the kinds of test, bench, example, build, and doc test code that name it by path; `direct_callers`, the bodies whose direct calls by path resolve to a function; `body`, what a body holds, with no code; `ops`, the fields and parameters a body uses and the methods it calls on them; and `comments`, the comments inside a body. A `body` record holds `statements` and `tokens`; `loops` and `loop_depth` (shown above 1); `tries` (`?` operators), `errs` and `nones` (paths ending in `Err` and `None`); `awaits`; `panics`; `macros`, the sorted names of the macros the body invokes; `single`, what a one-statement body does; every field after `tokens` is left out at 0 or empty. A missing fact is never proof: vibelight sees no macro expansion, generated code, dynamic dispatch, or code outside the run. Method-call syntax such as `section.level()` never fills `crates`, `tests`, or `direct_callers`, and the absence leads see it only as a bare name hit shared by every method of that name. The lead ids, such as `same-shape`, `direct-field-clusters`, `direct-impl-field-split`, and `no-observed-name-use`, are defined in the lead glossary of [`tools/vibelight.md`](tools/vibelight.md).
 
 ### Links to functions, constants, and statics
 
@@ -173,7 +174,7 @@ A re-export line (`using ...;`) links to a function, constant, or static of this
 
 ### The markdown notation
 
-The markdown is JSON Lines: after the stamp, every line is one compact JSON object, with no blank lines, indentation, or wrapping, so a model can read it a line at a time and a script can parse it. `k` names the kind of record, and `path` names its owner, an item path below the crate root, such as `contract::args::ArgDecl`, with `crate` for the root itself. The header's `schema` is 1.
+The markdown is JSON Lines: after the stamp, every line is one compact JSON object, with no blank lines, indentation, or wrapping, so a model can read it a line at a time and a script can parse it. `k` names the kind of record, and `path` names its owner, an item path below the crate root, such as `contract::args::ArgDecl`, with `crate` for the root itself. The header's `schema` is 2. A reach is spelled from the node's own module: `pub` for anywhere, `pub(crate)` for the crate, `pub(self)` for the module itself, `pub(super)` for its parent, and `pub(in crate::a::b)` for another module around it.
 
 A type's whole shape is one `rust` string, such as `pub struct Point { pub x: i32, pub y: i32, label: String }`, and a trait's `rust` is its header, with each trait item a record of its own. Each function's signature is one `sig` string with its `where` clause inline, and a trait impl's function also has `impl`, the impl header. An `impl` record is the impl header, with the `locs` of every block that writes it. A constant or static has a `value` only when its initializer is one literal of at most 100 characters. `attrs` lists the attributes that shape an API or its wire format, `derives` the derived traits, and `attributes` the attribute macros, with `cfgs` and `lints` beside them and `test_support` on test-support code. Plain comments above a declaration are in its `comment` field, comments with nothing after them in a module, type, or impl body are in `dangling`, and parameter comments are in `param_docs`.
 
@@ -181,16 +182,17 @@ A doc is a `doc` record of its own, never a field, because some tools cut long l
 
 Since some tools cut long lines short, no line is longer than 900 characters. A record that would be keeps the fields that name it and as much of its widest field as fits, and `more` records right after it carry the rest. Each names its owner by `path`, or a lead by its first subject and its `id`, names the `field` it continues, such as `locs` or `spellings.3.locs` for one element's field, counts its `part` from 2, and holds either `items`, whole elements to add to that array, or `text`, a piece to add to that string. The `modules` ranges count these lines too.
 
-Here are the first four lines of the outline of a small test crate, then a struct, its impl, and a method from further down:
+Here are the first four lines of the outline of a small test crate, then the root module's record, a struct, its impl, and a method from further down:
 
 ```text
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"links","target":"lib","root":".."}
+{"k":"vibelight-outline","schema":2,"crate":"links","target":"lib","root":".."}
 {"k":"modules","items":[{"path":"crate","from":15,"to":29},{"path":"parts","from":30,"to":35}]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:12"],"limits":["macros"]}
 ```
 
 ```text
+{"k":"mod","path":"crate","loc":"src/lib.rs:1","types":2,"mix":{"pub":2}}
 {"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6"}
 {"k":"doc","path":"Engine","text":"A type with an impl in another file."}
 {"k":"impl","path":"Engine","rust":"impl Engine","locs":["src/lib.rs:10"]}
@@ -198,7 +200,7 @@ Here are the first four lines of the outline of a small test crate, then a struc
 {"k":"doc","path":"Engine::start","text":"Starts the engine."}
 ```
 
-The `modules` record says lines 15 to 29 hold the root module and lines 30 to 35 hold `parts`, counting the stamp as line 1. The outline sits in `out` inside the crate, so its `root` is `..`, and `src/lib.rs:6` opens as `../src/lib.rs` at line 6.
+The `modules` record says lines 15 to 29 hold the root module and lines 30 to 35 hold `parts`, counting the stamp as line 1, and `parts` has no `vis` because its `mod` line has no keyword. Line 15, the root's `mod` record, says the root declares two types, both `pub`. The outline sits in `out` inside the crate, so its `root` is `..`, and `src/lib.rs:6` opens as `../src/lib.rs` at line 6.
 
 ### The HTML notation
 

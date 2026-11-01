@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"links","target":"lib","root":".."}
+{"k":"vibelight-outline","schema":2,"crate":"links","target":"lib","root":".."}
 {"k":"modules","items":[{"path":"crate","from":15,"to":29},{"path":"parts","from":30,"to":35}]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:12"],"limits":["macros"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Part"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:9"],"limits":["macros"]}
@@ -12,7 +12,7 @@
 {"k":"surface","path":"Dial","kind":"struct"}
 {"k":"surface","path":"Engine","kind":"struct"}
 {"k":"spelling","path":"std::option::Option","preferred":"Option","spellings":[{"text":"Option","count":1,"locs":["src/parts.rs:13"]},{"text":"std::option::Option","count":2,"locs":["src/lib.rs:27","src/parts.rs:14"]}]}
-{"k":"mod","path":"crate","loc":"src/lib.rs:1","types":2}
+{"k":"mod","path":"crate","loc":"src/lib.rs:1","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Source links."}
 {"k":"struct","path":"Engine","rust":"pub struct Engine { pub speed: u32 }","loc":"src/lib.rs:6"}
 {"k":"doc","path":"Engine","text":"A type with an impl in another file."}
@@ -27,7 +27,7 @@
 {"k":"impl","path":"Engine","rust":"impl crate::Engine","locs":["src/parts.rs:3"]}
 {"k":"fn","path":"Engine::stop","sig":"pub fn stop(&self)","loc":"src/parts.rs:5","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"Engine::stop","text":"Stops the engine."}
-{"k":"mod","path":"parts","loc":"src/parts.rs:1","vis":"private","types":2}
+{"k":"mod","path":"parts","loc":"src/parts.rs:1","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"parts","text":"Parts of the engine."}
 {"k":"struct","path":"parts::Part","rust":"pub struct Part","loc":"src/parts.rs:9"}
 {"k":"doc","path":"parts::Part","text":"A part."}

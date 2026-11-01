@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"order_nesting","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"order_nesting","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":28,"to":66}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Able","Able::leaf","Config::limit","Fork","Fork::a_left","Fork::b_right","Host::run","Left::base","Orphan","Report","Report::summary","Right::base","Run","Run::config","Run::steps","Step::a_trace","Step::b_log","Step::config"],"evidence":"no hit of `Able` in the scanned sources beyond its 1 declaration; no hit of `leaf` in the scanned sources beyond its 1 declaration; no hit of `limit` in the scanned sources beyond its 1 declaration; no hit of `Fork` in the scanned sources beyond its 1 declaration; no hit of `a_left` in the scanned sources beyond its 1 declaration; no hit of `b_right` in the scanned sources beyond its 1 declaration; no hit of `run` in the scanned sources beyond ","locs":["src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":18}
 {"k":"more","path":"Able","id":"no-observed-name-use","field":"evidence","part":2,"text":"its 1 declaration; no hit of `base` in the scanned sources beyond its 2 declarations; no hit of `Orphan` in the scanned sources beyond its 1 declaration; no hit of `Report` in the scanned sources beyond its 1 declaration; no hit of `summary` in the scanned sources beyond its 1 declaration; no hit of `Run` in the scanned sources beyond its 1 declaration; no hit of `config` in the scanned sources beyond its 2 declarations; no hit of `steps` in the scanned sources beyond its 1 declaration; no hit of `a_trace` in the scanned sources beyond its 1 declaration; no hit of `b_log` in the scanned sources beyond its 1 declaration"}
@@ -25,7 +25,7 @@
 {"k":"surface","path":"Store","kind":"struct"}
 {"k":"surface","path":"Summary","kind":"struct"}
 {"k":"surface","path":"Trace","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":17}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":17,"mix":{"pub":17}}
 {"k":"doc","path":"crate","text":"Dependency order: each part follows its owner."}
 {"k":"struct","path":"Run","rust":"pub struct Run { pub config: Config, pub steps: Vec<Step> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Run","text":"The main entry: it reaches the most declarations."}

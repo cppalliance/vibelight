@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"order_groups","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":42,"to":49},{"path":"engine","from":50,"to":55},{"path":"engine::sched","from":56,"to":59},{"path":"engine::sched::deep","from":60,"to":63},{"path":"store","from":64,"to":67},{"path":"util","from":68,"to":71}]}
+{"k":"vibelight-outline","schema":2,"crate":"order_groups","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":42,"to":49},{"path":"engine","vis":"pub","from":50,"to":55},{"path":"engine::sched","vis":"pub","from":56,"to":59},{"path":"engine::sched::deep","vis":"pub","from":60,"to":63},{"path":"store","vis":"pub","from":64,"to":67},{"path":"util","vis":"pub","from":68,"to":71}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["engine::sched::deep"],"evidence":"holds only `Slot`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["store"],"evidence":"holds only `Db`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["util"],"evidence":"holds only `Spare`","locs":["src/lib.rs:0"]}
@@ -39,7 +39,7 @@
 {"k":"surface","path":"store::Db","kind":"struct"}
 {"k":"surface","path":"util","kind":"mod"}
 {"k":"surface","path":"util::Spare","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"crate","text":"Groups of types by module."}
 {"k":"struct","path":"App","rust":"pub struct App { pub a_core: engine::Core, pub b_db: store::Db, pub c_log: Log }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"App","text":"The only root: it names Core, Db, and Log, in that order."}
@@ -47,25 +47,25 @@
 {"k":"doc","path":"Log","text":"Named only by App, in the crate root."}
 {"k":"struct","path":"Level","rust":"pub struct Level","loc":"src/lib.rs:0","named_by":["Log"]}
 {"k":"doc","path":"Level","text":"Named only by Log, in the crate root."}
-{"k":"mod","path":"engine","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"engine","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"engine","text":"The engine."}
 {"k":"struct","path":"engine::Core","rust":"pub struct Core { pub a_plan: Plan, pub b_queue: sched::Queue }","loc":"src/lib.rs:0","named_by":["App"]}
 {"k":"doc","path":"engine::Core","text":"Named only by App; names Plan, then Queue."}
 {"k":"struct","path":"engine::Plan","rust":"pub struct Plan","loc":"src/lib.rs:0","named_by":["engine::Core"]}
 {"k":"doc","path":"engine::Plan","text":"Named only by Core."}
-{"k":"mod","path":"engine::sched","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"engine::sched","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"engine::sched","text":"The scheduler."}
 {"k":"struct","path":"engine::sched::Queue","rust":"pub struct Queue { pub slot: deep::Slot }","loc":"src/lib.rs:0","named_by":["engine::Core"]}
 {"k":"doc","path":"engine::sched::Queue","text":"Named only by Core; names Slot."}
-{"k":"mod","path":"engine::sched::deep","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"engine::sched::deep","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"engine::sched::deep","text":"Three segments deep: its group is named for the first two."}
 {"k":"struct","path":"engine::sched::deep::Slot","rust":"pub struct Slot","loc":"src/lib.rs:0","named_by":["engine::sched::Queue"]}
 {"k":"doc","path":"engine::sched::deep::Slot","text":"Named only by Queue."}
-{"k":"mod","path":"store","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"store","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"store","text":"The store."}
 {"k":"struct","path":"store::Db","rust":"pub struct Db","loc":"src/lib.rs:0","named_by":["App"]}
 {"k":"doc","path":"store::Db","text":"Named only by App: a lone type in its module."}
-{"k":"mod","path":"util","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"util","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"util","text":"Helpers nothing uses."}
 {"k":"struct","path":"util::Spare","rust":"pub struct Spare","loc":"src/lib.rs:0"}
 {"k":"doc","path":"util::Spare","text":"Names nothing and nothing names it."}

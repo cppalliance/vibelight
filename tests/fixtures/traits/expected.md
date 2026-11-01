@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"traits","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"traits","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":11,"to":38}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Convert","Convert::convert","Lender","Lender::lend","Observer","Observer::finish","Observer::flush","Observer::Item","Observer::LIMIT","Observer::make","Observer::record","Zeroable"],"evidence":"no hit of `Convert` in the scanned sources beyond its 1 declaration; no hit of `convert` in the scanned sources beyond its 1 declaration; no hit of `Lender` in the scanned sources beyond its 1 declaration; no hit of `lend` in the scanned sources beyond its 1 declaration; no hit of `Observer` in the scanned sources beyond its 1 declaration; no hit of `finish` in the scanned sources beyond its 1 declaration; no hit of `flush` in the scanned ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
 {"k":"more","path":"Convert","id":"no-observed-name-use","field":"evidence","part":2,"text":"sources beyond its 1 declaration; no hit of `Item` in the scanned sources beyond its 1 declaration; no hit of `LIMIT` in the scanned sources beyond its 1 declaration; no hit of `make` in the scanned sources beyond its 1 declaration; no hit of `record` in the scanned sources beyond its 1 declaration; no hit of `Zeroable` in the scanned sources beyond its 1 declaration"}
@@ -8,7 +8,7 @@
 {"k":"surface","path":"Lender","kind":"trait"}
 {"k":"surface","path":"Observer","kind":"trait"}
 {"k":"surface","path":"Zeroable","kind":"trait"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Traits."}
 {"k":"trait","path":"Observer","rust":"pub trait Observer: Send + Sync","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Observer","text":"Watches a run."}

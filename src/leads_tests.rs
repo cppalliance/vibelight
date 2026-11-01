@@ -274,7 +274,7 @@ fn the_glossary_in_the_lens_gives_every_registered_id_one_bullet_in_order() {
         found[0]
     };
     let open = at("<lead-glossary");
-    assert_eq!(lines[open], "<lead-glossary schema=\"1\">");
+    assert_eq!(lines[open], "<lead-glossary schema=\"2\">");
     let close = at("</lead-glossary>");
     assert!(at("<slop-lens>") < open && close < at("</slop-lens>"));
     let body = &lines[open + 1..close];

@@ -12,7 +12,7 @@ use crate::render_slop_check::{Mode, check};
 use crate::root::TargetKind;
 
 /// Renders the outline of a one-file library, written beside the crate.
-fn outline(lib: &str) -> String {
+fn rendered(lib: &str) -> anyhow::Result<String> {
     let fixture = fixture(&[("src/lib.rs", lib)]);
     let run = run(&fixture);
     let leads = crate::leads::find(&run, &[]).leads;
@@ -28,9 +28,21 @@ fn outline(lib: &str) -> String {
         shown_dir: ".".to_owned(),
         root: ".".to_owned(),
     };
-    let text = render(&input).unwrap();
+    render(&input)
+}
+
+/// Renders a one-file library's outline, which must meet the schema.
+fn outline(lib: &str) -> String {
+    let text = rendered(lib).unwrap();
     check(&text, Mode::Raw).unwrap_or_else(|why| panic!("{why}\n{text}"));
     text
+}
+
+#[test]
+fn a_record_that_no_cut_brings_within_the_cap_fails_the_render() {
+    let lib = format!("/// Wide.\npub fn {}() {{}}\n", "a".repeat(950));
+    let why = rendered(&lib).unwrap_err().to_string();
+    assert!(why.contains("wider than 900 characters"), "{why}");
 }
 
 /// Returns the outline's lines of one kind.
@@ -50,7 +62,7 @@ fn a_library_prints_its_header_modules_and_one_record_per_item() {
     );
     let lines: Vec<&str> = text.lines().collect();
     assert_eq!(lines[0], "*Updated 2026-01-01T00:00:00Z*");
-    assert!(lines[1].starts_with("{\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\""));
+    assert!(lines[1].starts_with("{\"k\":\"vibelight-outline\",\"schema\":2,\"crate\":\""));
     assert!(
         lines[1].ends_with("\",\"target\":\"lib\",\"root\":\".\"}"),
         "no folder: {}",
@@ -125,6 +137,45 @@ fn signatures_and_shapes_stay_on_one_line_with_where_clauses_inline() {
     assert!(text.contains("\"sig\":\"pub fn pick<T>(a: T, b: T) -> T where T: PartialOrd\""));
 }
 
+#[test]
+fn the_outline_shows_the_module_tree_its_dependencies_and_what_reaches_further() {
+    let text = outline(
+        "mod engine {\n    pub mod parse {\n        pub fn lex() -> u8 { 1 }\n    }\n    \
+         pub(crate) mod run {\n        pub(crate) fn start() -> u8 {\n            \
+         super::parse::lex() + crate::store::KEEP\n        }\n    }\n}\n\
+         mod store {\n    pub(crate) const KEEP: u8 = 2;\n}\n\
+         pub use engine::parse::lex;\n\n/// Runs.\npub fn go() -> u8 { engine::run::start() }\n",
+    );
+    let lines: Vec<&str> = text.lines().collect();
+    for item in [
+        "{\"path\":\"engine\",\"from\":",
+        "{\"path\":\"engine::parse\",\"vis\":\"pub\",\"eff\":\"pub(crate)\",\"from\":",
+        "{\"path\":\"engine::run\",\"vis\":\"pub(crate)\",\"from\":",
+    ] {
+        assert!(lines[2].contains(item), "{item}\n{}", lines[2]);
+    }
+    let uses = "\"uses\":[{\"path\":\"engine::parse\",\"n\":1},{\"path\":\"store\",\"n\":1}]";
+    let deps = format!("{{\"k\":\"deps\",\"path\":\"engine::run\",{uses}}}");
+    assert_eq!(kind(&text, "deps"), [deps.as_str()]);
+    let root = "\"path\":\"crate\",\"loc\":\"src/lib.rs:1\",\"functions\":1,\"reexports\":1,";
+    let root = format!("{root}\"mix\":{{\"pub\":2}}}}");
+    let lex = "\"sig\":\"pub fn lex() -> u8\",\"loc\":\"src/lib.rs:3\",\"eff\":\"pub\"";
+    let start = "\"sig\":\"pub(crate) fn start() -> u8\",\"loc\":\"src/lib.rs:6\",\"eff\"";
+    assert!(text.contains(&root) && text.contains(lex), "{text}");
+    assert!(!text.contains(start), "{text}");
+    let unsorted = "\"uses\":[{\"path\":\"store\",\"n\":1},{\"path\":\"engine::parse\",\"n\":1}]";
+    let why = check(&text.replacen(uses, unsorted, 1), Mode::Raw).unwrap_err();
+    assert!(why.contains("`uses` is not sorted"), "{why}");
+    let surface = kind(&text, "surface")[0];
+    let early = text.replacen(&format!("{surface}\n"), "", 1).replacen(
+        &format!("{deps}\n"),
+        &format!("{deps}\n{surface}\n"),
+        1,
+    );
+    let why = check(&early, Mode::Raw).unwrap_err();
+    assert!(why.contains("out of the kinds' order"), "{why}");
+}
+
 /// A small outline that meets the schema, to break line by line.
 fn sample() -> String {
     outline("/// A.\npub struct A;\n\n/// Runs.\npub fn run(a: u8, b: u8, c: u8) {}\n")
@@ -149,7 +200,7 @@ fn the_check_rejects_every_kind_of_broken_outline() {
         (broken(",\"rust\":\"pub struct A\"", ""), "missing"),
         (broken("*\n", "*\r\n"), "CR"),
         (broken("*\n", "*\n\n"), "blank"),
-        (broken("\"schema\":1", "\"schema\":2"), "schema"),
+        (broken("\"schema\":2", "\"schema\":3"), "schema"),
         (broken("{\"k\":\"modules\"", "{\"k\":\"modules\" "), "form"),
         (good.replace("src/lib.rs:2\"", "src/lib.rs:0\""), "raw line"),
         (broken(",\"root\":\".\"", ""), "no root"),

@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"long_lines","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"long_lines","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":13,"to":32}]}
 {"k":"lead","id":"same-type-many-role-names","mode":"direct-syntax","subjects":["Wide::exactly_at_80","Wide::fits_with_comment"],"evidence":"`u64` as `first_value`, `second_value`, `value`, which share `value`","locs":["src/lib.rs:0","src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Container","Registry"],"evidence":"no hit of `Container` in the scanned sources beyond its 1 declaration; no hit of `Registry` in the scanned sources beyond its 1 declaration; no hit of `a_field_with_a_very_long_type` in the scanned sources beyond its 1 declaration; no hit of `exactly_at_80` in the scanned sources beyond its 1 declaration; no hit of `fits_with_comment` in the scanned sources beyond its 1 declaration; no hit of `huge` in the scanned sources beyond its 1 ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
@@ -10,7 +10,7 @@
 {"k":"surface","path":"Container","kind":"struct"}
 {"k":"surface","path":"Registry","kind":"struct"}
 {"k":"surface","path":"Wide","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"crate","text":"The long-line rule."}
 {"k":"struct","path":"Wide","rust":"pub struct Wide { pub a_field_with_a_very_long_type: std::collections::BTreeMap<String, std::collections::BTreeSet<u64>> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Wide","text":"Members that test the long-line rule."}

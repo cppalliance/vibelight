@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"consts","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"consts","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":16,"to":36}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Config::DOUBLE"],"evidence":"no hit of `DOUBLE` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["COUNTER"],"evidence":"no hit of `COUNTER` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -13,7 +13,7 @@
 {"k":"surface","path":"LIMIT","kind":"value"}
 {"k":"surface","path":"NAME","kind":"value"}
 {"k":"surface","path":"STATE","kind":"value"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"values":6,"mix":{"pub":6,"pub(self)":1}}
 {"k":"doc","path":"crate","text":"Constants and statics."}
 {"k":"const","path":"LIMIT","rust":"pub const LIMIT: usize","value":"64","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"LIMIT","text":"The default limit."}

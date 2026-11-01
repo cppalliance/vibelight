@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"comments_kinds","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"comments_kinds","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":11,"to":22}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["after_block","BlockComment","DocFirst","Fenced","Linked","PlainFirst"],"evidence":"no hit of `after_block` in the scanned sources beyond its 1 declaration; no hit of `BlockComment` in the scanned sources beyond its 1 declaration; no hit of `DocFirst` in the scanned sources beyond its 1 declaration; no hit of `Fenced` in the scanned sources beyond its 1 declaration; no hit of `Linked` in the scanned sources beyond its 1 declaration; no hit of `PlainFirst` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":6}
 {"k":"surface","path":"after_block","kind":"fn"}
@@ -8,7 +8,7 @@
 {"k":"surface","path":"Fenced","kind":"struct"}
 {"k":"surface","path":"Linked","kind":"struct"}
 {"k":"surface","path":"PlainFirst","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"functions":1,"mix":{"pub":6}}
 {"k":"doc","path":"crate","text":"Comment kinds and their order.\n\nCrate docs print as `//!` lines."}
 {"k":"struct","path":"DocFirst","rust":"pub struct DocFirst","loc":"src/lib.rs:0","comment":"// Then an ordinary comment."}
 {"k":"doc","path":"DocFirst","text":"A doc comment first."}

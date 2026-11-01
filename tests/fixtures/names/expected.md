@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"names","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":31,"to":53},{"path":"api","from":54,"to":58},{"path":"api::inner","from":59,"to":63},{"path":"model","from":64,"to":69}]}
+{"k":"vibelight-outline","schema":2,"crate":"names","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":31,"to":53},{"path":"api","vis":"pub","from":54,"to":58},{"path":"api::inner","vis":"pub","from":59,"to":63},{"path":"model","vis":"pub","from":64,"to":69}]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["api"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/api.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["api::inner"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/api.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["model"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/model.rs:0"]}
@@ -28,7 +28,7 @@
 {"k":"surface","path":"Pairs","kind":"alias"}
 {"k":"surface","path":"Twin","kind":"struct"}
 {"k":"surface","path":"Wrapper","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"reexports":1,"mix":{"pub":6}}
 {"k":"doc","path":"crate","text":"Name resolution."}
 {"k":"use","path":"Entry","rust":"pub use model::Record as Entry","loc":"src/lib.rs:0"}
 {"k":"struct","path":"Catalog","rust":"pub struct Catalog { pub first: crate::model::Record, pub second: Entry, pub third: api::Handle, pub fourth: Token, pub fifth: Shared }","loc":"src/lib.rs:0"}
@@ -51,17 +51,17 @@
 {"k":"doc","path":"Twin","text":"The first of two types named Twin, under different cfgs."}
 {"k":"struct","path":"Twin","rust":"pub struct Twin","loc":"src/lib.rs:0","cfgs":["windows"]}
 {"k":"doc","path":"Twin","text":"The second Twin."}
-{"k":"mod","path":"api","loc":"src/api.rs:0","vis":"public","types":1}
+{"k":"mod","path":"api","loc":"src/api.rs:0","types":1,"reexports":1,"mix":{"pub":2}}
 {"k":"doc","path":"api","text":"Re-exports through a glob."}
 {"k":"use","path":"api::*","rust":"pub use self::inner::*","loc":"src/api.rs:0"}
 {"k":"struct","path":"api::Token","rust":"pub struct Token","loc":"src/api.rs:0","named_by":["Catalog","Pairs"]}
 {"k":"doc","path":"api::Token","text":"A unique token type."}
-{"k":"mod","path":"api::inner","loc":"src/api.rs:0","vis":"public","types":2}
+{"k":"mod","path":"api::inner","loc":"src/api.rs:0","types":2,"mix":{"pub":2}}
 {"k":"struct","path":"api::inner::Handle","rust":"pub struct Handle","loc":"src/api.rs:0","named_by":["Catalog"]}
 {"k":"doc","path":"api::inner::Handle","text":"A handle."}
 {"k":"struct","path":"api::inner::Shared","rust":"pub struct Shared","loc":"src/api.rs:0"}
 {"k":"doc","path":"api::inner::Shared","text":"The other type named Shared."}
-{"k":"mod","path":"model","loc":"src/model.rs:0","vis":"public","types":2}
+{"k":"mod","path":"model","loc":"src/model.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"model","text":"The record types."}
 {"k":"struct","path":"model::Record","rust":"pub struct Record { pub id: u32 }","loc":"src/model.rs:0","named_by":["Catalog"],"reexported_by":["crate"]}
 {"k":"doc","path":"model::Record","text":"A record."}

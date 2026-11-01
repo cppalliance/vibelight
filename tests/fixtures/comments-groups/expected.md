@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"comments_groups","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":31,"to":47},{"path":"store","from":48,"to":57},{"path":"traits","from":58,"to":61}]}
+{"k":"vibelight-outline","schema":2,"crate":"comments_groups","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":31,"to":47},{"path":"store","vis":"pub","from":48,"to":57},{"path":"traits","vis":"pub","from":58,"to":61}]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Handle","traits::Persist"],"evidence":"one impl in the run: `impl traits::Persist for Handle`","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-impls","macros"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["traits"],"evidence":"holds only `Persist`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["store"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
@@ -28,7 +28,7 @@
 {"k":"surface","path":"traits::Persist","kind":"trait"}
 {"k":"surface","path":"Value","kind":"struct","item":"store::Value"}
 {"k":"surface","path":"write","kind":"fn","item":"store::write"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"reexports":4,"mix":{"pub":5}}
 {"k":"doc","path":"crate","text":"Comments on impl blocks and on use groups."}
 {"k":"use","path":"Key","rust":"pub use store::Key","loc":"src/lib.rs:0","comment":"// The key type."}
 {"k":"use","path":"Value","rust":"pub use store::Value","loc":"src/lib.rs:0","comment":"// The value type."}
@@ -45,7 +45,7 @@
 {"k":"doc","path":"Handle","text":"Shows the handle."}
 {"k":"fn","path":"Handle::fmt","sig":"fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result","loc":"src/lib.rs:0","impl":"impl std::fmt::Display for Handle","body":{"statements":1,"tokens":8,"single":"method write_str"},"ops":["f.write_str(\"handle\")"]}
 {"k":"impl","path":"Handle","rust":"impl traits::Persist for Handle","locs":["src/lib.rs:0"],"comment":"// Persists the handle."}
-{"k":"mod","path":"store","loc":"src/lib.rs:0","vis":"public","types":2,"functions":{"public":2}}
+{"k":"mod","path":"store","loc":"src/lib.rs:0","types":2,"functions":2,"mix":{"pub":4}}
 {"k":"doc","path":"store","text":"Keys and values."}
 {"k":"struct","path":"store::Key","rust":"pub struct Key","loc":"src/lib.rs:0","reexported_by":["crate"]}
 {"k":"doc","path":"store::Key","text":"A key."}
@@ -55,7 +55,7 @@
 {"k":"doc","path":"store::read","text":"Reads a value."}
 {"k":"fn","path":"store::write","sig":"pub fn write()","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"store::write","text":"Writes a value."}
-{"k":"mod","path":"traits","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"traits","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"trait","path":"traits::Persist","rust":"pub trait Persist","loc":"src/lib.rs:0","named_by":["Handle"]}
 {"k":"doc","path":"traits::Persist","text":"Something that persists."}
 {"k":"fn","path":"traits::Persist::save","sig":"fn save(&self)","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}

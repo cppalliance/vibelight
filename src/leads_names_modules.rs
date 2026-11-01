@@ -7,6 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::access::spelled;
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
@@ -253,7 +254,7 @@ fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut
     }
     for (m, module) in krate.modules.iter().enumerate() {
         if let (Some(parent), Vis::Super | Vis::In(_)) = (module.parent, module.vis) {
-            let spelled = spelled_vis(krate, module.vis);
+            let spelled = spelled(krate, module.vis);
             nodes.push((ItemRef::Module(m), module.vis, parent, spelled));
         }
         for (k, item) in module.items.iter().enumerate() {
@@ -282,18 +283,6 @@ fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut
         );
         let at = ItemId { target: t, item };
         out.push(Lead::new("visibility-spelling", Mode::DirectSyntax, evidence).item(run, at));
-    }
-}
-
-/// Spells a module's visibility from its kind, since a `mod` line keeps no
-/// spelling of its own: `pub(in path)` names its module from the root.
-fn spelled_vis(krate: &Crate, vis: Vis) -> String {
-    match vis {
-        Vis::Public => "pub".to_owned(),
-        Vis::Crate => "pub(crate)".to_owned(),
-        Vis::Super => "pub(super)".to_owned(),
-        Vis::In(m) => format!("pub(in crate::{})", krate.modules[m].path.join("::")),
-        Vis::Private => String::new(),
     }
 }
 

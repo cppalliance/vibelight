@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"modules","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":27,"to":28},{"path":"files","from":29,"to":32},{"path":"inline","from":33,"to":36},{"path":"inline::deeper","from":37,"to":39},{"path":"nested","from":40,"to":41},{"path":"nested::child","from":42,"to":45},{"path":"only_modules","from":46,"to":46},{"path":"only_modules::a","from":47,"to":49},{"path":"only_modules::b","from":50,"to":52},{"path":"renamed","from":53,"to":56}]}
+{"k":"vibelight-outline","schema":2,"crate":"modules","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":27,"to":28},{"path":"files","vis":"pub","from":29,"to":32},{"path":"inline","vis":"pub","from":33,"to":36},{"path":"inline::deeper","vis":"pub","from":37,"to":39},{"path":"nested","from":40,"to":41},{"path":"nested::child","vis":"pub","eff":"pub(crate)","from":42,"to":45},{"path":"only_modules","vis":"pub(crate)","from":46,"to":46},{"path":"only_modules::a","vis":"pub","eff":"pub(crate)","from":47,"to":49},{"path":"only_modules::b","vis":"pub","eff":"pub(crate)","from":50,"to":52},{"path":"renamed","from":53,"to":56}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["files"],"evidence":"holds only `InFile`","locs":["src/files.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["inline::deeper"],"evidence":"holds only `Deepest`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["nested"],"evidence":"holds only `mod child`","locs":["src/nested/mod.rs:0"]}
@@ -26,31 +26,31 @@
 {"k":"surface","path":"inline::Inside","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0"}
 {"k":"doc","path":"crate","text":"Module layouts."}
-{"k":"mod","path":"files","loc":"src/files.rs:0","vis":"public","types":1}
+{"k":"mod","path":"files","loc":"src/files.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"files","text":"A file module."}
 {"k":"struct","path":"files::InFile","rust":"pub struct InFile","loc":"src/files.rs:0"}
 {"k":"doc","path":"files::InFile","text":"A type in a file module."}
-{"k":"mod","path":"inline","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"inline","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"inline","text":"An inline module.\nInner docs of the inline module."}
 {"k":"struct","path":"inline::Inside","rust":"pub struct Inside","loc":"src/lib.rs:0"}
 {"k":"doc","path":"inline::Inside","text":"A type inside the inline module."}
-{"k":"mod","path":"inline::deeper","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"inline::deeper","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"struct","path":"inline::deeper::Deepest","rust":"pub struct Deepest","loc":"src/lib.rs:0"}
 {"k":"doc","path":"inline::deeper::Deepest","text":"The deepest type."}
-{"k":"mod","path":"nested","loc":"src/nested/mod.rs:0","vis":"private"}
+{"k":"mod","path":"nested","loc":"src/nested/mod.rs:0"}
 {"k":"doc","path":"nested","text":"A module in a mod.rs file."}
-{"k":"mod","path":"nested::child","loc":"src/nested/child.rs:0","vis":"public","functions":{"public":1}}
+{"k":"mod","path":"nested::child","loc":"src/nested/child.rs:0","functions":1,"mix":{"pub":1}}
 {"k":"doc","path":"nested::child","text":"A child of a mod.rs module."}
 {"k":"fn","path":"nested::child::child_fn","sig":"pub fn child_fn()","loc":"src/nested/child.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"nested::child::child_fn","text":"A function in a nested file."}
-{"k":"mod","path":"only_modules","loc":"src/only_modules.rs:0","vis":"internal"}
-{"k":"mod","path":"only_modules::a","loc":"src/only_modules/a.rs:0","vis":"public","types":1}
+{"k":"mod","path":"only_modules","loc":"src/only_modules.rs:0"}
+{"k":"mod","path":"only_modules::a","loc":"src/only_modules/a.rs:0","types":1,"mix":{"pub":1}}
 {"k":"struct","path":"only_modules::a::A","rust":"pub struct A","loc":"src/only_modules/a.rs:0"}
 {"k":"doc","path":"only_modules::a::A","text":"The first leaf type."}
-{"k":"mod","path":"only_modules::b","loc":"src/only_modules/b.rs:0","vis":"public","types":1}
+{"k":"mod","path":"only_modules::b","loc":"src/only_modules/b.rs:0","types":1,"mix":{"pub":1}}
 {"k":"struct","path":"only_modules::b::B","rust":"pub struct B","loc":"src/only_modules/b.rs:0"}
 {"k":"doc","path":"only_modules::b::B","text":"The second leaf type."}
-{"k":"mod","path":"renamed","loc":"src/custom-name.rs:0","vis":"private"}
+{"k":"mod","path":"renamed","loc":"src/custom-name.rs:0","values":1,"mix":{"pub":1}}
 {"k":"doc","path":"renamed","text":"Loaded through a path attribute."}
 {"k":"const","path":"renamed::LOADED","rust":"pub const LOADED: bool","value":"true","loc":"src/custom-name.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"renamed::LOADED","text":"Shows the file was loaded."}

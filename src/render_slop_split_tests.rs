@@ -100,6 +100,8 @@ fn modules() -> Record {
         items: (0..300)
             .map(|n| ModuleRange {
                 path: format!("module_{n:03}"),
+                vis: None,
+                eff: None,
                 from: Some(10 * n + 4),
                 to: Some(10 * n + 13),
             })

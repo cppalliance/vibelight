@@ -1,22 +1,25 @@
 //! Writes a target's markdown outline from the run's analysis view: the
 //! stamp line, then one compact JSON record per line. The header and the
-//! module ranges come first, then the target's leads, its public surface,
-//! the outside items it names, its spellings, and its wire keys, and then
-//! the catalog of every module, declaration, member, and module item,
-//! module by module in path order and by source line inside each. The
-//! outline reads the crates only as resolve and `link` left them, before
-//! any impl is attached, and prints no body's code. A record too wide for
-//! one line continues in `more` records right after it.
+//! module tree come first, then the target's leads, its public surface,
+//! which modules use which others, the outside items it names, its
+//! spellings, and its wire keys, and then the catalog of every module,
+//! declaration, member, and module item, module by module in path order
+//! and by source line inside each. The outline reads the crates only as
+//! resolve and `link` left them, before any impl is attached, and prints
+//! no body's code. A record too wide for one line continues in `more`
+//! records right after it.
 
 use anyhow::{Result, bail};
 
+use crate::access::{Accesses, spell, spelled, written};
 use crate::analysis::AnalysisRun;
 use crate::leads::Lead;
-use crate::model::{self, Crate, ModId, path_order};
+use crate::model::{self, Crate, ModId, Vis, path_order};
 use crate::render_slop_facts::{Facts, module_path};
 use crate::render_slop_schema::{
     DocRecord, Header, Loc, ModuleRange, Modules, Record, SCHEMA, TargetName,
 };
+use crate::render_slop_split::LINE_CAP;
 use crate::root::TargetKind;
 use crate::{
     render_slop_decl, render_slop_items, render_slop_lists, render_slop_split, render_slop_wire,
@@ -146,15 +149,16 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
         entries: Vec::new(),
     };
     let krate = outline.krate();
+    let order = sorted_modules(krate);
     let mut lists = render_slop_lists::leads(&outline, input.leads);
     lists.extend(render_slop_lists::surface(&outline));
+    lists.extend(render_slop_lists::deps(&outline, &order));
     lists.extend(render_slop_lists::external(&outline));
     lists.extend(render_slop_lists::spellings(&outline));
     lists.extend(render_slop_wire::wire_keys(&outline));
     render_slop_items::modules(&mut outline);
     render_slop_decl::decls(&mut outline);
     render_slop_decl::impls(&mut outline);
-    let order = sorted_modules(krate);
     let mut rank = vec![0; krate.modules.len()];
     for (place, &m) in order.iter().enumerate() {
         rank[m] = place;
@@ -163,14 +167,14 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
     entries.sort_by(|a, b| (rank[a.module].cmp(&rank[b.module])).then_with(|| a.rank.cmp(&b.rank)));
     let mut listed = Vec::new();
     for record in &lists {
-        listed.extend(render_slop_split::lines(record)?);
+        listed.extend(lines(record)?);
     }
     let mut catalog = Vec::new();
     let mut spans: Vec<Option<(usize, usize)>> = vec![None; krate.modules.len()];
     for entry in &entries {
         for record in &entry.records {
             let first = catalog.len();
-            catalog.extend(render_slop_split::lines(record)?);
+            catalog.extend(lines(record)?);
             let span = &mut spans[entry.module];
             *span = Some((span.map_or(first, |(from, _)| from), catalog.len() - 1));
         }
@@ -188,7 +192,8 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
         quieted: (input.quieted > 0).then_some(input.quieted),
     });
     let header = serde_json::to_string(&header)?;
-    let modules = modules(krate, &order, &spans, listed.len())?;
+    let accesses = &target.run.accesses[target.target];
+    let modules = modules(krate, accesses, &order, &spans, listed.len())?;
     let mut out = stamp::markdown(input.stamp);
     out.push('\n');
     for line in [&header]
@@ -203,35 +208,68 @@ pub(crate) fn render(input: &RenderInput<'_>) -> Result<String> {
     Ok(out)
 }
 
+/// Writes a record as lines, none wider than [`LINE_CAP`] characters.
+///
+/// # Errors
+/// Returns an internal error when the record cannot be written as JSON, or
+/// when a cut leaves a line wider than the cap.
+fn lines(record: &Record) -> Result<Vec<String>> {
+    let lines = render_slop_split::lines(record)?;
+    if let Some(line) = lines.iter().find(|line| line.chars().count() > LINE_CAP) {
+        let start: String = line.chars().take(80).collect();
+        bail!("internal error: a record line is wider than {LINE_CAP} characters: {start}");
+    }
+    Ok(lines)
+}
+
 /// Writes the modules record, whose ranges count the lines it takes
 /// itself. `spans` holds each module's first and last line in the catalog,
 /// counted from 0, and `listed` lines sit between the modules record and
 /// the catalog.
 fn modules(
     krate: &Crate,
+    accesses: &Accesses,
     order: &[ModId],
     spans: &[Option<(usize, usize)>],
     listed: usize,
 ) -> Result<Vec<String>> {
+    let reach: Vec<(Option<String>, Option<String>)> =
+        (order.iter()).map(|&m| reach(krate, accesses, m)).collect();
     let mut taken = 1;
     for _ in 0..8 {
         let before = 2 + taken + listed;
         let record = Record::Modules(Modules {
-            items: (order.iter())
-                .map(|&m| ModuleRange {
+            items: (order.iter().zip(&reach))
+                .map(|(&m, (vis, eff))| ModuleRange {
                     path: module_path(krate, m),
+                    vis: vis.clone(),
+                    eff: eff.clone(),
                     from: spans[m].map(|(from, _)| before + from + 1),
                     to: spans[m].map(|(_, to)| before + to + 1),
                 })
                 .collect(),
         });
-        let lines = render_slop_split::lines(&record)?;
+        let lines = lines(&record)?;
         if lines.len() == taken {
             return Ok(lines);
         }
         taken = lines.len();
     }
     bail!("internal error: the modules record takes no settled number of lines")
+}
+
+/// Returns a module's written visibility, left out when it has no keyword,
+/// and how far it reaches when that is less than written, spelled from its
+/// parent; neither for the root.
+fn reach(krate: &Crate, accesses: &Accesses, m: ModId) -> (Option<String>, Option<String>) {
+    let module = &krate.modules[m];
+    let Some(parent) = module.parent else {
+        return (None, None);
+    };
+    let vis = (module.vis != Vis::Private).then(|| spelled(krate, module.vis));
+    let eff = accesses.modules[m];
+    let eff = (eff != written(krate, module.vis, parent)).then(|| spell(krate, eff, parent));
+    (vis, eff)
 }
 
 /// Returns every module of a crate in path order.

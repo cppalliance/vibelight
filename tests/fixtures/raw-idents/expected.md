@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"raw_idents","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":17,"to":27},{"path":"r#impl","from":28,"to":31}]}
+{"k":"vibelight-outline","schema":2,"crate":"raw_idents","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":17,"to":27},{"path":"r#impl","vis":"pub","from":28,"to":31}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["r#impl"],"evidence":"holds only `Inner`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["r#impl"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["r#fn"],"evidence":"no hit of `fn` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -14,7 +14,7 @@
 {"k":"surface","path":"r#impl","kind":"mod"}
 {"k":"surface","path":"r#impl::Inner","kind":"struct"}
 {"k":"surface","path":"Keywords","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"crate","text":"Raw identifiers."}
 {"k":"struct","path":"Keywords","rust":"pub struct Keywords { pub r#type: u8, pub r#match: u8, kind: u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Keywords","text":"Raw names in a struct."}
@@ -25,7 +25,7 @@
 {"k":"doc","path":"Keywords::r#as","text":"A raw method."}
 {"k":"fn","path":"Keywords::r#async","sig":"pub fn r#async()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"fn","path":"r#fn","sig":"pub fn r#fn()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
-{"k":"mod","path":"r#impl","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"r#impl","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"r#impl","text":"A module with a raw name."}
 {"k":"struct","path":"r#impl::Inner","rust":"pub struct Inner","loc":"src/lib.rs:0"}
 {"k":"doc","path":"r#impl::Inner","text":"Lives in a raw module."}

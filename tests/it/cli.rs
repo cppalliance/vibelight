@@ -57,7 +57,7 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
     let text = fs::read_to_string(out.join("structs.md")).expect("the outline was written");
     assert!(text.starts_with(
         "*Updated 2026-01-01T00:00:00Z*\n\
-         {\"k\":\"vibelight-outline\",\"schema\":1,\"crate\":\"structs\",\"target\":\"lib\",\
+         {\"k\":\"vibelight-outline\",\"schema\":2,\"crate\":\"structs\",\"target\":\"lib\",\
          \"root\":\""
     ));
     assert!(out.join("html").join("structs.html").is_file());

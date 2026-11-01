@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"references","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"references","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":23,"to":56}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["apply","BYTES","NAME","pick","Source","Source::read","Table","Views::both","Views::callback","Views::check","Views::clear","Views::get","Views::into_name","Views::lookup","Views::poll","Views::raw_call","Views::read","Views::rename","Views::render"],"evidence":"no hit of `apply` in the scanned sources beyond its 1 declaration; no hit of `BYTES` in the scanned sources beyond its 1 declaration; no hit of `NAME` in the scanned sources beyond its 1 declaration; no hit of `pick` in the scanned sources beyond its 1 declaration; no hit of `Source` in the scanned sources beyond its 1 declaration; no hit of `read` in the scanned sources beyond its 2 declarations; no hit of `Table` in the scanned sources ","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":25}
 {"k":"more","path":"apply","id":"no-observed-name-use","field":"subjects","part":2,"items":["Views::same","Views::set","Views::shown","Views::step","Views::wrapped","Views::write"]}
@@ -20,7 +20,7 @@
 {"k":"surface","path":"Source","kind":"trait"}
 {"k":"surface","path":"Table","kind":"alias"}
 {"k":"surface","path":"Views","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"functions":{"public":3}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":4,"functions":3,"values":2,"mix":{"pub":9}}
 {"k":"doc","path":"crate","text":"References, raw pointers, and receivers."}
 {"k":"struct","path":"Views","rust":"pub struct Views<'a, T> { pub shared: &'a T, pub unique: &'a mut T, pub name: &'static str, pub items: &'a [&'a T], pub read: *const T, pub write: *mut T, pub shown: &'a dyn Display, pub check: Box<dyn Fn(&str) -> usize>, pub callback: &'a dyn Fn(&str) -> usize, pub both: &'a (dyn Display + Send), pub wrapped: &'a (dyn Fn(&str) -> usize), pub raw_call: *const dyn Fn() -> bool, pub step: &'a fn(u8) -> u8 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Views","text":"Borrowed and raw views of one value."}

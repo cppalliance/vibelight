@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"base_lists","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":61,"to":136},{"path":"bare","from":137,"to":141},{"path":"custom","from":142,"to":148},{"path":"globbed","from":149,"to":153},{"path":"other","from":154,"to":158}]}
+{"k":"vibelight-outline","schema":2,"crate":"base_lists","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":61,"to":136},{"path":"bare","vis":"pub","from":137,"to":141},{"path":"custom","vis":"pub","from":142,"to":148},{"path":"globbed","vis":"pub","from":149,"to":153},{"path":"other","vis":"pub","from":154,"to":158}]}
 {"k":"lead","id":"single-variant-enum","mode":"direct-syntax","subjects":["Error"],"evidence":"one variant, `Failed`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["Clone","Local"],"evidence":"one impl in the run: `impl Clone for Local`","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-impls","macros"]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["custom::Display","custom::Homemade"],"evidence":"one impl in the run: `impl Display for Homemade`","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-impls","macros"]}
@@ -58,7 +58,7 @@
 {"k":"external","path":"serde::Serialize","uses":1,"named_by":["Mixed"]}
 {"k":"spelling","path":"std::fmt::Debug","preferred":"Debug","spellings":[{"text":"Dbg","count":1,"locs":["src/lib.rs:0"]},{"text":"fmt::Debug","count":4,"locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"]}]}
 {"k":"spelling","path":"std::fmt::Display","spellings":[{"text":"D","count":1,"locs":["src/lib.rs:0"]},{"text":"fmt::Display","count":5,"locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"]},{"text":"std::fmt::Display","count":1,"locs":["src/lib.rs:0"]}]}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":19}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":19,"mix":{"pub":19}}
 {"k":"doc","path":"crate","text":"Base lists: short names, long paths, wrapping, collisions, and supertraits."}
 {"k":"enum","path":"Error","rust":"pub enum Error { Failed }","loc":"src/lib.rs:0","derives":["Debug"]}
 {"k":"doc","path":"Error","text":"The crate's own error, whose name collides with std::error::Error."}
@@ -134,24 +134,24 @@
 {"k":"struct","path":"Renamed","rust":"pub struct Renamed","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Renamed","text":"The standard Display through a renaming use."}
 {"k":"impl","path":"Renamed","rust":"impl D for Renamed","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"bare","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"bare","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"bare","text":"The standard Display after a use of the trait itself."}
 {"k":"struct","path":"bare::Imported","rust":"pub struct Imported","loc":"src/lib.rs:0"}
 {"k":"doc","path":"bare::Imported","text":"Display through the use, which is the standard one."}
 {"k":"impl","path":"bare::Imported","rust":"impl Display for Imported","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"custom","loc":"src/lib.rs:0","vis":"public","types":2}
+{"k":"mod","path":"custom","loc":"src/lib.rs:0","types":2,"mix":{"pub":2}}
 {"k":"doc","path":"custom","text":"A trait of this crate named Display."}
 {"k":"trait","path":"custom::Display","rust":"pub trait Display","loc":"src/lib.rs:0","named_by":["custom::Homemade"]}
 {"k":"doc","path":"custom::Display","text":"The crate's own Display."}
 {"k":"struct","path":"custom::Homemade","rust":"pub struct Homemade","loc":"src/lib.rs:0"}
 {"k":"doc","path":"custom::Homemade","text":"The crate's Display, which prints its path on its own line."}
 {"k":"impl","path":"custom::Homemade","rust":"impl Display for Homemade","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"globbed","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"globbed","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"globbed","text":"A Display that can only come from a glob import."}
 {"k":"struct","path":"globbed::Starred","rust":"pub struct Starred","loc":"src/lib.rs:0"}
 {"k":"doc","path":"globbed::Starred","text":"A Display from the glob, which prints as written."}
 {"k":"impl","path":"globbed::Starred","rust":"impl Display for Starred","locs":["src/lib.rs:0"]}
-{"k":"mod","path":"other","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"other","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"other","text":"Another crate's trait that is also named Display."}
 {"k":"struct","path":"other::Foreign","rust":"pub struct Foreign","loc":"src/lib.rs:0"}
 {"k":"doc","path":"other::Foreign","text":"The other crate's Display, which stays apart from the standard one."}

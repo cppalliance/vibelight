@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"facade","target":"lib","dir":"crates/facade"}
+{"k":"vibelight-outline","schema":2,"crate":"facade","target":"lib","dir":"crates/facade"}
 {"k":"modules","items":[{"path":"crate","from":16,"to":28}]}
 {"k":"lead","id":"one-observed-trait-impl","mode":"resolved","subjects":["::alpha::Reads","Panel"],"evidence":"one impl in the run: `impl alpha::Reads for Panel`","locs":["alpha:src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-impls","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Panel::meter"],"evidence":"no hit of `meter` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -13,7 +13,7 @@
 {"k":"surface","path":"show","kind":"fn"}
 {"k":"external","path":"alpha::Meter","uses":1,"named_by":["Panel"],"summary":"A meter that reads a gauge of beta."}
 {"k":"external","path":"alpha::Reads","uses":2,"named_by":["crate","Panel"],"summary":"A trait other crates implement."}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"functions":1,"reexports":3,"mix":{"pub":5}}
 {"k":"doc","path":"crate","text":"Facade: re-exports the workspace's public types."}
 {"k":"use","path":"Meter","rust":"pub use alpha::Meter","loc":"src/lib.rs:0"}
 {"k":"use","path":"Reads","rust":"pub use alpha::Reads","loc":"src/lib.rs:0"}

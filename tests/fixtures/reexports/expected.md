@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"reexports","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"reexports","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":18,"to":26},{"path":"inner","from":27,"to":34}]}
 {"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["inner::helper"],"evidence":"1 observed uses, all inside `reexports`; no other target of the run writes `helper`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
 {"k":"lead","id":"no-observed-external-use","mode":"lexical","subjects":["inner::Other"],"evidence":"2 observed uses, all inside `reexports`; no other target of the run writes `Other`","locs":["src/lib.rs:0"],"limits":["external-consumers","macros"]}
@@ -15,7 +15,7 @@
 {"k":"surface","path":"OldThing","kind":"struct","item":"inner::Thing"}
 {"k":"surface","path":"Other","kind":"struct","item":"inner::Other"}
 {"k":"surface","path":"Thing","kind":"struct","item":"inner::Thing"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0"}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","reexports":7,"mix":{"pub":6,"pub(crate)":1}}
 {"k":"doc","path":"crate","text":"Re-exports."}
 {"k":"use","path":"*","rust":"pub use inner::*","loc":"src/lib.rs:0"}
 {"k":"use","path":"Other","rust":"pub use inner::Other","loc":"src/lib.rs:0"}
@@ -24,11 +24,11 @@
 {"k":"use","path":"OldThing","rust":"pub use inner::Thing as OldThing","loc":"src/lib.rs:0"}
 {"k":"use","path":"assist","rust":"pub use inner::helper as assist","loc":"src/lib.rs:0"}
 {"k":"use","path":"CrateThing","rust":"pub(crate) use inner::Thing as CrateThing","loc":"src/lib.rs:0"}
-{"k":"mod","path":"inner","loc":"src/lib.rs:0","vis":"private","types":2,"functions":{"public":1}}
+{"k":"mod","path":"inner","loc":"src/lib.rs:0","types":2,"functions":1,"mix":{"pub":3}}
 {"k":"doc","path":"inner","text":"Holds the items."}
-{"k":"struct","path":"inner::Thing","rust":"pub struct Thing","loc":"src/lib.rs:0","reexported_by":["crate"]}
+{"k":"struct","path":"inner::Thing","rust":"pub struct Thing","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"]}
 {"k":"doc","path":"inner::Thing","text":"A thing."}
-{"k":"struct","path":"inner::Other","rust":"pub struct Other","loc":"src/lib.rs:0","reexported_by":["crate"]}
+{"k":"struct","path":"inner::Other","rust":"pub struct Other","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"]}
 {"k":"doc","path":"inner::Other","text":"Another thing."}
-{"k":"fn","path":"inner::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"inner::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"inner::helper","text":"A helper."}

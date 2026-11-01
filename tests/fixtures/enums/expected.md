@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"enums","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"enums","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":13,"to":38}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Event","Event::Finished","Event::Started","Level::Low","Level::max","Shape","Shape::Named","Shape::Tuple","Shape::Unit","Shape::Valued"],"evidence":"no hit of `Event` in the scanned sources beyond its 1 declaration; no hit of `Finished` in the scanned sources beyond its 1 declaration; no hit of `Started` in the scanned sources beyond its 1 declaration; no hit of `Low` in the scanned sources beyond its 1 declaration; no hit of `max` in the scanned sources beyond its 1 declaration; no hit of `Shape` in the scanned sources beyond its 1 declaration; no hit of `Named` in the scanned sources ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":10}
 {"k":"more","path":"Event","id":"no-observed-name-use","field":"evidence","part":2,"text":"beyond its 1 declaration; no hit of `Tuple` in the scanned sources beyond its 1 declaration; no hit of `Unit` in the scanned sources beyond its 1 declaration; no hit of `Valued` in the scanned sources beyond its 1 declaration"}
@@ -10,7 +10,7 @@
 {"k":"surface","path":"Event","kind":"enum"}
 {"k":"surface","path":"Level","kind":"enum"}
 {"k":"surface","path":"Shape","kind":"enum"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
 {"k":"doc","path":"crate","text":"Enum shapes."}
 {"k":"enum","path":"Shape","rust":"pub enum Shape { Unit, Tuple(u8, String), Named { x: i32, y: i32 }, Valued = 4 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Shape","text":"Every variant shape."}

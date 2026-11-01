@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"body_uses","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"body_uses","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":22,"to":49}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["list"],"evidence":"no hit of `list` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Lister"],"evidence":"no hit of `Lister` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -19,7 +19,7 @@
 {"k":"surface","path":"Probe","kind":"struct"}
 {"k":"surface","path":"Runner","kind":"struct"}
 {"k":"surface","path":"Wrapped","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":7,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":7,"functions":1,"mix":{"pub":8}}
 {"k":"doc","path":"crate","text":"Types that only function bodies name."}
 {"k":"struct","path":"Listed","rust":"pub struct Listed","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Listed","text":"Named only inside a free function's body."}

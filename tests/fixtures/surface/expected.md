@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"surface","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":44,"to":63},{"path":"api","from":64,"to":67},{"path":"api::v1","from":68,"to":73},{"path":"detail","from":74,"to":79},{"path":"detail::tools","from":80,"to":83},{"path":"prelude","from":84,"to":89},{"path":"values","from":90,"to":98},{"path":"values::inner","from":99,"to":101}]}
+{"k":"vibelight-outline","schema":2,"crate":"surface","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":44,"to":63},{"path":"api","vis":"pub","from":64,"to":67},{"path":"api::v1","vis":"pub","from":68,"to":73},{"path":"detail","from":74,"to":79},{"path":"detail::tools","vis":"pub","from":80,"to":83},{"path":"prelude","from":84,"to":89},{"path":"values","from":90,"to":98},{"path":"values::inner","from":99,"to":101}]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["detail::tools"],"evidence":"holds only `Tool`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"single-item-module","mode":"direct-syntax","subjects":["values::inner"],"evidence":"holds only `deep`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["detail::helper"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/lib.rs:0"],"limits":["macros"]}
@@ -41,7 +41,7 @@
 {"k":"surface","path":"Marker","kind":"struct","item":"prelude::Marker"}
 {"k":"surface","path":"MAX","kind":"value","item":"values::MAX"}
 {"k":"surface","path":"start","kind":"fn"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":1,"values":1,"reexports":8,"mix":{"pub":11,"pub(crate)":1}}
 {"k":"doc","path":"crate","text":"The public surface of a library."}
 {"k":"use","path":"Handle","rust":"pub use detail::Handle","loc":"src/lib.rs:0"}
 {"k":"use","path":"kit","rust":"pub use detail::tools as kit","loc":"src/lib.rs:0"}
@@ -61,41 +61,41 @@
 {"k":"doc","path":"Internal","text":"A crate-only type."}
 {"k":"struct","path":"Fake","rust":"pub struct Fake","loc":"src/lib.rs:0","cfgs":["any(test, feature = \"test-support\")"],"test_support":true}
 {"k":"doc","path":"Fake","text":"A fake for tests and benches."}
-{"k":"mod","path":"api","loc":"src/lib.rs:0","vis":"public"}
+{"k":"mod","path":"api","loc":"src/lib.rs:0","values":1,"mix":{"pub":1}}
 {"k":"doc","path":"api","text":"The public API."}
 {"k":"const","path":"api::VERSION","rust":"pub const VERSION: u8","value":"1","loc":"src/lib.rs:0","body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"api::VERSION","text":"The version in use."}
-{"k":"mod","path":"api::v1","loc":"src/lib.rs:0","vis":"public","types":1,"functions":{"public":1}}
+{"k":"mod","path":"api::v1","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"api::v1","text":"The first version."}
 {"k":"struct","path":"api::v1::Request","rust":"pub struct Request","loc":"src/lib.rs:0","named_by":["api::v1"]}
 {"k":"doc","path":"api::v1::Request","text":"A request."}
 {"k":"fn","path":"api::v1::send","sig":"pub fn send(request: Request) -> u8","loc":"src/lib.rs:0","body":{"statements":2,"tokens":8},"ops":["request"]}
 {"k":"doc","path":"api::v1::send","text":"Sends a request."}
-{"k":"mod","path":"detail","loc":"src/lib.rs:0","vis":"private","types":1,"functions":{"public":1}}
+{"k":"mod","path":"detail","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"detail","text":"Hidden helpers."}
-{"k":"struct","path":"detail::Handle","rust":"pub struct Handle","loc":"src/lib.rs:0","reexported_by":["crate"]}
+{"k":"struct","path":"detail::Handle","rust":"pub struct Handle","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"]}
 {"k":"doc","path":"detail::Handle","text":"A handle made public through a re-export."}
 {"k":"fn","path":"detail::helper","sig":"pub fn helper()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"detail::helper","text":"A helper that stays hidden."}
-{"k":"mod","path":"detail::tools","loc":"src/lib.rs:0","vis":"public","types":1}
+{"k":"mod","path":"detail::tools","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"detail::tools","text":"Tools reached only through a re-export."}
 {"k":"struct","path":"detail::tools::Tool","rust":"pub struct Tool","loc":"src/lib.rs:0"}
 {"k":"doc","path":"detail::tools::Tool","text":"A tool."}
-{"k":"mod","path":"prelude","loc":"src/lib.rs:0","vis":"private","types":1,"functions":{"public":1}}
+{"k":"mod","path":"prelude","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"prelude","text":"Names a glob brings in."}
-{"k":"struct","path":"prelude::Marker","rust":"pub struct Marker","loc":"src/lib.rs:0"}
+{"k":"struct","path":"prelude::Marker","rust":"pub struct Marker","loc":"src/lib.rs:0","eff":"pub"}
 {"k":"doc","path":"prelude::Marker","text":"A marker a glob re-exports."}
-{"k":"fn","path":"prelude::mark","sig":"pub fn mark()","loc":"src/lib.rs:0","body":{"statements":0,"tokens":2}}
+{"k":"fn","path":"prelude::mark","sig":"pub fn mark()","loc":"src/lib.rs:0","eff":"pub","body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"prelude::mark","text":"A function a glob re-exports."}
-{"k":"mod","path":"values","loc":"src/lib.rs:0","vis":"private","functions":{"public":1}}
+{"k":"mod","path":"values","loc":"src/lib.rs:0","functions":1,"values":2,"reexports":1,"mix":{"pub":4}}
 {"k":"doc","path":"values","text":"Values made public through re-exports."}
 {"k":"use","path":"values::deep","rust":"pub use self::inner::deep","loc":"src/lib.rs:0"}
-{"k":"fn","path":"values::build","sig":"pub fn build() -> u8","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":3}}
+{"k":"fn","path":"values::build","sig":"pub fn build() -> u8","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"values::build","text":"Builds a value."}
-{"k":"const","path":"values::MAX","rust":"pub const MAX: u8","value":"9","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
+{"k":"const","path":"values::MAX","rust":"pub const MAX: u8","value":"9","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"values::MAX","text":"The largest value."}
-{"k":"static","path":"values::CURRENT","rust":"pub static CURRENT: u8","value":"0","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
+{"k":"static","path":"values::CURRENT","rust":"pub static CURRENT: u8","value":"0","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"values::CURRENT","text":"The current value."}
-{"k":"mod","path":"values::inner","loc":"src/lib.rs:0","vis":"private","functions":{"public":1}}
-{"k":"fn","path":"values::inner::deep","sig":"pub fn deep()","loc":"src/lib.rs:0","reexported_by":["crate","values"],"body":{"statements":0,"tokens":2}}
+{"k":"mod","path":"values::inner","loc":"src/lib.rs:0","functions":1,"mix":{"pub":1}}
+{"k":"fn","path":"values::inner::deep","sig":"pub fn deep()","loc":"src/lib.rs:0","eff":"pub","reexported_by":["crate","values"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"values::inner::deep","text":"A function two re-exports away."}

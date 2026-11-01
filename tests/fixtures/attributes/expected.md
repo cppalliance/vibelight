@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"attributes","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"attributes","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":20,"to":41}]}
 {"k":"lead","id":"field-and-accessor","mode":"direct-syntax","subjects":["Record::name"],"evidence":"`pub name` and `fn name`","locs":["src/lib.rs:0","src/lib.rs:0"]}
 {"k":"lead","id":"compat-shim","mode":"direct-syntax","subjects":["helper"],"evidence":"`#[deprecated]`","locs":["src/lib.rs:0"]}
@@ -17,7 +17,7 @@
 {"k":"surface","path":"Record","kind":"struct"}
 {"k":"surface","path":"Row","kind":"struct","item":"Record"}
 {"k":"wire-keys","path":"Record","keys":["cache","count","id"],"loc":"src/lib.rs:0"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":{"public":1}}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":2,"functions":1,"reexports":1,"mix":{"pub":4}}
 {"k":"doc","path":"crate","text":"Attributes that shape an API or its wire format."}
 {"k":"use","path":"Row","rust":"pub use Record as Row","loc":"src/lib.rs:0"}
 {"k":"enum","path":"Level","rust":"pub enum Level { #[deprecated(since = \"1.2\", note = \"use High\")] Top = 2, Low = 0 }","loc":"src/lib.rs:0","attrs":["non_exhaustive","repr(u8)"],"derives":["Clone","Copy"]}

@@ -33,9 +33,15 @@ pub(crate) enum Mode {
 /// The lists whose entries sort with [`name_order`].
 const NAMED: [&str; 6] = ["attributes", "attrs", "cfgs", "derives", "lints", "limits"];
 /// The lists whose entries are paths, sorted segment by segment.
-const PATHS: [&str; 4] = ["named_by", "reexported_by", "direct_callers", "users"];
+const PATHS: [&str; 3] = ["named_by", "reexported_by", "direct_callers"];
 /// The lists whose entries sort as plain text.
 const PLAIN: [&str; 4] = ["crates", "tests", "ops", "keys"];
+/// The lists of maps whose `path` is a module's, sorted segment by segment
+/// with `crate` first.
+const MODULES: [&str; 1] = ["uses"];
+
+/// The section of the catalog's records, which print last.
+const CATALOG: usize = 8;
 
 /// A record with the parts that continue it, joined.
 struct Joined {
@@ -149,10 +155,11 @@ fn section(record: &Record) -> usize {
         Record::Modules(_) => 1,
         Record::Lead(_) => 2,
         Record::Surface(_) => 3,
-        Record::External(_) => 4,
-        Record::Spelling(_) => 5,
-        Record::WireKeys(_) => 6,
-        _ => 7,
+        Record::Deps(_) => 4,
+        Record::External(_) => 5,
+        Record::Spelling(_) => 6,
+        Record::WireKeys(_) => 7,
+        _ => CATALOG,
     }
 }
 
@@ -253,7 +260,7 @@ fn ranges(records: &[Record], starts: &[usize], last: usize) -> Result<(), Strin
     let Some(Record::Modules(modules)) = records.get(1) else {
         return Err("line 3 is no modules record".to_owned());
     };
-    let first = records.iter().position(|r| section(r) == 7);
+    let first = records.iter().position(|r| section(r) == CATALOG);
     let mut next = first.map_or(last + 1, |i| starts[i]);
     let mut previous: Option<Vec<String>> = None;
     let mut begun = BTreeSet::new();
@@ -351,18 +358,26 @@ fn walk(value: &Value, mode: Mode) -> Result<(), String> {
     }
 }
 
-/// Checks that a list of names is sorted, each entry once.
+/// Checks that a list of names, or of maps named by a module's `path`, is
+/// sorted, each entry once.
 fn sorted(key: &str, items: &[Value]) -> Result<(), String> {
-    let texts: Vec<&str> = items.iter().filter_map(Value::as_str).collect();
+    let modules = MODULES.contains(&key);
+    let texts: Vec<&str> = (items.iter())
+        .map(|item| if modules { &item["path"] } else { item })
+        .filter_map(Value::as_str)
+        .collect();
     if texts.len() != items.len() {
         return Ok(());
     }
     let segments = |s: &str| -> Vec<String> { s.split("::").map(str::to_owned).collect() };
+    let module = |s: &str| if s == "crate" { vec![] } else { segments(s) };
     let less = |a: &str, b: &str| {
         if NAMED.contains(&key) {
             name_order(a, b) == Ordering::Less
         } else if PATHS.contains(&key) {
             path_order(&segments(a), &segments(b)).then_with(|| a.cmp(b)) == Ordering::Less
+        } else if modules {
+            path_order(&module(a), &module(b)) == Ordering::Less
         } else if PLAIN.contains(&key) {
             a < b
         } else {

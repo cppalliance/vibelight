@@ -1,6 +1,6 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"order_modules","target":"lib"}
-{"k":"modules","items":[{"path":"crate","from":23,"to":28},{"path":"engine","from":29,"to":36},{"path":"plan","from":37,"to":48}]}
+{"k":"vibelight-outline","schema":2,"crate":"order_modules","target":"lib"}
+{"k":"modules","items":[{"path":"crate","from":25,"to":30},{"path":"engine","vis":"pub","from":31,"to":38},{"path":"plan","vis":"pub","from":39,"to":50}]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["engine"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"pub-mod-surface","mode":"resolved","subjects":["plan"],"evidence":"`pub mod` on the surface: its `pub` items reach users by its path","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"module-cycle","mode":"resolved","subjects":["engine","plan"],"evidence":"`engine` uses `plan`; `plan` uses `engine`","locs":["src/lib.rs:0","src/lib.rs:0"]}
@@ -20,13 +20,15 @@
 {"k":"surface","path":"plan::launch","kind":"fn"}
 {"k":"surface","path":"plan::Plan","kind":"struct"}
 {"k":"surface","path":"plan::Step","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
+{"k":"deps","path":"engine","uses":[{"path":"plan","n":1}]}
+{"k":"deps","path":"plan","uses":[{"path":"engine","n":1}]}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"crate","text":"Declarations shown one module at a time."}
 {"k":"struct","path":"Orphan","rust":"pub struct Orphan","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Orphan","text":"A value nothing uses."}
 {"k":"impl","path":"Box<Orphan>","rust":"impl Clone for Box<Orphan>","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Box<Orphan>::clone","sig":"fn clone(&self) -> Self","loc":"src/lib.rs:0","impl":"impl Clone for Box<Orphan>","body":{"statements":1,"tokens":9,"single":"call Box::new"}}
-{"k":"mod","path":"engine","loc":"src/lib.rs:0","vis":"public","types":1,"functions":{"public":1}}
+{"k":"mod","path":"engine","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
 {"k":"doc","path":"engine","text":"Runs things."}
 {"k":"struct","path":"engine::Runner","rust":"pub struct Runner { pub plan: crate::plan::Plan }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"engine::Runner","text":"A runner."}
@@ -34,7 +36,7 @@
 {"k":"doc","path":"engine::Runner::plan","text":"Its plan."}
 {"k":"fn","path":"engine::start","sig":"pub fn start()","loc":"src/lib.rs:0","direct_callers":["plan::launch"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"engine::start","text":"Starts the engine."}
-{"k":"mod","path":"plan","loc":"src/lib.rs:0","vis":"public","types":3,"functions":{"public":1}}
+{"k":"mod","path":"plan","loc":"src/lib.rs:0","types":3,"functions":1,"mix":{"pub":4}}
 {"k":"doc","path":"plan","text":"Plans runs."}
 {"k":"struct","path":"plan::Plan","rust":"pub struct Plan { pub steps: Vec<Step> }","loc":"src/lib.rs:0","named_by":["engine::Runner"]}
 {"k":"doc","path":"plan::Plan","text":"A plan."}

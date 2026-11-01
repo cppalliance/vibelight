@@ -58,7 +58,7 @@ fn a_crate_with_slop_prints_its_leads_first_with_modes_and_limits() {
     let text = fs::read_to_string(out.join("sloppy.md")).expect("the outline was written");
     let records = records(&text);
     assert_eq!(records[0]["k"], "vibelight-outline");
-    assert_eq!(records[0]["schema"], 1);
+    assert_eq!(records[0]["schema"], 2);
     assert_eq!(records[1]["k"], "modules");
     let leads: Vec<&Value> = records.iter().filter(|r| r["k"] == "lead").collect();
     let heads = ["vibelight-outline", "modules", "lead"];

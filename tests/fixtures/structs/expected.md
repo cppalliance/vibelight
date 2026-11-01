@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"structs","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"structs","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":20,"to":53}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Buffer","Buffer::data","Empty","Index::get","Marker","Meters","Pair","Point","Point::x","Point::y","Span","Token::new"],"evidence":"no hit of `Buffer` in the scanned sources beyond its 1 declaration; no hit of `data` in the scanned sources beyond its 1 declaration; no hit of `Empty` in the scanned sources beyond its 1 declaration; no hit of `get` in the scanned sources beyond its 1 declaration; no hit of `Marker` in the scanned sources beyond its 1 declaration; no hit of `Meters` in the scanned sources beyond its 1 declaration; no hit of `Pair` in the scanned sources ","locs":["src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0","src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":12}
 {"k":"more","path":"Buffer","id":"no-observed-name-use","field":"evidence","part":2,"text":"beyond its 1 declaration; no hit of `Point` in the scanned sources beyond its 1 declaration; no hit of `x` in the scanned sources beyond its 1 declaration; no hit of `y` in the scanned sources beyond its 1 declaration; no hit of `Span` in the scanned sources beyond its 1 declaration; no hit of `new` in the scanned sources beyond its 1 declaration"}
@@ -17,7 +17,7 @@
 {"k":"surface","path":"Point","kind":"struct"}
 {"k":"surface","path":"Span","kind":"struct"}
 {"k":"surface","path":"Token","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":9}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":9,"mix":{"pub":9}}
 {"k":"doc","path":"crate","text":"Struct shapes: named, tuple, unit, and generic."}
 {"k":"struct","path":"Point","rust":"pub struct Point { pub x: i32, pub y: i32, label: String }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Point","text":"A named struct with public and private fields."}

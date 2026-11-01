@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"extern_block","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"extern_block","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":12,"to":21}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["abs"],"evidence":"no hit of `abs` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["errno"],"evidence":"no hit of `errno` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
@@ -9,7 +9,7 @@
 {"k":"surface","path":"errno","kind":"value"}
 {"k":"surface","path":"exit","kind":"fn"}
 {"k":"surface","path":"GetTickCount","kind":"fn"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0"}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","functions":4,"values":1,"mix":{"pub":4,"pub(self)":1}}
 {"k":"doc","path":"crate","text":"Extern blocks."}
 {"k":"extern","path":"abs","rust":"extern \"C\" { pub fn abs(x: i32) -> i32 }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"abs","text":"Absolute value."}

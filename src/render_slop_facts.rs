@@ -1,12 +1,13 @@
 //! The facts that the records of one target's outline carry: what names
-//! each declaration in its signatures, what re-exports each item, where
-//! other targets and test code are observed to use an item, who calls a
-//! function directly, and what each body holds. Every list is sorted, each
-//! entry once.
+//! each declaration in its signatures, what re-exports each item and how
+//! far that makes it reach, where other targets and test code are observed
+//! to use an item, who calls a function directly, and what each body holds.
+//! Every list is sorted, each entry once.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
+use crate::access::{narrowed, spell};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::analysis_paths::PathKind;
@@ -171,6 +172,24 @@ impl<'a> Facts<'a> {
         };
         let found = self.reexported_by.get(&at)?;
         some(sorted_paths(found.iter().cloned()))
+    }
+
+    /// Spells, from its module, how far a declaration or a module item of
+    /// the target reaches, when a re-export makes that differ from its
+    /// module's reach narrowed by its own visibility.
+    pub(crate) fn eff(&self, item: ItemRef) -> Option<String> {
+        let AnalysisTarget { run, target: t } = self.target;
+        let (krate, accesses) = (&run.krates[t], &run.accesses[t]);
+        let (reach, vis, m) = match item {
+            ItemRef::Decl(d) => (accesses.decls[d], krate.decls[d].vis, krate.decls[d].module),
+            ItemRef::Value(at) => {
+                let vis = krate.modules[at.module].items[at.item].vis;
+                (accesses.value(at), vis, at.module)
+            }
+            _ => return None,
+        };
+        let expected = narrowed(krate, accesses.modules[m], vis, m);
+        (expected != Some(reach)).then(|| spell(krate, reach, m))
     }
 
     /// Returns the other targets observed to use an item of the target, and

@@ -355,11 +355,11 @@ fn one_named_crate_with_nothing_to_outline_still_fails() {
 }
 
 const ROOTED: &str = r#"*Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"rooted","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"rooted","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":6,"to":9}]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Root"],"evidence":"no hit of `Root` in the scanned sources beyond its 1 declaration","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"]}
 {"k":"surface","path":"Root","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
 {"k":"doc","path":"crate","text":"The root package."}
 {"k":"struct","path":"Root","rust":"pub struct Root","loc":"src/lib.rs:0"}
 {"k":"doc","path":"Root","text":"A root type."}

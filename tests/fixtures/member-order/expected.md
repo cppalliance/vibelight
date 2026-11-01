@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":1,"crate":"member_order","target":"lib"}
+{"k":"vibelight-outline","schema":2,"crate":"member_order","target":"lib"}
 {"k":"modules","items":[{"path":"crate","from":20,"to":50}]}
 {"k":"lead","id":"lint-suppression","mode":"direct-syntax","subjects":["Scrambled"],"evidence":"`#[allow(non_snake_case)]`","locs":["src/lib.rs:0"]}
 {"k":"lead","id":"no-observed-name-use","mode":"lexical","subjects":["Grouped","Grouped::build","Grouped::LIMIT","Grouped::member","Grouped::Out","Order","Order::Alpha","Order::Mike","Order::Zulu","Scrambled::Alpha","Scrambled::alpha","Scrambled::Apply","Scrambled::apply","Scrambled::make","Scrambled::MAX","Scrambled::zed"],"evidence":"no hit of `Grouped` in the scanned sources beyond its 1 declaration; no hit of `build` in the scanned sources beyond its 1 declaration; no hit of `LIMIT` in the scanned sources beyond its 1 declaration; no hit of `member` in the scanned sources beyond its 1 declaration; no hit of `Out` in the scanned sources beyond its 1 declaration; no hit of `Order` in the scanned sources beyond its 1 declaration; no hit of `Alpha` in the scanned sources ","locs":["src/lib.rs:0"],"limits":["external-consumers","generated-code","macros"],"module":"crate","count":18}
@@ -17,7 +17,7 @@
 {"k":"surface","path":"Order","kind":"enum"}
 {"k":"surface","path":"Scrambled","kind":"struct"}
 {"k":"surface","path":"Triple","kind":"struct"}
-{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5}
+{"k":"mod","path":"crate","loc":"src/lib.rs:0","types":5,"mix":{"pub":5}}
 {"k":"doc","path":"crate","text":"Member order inside a block."}
 {"k":"struct","path":"Scrambled","rust":"pub struct Scrambled { pub zeta: u8, pub alpha: u8, beta: u8, pub Alpha: u8 }","loc":"src/lib.rs:0","lints":["allow(non_snake_case)"]}
 {"k":"doc","path":"Scrambled","text":"Members in scrambled order."}

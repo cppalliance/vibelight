@@ -7,7 +7,12 @@
 //! the item, `reexported_by` the modules that re-export it, `crates` the
 //! other targets of the run whose code is observed to use it, and `tests`
 //! the kinds of test, bench, example, build, and doc test code observed to
-//! use it. The body facts are `body`, `ops`, and `comments`.
+//! use it. The body facts are `body`, `ops`, and `comments`. `eff` spells
+//! how far a declaration or a module item reaches, from its own module,
+//! only when a re-export makes that differ from its module's reach
+//! narrowed by its own visibility.
+
+use std::collections::BTreeMap;
 
 #[cfg(test)]
 use serde::Deserialize;
@@ -15,38 +20,32 @@ use serde::Serialize;
 
 use crate::render_slop_schema::{Loc, absent};
 
-/// How many free functions a module has at each visibility.
-#[derive(Debug, Default, Serialize)]
-#[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
-pub(crate) struct VisCounts {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) public: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) internal: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) private: Option<usize>,
-}
-
-/// A module, first among its catalog records.
+/// A module, first among its catalog records. The counts take in what the
+/// module declares itself, extern items by their kind, and `mix` counts
+/// the same items by their written visibility.
 #[derive(Debug, Default, Serialize)]
 #[cfg_attr(test, derive(Deserialize), serde(deny_unknown_fields))]
 pub(crate) struct ModRecord {
     pub(crate) path: String,
     pub(crate) loc: Loc,
-    /// `public`, `internal`, or `private`; left out for the crate root.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) vis: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) lints: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) test_support: Option<bool>,
-    /// How many structs, enums, unions, traits, and aliases it declares.
+    /// Its structs, enums, unions, traits, and aliases.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) types: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) functions: Option<VisCounts>,
+    pub(crate) functions: Option<usize>,
+    /// Its constants and statics.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) values: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) reexports: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) mix: Option<BTreeMap<String, usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
     /// The comments with nothing after them in the module.
@@ -61,6 +60,8 @@ pub(crate) struct TypeRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
@@ -94,6 +95,8 @@ pub(crate) struct TraitRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
@@ -125,6 +128,8 @@ pub(crate) struct AliasRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     /// The header of the trait impl that holds it.
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
@@ -231,6 +236,8 @@ pub(crate) struct FnRecord {
     pub(crate) path: String,
     pub(crate) sig: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     /// The header of the trait impl that holds it.
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
@@ -275,6 +282,8 @@ pub(crate) struct ValueRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) value: Option<String>,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     #[serde(rename = "impl", skip_serializing_if = "Option::is_none")]
     pub(crate) impl_header: Option<String>,
     #[serde(skip_serializing_if = "absent")]
@@ -306,6 +315,8 @@ pub(crate) struct ExternRecord {
     pub(crate) path: String,
     pub(crate) rust: String,
     pub(crate) loc: Loc,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) eff: Option<String>,
     #[serde(skip_serializing_if = "absent")]
     pub(crate) cfgs: Option<Vec<String>>,
     #[serde(skip_serializing_if = "absent")]
