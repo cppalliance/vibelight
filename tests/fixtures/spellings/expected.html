@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,29 +58,30 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">spellings · Timer</a>
+<li><a href="#mod.spellings">spellings</a>
 <ul>
-<li><a href="#type.spellings.Clock">Clock</a></li>
+<li><a href="#mod.spellings.bare"><b>bare</b></a>
+<ul>
+<li><a href="#type.spellings.bare.Label"><b>Label</b></a></li>
 </ul>
 </li>
-<li><a href="#unconnected">Unconnected types</a>
+<li><a href="#type.spellings.Clock"><b>Clock</b></a></li>
+<li><a href="#mod.spellings.debug"><b>debug</b></a>
 <ul>
-<li><a href="#type.spellings.bare.Label">bare::Label</a></li>
-<li><a href="#type.spellings.debug.Dial">debug::Dial</a></li>
-<li><a href="#type.spellings.debug.Gauge">debug::Gauge</a></li>
-<li><a href="#type.spellings.debug.Knob">debug::Knob</a></li>
-<li><a href="#type.spellings.Duration">Duration</a></li>
-<li><a href="#type.spellings.other.Badge">other::Badge</a></li>
-<li><a href="#type.spellings.other.Pin">other::Pin</a></li>
-<li><a href="#type.spellings.Wrapper">Wrapper</a></li>
+<li><a href="#type.spellings.debug.Dial"><b>Dial</b></a></li>
+<li><a href="#type.spellings.debug.Gauge"><b>Gauge</b></a></li>
+<li><a href="#type.spellings.debug.Knob"><b>Knob</b></a></li>
 </ul>
 </li>
-<li><a href="#modules">Modules</a>
+<li><a href="#type.spellings.Duration"><b>Duration</b></a></li>
+<li><a href="#mod.spellings.other"><b>other</b></a>
 <ul>
-<li><a href="#mod.spellings">spellings</a></li>
-<li><a href="#mod.spellings.bare">bare</a></li>
-<li><a href="#mod.spellings.debug">debug</a></li>
-<li><a href="#mod.spellings.other">other</a></li>
+<li><a href="#type.spellings.other.Badge"><b>Badge</b></a></li>
+<li><a href="#type.spellings.other.Pin"><b>Pin</b></a></li>
+</ul>
+</li>
+<li><a href="#type.spellings.Timer"><b>Timer</b></a></li>
+<li><a href="#type.spellings.Wrapper"><b>Wrapper</b></a></li>
 </ul>
 </li>
 <li><a href="#spellings">Spellings</a></li>
@@ -94,11 +95,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -125,19 +128,21 @@ span.src{cursor:default}
 <li><a href="#type.spellings.Timer">Timer</a></li>
 <li><a href="#type.spellings.Wrapper">Wrapper</a></li>
 </ul>
-<hr>
-<h2 id="group.1">spellings · Timer</h2>
+<h2 id="mod.spellings">spellings</h2>
+<p class="anatomy">crate root: 4 types; pub 4</p>
 <h3 id="type.spellings.Timer">Timer</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> derive: serde::Serialize</p>
 <div class="doc mc-doc">
 <p><span class="c">A timer that names its laps.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Timer : Display
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Timer : Display
 {
+<span class="k">pub:</span>
     <span class="src">laps</span>: Map&lt;u32, String&gt;,
 <span class="gap"></span>    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
 <span class="gap"></span>    <span class="src">period</span>: ::std::time::Duration,
-<span class="gap"></span>    <span class="src">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="src">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
 <span class="gap"></span>    <span class="src">wait</span>(extra: std::time::Duration) -&gt; Vec&lt;String&gt;
 }</code></pre>
 <h3 id="type.spellings.Clock">Clock</h3>
@@ -145,94 +150,78 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A clock with an optional alarm.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Clock : Display
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Clock : Display
 {
+<span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">When the alarm rings; see </span><code><span class="c">core::option::Option</span></code><span class="c">.</span></div>    <span class="src">alarm</span>: Option&lt;u8&gt;,
 <span class="gap"></span>    <span class="src">label</span>: String,
 <span class="gap"></span>    <span class="src">snooze</span>: Option&lt;u8&gt;,
 <span class="gap"></span>    <span class="src">step</span>: core::time::Duration,
 }</code></pre>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
-<h3 id="type.spellings.bare.Label">bare::Label</h3>
-<div class="doc mc-doc">
-<p><span class="c">A label that shows itself through the standard Display.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Label : Display</code></pre>
-<h3 id="type.spellings.debug.Dial">debug::Dial</h3>
-<div class="doc mc-doc">
-<p><span class="c">A dial that writes Debug through the fmt module.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Dial : Debug</code></pre>
-<h3 id="type.spellings.debug.Gauge">debug::Gauge</h3>
-<div class="doc mc-doc">
-<p><span class="c">A gauge that derives Debug, which adds no spelling.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Gauge : Debug</code></pre>
-<h3 id="type.spellings.debug.Knob">debug::Knob</h3>
-<div class="doc mc-doc">
-<p><span class="c">A knob that writes Debug with its full path.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Knob : Debug</code></pre>
 <h3 id="type.spellings.Duration">Duration</h3>
 <div class="doc mc-doc">
 <p><span class="c">The crate's own Duration, so the standard one has no bare spelling to</span> <span class="c">prefer.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Duration</code></pre>
-<h3 id="type.spellings.other.Badge">other::Badge</h3>
-<div class="doc mc-doc">
-<p><span class="c">A badge that shows itself through the other crate's Display.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Badge
-    : other_crate::Display</code></pre>
-<h3 id="type.spellings.other.Pin">other::Pin</h3>
-<div class="doc mc-doc">
-<p><span class="c">A pin that names the other crate's Display by its full path.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Pin
-    : other_crate::Display</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Duration</code></pre>
 <h3 id="type.spellings.Wrapper">Wrapper</h3>
 <div class="doc mc-doc">
 <p><span class="c">A wrapper whose impl names std::string::String only in its self type,</span> <span class="c">which does not count.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Wrapper&lt;T&gt;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt;
 {
+<span class="k">pub:</span>
     <span class="src">inner</span>: T,
-<span class="gap"></span>    <span class="src">is_empty</span>() -&gt; bool
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="src">is_empty</span>() -&gt; bool
 <span class="gap"></span>    <span class="src">len</span>() -&gt; usize
 }</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.spellings">spellings</h3>
-<ul>
-<li><a href="#type.spellings.Clock">Clock</a></li>
-<li><a href="#type.spellings.Duration">Duration</a></li>
-<li><a href="#type.spellings.Timer">Timer</a></li>
-<li><a href="#type.spellings.Wrapper">Wrapper</a></li>
-</ul>
-<h3 id="mod.spellings.bare">bare</h3>
+<h2 id="mod.spellings.bare">bare</h2>
 <div class="doc mc-doc">
 <p><span class="c">The standard Display written bare after a use.</span></p>
 </div>
-<ul>
-<li><a href="#type.spellings.bare.Label">bare::Label</a></li>
-</ul>
-<h3 id="mod.spellings.debug">debug</h3>
+<p class="anatomy">pub mod: 1 type; pub 1</p>
+<h3 id="type.spellings.bare.Label"><span class="dim">bare::</span>Label</h3>
+<div class="doc mc-doc">
+<p><span class="c">A label that shows itself through the standard Display.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Label : Display</code></pre>
+<h2 id="mod.spellings.debug">debug</h2>
 <div class="doc mc-doc">
 <p><span class="c">Debug by derive and by hand. A derive name is never counted.</span></p>
 </div>
-<ul>
-<li><a href="#type.spellings.debug.Dial">debug::Dial</a></li>
-<li><a href="#type.spellings.debug.Gauge">debug::Gauge</a></li>
-<li><a href="#type.spellings.debug.Knob">debug::Knob</a></li>
-</ul>
-<h3 id="mod.spellings.other">other</h3>
+<p class="anatomy">pub mod: 3 types; pub 3</p>
+<h3 id="type.spellings.debug.Dial"><span class="dim">debug::</span>Dial</h3>
+<div class="doc mc-doc">
+<p><span class="c">A dial that writes Debug through the fmt module.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Dial : Debug</code></pre>
+<h3 id="type.spellings.debug.Gauge"><span class="dim">debug::</span>Gauge</h3>
+<div class="doc mc-doc">
+<p><span class="c">A gauge that derives Debug, which adds no spelling.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Gauge : Debug</code></pre>
+<h3 id="type.spellings.debug.Knob"><span class="dim">debug::</span>Knob</h3>
+<div class="doc mc-doc">
+<p><span class="c">A knob that writes Debug with its full path.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Knob : Debug</code></pre>
+<h2 id="mod.spellings.other">other</h2>
 <div class="doc mc-doc">
 <p><span class="c">Another crate's Display, which never merges with the standard one.</span></p>
 </div>
-<ul>
-<li><a href="#type.spellings.other.Badge">other::Badge</a></li>
-<li><a href="#type.spellings.other.Pin">other::Pin</a></li>
-</ul>
+<p class="anatomy">pub mod: 2 types; pub 2</p>
+<h3 id="type.spellings.other.Badge"><span class="dim">other::</span>Badge</h3>
+<div class="doc mc-doc">
+<p><span class="c">A badge that shows itself through the other crate's Display.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Badge
+    : other_crate::Display</code></pre>
+<h3 id="type.spellings.other.Pin"><span class="dim">other::</span>Pin</h3>
+<div class="doc mc-doc">
+<p><span class="c">A pin that names the other crate's Display by its full path.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Pin
+    : other_crate::Display</code></pre>
 <h2 id="spellings">Spellings</h2>
 <ul class="spellings">
 <li><code>other_crate::Display</code> is written 2 ways; pick one and search for the rest:

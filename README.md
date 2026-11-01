@@ -11,8 +11,8 @@ vibelight reads the Rust crates of a repository and writes an outline of each: e
 - **An index.** `.vibelight/index.md` lists each outline with its crate's folder, whether the run selected the crate or followed a path dependency to it, and its size. `html/index.html` is the same list as a page that links to each other page, so the HTML folder has a place to start.
 - **One outline per target.** The library, each binary, or a single `.rs` file gets `<target>.md` and `html/<target>.html`.
 - **Facts for analysis.** The markdown gives each declaration the facts vibelight observes across the run: what names and re-exports it, which other crates and which kinds of test code use it, which bodies call a function, and for each body, counts of its statements, loops, and error paths, the fields and parameters it touches, and its comments. Before the declarations come the leads: places that look like slop, each with an id, its evidence, the kind of evidence it rests on, and its known blind spots.
-- **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, and so does a re-exported function, constant, or static. The contents list sits in a sticky sidebar, and the colors follow your system's light or dark setting.
-- **Dependency order.** In the HTML, declarations are ordered by how they name each other. The types nothing else names come first, each followed by the types it owns: a type that only one other type names follows it directly, and a type that several name follows the last of them, so every type comes after the types that use it. The HTML splits the types into groups, one for each run of types in a module, each opened by a rule and a heading named for the module and the type that leads the group, such as `execute::scheduler · Scheduler`, and ends with a by-module index. The markdown goes module by module in path order instead, with each module's records in source order.
+- **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, and so does a re-exported function, constant, or static. The sidebar is the module tree, with each module's types, functions, constants, and statics, and the names on the public surface in bold; the colors follow your system's light or dark setting.
+- **Module by module, with visibility.** The HTML has one section per module in path order: its path, a line of what it declares and at which visibility, its types, then its items. Inside a module, types are ordered by how they name each other: a type follows the type that owns it, so every type comes after the types that use it. Each type and item prints with its visibility as written, members grouped under labels such as `pub:` and `pub(crate):`, and a dim `reaches pub(crate)` line marks a node that reaches less far than its visibility says. The markdown also goes module by module in path order, with each module's records in source order.
 - **Comments kept.** Doc comments and ordinary comments stay with the item they belong to. In the HTML a doc comment prints as prose, and one button in the sidebar hides or shows every member's comment. The markdown also keeps the comments inside each function body, with their lines.
 - **Every macro marked.** In the HTML, macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and the page lists them all at the top, each with a link to where it sits. The markdown has a `macro` record for each definition and invocation, and lists derives and attribute macros on the record they apply to.
 - **Macros looked through.** Each item-position invocation of one of the crate's own `macro_rules!` macros is expanded, and the items it writes are outlined like any other, in the invoking module and at the invocation's line. The markdown marks each such top-level record with `via`, such as `"via":"events!"`, and the HTML's `Source:` line says "written by `events!`". An invocation that cannot be expanded stays a mark and warns; other macros are not expanded.
@@ -142,12 +142,12 @@ The HTML file colors code the way an editor does. A link inside the page uses th
 
 Each HTML page opens with the stamp, the target's name, its crate docs, and a short **Legend** of its notation (see [The HTML notation](#the-html-notation)). It then has these parts:
 
-- **Contents:** links to every section and declaration.
+- **Sidebar:** the Legend, the Public surface, then the module tree: every module under its parent, each with its types, functions (shown with `()`), constants, and statics in path order, the names on the public surface in bold. Extern items and macros are not listed.
 - **The `MACROS:` line:** at the top of the page, a count of macros by kind, followed by one entry per macro, linking to the declaration or module that holds it. The sidebar does not link it.
-- **Public surface:** for a library, every path a user of the crate can name, walking public modules and `pub use` re-exports, globs and `#[macro_export]` macros included. Each path links to what it names, a re-export of another crate's item shows the path it comes from, and test-support code is marked `(test support)`.
-- **The types, in dependency order.** The types nothing else names are the roots, and they go by how many types they reach. Each root is followed by the types it owns: a type that only one other type names follows it directly, and a type that several name follows the last of them, so everything that names a type is above it. A type's parts go in the order of its fields (or variants, alias target, or supertraits) as declared, and then the types its methods name. Types that name each other in a cycle are placed together. A type that only a free function, a constant, a static, a re-export, or a function body outside its own impls names is in use, so it is a root. The HTML groups the types: a run of types in one module, judged by the first two segments of the module path, is a group with a rule above it and a heading named for the module and for the group's lead type, the first type that belongs to that module, and a type alone in its module joins the group before it. A heading that would still repeat takes ` (2)`, ` (3)`, and so on. In the sidebar, the group's other types sit under its caption by their path from the group's module on, such as `admission::Admission` under `execute::scheduler · Scheduler`, so a name is not repeated; the lead is left out of the list because the caption names it, and a type from another module keeps its full path. **Test support** holds types behind a `cfg` that lists `test` inside `any(...)`, such as `cfg(any(test, feature = "test-support"))`, kept apart from the production types, and **Unconnected types** holds types that name nothing and that nothing names. Each has its own heading and rule after the groups.
+- **Public surface:** for a library, every path a user of the crate can name, walking public modules and `pub use` re-exports, globs and `#[macro_export]` macros included. Each path links to what it names, a function, constant, or static to its own name in its module's items, a re-export of another crate's item shows the path it comes from, and test-support code is marked `(test support)`.
+- **One section per module,** in path order. The heading shows the module's parent path dim before its name, such as `engine::` then `parse`. Then come its `Source:` line, its docs, and its anatomy line: the module's visibility, how far it reaches when that is less, what it declares, and the same items by visibility, such as `pub mod, reaches pub(crate): 1 type, 2 functions; pub(crate) 2, pub(super) 1`. Then come the module's types and its block of items.
+- **The types of a module, in dependency order.** A type follows the type that owns it: a type that only one other type names follows it directly, and a type that several name follows the last of them, so everything that names a type is above it. The types nothing else names are the roots, and they go by how many types they reach. A type's parts go in the order of its fields (or variants, alias target, or supertraits) as declared, and then the types its methods name. Types that name each other in a cycle are placed together. A type that only a free function, a constant, a static, a re-export, or a function body outside its own impls names is in use, so it is a root. After a module's connected types come its types that name nothing and that nothing names, and then its test-support types, those behind a `cfg` that lists `test` inside `any(...)`, such as `cfg(any(test, feature = "test-support"))`. A type's heading shows its module's path dim before its name.
 - **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `implements: Trait for Type` lines.
-- **Modules:** one heading per module, with its docs, links to its declarations, and its re-exports, macros, constants, statics, free functions, and extern blocks.
 - **Spellings:** each item from outside the crate that the source writes in more than one way, with every spelling (see [Spellings](#spellings)).
 
 A section shows up only when it has something in it. Only the HTML file links type names.
@@ -207,16 +207,18 @@ The `modules` record says lines 16 to 33 hold the root module and lines 34 to 39
 
 ### The HTML notation
 
-Every type prints as one C++-style block, with the members of all its inherent impls merged in, wherever they are written. Here is a type whose fields and methods are all private:
+Every type prints as one C++-style block that uses Rust's item keyword and its visibility as written, with the members of all its inherent impls merged in, wherever they are written. Here is a public type whose fields and methods are all private:
 
 ```
 /// Holds the text the lexer is still reading.
-class Cursor
+pub struct Cursor
 {
-    pos: usize,
-
+pub(self):
     text: String,
 
+    pos: usize,
+
+pub(self):
     static new(text: String) -> Cursor
 
     bump() mut
@@ -227,28 +229,30 @@ class Cursor
 }
 ```
 
-Its body starts with a private member, so it prints as a `class`, which starts private, and needs no label. A body that starts with an `internal:` member also prints as a `class`, and keeps its `internal:` label. A body that starts public prints as a `struct`, which starts public. The data comes first, a type's fields or an enum's variants, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into three sections, in this order: public, then `internal:` for `pub(crate)`, `pub(super)`, and `pub(in path)`, which an internal crate uses for almost everything, then `private:`. The keyword sets the access at the top of the body, private for a `class` and public for a `struct`, and a label prints only where the access changes from the one in effect, as in a C++ header. So a visibility that holds both fields and methods prints its label twice, once for each part:
+The header names the type with `struct`, `enum`, `union`, or `trait` after its visibility, such as `pub(crate) enum Mode`, and a type with no visibility keyword shows none. The body lists first what has no visibility of its own: an enum's variants, a trait's items, and the type's macro marks. The data comes next, a struct's fields, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into sections by visibility, each opened by its label as written, such as `pub:`, `pub(crate):`, `pub(super):`, or `pub(in crate::engine):`, and `pub(self):` for no keyword. The widest comes first: `pub`, then what reaches the whole crate, then what reaches a deeper module, so a `pub(super)` in a module just under the root sits beside `pub(crate)`, which it means. A visibility that holds both fields and methods prints its label twice, once for each part:
 
 ```
-class Run
+pub struct Run
 {
-internal:
+pub(crate):
     id: RunId,
 
-private:
+pub(self):
     cache: HashMap<Key, Value>,
 
     name: String,
 
-public:
+pub:
     static new() -> Run
 
-internal:
+pub(crate):
     advance() mut
 }
 ```
 
-A type's own visibility does not print above its header. A module's trailing block marks each item that is not public with an `internal` or `private` line above it.
+A module's block of items uses the same labels. Its macro marks and its extern blocks come first, one extern block per ABI with its items labeled inside its braces, and then its re-exports, constants, statics, and functions, each under its label.
+
+A node that reaches less far than its visibility says, because a module around it is narrower, gets a dim line above it, such as `reaches pub(crate)` above a `pub struct` in a private module: that is the widest place its path can be named from. A member or an item that reaches exactly as far as its type or module leaves the line out, since the type or the module already says it.
 
 The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. The data keeps its declared order. The other members are grouped (associated types, constants, special members, static functions, then member functions) and sorted by name inside each group.
 
@@ -256,9 +260,9 @@ Comments stay with what they belong to. Each impl block's comments sit under a l
 
 One button in the sidebar hides every one of those member comments at once, and shows them again. It is a checkbox and a label, so it needs no script, it works with the keyboard, and the page still makes no network request. The comments are shown when the page opens. With them hidden, the first member sits right under the opening brace and members sit half a line apart. A comment on the same line as code, such as `field: u8, // note`, stays visible, because removing it would change that line. Attributes that shape the API or its wire format print as `[[...]]` at half contrast. A function or a field closes its line with them, such as `[[must_use]]`, `[[track_caller]]`, and `[[serde(rename = "id")]]`, and anything else gets them on lines above it, such as `[[non_exhaustive]]`, `[[repr(C)]]`, and `[[deprecated]]` on a variant. Other attributes stay hidden, and a signature has no semicolon. Each inherent impl's link in a `Source:` line is followed by the names of the members it adds.
 
-The page opens with a short Legend of this notation, so a reader of the page alone can follow it: `class` and `struct`, `static` and the `() mut` marker, the base list, the access labels and the data-first order of a type's body, `[[...]]`, `implements:`, `MACRO`, and how comments print.
+The page opens with a short Legend of this notation, so a reader of the page alone can follow it: the module sections and the sidebar, the item keywords and visibility, `static` and the `() mut` marker, the base list, the labels and the order of a type's body and a module's items, the `reaches` line, `[[...]]`, `implements:`, `MACRO`, and how comments print.
 
-Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together after the fields, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A name counts as standard only when it really resolves to `std`, `core`, or `alloc`, so another crate's `Display`, the crate's own `Display`, or a `Display` that only comes through a glob import gets its own line. A derive from another crate keeps its bold **MACRO** line above the block.
+Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together under the type's own label, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A name counts as standard only when it really resolves to `std`, `core`, or `alloc`, so another crate's `Display`, the crate's own `Display`, or a `Display` that only comes through a glob import gets its own line. A derive from another crate keeps its bold **MACRO** line above the block.
 
 ## Spellings
 

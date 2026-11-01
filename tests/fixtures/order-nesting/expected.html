@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,33 +58,25 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">order_nesting · Run</a>
+<li><a href="#mod.order_nesting">order_nesting</a>
 <ul>
-<li><a href="#type.order_nesting.Step">Step</a></li>
-<li><a href="#type.order_nesting.Trace">Trace</a></li>
-<li><a href="#type.order_nesting.Log">Log</a></li>
-<li><a href="#type.order_nesting.Config">Config</a></li>
-<li><a href="#type.order_nesting.Fork">Fork</a></li>
-<li><a href="#type.order_nesting.Left">Left</a></li>
-<li><a href="#type.order_nesting.Right">Right</a></li>
-<li><a href="#type.order_nesting.Base">Base</a></li>
-<li><a href="#type.order_nesting.Host">Host</a></li>
-<li><a href="#type.order_nesting.Store">Store</a></li>
-<li><a href="#type.order_nesting.Job">Job</a></li>
-<li><a href="#type.order_nesting.Able">Able</a></li>
-<li><a href="#type.order_nesting.Leaf">Leaf</a></li>
-<li><a href="#type.order_nesting.Report">Report</a></li>
-<li><a href="#type.order_nesting.Summary">Summary</a></li>
-</ul>
-</li>
-<li><a href="#unconnected">Unconnected types</a>
-<ul>
-<li><a href="#type.order_nesting.Orphan">Orphan</a></li>
-</ul>
-</li>
-<li><a href="#modules">Modules</a>
-<ul>
-<li><a href="#mod.order_nesting">order_nesting</a></li>
+<li><a href="#type.order_nesting.Able"><b>Able</b></a></li>
+<li><a href="#type.order_nesting.Base"><b>Base</b></a></li>
+<li><a href="#type.order_nesting.Config"><b>Config</b></a></li>
+<li><a href="#type.order_nesting.Fork"><b>Fork</b></a></li>
+<li><a href="#type.order_nesting.Host"><b>Host</b></a></li>
+<li><a href="#type.order_nesting.Job"><b>Job</b></a></li>
+<li><a href="#type.order_nesting.Leaf"><b>Leaf</b></a></li>
+<li><a href="#type.order_nesting.Left"><b>Left</b></a></li>
+<li><a href="#type.order_nesting.Log"><b>Log</b></a></li>
+<li><a href="#type.order_nesting.Orphan"><b>Orphan</b></a></li>
+<li><a href="#type.order_nesting.Report"><b>Report</b></a></li>
+<li><a href="#type.order_nesting.Right"><b>Right</b></a></li>
+<li><a href="#type.order_nesting.Run"><b>Run</b></a></li>
+<li><a href="#type.order_nesting.Step"><b>Step</b></a></li>
+<li><a href="#type.order_nesting.Store"><b>Store</b></a></li>
+<li><a href="#type.order_nesting.Summary"><b>Summary</b></a></li>
+<li><a href="#type.order_nesting.Trace"><b>Trace</b></a></li>
 </ul>
 </li>
 </ul>
@@ -97,11 +89,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -128,14 +122,15 @@ span.src{cursor:default}
 <li><a href="#type.order_nesting.Summary">Summary</a></li>
 <li><a href="#type.order_nesting.Trace">Trace</a></li>
 </ul>
-<hr>
-<h2 id="group.1">order_nesting · Run</h2>
+<h2 id="mod.order_nesting">order_nesting</h2>
+<p class="anatomy">crate root: 17 types; pub 17</p>
 <h3 id="type.order_nesting.Run">Run</h3>
 <div class="doc mc-doc">
 <p><span class="c">The main entry: it reaches the most declarations.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Run
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Run
 {
+<span class="k">pub:</span>
     <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
 <span class="gap"></span>    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
 }</code></pre>
@@ -143,8 +138,9 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">Named by Run; first names Trace, then Log, then Config.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Step
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Step
 {
+<span class="k">pub:</span>
     <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
 <span class="gap"></span>    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
 <span class="gap"></span>    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
@@ -153,26 +149,28 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">Named only by Step, before Log.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Trace</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Trace</code></pre>
 <h3 id="type.order_nesting.Log">Log</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Step.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Log</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Log</code></pre>
 <h3 id="type.order_nesting.Config">Config</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named by Run and by Step, so it follows Step's last part, not Run.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Config
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Config
 {
+<span class="k">pub:</span>
     <span class="src">limit</span>: u32,
 }</code></pre>
 <h3 id="type.order_nesting.Fork">Fork</h3>
 <div class="doc mc-doc">
 <p><span class="c">A diamond root: it reaches three declarations through two branches.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Fork
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Fork
 {
+<span class="k">pub:</span>
     <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
 <span class="gap"></span>    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
 }</code></pre>
@@ -180,97 +178,79 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">Named only by Fork.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Left
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Left
 {
+<span class="k">pub:</span>
     <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Right">Right</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Fork, after Left.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Right
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Right
 {
+<span class="k">pub:</span>
     <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Base">Base</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named by Left and by Right, so it follows Right, the last of them.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Base</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Base</code></pre>
 <h3 id="type.order_nesting.Host">Host</h3>
 <div class="doc mc-doc">
 <p><span class="c">A root whose public method prints before its private field, so its</span> <span class="c">block names Job first, yet its field type, Store, still comes first.</span></p>
 </div>
-<pre><code><span class="k">class</span> Host
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Host
 {
+<span class="k">pub(self):</span>
     <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
-<span class="gap"></span><span class="k">public:</span>
+<span class="gap"></span><span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Runs a job.</span></div>    <span class="src">run</span>(job: <a href="#type.order_nesting.Job">Job</a>)
 }</code></pre>
 <h3 id="type.order_nesting.Store">Store</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Host's field.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Store</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Store</code></pre>
 <h3 id="type.order_nesting.Job">Job</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Host's method.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Job</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Job</code></pre>
 <h3 id="type.order_nesting.Able">Able</h3>
 <div class="doc mc-doc">
 <p><span class="c">A root that ties Report on reach and comes first by path.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Able
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Able
 {
+<span class="k">pub:</span>
     <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Leaf">Leaf</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Able.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Leaf</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Leaf</code></pre>
 <h3 id="type.order_nesting.Report">Report</h3>
 <div class="doc mc-doc">
 <p><span class="c">A root that ties Able on reach.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Report
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Report
 {
+<span class="k">pub:</span>
     <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Summary">Summary</h3>
 <div class="doc mc-doc">
 <p><span class="c">Named only by Report.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Summary</code></pre>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Summary</code></pre>
 <h3 id="type.order_nesting.Orphan">Orphan</h3>
 <div class="doc mc-doc">
 <p><span class="c">Names nothing and nothing names it.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Orphan</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.order_nesting">order_nesting</h3>
-<ul>
-<li><a href="#type.order_nesting.Able">Able</a></li>
-<li><a href="#type.order_nesting.Base">Base</a></li>
-<li><a href="#type.order_nesting.Config">Config</a></li>
-<li><a href="#type.order_nesting.Fork">Fork</a></li>
-<li><a href="#type.order_nesting.Host">Host</a></li>
-<li><a href="#type.order_nesting.Job">Job</a></li>
-<li><a href="#type.order_nesting.Leaf">Leaf</a></li>
-<li><a href="#type.order_nesting.Left">Left</a></li>
-<li><a href="#type.order_nesting.Log">Log</a></li>
-<li><a href="#type.order_nesting.Orphan">Orphan</a></li>
-<li><a href="#type.order_nesting.Report">Report</a></li>
-<li><a href="#type.order_nesting.Right">Right</a></li>
-<li><a href="#type.order_nesting.Run">Run</a></li>
-<li><a href="#type.order_nesting.Step">Step</a></li>
-<li><a href="#type.order_nesting.Store">Store</a></li>
-<li><a href="#type.order_nesting.Summary">Summary</a></li>
-<li><a href="#type.order_nesting.Trace">Trace</a></li>
-</ul>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Orphan</code></pre>
 </main>
 </body>
 </html>

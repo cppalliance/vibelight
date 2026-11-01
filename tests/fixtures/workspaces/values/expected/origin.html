@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,10 +58,15 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#modules">Modules</a>
+<li><a href="#mod.origin">origin</a>
 <ul>
-<li><a href="#mod.origin">origin</a></li>
-<li><a href="#mod.origin.gauge">gauge</a></li>
+<li><a href="#mod.origin.gauge"><b>gauge</b></a>
+<ul>
+<li><a href="#const.origin.gauge.LIMIT"><b>LIMIT</b></a></li>
+<li><a href="#fn.origin.gauge.measure"><b>measure()</b></a></li>
+<li><a href="#static.origin.gauge.TOTAL"><b>TOTAL</b></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -74,11 +79,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -88,20 +95,20 @@ span.src{cursor:default}
 <h2 id="surface">Public surface</h2>
 <ul class="surface">
 <li><a href="#mod.origin.gauge">gauge</a></li>
-<li><a href="#mod.origin.gauge">gauge::LIMIT</a></li>
-<li><a href="#mod.origin.gauge">gauge::measure()</a></li>
-<li><a href="#mod.origin.gauge">gauge::TOTAL</a></li>
+<li><a href="#const.origin.gauge.LIMIT">gauge::LIMIT</a></li>
+<li><a href="#fn.origin.gauge.measure">gauge::measure()</a></li>
+<li><a href="#static.origin.gauge.TOTAL">gauge::TOTAL</a></li>
 </ul>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.origin">origin</h3>
-<h3 id="mod.origin.gauge">gauge</h3>
+<h2 id="mod.origin">origin</h2>
+<p class="anatomy">crate root</p>
+<h2 id="mod.origin.gauge">gauge</h2>
 <div class="doc mc-doc">
 <p><span class="c">Gauge values.</span></p>
 </div>
-<div class="doc mc-doc">
-<p><span class="c">The highest reading.</span></p>
-</div>
-<pre><code><span class="k">constexpr</span> <span class="src" id="const.origin.gauge.LIMIT">LIMIT</span>: u32 = 8
+<p class="anatomy">pub mod: 1 function, 2 values; pub 3</p>
+<pre><code><span class="k">pub:</span>
+<span class="c"> The highest reading.</span>
+<span class="k">constexpr</span> <span class="src" id="const.origin.gauge.LIMIT">LIMIT</span>: u32 = 8
 <span class="gap"></span><span class="c"> A running total.</span>
 <span class="k">static</span> <span class="src" id="static.origin.gauge.TOTAL">TOTAL</span>: u32 = 0
 <span class="gap"></span><span class="c"> Takes one reading.</span>

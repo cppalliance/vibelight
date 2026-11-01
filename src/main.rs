@@ -1,6 +1,7 @@
 //! Command-line entry point: writes a markdown and an HTML outline per target.
 
 mod access;
+mod access_stamp;
 #[cfg(test)]
 mod access_tests;
 mod analysis;
@@ -10,6 +11,7 @@ mod analysis_paths;
 #[cfg(test)]
 mod analysis_tests;
 mod analysis_uses;
+mod anatomy;
 mod attach;
 mod attrs;
 mod census;
@@ -41,6 +43,7 @@ mod collect_use_group;
 mod comments;
 mod config;
 mod document;
+mod document_body;
 mod document_kill;
 mod document_modules;
 mod document_sections;
@@ -51,7 +54,6 @@ mod exclude;
 mod flatten;
 mod folders;
 mod glob;
-mod groups;
 mod index;
 mod inputs;
 mod layout;

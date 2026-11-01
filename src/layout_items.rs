@@ -2,26 +2,34 @@
 
 use std::collections::BTreeMap;
 
+use crate::access::Access;
+use crate::access_stamp::Stamp;
 use crate::layout::{
     Block, Line, Span, above, code, const_line, fn_lines, key, line_text, mark_line, note_lines,
     plain,
 };
 use crate::layout_decl::{BodyParts, body};
-use crate::layout_groups::{Entry, empty_sections, join_groups, section, sort_entries};
+use crate::layout_groups::{
+    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries,
+};
 use crate::layout_marker::Marker;
 use crate::macros;
 use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, name_order};
 
-/// Builds a module's trailing block: the public items, then the internal
-/// and private ones, each section grouped as re-exports, macro marks,
-/// constants, statics, free functions, and extern blocks.
+/// Builds a module's trailing block: first what has no label of its own,
+/// macro marks, one extern block per ABI with its items labeled inside,
+/// and unsupported lines; then the items in sections by visibility, every
+/// section opened by its label and grouped as re-exports, constants,
+/// statics, and free functions; then comments with nothing after them.
 pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let module = &krate.modules[id];
-    let entry = |item: &Item, at: ValueRef| item_entry(krate, item, at);
-    let mut sections = empty_sections(6);
-    let mut foreign: [Vec<&Item>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    let shown = module.access.as_ref().and_then(Stamp::note);
+    let entry = |item: &Item, at: ValueRef| item_entry(krate, item, at, shown);
+    let mut sections = Sections::new();
+    let mut marks = Vec::new();
+    let mut foreign: Vec<&Item> = Vec::new();
     let mut unsupported = Vec::new();
-    let mut use_groups: BTreeMap<(usize, usize), Vec<Entry>> = BTreeMap::new();
+    let mut use_groups: BTreeMap<(Label, usize), Vec<Entry>> = BTreeMap::new();
     for (index, item) in module.items.iter().enumerate() {
         let at = ValueRef {
             module: id,
@@ -31,28 +39,31 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
             group: Some(set), ..
         } = item.kind
         {
-            let entries = use_groups.entry((section(item.vis), set)).or_default();
+            let entries = use_groups.entry((label(&item.meta), set)).or_default();
             entries.push(entry(item, at));
             continue;
         }
         let group = match &item.kind {
             ItemKind::Reexport { .. } => 0,
-            ItemKind::Mark(_) => 1,
-            ItemKind::Const { .. } => 2,
-            ItemKind::Static { .. } => 3,
-            ItemKind::Fn(_) => 4,
+            ItemKind::Const { .. } => 1,
+            ItemKind::Static { .. } => 2,
+            ItemKind::Fn(_) => 3,
+            ItemKind::Mark(_) => {
+                marks.push(entry(item, at));
+                continue;
+            }
             ItemKind::Foreign { .. } => {
-                foreign[section(item.vis)].push(item);
+                foreign.push(item);
                 continue;
             }
             ItemKind::Unsupported(kind) => {
-                unsupported.push((kind.as_str(), item.loc));
+                unsupported.push(mark_line("UNSUPPORTED:", kind, 0, Some(item.loc)));
                 continue;
             }
         };
-        sections[section(item.vis)][group].push(entry(item, at));
+        add(&mut sections, label(&item.meta), 4, group, entry(item, at));
     }
-    for ((at_section, _), mut entries) in use_groups {
+    for ((at, _), mut entries) in use_groups {
         sort_entries(&mut entries, &krate.refs);
         let merged = Entry {
             name: entries[0].name.clone(),
@@ -62,39 +73,37 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
                 .flat_map(|e| e.repeats.drain(..))
                 .collect(),
         };
-        sections[at_section][0].push(merged);
+        add(&mut sections, at, 4, 0, merged);
     }
-    for group in sections.iter_mut().flatten() {
-        sort_entries(group, &krate.refs);
-    }
-    for (groups, items) in sections.iter_mut().zip(&foreign) {
+    for groups in sections.values_mut() {
+        for group in groups.iter_mut() {
+            sort_entries(group, &krate.refs);
+        }
         let reexports = std::mem::take(&mut groups[0]);
         if !reexports.is_empty() {
             groups[0] = vec![packed(reexports, "using")];
         }
-        groups[5] = extern_blocks(krate, items);
     }
-    // The bucket order still groups the module's items by visibility, but no
-    // section label is printed: a module has no enclosing type to annotate, so
-    // each item carries its own `// internal` or `// private` line instead.
+    sort_entries(&mut marks, &krate.refs);
+    let (lines, repeats): (Vec<Line>, Vec<_>) = unsupported.into_iter().unzip();
+    let unsupported = (!lines.is_empty()).then(|| Entry {
+        name: String::new(),
+        lines,
+        repeats,
+    });
+    let first = vec![
+        marks,
+        extern_blocks(krate, &foreign, shown),
+        unsupported.into_iter().collect(),
+    ];
     let mut block = Block::default();
-    join_groups(sections.into_iter().flatten().collect(), &mut block);
+    join_sections(first, [sections, Sections::new()], &mut block);
     let dangling = note_lines(&module.dangling, 0, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
             block.lines.push(Line::default());
         }
         block.lines.extend(dangling);
-    }
-    if !unsupported.is_empty() {
-        if !block.lines.is_empty() {
-            block.lines.push(Line::default());
-        }
-        for (kind, loc) in unsupported {
-            let (line, repeat) = mark_line("UNSUPPORTED:", kind, 0, Some(loc));
-            block.lines.push(line);
-            block.repeats.push(repeat);
-        }
     }
     (!block.lines.is_empty()).then_some(block)
 }
@@ -103,7 +112,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
 /// as, which orders the items whose ids would repeat.
 pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
     let item = &krate.modules[at.module].items[at.item];
-    let entry = item_entry(krate, item, at);
+    let entry = item_entry(krate, item, at, None);
     let lines: Vec<String> = entry
         .lines
         .iter()
@@ -112,16 +121,14 @@ pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
     lines.join("\n")
 }
 
-fn item_entry(krate: &Crate, item: &Item, at: ValueRef) -> Entry {
+/// Returns a module item's entry, with a `reaches` line above it when it
+/// reaches less than its visibility gives and its module's note, `shown`,
+/// says otherwise.
+fn item_entry(krate: &Crate, item: &Item, at: ValueRef, shown: Option<Access>) -> Entry {
     let refs = &krate.refs;
     let attrs_above = !matches!(item.kind, ItemKind::Fn(_));
     let (mut lines, mut repeats) = above(&item.meta, 0, item.loc, attrs_above);
-    // A module has no enclosing type whose `internal:` and `private:`
-    // sections could label an item, so each item's own visibility prints
-    // above it.
-    if let Some(line) = crate::layout_decl::visibility_line(item.vis, 0) {
-        lines.push(line);
-    }
+    lines.extend(reaches_line(&item.meta, 0, shown));
     let name = Span::Value(item.name.clone(), item.loc, at);
     let trailing = item.meta.trailing.clone();
     match &item.kind {
@@ -204,8 +211,9 @@ fn packed(entries: Vec<Entry>, word: &str) -> Entry {
     }
 }
 
-/// Merges extern-block items into one block per ABI, sorted by ABI.
-fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
+/// Merges extern-block items into one block per ABI, sorted by ABI, each
+/// with its items in sections by visibility inside its braces.
+fn extern_blocks(krate: &Crate, items: &[&Item], shown: Option<Access>) -> Vec<Entry> {
     let mut abis: Vec<&str> = items
         .iter()
         .filter_map(|i| match &i.kind {
@@ -217,7 +225,7 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
     abis.dedup();
     let mut entries = Vec::new();
     for abi in abis {
-        let mut groups: Vec<Vec<Entry>> = (0..3).map(|_| Vec::new()).collect();
+        let mut sections = Sections::new();
         for item in items {
             let ItemKind::Foreign {
                 abi: own,
@@ -231,6 +239,7 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
             }
             let attrs_above = !matches!(foreign, Foreign::Fn(_));
             let (mut lines, repeats) = above(&item.meta, 4, item.loc, attrs_above);
+            lines.extend(reaches_line(&item.meta, 4, shown));
             let name = Span::Name(item.name.clone(), item.loc);
             let trailing = item.meta.trailing.clone();
             let group = match foreign {
@@ -264,17 +273,18 @@ fn extern_blocks(krate: &Crate, items: &[&Item]) -> Vec<Entry> {
                     2
                 }
             };
-            groups[group].push(Entry {
+            let entry = Entry {
                 name: item.name.clone(),
                 lines,
                 repeats,
-            });
+            };
+            add(&mut sections, label(&item.meta), 3, group, entry);
         }
-        for group in &mut groups {
+        for group in sections.values_mut().flatten() {
             sort_entries(group, &krate.refs);
         }
         let mut inner = Block::default();
-        join_groups(groups, &mut inner);
+        join_sections(Vec::new(), [sections, Sections::new()], &mut inner);
         let mut lines = vec![
             Line {
                 indent: 0,
@@ -405,12 +415,13 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
                 &BodyParts {
                     members: &item.members,
                     variants: None,
-                    class: false,
-                    all_public: false,
+                    unlabeled: false,
                     dangling: &item.dangling,
                     end_marks: &item.marks,
                     special: &[],
                     name: "",
+                    own: (0, "pub".to_owned()),
+                    shown: None,
                 },
             );
             block.lines.extend(inner.lines);

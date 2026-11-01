@@ -1,4 +1,4 @@
-//! The module order the HTML's Modules section follows.
+//! The module order the HTML's body follows.
 
 use crate::document::Builder;
 use crate::model::{ModId, path_order};

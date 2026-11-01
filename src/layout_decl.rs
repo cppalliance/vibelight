@@ -1,16 +1,20 @@
 //! Lays out declaration blocks: headers and bodies.
 
+use crate::access::Access;
+use crate::access_stamp::Stamp;
 use crate::layout::{
-    Block, Line, Span, above, code, key, mark_line, note_lines, plain, where_parts,
+    Block, Line, Span, above, code, key, mark_line, note_lines, plain, vis_spans, where_parts,
 };
-use crate::layout_groups::{Sections, empty_sections, join_sections, section, sort_entries};
+use crate::layout_groups::{
+    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries,
+};
 use crate::layout_head::header_lines;
 use crate::layout_marker::Marker;
 use crate::layout_members::{member_entry, variant_entry};
 use crate::layout_special::special_entry;
 use crate::model::{
-    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, TypeRef,
-    Variant, Vis, name_order,
+    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, Variant,
+    name_order,
 };
 
 /// Builds the block of one declaration, its functions ordered by name.
@@ -31,11 +35,11 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
         ..Meta::default()
     };
     block.lines.extend(above(&cfgs, 0, decl.loc, true).0);
+    block.lines.extend(reaches_line(&decl.meta, 0, None));
     if let Shape::Alias(target) = &decl.shape {
         block.lines.push(alias_line(decl, target));
         return block;
     }
-    let class = is_class(decl);
     let has_body = !matches!(decl.shape, Shape::Unit | Shape::Tuple(_))
         || !decl.members.is_empty()
         || !decl.special.is_empty()
@@ -43,7 +47,7 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
         || !decl.dangling.is_empty();
     block
         .lines
-        .extend(header_lines(decl, head_spans(decl, class), has_body, refs));
+        .extend(header_lines(decl, head_spans(decl), has_body, refs));
     if !has_body {
         return block;
     }
@@ -56,12 +60,13 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
         &BodyParts {
             members: &decl.members,
             variants,
-            class,
-            all_public: matches!(decl.shape, Shape::Trait { .. }),
+            unlabeled: matches!(decl.shape, Shape::Trait { .. }),
             dangling: &decl.dangling,
             end_marks: &decl.end_marks,
             special: &decl.special,
             name: &decl.name,
+            own: label(&decl.meta),
+            shown: decl.meta.access.as_ref().and_then(Stamp::note),
         },
     );
     block.lines.push(brace("{"));
@@ -69,36 +74,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block.repeats.extend(body.repeats);
     block.lines.push(brace("}"));
     block
-}
-
-/// Returns the line above a module's free item that is not public, which
-/// gives its own visibility: `// internal` or `// private`. A type does not
-/// take one: its members' `internal:` and `private:` sections already say
-/// what a reader needs, and a line above the header was only noise.
-pub(crate) fn visibility_line(vis: Vis, indent: usize) -> Option<Line> {
-    let text = match vis {
-        Vis::Public => return None,
-        Vis::Crate | Vis::Super | Vis::In(_) => "internal",
-        Vis::Private => "private",
-    };
-    Some(Line {
-        indent,
-        spans: vec![
-            Span::Marker(Marker::PLAIN.spaced),
-            Span::Comment(text.to_owned()),
-        ],
-        trailing: None,
-    })
-}
-
-/// Sorts every group of a body's members. The fields and the variants are
-/// not here: they keep their declared order in the data sections.
-fn order_groups(sections: &mut Sections, refs: &[TypeRef]) {
-    for groups in sections.iter_mut() {
-        for group in groups.iter_mut() {
-            sort_entries(group, refs);
-        }
-    }
 }
 
 fn brace(text: &str) -> Line {
@@ -129,34 +104,15 @@ fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
     }
 }
 
-/// Tells whether a struct prints as a class: its body starts with an
-/// `internal:` or a private section, since a class starts private and a
-/// struct starts public. The body starts with its data, the fields, in the
-/// order public, internal, private, or with its other members when it has no
-/// field. A struct with no member has no body and stays a struct.
-fn is_class(decl: &Decl) -> bool {
-    let first = |fields: bool| {
-        decl.members
-            .iter()
-            .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
-            .filter(|m| matches!(m.kind, MemberKind::Field(_)) == fields)
-            .map(|m| section(m.vis))
-            .min()
-    };
-    decl.kind == DeclKind::Struct
-        && first(true)
-            .or_else(|| first(false))
-            .is_some_and(|start| start != section(Vis::Public))
-}
-
-/// Returns a type alias or trait alias as one line.
+/// Returns a type alias or trait alias as one line, after its visibility.
 fn alias_line(decl: &Decl, target: &Text) -> Line {
     let keyword = if decl.kind == DeclKind::TraitAlias {
         "trait"
     } else {
         "using"
     };
-    let mut spans = vec![key(keyword), plain(&format!(" {}", decl.name))];
+    let mut spans = vis_spans(&decl.meta.vis);
+    spans.extend([key(keyword), plain(&format!(" {}", decl.name))]);
     spans.extend(code(&decl.generics));
     spans.push(plain(" = "));
     spans.extend(code(target));
@@ -171,23 +127,19 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
     }
 }
 
-/// Returns the start of a header: the keyword, the name, and the generics.
-fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
-    let mut spans = Vec::new();
-    if let Shape::Trait { prefix, .. } = &decl.shape {
-        if !prefix.is_empty() {
-            spans.push(key(prefix.trim_end()));
-            spans.push(plain(" "));
+/// Returns the start of a header: the visibility as written, the Rust
+/// keyword with any trait prefix, the name, and the generics.
+fn head_spans(decl: &Decl) -> Vec<Span> {
+    let mut spans = vis_spans(&decl.meta.vis);
+    let keyword = match (&decl.shape, decl.kind) {
+        (Shape::Trait { prefix, .. }, _) => {
+            if !prefix.is_empty() {
+                spans.extend([key(prefix.trim_end()), plain(" ")]);
+            }
+            "trait"
         }
-        spans.push(key("trait"));
-        spans.push(plain(&format!(" {}", decl.name)));
-        spans.extend(code(&decl.generics));
-        return spans;
-    }
-    let keyword = match decl.kind {
-        DeclKind::Enum => "enum",
-        DeclKind::Union => "union",
-        _ if class => "class",
+        (_, DeclKind::Enum) => "enum",
+        (_, DeclKind::Union) => "union",
         _ => "struct",
     };
     spans.push(key(keyword));
@@ -199,31 +151,34 @@ fn head_spans(decl: &Decl, class: bool) -> Vec<Span> {
 /// What goes between a type's braces.
 pub(crate) struct BodyParts<'b> {
     pub(crate) members: &'b [Member],
-    /// An enum's variants, which print as its data, in declared order.
+    /// An enum's variants, which print first, unlabeled, in declared order.
     pub(crate) variants: Option<&'b [Variant]>,
-    /// A class starts private and any other type starts public, and a label
-    /// prints only where the access changes from there.
-    pub(crate) class: bool,
-    /// Every member of a trait is public.
-    pub(crate) all_public: bool,
+    /// Every member of a trait is as visible as the trait, so a trait's
+    /// members print unlabeled.
+    pub(crate) unlabeled: bool,
     pub(crate) dangling: &'b [Note],
     pub(crate) end_marks: &'b [String],
-    /// The special members, printed as one packed group after the data and
-    /// the constants.
+    /// The special members, printed as one packed group under the type's
+    /// own label.
     pub(crate) special: &'b [Special],
     /// The type's name, which the special members spell.
     pub(crate) name: &'b str,
+    /// The type's own label.
+    pub(crate) own: Label,
+    /// The access the type's `reaches` note shows, if it shows one.
+    pub(crate) shown: Option<Access>,
 }
 
-/// Builds the lines between a type's braces: the data first, a struct's
-/// fields or an enum's variants, then every other member, each set in the
-/// order public, `internal:`, `private:` with a label wherever the access
-/// changes, then comments with nothing after them, macro marks, and
-/// unsupported lines.
+/// Builds the lines between a type's braces: first what has no label of
+/// its own, an enum's variants or a trait's members, then macro marks and
+/// unsupported lines; then the data, a struct's fields, and then every
+/// other member, each set in sections by visibility, every section opened
+/// by its label; then comments with nothing after them.
 pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
-    let mut data = empty_sections(6);
-    let mut sections = empty_sections(6);
+    let mut first: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
+    let mut data = Sections::new();
+    let mut members = Sections::new();
     let real = parts
         .members
         .iter()
@@ -236,45 +191,25 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
             MemberKind::Fn(_) if member.kind.is_static_fn() => 4,
             _ => 5,
         };
-        let vis = if parts.all_public {
-            Vis::Public
-        } else {
-            member.vis
-        };
-        let entry = member_entry(krate, member);
-        if group == 2 {
-            data[section(vis)][group].push(entry);
-        } else {
-            sections[section(vis)][group].push(entry);
+        let entry = member_entry(krate, member, parts.shown);
+        match (parts.unlabeled, group) {
+            (true, _) => first[group].push(entry),
+            (false, 2) => add(&mut data, label(&member.meta), 6, group, entry),
+            (false, _) => add(&mut members, label(&member.meta), 6, group, entry),
         }
     }
-    order_groups(&mut sections, refs);
+    for group in first.iter_mut().chain(members.values_mut().flatten()) {
+        sort_entries(group, refs);
+    }
     if let Some(variants) = parts.variants {
-        data[0][2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
+        first[2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }
-    let default = if parts.class {
-        Vis::Private
-    } else {
-        Vis::Public
-    };
-    // A class with no public member prints its special members in its own
-    // section, which needs no label. Any other type has a public member, so
-    // they print in the public section, where a trait impl is visible.
-    let has_public = parts
-        .members
-        .iter()
-        .filter(|m| !matches!(m.kind, MemberKind::Mark(_) | MemberKind::Unsupported(_)))
-        .any(|m| m.vis == Vis::Public);
-    let special = if parts.class && !has_public {
-        default
-    } else {
-        Vis::Public
-    };
     if let Some(entry) = special_entry(parts.special, parts.name, refs) {
-        sections[section(special)][3].push(entry);
+        add(&mut members, parts.own.clone(), 6, 3, entry);
     }
+    first.push(marks(parts));
     let mut block = Block::default();
-    join_sections(data, sections, default, &mut block);
+    join_sections(first, [data, members], &mut block);
     let dangling = note_lines(parts.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
@@ -282,39 +217,40 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
         }
         block.lines.extend(dangling);
     }
-    let mut marks: Vec<&str> = parts.end_marks.iter().map(String::as_str).collect();
-    marks.extend(parts.members.iter().filter_map(|m| match &m.kind {
+    block
+}
+
+/// Returns a body's macro marks, sorted, then its unsupported lines, as
+/// one packed entry each.
+fn marks(parts: &BodyParts<'_>) -> Vec<Entry> {
+    let mut texts: Vec<&str> = parts.end_marks.iter().map(String::as_str).collect();
+    texts.extend(parts.members.iter().filter_map(|m| match &m.kind {
         MemberKind::Mark(text) => Some(text.as_str()),
         _ => None,
     }));
-    marks.sort_by(|a, b| name_order(a, b));
-    marks.dedup();
-    let unsupported: Vec<&Member> = parts
+    texts.sort_by(|a, b| name_order(a, b));
+    texts.dedup();
+    let marks = texts
+        .into_iter()
+        .map(|text| mark_line("MACRO", text, 4, None));
+    let unsupported = parts
         .members
         .iter()
-        .filter(|m| matches!(m.kind, MemberKind::Unsupported(_)))
-        .collect();
-    if !marks.is_empty() {
-        if !block.lines.is_empty() {
-            block.lines.push(Line::default());
-        }
-        for mark in marks {
-            let (line, repeat) = mark_line("MACRO", mark, 4, None);
-            block.lines.push(line);
-            block.repeats.push(repeat);
-        }
-    }
-    if !unsupported.is_empty() {
-        if !block.lines.is_empty() {
-            block.lines.push(Line::default());
-        }
-        for member in unsupported {
-            if let MemberKind::Unsupported(kind) = &member.kind {
-                let (line, repeat) = mark_line("UNSUPPORTED:", kind, 4, Some(member.loc));
-                block.lines.push(line);
-                block.repeats.push(repeat);
+        .filter_map(|member| match &member.kind {
+            MemberKind::Unsupported(kind) => {
+                Some(mark_line("UNSUPPORTED:", kind, 4, Some(member.loc)))
             }
-        }
-    }
-    block
+            _ => None,
+        });
+    let packed = |lines: Vec<(Line, crate::layout::Repeat)>| {
+        let (lines, repeats): (Vec<Line>, Vec<_>) = lines.into_iter().unzip();
+        (!lines.is_empty()).then(|| Entry {
+            name: String::new(),
+            lines,
+            repeats,
+        })
+    };
+    let marks = packed(marks.collect());
+    let unsupported = packed(unsupported.collect());
+    marks.into_iter().chain(unsupported).collect()
 }

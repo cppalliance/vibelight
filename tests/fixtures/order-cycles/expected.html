@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,21 +58,17 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">order_cycles · Root</a>
+<li><a href="#mod.order_cycles">order_cycles</a>
 <ul>
-<li><a href="#type.order_cycles.net.Ping">net::Ping</a></li>
-<li><a href="#type.order_cycles.net.Pong">net::Pong</a></li>
+<li><a href="#type.order_cycles.Left"><b>Left</b></a></li>
+<li><a href="#mod.order_cycles.net"><b>net</b></a>
+<ul>
+<li><a href="#type.order_cycles.net.Ping"><b>Ping</b></a></li>
+<li><a href="#type.order_cycles.net.Pong"><b>Pong</b></a></li>
 </ul>
 </li>
-<li><a href="#group.2">order_cycles · Left</a>
-<ul>
-<li><a href="#type.order_cycles.Right">Right</a></li>
-</ul>
-</li>
-<li><a href="#modules">Modules</a>
-<ul>
-<li><a href="#mod.order_cycles">order_cycles</a></li>
-<li><a href="#mod.order_cycles.net">net</a></li>
+<li><a href="#type.order_cycles.Right"><b>Right</b></a></li>
+<li><a href="#type.order_cycles.Root"><b>Root</b></a></li>
 </ul>
 </li>
 </ul>
@@ -85,11 +81,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -105,65 +103,58 @@ span.src{cursor:default}
 <li><a href="#type.order_cycles.Right">Right</a></li>
 <li><a href="#type.order_cycles.Root">Root</a></li>
 </ul>
-<hr>
-<h2 id="group.1">order_cycles · Root</h2>
+<h2 id="mod.order_cycles">order_cycles</h2>
+<p class="anatomy">crate root: 3 types; pub 3</p>
 <h3 id="type.order_cycles.Root">Root</h3>
 <div class="doc mc-doc">
 <p><span class="c">Names the cycle below it.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Root
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Root
 {
+<span class="k">pub:</span>
     <span class="src">ping</span>: <a href="#type.order_cycles.net.Ping">net::Ping</a>,
 }</code></pre>
-<h3 id="type.order_cycles.net.Ping">net::Ping</h3>
-<div class="doc mc-doc">
-<p><span class="c">Names Pong.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Ping
-{
-    <span class="src">pong</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Pong">Pong</a>&gt;&gt;,
-}</code></pre>
-<h3 id="type.order_cycles.net.Pong">net::Pong</h3>
-<div class="doc mc-doc">
-<p><span class="c">Names Ping back.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Pong
-{
-    <span class="src">ping</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Ping">Ping</a>&gt;&gt;,
-}</code></pre>
-<hr>
-<h2 id="group.2">order_cycles · Left</h2>
 <h3 id="type.order_cycles.Left">Left</h3>
 <div class="doc mc-doc">
 <p><span class="c">Half of a cycle that nothing else names.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Left
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Left
 {
+<span class="k">pub:</span>
     <span class="src">right</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Right">Right</a>&gt;&gt;,
 }</code></pre>
 <h3 id="type.order_cycles.Right">Right</h3>
 <div class="doc mc-doc">
 <p><span class="c">The other half.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Right
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Right
 {
+<span class="k">pub:</span>
     <span class="src">left</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Left">Left</a>&gt;&gt;,
 }</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.order_cycles">order_cycles</h3>
-<ul>
-<li><a href="#type.order_cycles.Left">Left</a></li>
-<li><a href="#type.order_cycles.Right">Right</a></li>
-<li><a href="#type.order_cycles.Root">Root</a></li>
-</ul>
-<h3 id="mod.order_cycles.net">net</h3>
+<h2 id="mod.order_cycles.net">net</h2>
 <div class="doc mc-doc">
 <p><span class="c">A cycle below level 1.</span></p>
 </div>
-<ul>
-<li><a href="#type.order_cycles.net.Ping">net::Ping</a></li>
-<li><a href="#type.order_cycles.net.Pong">net::Pong</a></li>
-</ul>
+<p class="anatomy">pub mod: 2 types; pub 2</p>
+<h3 id="type.order_cycles.net.Ping"><span class="dim">net::</span>Ping</h3>
+<div class="doc mc-doc">
+<p><span class="c">Names Pong.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Ping
+{
+<span class="k">pub:</span>
+    <span class="src">pong</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Pong">Pong</a>&gt;&gt;,
+}</code></pre>
+<h3 id="type.order_cycles.net.Pong"><span class="dim">net::</span>Pong</h3>
+<div class="doc mc-doc">
+<p><span class="c">Names Ping back.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Pong
+{
+<span class="k">pub:</span>
+    <span class="src">ping</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Ping">Ping</a>&gt;&gt;,
+}</code></pre>
 </main>
 </body>
 </html>

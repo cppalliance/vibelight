@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,36 +58,37 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">own · Owned</a>
+<li><a href="#mod.prelude_order">prelude_order</a>
 <ul>
-<li><a href="#type.prelude_order.starred.Starred">starred::Starred</a></li>
-<li><a href="#type.prelude_order.own.Result">Result</a></li>
-<li><a href="#type.prelude_order.own.OwnError">OwnError</a></li>
+<li><a href="#mod.prelude_order.alpha"><b>alpha</b></a>
+<ul>
+<li><a href="#type.prelude_order.alpha.AlphaError"><b>AlphaError</b></a></li>
+<li><a href="#type.prelude_order.alpha.Result">Result</a></li>
 </ul>
 </li>
-<li><a href="#group.2">alpha · Result</a>
+<li><a href="#mod.prelude_order.beta"><b>beta</b></a>
 <ul>
-<li><a href="#type.prelude_order.alpha.AlphaError">AlphaError</a></li>
+<li><a href="#type.prelude_order.beta.BetaError"><b>BetaError</b></a></li>
+<li><a href="#type.prelude_order.beta.Result">Result</a></li>
 </ul>
 </li>
-<li><a href="#group.3">beta · Result</a>
+<li><a href="#mod.prelude_order.own"><b>own</b></a>
 <ul>
-<li><a href="#type.prelude_order.beta.BetaError">BetaError</a></li>
+<li><a href="#type.prelude_order.own.Owned"><b>Owned</b></a></li>
+<li><a href="#type.prelude_order.own.OwnError"><b>OwnError</b></a></li>
+<li><a href="#type.prelude_order.own.Result"><b>Result</b></a></li>
 </ul>
 </li>
-<li><a href="#unconnected">Unconnected types</a>
+<li><a href="#mod.prelude_order.plain"><b>plain</b></a>
 <ul>
-<li><a href="#type.prelude_order.plain.Report">plain::Report</a></li>
+<li><a href="#type.prelude_order.plain.Report"><b>Report</b></a></li>
 </ul>
 </li>
-<li><a href="#modules">Modules</a>
+<li><a href="#mod.prelude_order.starred"><b>starred</b></a>
 <ul>
-<li><a href="#mod.prelude_order">prelude_order</a></li>
-<li><a href="#mod.prelude_order.alpha">alpha</a></li>
-<li><a href="#mod.prelude_order.beta">beta</a></li>
-<li><a href="#mod.prelude_order.own">own</a></li>
-<li><a href="#mod.prelude_order.plain">plain</a></li>
-<li><a href="#mod.prelude_order.starred">starred</a></li>
+<li><a href="#type.prelude_order.starred.Starred"><b>Starred</b></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#spellings">Spellings</a></li>
@@ -101,11 +102,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -127,109 +130,90 @@ span.src{cursor:default}
 <li><a href="#mod.prelude_order.starred">starred</a></li>
 <li><a href="#type.prelude_order.starred.Starred">starred::Starred</a></li>
 </ul>
-<hr>
-<h2 id="group.1">own · Owned</h2>
-<h3 id="type.prelude_order.own.Owned">own::Owned</h3>
+<h2 id="mod.prelude_order">prelude_order</h2>
+<p class="anatomy">crate root</p>
+<h2 id="mod.prelude_order.alpha">alpha</h2>
 <div class="doc mc-doc">
-<p><span class="c">A value in this module's Result.</span></p>
+<p><span class="c">The first module with a private Result alias.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Owned
-{
-    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u8&gt;,
-}</code></pre>
-<h3 id="type.prelude_order.starred.Starred">starred::Starred</h3>
-<div class="doc mc-doc">
-<p><span class="c">A value in the Result that the glob brings in.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Starred
-{
-    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u16&gt;,
-}</code></pre>
-<h3 id="type.prelude_order.own.Result">own::Result</h3>
-<div class="doc mc-doc">
-<p><span class="c">The results of this module.</span></p>
-</div>
-<pre><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.own.OwnError">OwnError</a>&gt;</code></pre>
-<h3 id="type.prelude_order.own.OwnError">own::OwnError</h3>
-<div class="doc mc-doc">
-<p><span class="c">The error of this module.</span></p>
-</div>
-<pre><code><span class="k">struct</span> OwnError</code></pre>
-<hr>
-<h2 id="group.2">alpha · Result</h2>
-<h3 id="type.prelude_order.alpha.Result">alpha::Result</h3>
+<p class="anatomy">pub mod: 2 types; pub 1, pub(self) 1</p>
+<h3 id="type.prelude_order.alpha.Result"><span class="dim">alpha::</span>Result</h3>
 <div class="doc mc-doc">
 <p><span class="c">The results of alpha.</span></p>
 </div>
 <pre><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.alpha.AlphaError">AlphaError</a>&gt;</code></pre>
-<h3 id="type.prelude_order.alpha.AlphaError">alpha::AlphaError</h3>
+<h3 id="type.prelude_order.alpha.AlphaError"><span class="dim">alpha::</span>AlphaError</h3>
 <div class="doc mc-doc">
 <p><span class="c">Alpha's error.</span></p>
 </div>
-<pre><code><span class="k">struct</span> AlphaError</code></pre>
-<hr>
-<h2 id="group.3">beta · Result</h2>
-<h3 id="type.prelude_order.beta.Result">beta::Result</h3>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> AlphaError</code></pre>
+<h2 id="mod.prelude_order.beta">beta</h2>
+<div class="doc mc-doc">
+<p><span class="c">The second module with a private Result alias.</span></p>
+</div>
+<p class="anatomy">pub mod: 2 types; pub 1, pub(self) 1</p>
+<h3 id="type.prelude_order.beta.Result"><span class="dim">beta::</span>Result</h3>
 <div class="doc mc-doc">
 <p><span class="c">The results of beta.</span></p>
 </div>
 <pre><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.beta.BetaError">BetaError</a>&gt;</code></pre>
-<h3 id="type.prelude_order.beta.BetaError">beta::BetaError</h3>
+<h3 id="type.prelude_order.beta.BetaError"><span class="dim">beta::</span>BetaError</h3>
 <div class="doc mc-doc">
 <p><span class="c">Beta's error.</span></p>
 </div>
-<pre><code><span class="k">struct</span> BetaError</code></pre>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
-<h3 id="type.prelude_order.plain.Report">plain::Report</h3>
-<div class="doc mc-doc">
-<p><span class="c">A report whose outcome is the standard Result.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Report
-{
-    <span class="src">outcome</span>: Result&lt;u8, String&gt;,
-}</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.prelude_order">prelude_order</h3>
-<h3 id="mod.prelude_order.alpha">alpha</h3>
-<div class="doc mc-doc">
-<p><span class="c">The first module with a private Result alias.</span></p>
-</div>
-<ul>
-<li><a href="#type.prelude_order.alpha.AlphaError">alpha::AlphaError</a></li>
-<li><a href="#type.prelude_order.alpha.Result">alpha::Result</a></li>
-</ul>
-<h3 id="mod.prelude_order.beta">beta</h3>
-<div class="doc mc-doc">
-<p><span class="c">The second module with a private Result alias.</span></p>
-</div>
-<ul>
-<li><a href="#type.prelude_order.beta.BetaError">beta::BetaError</a></li>
-<li><a href="#type.prelude_order.beta.Result">beta::Result</a></li>
-</ul>
-<h3 id="mod.prelude_order.own">own</h3>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> BetaError</code></pre>
+<h2 id="mod.prelude_order.own">own</h2>
 <div class="doc mc-doc">
 <p><span class="c">A module that declares its own Result and uses it.</span></p>
 </div>
-<ul>
-<li><a href="#type.prelude_order.own.Owned">own::Owned</a></li>
-<li><a href="#type.prelude_order.own.OwnError">own::OwnError</a></li>
-<li><a href="#type.prelude_order.own.Result">own::Result</a></li>
-</ul>
-<h3 id="mod.prelude_order.plain">plain</h3>
+<p class="anatomy">pub mod: 3 types; pub 3</p>
+<h3 id="type.prelude_order.own.Owned"><span class="dim">own::</span>Owned</h3>
+<div class="doc mc-doc">
+<p><span class="c">A value in this module's Result.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Owned
+{
+<span class="k">pub:</span>
+    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u8&gt;,
+}</code></pre>
+<h3 id="type.prelude_order.own.Result"><span class="dim">own::</span>Result</h3>
+<div class="doc mc-doc">
+<p><span class="c">The results of this module.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.own.OwnError">OwnError</a>&gt;</code></pre>
+<h3 id="type.prelude_order.own.OwnError"><span class="dim">own::</span>OwnError</h3>
+<div class="doc mc-doc">
+<p><span class="c">The error of this module.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> OwnError</code></pre>
+<h2 id="mod.prelude_order.plain">plain</h2>
 <div class="doc mc-doc">
 <p><span class="c">A module that names the prelude Result and imports nothing.</span></p>
 </div>
-<ul>
-<li><a href="#type.prelude_order.plain.Report">plain::Report</a></li>
-</ul>
-<h3 id="mod.prelude_order.starred">starred</h3>
+<p class="anatomy">pub mod: 1 type; pub 1</p>
+<h3 id="type.prelude_order.plain.Report"><span class="dim">plain::</span>Report</h3>
+<div class="doc mc-doc">
+<p><span class="c">A report whose outcome is the standard Result.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Report
+{
+<span class="k">pub:</span>
+    <span class="src">outcome</span>: Result&lt;u8, String&gt;,
+}</code></pre>
+<h2 id="mod.prelude_order.starred">starred</h2>
 <div class="doc mc-doc">
 <p><span class="c">A module whose glob import brings in the Result of own.</span></p>
 </div>
-<ul>
-<li><a href="#type.prelude_order.starred.Starred">starred::Starred</a></li>
-</ul>
+<p class="anatomy">pub mod: 1 type; pub 1</p>
+<h3 id="type.prelude_order.starred.Starred"><span class="dim">starred::</span>Starred</h3>
+<div class="doc mc-doc">
+<p><span class="c">A value in the Result that the glob brings in.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Starred
+{
+<span class="k">pub:</span>
+    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u16&gt;,
+}</code></pre>
 <h2 id="spellings">Spellings</h2>
 <ul class="spellings">
 <li><code>std::result::Result</code> is written 2 ways; pick one and search for the rest:

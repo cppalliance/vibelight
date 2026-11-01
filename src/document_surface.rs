@@ -2,6 +2,7 @@
 //! name, each linking to the heading of what it names.
 
 use crate::document::{Builder, Inline, Item, Node, anchor};
+use crate::model::ValueRef;
 use crate::surface::{Entry, Kind};
 
 impl Builder<'_> {
@@ -24,9 +25,9 @@ impl Builder<'_> {
     }
 
     /// Returns one list item per surface path. A function's path ends in
-    /// `()` and a macro's in `!`. Functions, constants, statics, and macros
-    /// have no headings, so they link to the heading of the module that
-    /// declares them. A re-export of another crate's item, or one the walk
+    /// `()` and a macro's in `!`. Functions, constants, and statics link to
+    /// their ids, and macros, which have none, to the heading of the module
+    /// that declares them. A re-export of another crate's item, or one the walk
     /// cannot place, shows the path as written after it and has no link.
     /// A path that two declarations share, as under different `cfg`s, is
     /// listed once, linking to the heading whose id sorts first.
@@ -34,13 +35,15 @@ impl Builder<'_> {
         let mut lines: Vec<(String, Option<&str>, bool)> = Vec::new();
         for entry in surface {
             let mut text = entry.path.join("::");
+            let value =
+                |at: &ValueRef| (self.value_ids.get(at)).unwrap_or(&self.mod_ids[at.module]);
             let id = match &entry.kind {
                 Kind::Module(m) => Some(&self.mod_ids[*m]),
-                Kind::Value(at) => Some(&self.mod_ids[at.module]),
+                Kind::Value(at) => Some(value(at)),
                 Kind::Decl(d) => Some(&self.decl_ids[*d]),
                 Kind::Function(at) => {
                     text.push_str("()");
-                    Some(&self.mod_ids[at.module])
+                    Some(value(at))
                 }
                 Kind::Macro(m) => {
                     text.push('!');

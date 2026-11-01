@@ -1,8 +1,12 @@
 //! The groups of a type body or a module block: sortable entries, the
-//! sections they print in, and the blank lines between them.
+//! sections they print in, labeled by visibility, and the blank lines
+//! between them.
 
-use crate::layout::{Block, Line, Repeat, key, line_text};
-use crate::model::{TypeRef, Vis, name_order};
+use std::collections::BTreeMap;
+
+use crate::access::Access;
+use crate::layout::{Block, Line, Repeat, Span, key, line_text};
+use crate::model::{Meta, TypeRef, name_order};
 
 /// One sortable entry of a group: a member, a variant, or an item.
 pub(crate) struct Entry {
@@ -34,47 +38,77 @@ pub(crate) fn join_groups(groups: Vec<Vec<Entry>>, block: &mut Block) {
     block.lines.extend(spaced(members));
 }
 
-/// The groups of a body's or a module block's sections: public, internal,
-/// and private, in print order.
-pub(crate) type Sections = [Vec<Vec<Entry>>; 3];
+/// A section's label: the rank its written visibility sorts by, wider
+/// first, then the spelling it prints, such as `pub(crate)`.
+pub(crate) type Label = (usize, String);
 
-/// Returns empty sections of `per_section` groups each.
-pub(crate) fn empty_sections(per_section: usize) -> Sections {
-    std::array::from_fn(|_| (0..per_section).map(|_| Vec::new()).collect())
+/// The labeled sections of a type body or a module block, in print order,
+/// each holding its groups.
+pub(crate) type Sections = BTreeMap<Label, Vec<Vec<Entry>>>;
+
+/// Returns a node's label: the rank its stamp gives, and its visibility as
+/// written, `pub(self)` for none. A node analysis did not stamp ranks by
+/// its spelling alone.
+pub(crate) fn label(meta: &Meta) -> Label {
+    let spelling = if meta.vis.is_empty() {
+        "pub(self)"
+    } else {
+        meta.vis.as_str()
+    };
+    let guess = || match spelling {
+        "pub" => 0,
+        "pub(crate)" => 1,
+        "pub(self)" => usize::MAX,
+        _ => 2,
+    };
+    let rank = meta.access.as_ref().map_or_else(guess, |stamp| stamp.rank);
+    (rank, spelling.to_owned())
 }
 
-/// Returns the index of a visibility's section: public, internal, or
-/// private.
-pub(crate) fn section(vis: Vis) -> usize {
-    usize::from(vis.rank())
+/// Adds an entry to group `group` of the section `label`, whose groups
+/// number `per`.
+pub(crate) fn add(sections: &mut Sections, label: Label, per: usize, group: usize, entry: Entry) {
+    let groups = (sections.entry(label)).or_insert_with(|| (0..per).map(|_| Vec::new()).collect());
+    groups[group].push(entry);
 }
 
-/// Joins a type body's data sections, then its member sections, each set in
-/// the order public, `internal:`, `private:`, with a blank line before every
-/// section that has entries. A label opens a section only when its
-/// visibility is not the access already in effect, which starts as `default`,
-/// the access the keyword gives: public in a struct, private in a class. So a
-/// visibility that holds both data and members can print its label twice,
-/// as a C++ header does. Only a type uses this: a module has no enclosing
-/// brace, so its items carry their own visibility line instead.
-pub(crate) fn join_sections(data: Sections, members: Sections, default: Vis, block: &mut Block) {
-    let labels = ["public:", "internal:", "private:"];
-    let mut current = section(default);
-    for set in [data, members] {
-        for ((index, label), groups) in labels.into_iter().enumerate().zip(set) {
+/// Returns the dim line that says how far a node reaches when that is less
+/// than its visibility gives, unless its container's note, `shown`, says
+/// the same.
+pub(crate) fn reaches_line(meta: &Meta, indent: usize, shown: Option<Access>) -> Option<Line> {
+    let stamp = meta.access.as_ref()?;
+    let reach = stamp.reaches.as_ref().filter(|_| stamp.note() != shown)?;
+    Some(Line {
+        indent,
+        spans: vec![Span::Dim(format!("reaches {reach}"))],
+        trailing: None,
+    })
+}
+
+/// Joins a type body's or a module block's groups: the unlabeled groups
+/// `first`, then each set of labeled sections, data first and then
+/// members, every section opened by its label, such as `pub(crate):`, with
+/// a blank line before it. A visibility that holds both data and members
+/// prints its label twice.
+pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sets: [Sections; 2], block: &mut Block) {
+    if first.iter().any(|group| !group.is_empty()) {
+        if !block.lines.is_empty() {
+            block.lines.push(Line::default());
+        }
+        join_groups(first, block);
+    }
+    for set in sets {
+        for ((_, spelling), groups) in set {
             if groups.iter().all(Vec::is_empty) {
                 continue;
             }
             if !block.lines.is_empty() {
                 block.lines.push(Line::default());
             }
-            if index != current {
-                block.lines.push(Line {
-                    spans: vec![key(label)],
-                    ..Line::default()
-                });
-                current = index;
-            }
+            block.lines.push(Line {
+                spans: vec![key(&format!("{spelling}:"))],
+                ..Line::default()
+            });
             join_groups(groups, block);
         }
     }

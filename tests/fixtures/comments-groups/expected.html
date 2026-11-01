@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,18 +58,22 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">comments_groups · Handle</a>
+<li><a href="#mod.comments_groups">comments_groups</a>
 <ul>
-<li><a href="#type.comments_groups.traits.Persist">traits::Persist</a></li>
-<li><a href="#type.comments_groups.store.Key">store::Key</a></li>
-<li><a href="#type.comments_groups.store.Value">store::Value</a></li>
+<li><a href="#type.comments_groups.Handle"><b>Handle</b></a></li>
+<li><a href="#mod.comments_groups.store"><b>store</b></a>
+<ul>
+<li><a href="#type.comments_groups.store.Key"><b>Key</b></a></li>
+<li><a href="#fn.comments_groups.store.read"><b>read()</b></a></li>
+<li><a href="#type.comments_groups.store.Value"><b>Value</b></a></li>
+<li><a href="#fn.comments_groups.store.write"><b>write()</b></a></li>
 </ul>
 </li>
-<li><a href="#modules">Modules</a>
+<li><a href="#mod.comments_groups.traits"><b>traits</b></a>
 <ul>
-<li><a href="#mod.comments_groups">comments_groups</a></li>
-<li><a href="#mod.comments_groups.store">store</a></li>
-<li><a href="#mod.comments_groups.traits">traits</a></li>
+<li><a href="#type.comments_groups.traits.Persist"><b>Persist</b></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -82,11 +86,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -97,19 +103,19 @@ span.src{cursor:default}
 <ul class="surface">
 <li><a href="#type.comments_groups.Handle">Handle</a></li>
 <li><a href="#type.comments_groups.store.Key">Key</a></li>
-<li><a href="#mod.comments_groups.store">read()</a></li>
+<li><a href="#fn.comments_groups.store.read">read()</a></li>
 <li><a href="#mod.comments_groups.store">store</a></li>
 <li><a href="#type.comments_groups.store.Key">store::Key</a></li>
-<li><a href="#mod.comments_groups.store">store::read()</a></li>
+<li><a href="#fn.comments_groups.store.read">store::read()</a></li>
 <li><a href="#type.comments_groups.store.Value">store::Value</a></li>
-<li><a href="#mod.comments_groups.store">store::write()</a></li>
+<li><a href="#fn.comments_groups.store.write">store::write()</a></li>
 <li><a href="#mod.comments_groups.traits">traits</a></li>
 <li><a href="#type.comments_groups.traits.Persist">traits::Persist</a></li>
 <li><a href="#type.comments_groups.store.Value">Value</a></li>
-<li><a href="#mod.comments_groups.store">write()</a></li>
+<li><a href="#fn.comments_groups.store.write">write()</a></li>
 </ul>
-<hr>
-<h2 id="group.1">comments_groups · Handle</h2>
+<h2 id="mod.comments_groups">comments_groups</h2>
+<p class="anatomy">crate root: 1 type, 4 re-exports; pub 5</p>
 <h3 id="type.comments_groups.Handle">Handle</h3>
 <div class="doc mc-doc">
 <p><span class="c">A handle.</span></p>
@@ -122,61 +128,52 @@ span.src{cursor:default}
 <span class="c"> Reading.</span>
  <span class="c">Handle</span>
 <span class="c"> Opening.</span>
-<span class="k">struct</span> Handle
+<span class="k">pub</span> <span class="k">struct</span> Handle
     : Display
     , <a href="#type.comments_groups.traits.Persist">traits::Persist</a>
 {
+<span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a handle.</span></div>    <span class="k">static</span> <span class="src">open</span>() -&gt; <a href="#type.comments_groups.Handle">Handle</a>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reads a byte.</span></div>    <span class="src">get</span>() -&gt; u8
 }</code></pre>
-<h3 id="type.comments_groups.traits.Persist">traits::Persist</h3>
-<div class="doc mc-doc">
-<p><span class="c">Something that persists.</span></p>
-</div>
-<pre><code><span class="k">trait</span> Persist
-{
-    <span class="src">save</span>()
-}</code></pre>
-<h3 id="type.comments_groups.store.Key">store::Key</h3>
-<div class="doc mc-doc">
-<p><span class="c">A key.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Key</code></pre>
-<h3 id="type.comments_groups.store.Value">store::Value</h3>
-<div class="doc mc-doc">
-<p><span class="c">A value.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Value</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.comments_groups">comments_groups</h3>
-<ul>
-<li><a href="#type.comments_groups.Handle">Handle</a></li>
-</ul>
-<pre><code><span class="c"> The key type.</span>
+<pre><code><span class="k">pub:</span>
+<span class="c"> The key type.</span>
 <span class="k">using</span> <a href="#type.comments_groups.store.Key">store::Key</a>
 <span class="gap"></span><span class="c"> Store operations, for scripts.</span>
 <span class="k">using</span> <a href="#fn.comments_groups.store.read">store::read</a>
 <span class="c"> Writes replace the old value.</span>
 <span class="k">using</span> <a href="#fn.comments_groups.store.write">store::write</a>
 <span class="gap"></span><span class="k">using</span> <a href="#type.comments_groups.store.Value">store::Value</a> <span class="c">// The value type.</span></code></pre>
-<h3 id="mod.comments_groups.store">store</h3>
+<h2 id="mod.comments_groups.store">store</h2>
 <div class="doc mc-doc">
 <p><span class="c">Keys and values.</span></p>
 </div>
-<ul>
-<li><a href="#type.comments_groups.store.Key">store::Key</a></li>
-<li><a href="#type.comments_groups.store.Value">store::Value</a></li>
-</ul>
+<p class="anatomy">pub mod: 2 types, 2 functions; pub 4</p>
+<h3 id="type.comments_groups.store.Key"><span class="dim">store::</span>Key</h3>
 <div class="doc mc-doc">
-<p><span class="c">Reads a value.</span></p>
+<p><span class="c">A key.</span></p>
 </div>
-<pre><code><span class="src" id="fn.comments_groups.store.read">read</span>()
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Key</code></pre>
+<h3 id="type.comments_groups.store.Value"><span class="dim">store::</span>Value</h3>
+<div class="doc mc-doc">
+<p><span class="c">A value.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Value</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Reads a value.</span>
+<span class="src" id="fn.comments_groups.store.read">read</span>()
 <span class="gap"></span><span class="c"> Writes a value.</span>
 <span class="src" id="fn.comments_groups.store.write">write</span>()</code></pre>
-<h3 id="mod.comments_groups.traits">traits</h3>
-<ul>
-<li><a href="#type.comments_groups.traits.Persist">traits::Persist</a></li>
-</ul>
+<h2 id="mod.comments_groups.traits">traits</h2>
+<p class="anatomy">pub mod: 1 type; pub 1</p>
+<h3 id="type.comments_groups.traits.Persist"><span class="dim">traits::</span>Persist</h3>
+<div class="doc mc-doc">
+<p><span class="c">Something that persists.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Persist
+{
+    <span class="src">save</span>()
+}</code></pre>
 </main>
 </body>
 </html>

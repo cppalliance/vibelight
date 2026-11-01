@@ -73,13 +73,20 @@ pub(crate) fn render(
     }
     for node in &doc.sections {
         match node {
-            Node::Heading { level, id, text } => {
-                let _ = writeln!(
-                    out,
-                    "<h{level} id=\"{}\">{}</h{level}>",
-                    attr(id),
-                    escape(text)
-                );
+            Node::Heading {
+                level,
+                id,
+                crumb,
+                text,
+            } => {
+                let _ = write!(out, "<h{level} id=\"{}\">", attr(id));
+                if !crumb.is_empty() {
+                    let _ = write!(out, "<span class=\"dim\">{}</span>", escape(crumb));
+                }
+                let _ = writeln!(out, "{}</h{level}>", escape(text));
+            }
+            Node::Note { class, text } => {
+                let _ = writeln!(out, "<p class=\"{class}\">{}</p>", escape(text));
             }
             Node::Code(block) => page.pre(&mut out, block),
             Node::Source(links) => {
@@ -122,7 +129,6 @@ pub(crate) fn render(
                 }
                 out.push_str("</p>\n");
             }
-            Node::Rule => out.push_str("<hr>\n"),
             Node::List { class, items } => page.list(&mut out, items, class),
         }
     }
@@ -214,8 +220,10 @@ impl Page<'_> {
                     self.spans(out, spans);
                     out.push_str("</code>");
                 }
-                Inline::Anchor { text, id } => {
-                    let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(id), escape(text));
+                Inline::Anchor { text, id, strong } => {
+                    let (open, close) = if *strong { ("<b>", "</b>") } else { ("", "") };
+                    let text = escape(text);
+                    let _ = write!(out, "<a href=\"#{}\">{open}{text}{close}</a>", attr(id));
                 }
                 Inline::Kill {
                     text,

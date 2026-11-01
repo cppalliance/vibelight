@@ -3,6 +3,7 @@
 use std::cmp::Ordering;
 use std::ops::Range;
 
+use crate::access_stamp::Stamp;
 use crate::model_body::{AttrPath, Body};
 use crate::source::SourceFile;
 use crate::typerefs::strip_raw;
@@ -59,6 +60,9 @@ pub(crate) struct Meta {
     pub(crate) raw_doc: Option<String>,
     /// The lint attributes as written, such as `allow(dead_code)`, sorted.
     pub(crate) lints: Vec<String>,
+    /// How far the node reaches, stamped after analysis and before attach
+    /// for the HTML; `None` before, and for a node analysis does not see.
+    pub(crate) access: Option<Stamp>,
 }
 
 /// A node's visibility as written, with the module a `pub(in path)` names.
@@ -76,18 +80,6 @@ pub(crate) enum Vis {
     In(ModId),
     /// `pub(self)`, `pub(in self)`, or no keyword.
     Private,
-}
-
-impl Vis {
-    /// Ranks the visibility for a coarse order: 0 for `pub`, 1 for a
-    /// restricted visibility, and 2 for private.
-    pub(crate) fn rank(self) -> u8 {
-        match self {
-            Vis::Public => 0,
-            Vis::Crate | Vis::Super | Vis::In(_) => 1,
-            Vis::Private => 2,
-        }
-    }
 }
 
 /// How a function takes its object.
@@ -371,6 +363,8 @@ pub(crate) struct Module {
     pub(crate) dangling: Vec<Note>,
     /// The visibility on the `mod` line; the root module is public.
     pub(crate) vis: Vis,
+    /// How far the module reaches, stamped after analysis for the HTML.
+    pub(crate) access: Option<Stamp>,
     /// The module whose `mod` item declares this one; `None` for the root.
     pub(crate) parent: Option<ModId>,
     /// Whether it, or a module around it, is test support.

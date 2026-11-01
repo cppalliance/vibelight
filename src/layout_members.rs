@@ -1,17 +1,23 @@
 //! Lays out the entries between a type's braces: members and variants.
 
+use crate::access::Access;
 use crate::layout::{
-    Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain, width,
+    Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
+    vis_spans, width,
 };
-use crate::layout_groups::{Entry, spaced};
+use crate::layout_groups::{Entry, reaches_line, spaced};
 use crate::layout_marker::Marker;
 use crate::model::{Crate, Member, MemberKind, Param, TypeRef, Variant, VariantFields};
 use crate::wrap::MAX_WIDTH;
 
-pub(crate) fn member_entry(krate: &Crate, member: &Member) -> Entry {
+/// Returns a member's entry, with a `reaches` line above it when it reaches
+/// less than its visibility gives and its type's note, `shown`, says
+/// otherwise.
+pub(crate) fn member_entry(krate: &Crate, member: &Member, shown: Option<Access>) -> Entry {
     let refs = &krate.refs;
     let attrs_above = matches!(member.kind, MemberKind::Type(_) | MemberKind::Const { .. });
     let (mut lines, repeats) = above(&member.meta, 4, member.loc, attrs_above);
+    lines.extend(reaches_line(&member.meta, 4, shown));
     let name = Span::Name(member.name.clone(), member.loc);
     match &member.kind {
         MemberKind::Type(text) => {
@@ -207,11 +213,12 @@ fn expanded_variant(
 }
 
 /// Returns one line per parameter, comments above each, every line but
-/// the last ending in a comma.
+/// the last ending in a comma; a tuple field starts with its visibility.
 pub(crate) fn param_lines(fields: &[Param], indent: usize) -> Vec<Line> {
     spaced(fields.iter().enumerate().map(|(i, field)| {
         let mut lines = note_lines(&field.meta.notes, indent, Marker::DOC);
-        let mut spans = code(&field.text);
+        let mut spans = vis_spans(&field.meta.vis);
+        spans.extend(code(&field.text));
         if i + 1 < fields.len() {
             spans.push(plain(","));
         }

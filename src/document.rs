@@ -35,10 +35,11 @@ pub(crate) enum Inline {
     Bold(String),
     /// Inline code, styled for HTML.
     Code(Vec<Span>),
-    /// A link to a heading.
+    /// A link to a heading, bold for a node on the public surface.
     Anchor {
         text: String,
         id: String,
+        strong: bool,
     },
     /// A kill list link: it points at the mark, under its heading.
     Kill {
@@ -62,14 +63,23 @@ pub(crate) struct Item {
 /// One block-level piece of the document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Node {
+    /// A heading: dim text that leads to it, such as a module's parent path
+    /// `engine::`, then its own text.
     Heading {
         level: u8,
         id: String,
+        crumb: String,
         text: String,
     },
     Code(Block),
     /// A `Source:` line: the definition, then any impl blocks.
     Source(Vec<SourceLink>),
+    /// A line of plain text in a styled paragraph, such as a module's
+    /// anatomy.
+    Note {
+        class: &'static str,
+        text: String,
+    },
     /// A bold label line outside a block, such as `MACRO derive: Clone`.
     Mark {
         label: &'static str,
@@ -81,8 +91,6 @@ pub(crate) enum Node {
         class: &'static str,
         items: Vec<Item>,
     },
-    /// A horizontal rule that opens a group of declarations.
-    Rule,
 }
 
 /// The whole outline of one target.
@@ -119,9 +127,10 @@ pub(crate) struct Builder<'a> {
     pub(crate) links: Option<&'a LinkBase>,
     /// The blocks the document prints for the declarations.
     pub(crate) blocks: &'a [Block],
-    pub(crate) texts: Vec<String>,
     pub(crate) decl_ids: Vec<String>,
     pub(crate) mod_ids: Vec<String>,
+    /// The id of each module-level function, constant, and static.
+    pub(crate) value_ids: BTreeMap<ValueRef, String>,
     pub(crate) nodes: Vec<Node>,
     /// Each mark line, in the order it was added.
     pub(crate) marks: Vec<MarkLine>,
@@ -157,9 +166,9 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         krate,
         links,
         blocks,
-        texts,
         decl_ids,
         mod_ids,
+        value_ids: crate::document_values::value_ids(krate),
         nodes: Vec::new(),
         marks: Vec::new(),
         heading_id: String::new(),
@@ -169,10 +178,8 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         children: Vec::new(),
     }];
     contents.extend(b.surface(surface));
-    let modules = b.sorted_modules();
-    contents.extend(b.grouped(order));
+    contents.push(b.modules_body(order, surface));
     contents.extend(b.other_impls_section(others));
-    contents.push(b.modules_section(&modules));
     if !spellings.is_empty() {
         contents.push(Item {
             inlines: vec![anchor("Spellings", "spellings")],
@@ -197,14 +204,30 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         sections: b.nodes,
         refs: krate.refs.clone(),
         decl_ids: b.decl_ids,
-        value_ids: crate::document_values::value_ids(krate),
+        value_ids: b.value_ids,
     }
 }
 
+/// Returns the crumb that leads to a node of module `path`: each segment
+/// followed by `::`, or nothing for the root.
+pub(crate) fn crumb(path: &[String]) -> String {
+    let mut out = path.join("::");
+    if !out.is_empty() {
+        out.push_str("::");
+    }
+    out
+}
+
 pub(crate) fn anchor(text: &str, id: &str) -> Inline {
+    strong_anchor(text, id, false)
+}
+
+/// Returns a link to a heading, bold when `strong`.
+pub(crate) fn strong_anchor(text: &str, id: &str, strong: bool) -> Inline {
     Inline::Anchor {
         text: text.to_owned(),
         id: id.to_owned(),
+        strong,
     }
 }
 
@@ -258,10 +281,16 @@ pub(crate) fn suffixed(base: &[String], order: impl Fn(usize, usize) -> Ordering
 
 impl Builder<'_> {
     pub(crate) fn heading(&mut self, level: u8, id: &str, text: &str) {
+        self.heading_crumb(level, id, String::new(), text);
+    }
+
+    /// Adds a heading whose dim `crumb` leads to its text.
+    pub(crate) fn heading_crumb(&mut self, level: u8, id: &str, crumb: String, text: &str) {
         id.clone_into(&mut self.heading_id);
         self.nodes.push(Node::Heading {
             level,
             id: id.to_owned(),
+            crumb,
             text: text.to_owned(),
         });
     }

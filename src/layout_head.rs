@@ -1,7 +1,7 @@
 //! Lays out a declaration's head: the keyword line with any tuple fields,
 //! the base list, and the `where` clause.
 
-use crate::layout::{Line, Span, code, plain, where_parts, width};
+use crate::layout::{Line, Span, code, plain, vis_spans, where_parts, width};
 use crate::layout_members::param_lines;
 use crate::model::{Base, Decl, Shape, TypeRef, name_order};
 use crate::wrap::{self, MAX_WIDTH};
@@ -95,6 +95,7 @@ fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
         if i > 0 {
             header.push(plain(", "));
         }
+        header.extend(vis_spans(&field.meta.vis));
         header.extend(code(&field.text));
     }
     header.push(plain(")"));
@@ -177,7 +178,7 @@ mod tests {
         let source = "pub struct Run;\n\
                       impl std::fmt::Display for Run {}\n\
                       impl std::fmt::Debug for Run {}\n";
-        assert_eq!(head(source, "Run"), ["struct Run : Debug, Display"]);
+        assert_eq!(head(source, "Run"), ["pub struct Run : Debug, Display"]);
     }
 
     #[test]
@@ -189,7 +190,7 @@ mod tests {
         assert_eq!(
             head(source, "Holder"),
             [
-                "struct Holder<T>",
+                "pub struct Holder<T>",
                 "    : Debug",
                 "    , Named",
                 "    where T: Copy"
@@ -213,7 +214,7 @@ mod tests {
         assert_eq!(
             lines,
             [
-                "struct Wide",
+                "pub struct Wide",
                 "    : Binary, Debug, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp",
                 "    , UpperHex, Write"
             ]

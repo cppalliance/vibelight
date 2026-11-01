@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,25 +58,21 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">prompt · Prompt</a>
+<li><a href="#mod.runvil_parser">runvil_parser</a>
 <ul>
-<li><a href="#type.runvil_parser.Frontmatter">Frontmatter</a></li>
-<li><a href="#type.runvil_parser.prompt.Section">Section</a></li>
-<li><a href="#type.runvil_parser.prompt.Block">Block</a></li>
-</ul>
-</li>
-<li><a href="#group.2">runvil_parser · BodyText</a>
-<ul>
-<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
-<li><a href="#type.runvil_parser.Result">Result</a></li>
-<li><a href="#type.runvil_parser.Error">Error</a></li>
-</ul>
-</li>
-<li><a href="#modules">Modules</a>
-<ul>
-<li><a href="#mod.runvil_parser">runvil_parser</a></li>
+<li><a href="#type.runvil_parser.BodyText"><b>BodyText</b></a></li>
+<li><a href="#type.runvil_parser.Error"><b>Error</b></a></li>
+<li><a href="#type.runvil_parser.Frontmatter"><b>Frontmatter</b></a></li>
 <li><a href="#mod.runvil_parser.parse">parse</a></li>
-<li><a href="#mod.runvil_parser.prompt">prompt</a></li>
+<li><a href="#type.runvil_parser.ParseError"><b>ParseError</b></a></li>
+<li><a href="#mod.runvil_parser.prompt">prompt</a>
+<ul>
+<li><a href="#type.runvil_parser.prompt.Block"><b>Block</b></a></li>
+<li><a href="#type.runvil_parser.prompt.Prompt"><b>Prompt</b></a></li>
+<li><a href="#type.runvil_parser.prompt.Section"><b>Section</b></a></li>
+</ul>
+</li>
+<li><a href="#type.runvil_parser.Result">Result</a></li>
 </ul>
 </li>
 </ul>
@@ -91,11 +87,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -113,21 +111,63 @@ span.src{cursor:default}
 <li><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></li>
 <li><a href="#type.runvil_parser.prompt.Section">Section</a></li>
 </ul>
-<hr>
-<h2 id="group.1">prompt · Prompt</h2>
-<h3 id="type.runvil_parser.prompt.Prompt">prompt::Prompt</h3>
+<h2 id="mod.runvil_parser">runvil_parser</h2>
+<p class="anatomy">crate root: 5 types, 4 re-exports; pub 8, pub(crate) 1</p>
+<h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
+<div class="doc mc-doc">
+<p><span class="c">The parsed YAML frontmatter.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Frontmatter</code></pre>
+<h3 id="type.runvil_parser.BodyText">BodyText</h3>
+<div class="doc mc-doc">
+<p><span class="c">Shared Markdown text.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> BodyText</code></pre>
+<h3 id="type.runvil_parser.ParseError">ParseError</h3>
+<div class="doc mc-doc">
+<p><span class="c">A parse failure reported to callers.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> ParseError</code></pre>
+<h3 id="type.runvil_parser.Result">Result</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's result type.</span></p>
+</div>
+<pre><code><span class="k">pub(crate)</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;</code></pre>
+<h3 id="type.runvil_parser.Error">Error</h3>
+<div class="doc mc-doc">
+<p><span class="c">The crate's internal error.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Error</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> <a href="#type.runvil_parser.prompt.Block">prompt::Block</a>
+<span class="k">using</span> runvil_lua::LuaProgram
+<span class="k">using</span> <a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a>
+<span class="k">using</span> <a href="#type.runvil_parser.prompt.Section">prompt::Section</a></code></pre>
+<h2 id="mod.runvil_parser.parse">parse</h2>
+<div class="doc mc-doc">
+<p><span class="c">Parses a prompt's source into a </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c">: frontmatter, H1, and sections.</span></p>
+</div>
+<p class="anatomy">mod</p>
+<h2 id="mod.runvil_parser.prompt">prompt</h2>
+<div class="doc mc-doc">
+<p><span class="c">Holds the parsed prompt tree: </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c">, its </span><code><span class="c"><a href="#type.runvil_parser.prompt.Section">Section</a></span></code><span class="c">s, and their </span><code><span class="c"><a href="#type.runvil_parser.prompt.Block">Block</a></span></code><span class="c">s.</span></p>
+<p><span class="c">Code outside the Engine reads a prompt's title and frontmatter; the tree</span> <span class="c">below them is the Engine's, reached through </span><code><span class="c">crate::detail</span></code><span class="c">.</span></p>
+<p><span class="c">Construction happens in the parsing modules; this module holds the value</span> <span class="c">types and the invariant-preserving operations on them.</span></p>
+</div>
+<p class="anatomy">mod: 3 types; pub 3</p>
+<h3 id="type.runvil_parser.prompt.Prompt"><span class="dim">prompt::</span>Prompt</h3>
 <div class="doc mc-doc">
 <p><span class="c">A fully parsed prompt file.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">class</span> Prompt : Clone, Debug, Eq, PartialEq
+<span class="k">pub</span> <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
 {
-<span class="k">internal:</span>
+<span class="k">pub(crate):</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The required H1 title.</span></div>    <span class="src">title</span>: String,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered live Lua and prose blocks from the H1.</span></div>    <span class="src">h1_blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Top-level sections (H2s) in file order.</span></div>    <span class="src">sections</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-<span class="gap"></span><span class="k">public:</span>
+<span class="gap"></span><span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Parses the full source text of a prompt file into a </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c"> and</span>
 <span class="c">returns the events reported during parsing alongside the result.</span>
 
@@ -174,14 +214,14 @@ span.src{cursor:default}
         (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;)
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the parsed frontmatter.</span></div>    <span class="src">frontmatter</span>() -&gt; <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>&amp; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the prompt's title, the text of its required H1 heading.</span></div>    <span class="src">title</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-<span class="gap"></span><span class="k">internal:</span>
+<span class="gap"></span><span class="k">pub(crate):</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The entry-point section: the first top-level section in file order;</span>
 <span class="c">the Engine reaches it through </span><code><span class="c">crate::detail::entry</span></code><span class="c">.</span></div>    <span class="src">entry</span>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered live Lua and prose blocks from the H1; the Engine</span>
 <span class="c">reaches them through </span><code><span class="c">crate::detail::h1_blocks</span></code><span class="c">.</span></div>    <span class="src">h1_blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the top-level H2 sections in file order; the Engine reaches</span>
 <span class="c">them through </span><code><span class="c">crate::detail::sections</span></code><span class="c">.</span></div>    <span class="src">sections</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
-<span class="gap"></span><span class="k">private:</span>
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="k">static</span> <span class="src">parse_body</span>(
         frontmatter: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
         shared: Arc&lt;str&gt;&amp;,
@@ -189,19 +229,14 @@ span.src{cursor:default}
         emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
 <span class="gap"></span>    <span class="k">static</span> <span class="src">parse_inner</span>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
 }</code></pre>
-<h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
-<div class="doc mc-doc">
-<p><span class="c">The parsed YAML frontmatter.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Frontmatter</code></pre>
-<h3 id="type.runvil_parser.prompt.Section">prompt::Section</h3>
+<h3 id="type.runvil_parser.prompt.Section"><span class="dim">prompt::</span>Section</h3>
 <div class="doc mc-doc">
 <p><span class="c">One section of a prompt: a heading, ordered blocks, and children.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">class</span> Section : Clone, Debug, Eq, PartialEq
+<span class="k">pub</span> <span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
 {
-<span class="k">internal:</span>
+<span class="k">pub(crate):</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>    <span class="src">name</span>: String,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading level, 2 through 6.</span></div>    <span class="src">level</span>: u8,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ordered lua/prose blocks for this section.</span></div>    <span class="src">blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
@@ -210,7 +245,7 @@ span.src{cursor:default}
 
 <span class="c">Empty for non-list sections.</span></div>    <span class="src">items</span>: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The section's own raw Markdown, without its heading line or children.</span></div>    <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
-<span class="gap"></span><span class="k">public:</span>
+<span class="gap"></span><span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the ordered Lua and prose blocks of this section.</span></div>    <span class="src">blocks</span>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the child sections nested under this one.</span></div>    <span class="src">children</span>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic trailing Lua fence when the last block is Lua and not the sole</span>
@@ -223,12 +258,12 @@ span.src{cursor:default}
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Classic leading Lua fence when the first block is Lua.</span></div>    <span class="src">prologue</span>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Text of the last prose block, or </span><code>""</code><span class="c"> when the section has none.</span></div>    <span class="src">prose</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
 }</code></pre>
-<h3 id="type.runvil_parser.prompt.Block">prompt::Block</h3>
+<h3 id="type.runvil_parser.prompt.Block"><span class="dim">prompt::</span>Block</h3>
 <div class="doc mc-doc">
 <p><span class="c">One executable block inside a section: a compiled Lua fence or prose.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
+<span class="k">pub</span> <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>    <span class="src">Lua</span>(LuaProgram),
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Author prose: the pending Markdown accumulated since the nearest</span>
@@ -241,56 +276,6 @@ span.src{cursor:default}
 <div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">Captured Markdown, trimmed of surrounding blank lines.</span></div>        text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
     },
 }</code></pre>
-<hr>
-<h2 id="group.2">runvil_parser · BodyText</h2>
-<h3 id="type.runvil_parser.BodyText">BodyText</h3>
-<div class="doc mc-doc">
-<p><span class="c">Shared Markdown text.</span></p>
-</div>
-<pre><code><span class="k">struct</span> BodyText</code></pre>
-<h3 id="type.runvil_parser.ParseError">ParseError</h3>
-<div class="doc mc-doc">
-<p><span class="c">A parse failure reported to callers.</span></p>
-</div>
-<pre><code><span class="k">struct</span> ParseError</code></pre>
-<h3 id="type.runvil_parser.Result">Result</h3>
-<div class="doc mc-doc">
-<p><span class="c">The crate's result type.</span></p>
-</div>
-<pre><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;</code></pre>
-<h3 id="type.runvil_parser.Error">Error</h3>
-<div class="doc mc-doc">
-<p><span class="c">The crate's internal error.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Error</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.runvil_parser">runvil_parser</h3>
-<ul>
-<li><a href="#type.runvil_parser.BodyText">BodyText</a></li>
-<li><a href="#type.runvil_parser.Error">Error</a></li>
-<li><a href="#type.runvil_parser.Frontmatter">Frontmatter</a></li>
-<li><a href="#type.runvil_parser.ParseError">ParseError</a></li>
-<li><a href="#type.runvil_parser.Result">Result</a></li>
-</ul>
-<pre><code><span class="k">using</span> <a href="#type.runvil_parser.prompt.Block">prompt::Block</a>
-<span class="k">using</span> runvil_lua::LuaProgram
-<span class="k">using</span> <a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a>
-<span class="k">using</span> <a href="#type.runvil_parser.prompt.Section">prompt::Section</a></code></pre>
-<h3 id="mod.runvil_parser.parse">parse</h3>
-<div class="doc mc-doc">
-<p><span class="c">Parses a prompt's source into a </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c">: frontmatter, H1, and sections.</span></p>
-</div>
-<h3 id="mod.runvil_parser.prompt">prompt</h3>
-<div class="doc mc-doc">
-<p><span class="c">Holds the parsed prompt tree: </span><code><span class="c"><a href="#type.runvil_parser.prompt.Prompt">Prompt</a></span></code><span class="c">, its </span><code><span class="c"><a href="#type.runvil_parser.prompt.Section">Section</a></span></code><span class="c">s, and their </span><code><span class="c"><a href="#type.runvil_parser.prompt.Block">Block</a></span></code><span class="c">s.</span></p>
-<p><span class="c">Code outside the Engine reads a prompt's title and frontmatter; the tree</span> <span class="c">below them is the Engine's, reached through </span><code><span class="c">crate::detail</span></code><span class="c">.</span></p>
-<p><span class="c">Construction happens in the parsing modules; this module holds the value</span> <span class="c">types and the invariant-preserving operations on them.</span></p>
-</div>
-<ul>
-<li><a href="#type.runvil_parser.prompt.Block">prompt::Block</a></li>
-<li><a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a></li>
-<li><a href="#type.runvil_parser.prompt.Section">prompt::Section</a></li>
-</ul>
 </main>
 </body>
 </html>

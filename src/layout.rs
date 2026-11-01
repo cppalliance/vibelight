@@ -118,6 +118,16 @@ pub(crate) fn plain(text: &str) -> Span {
     Span::Code(text.to_owned())
 }
 
+/// Returns a visibility as written and the space after it, or nothing for
+/// a node with no visibility keyword.
+pub(crate) fn vis_spans(vis: &str) -> Vec<Span> {
+    if vis.is_empty() {
+        Vec::new()
+    } else {
+        vec![key(vis), plain(" ")]
+    }
+}
+
 /// Returns the lines of notes at an indent; `marker` opens each doc line.
 pub(crate) fn note_lines(notes: &[Note], indent: usize, marker: Marker) -> Vec<Line> {
     let mut out = Vec::new();

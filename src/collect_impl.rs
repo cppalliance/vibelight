@@ -324,6 +324,7 @@ impl Collector<'_> {
                     .unwrap_or_default(),
                 raw_doc,
                 lints,
+                access: None,
             },
             loc: parts.loc,
             self_fields: Vec::new(),

@@ -91,6 +91,7 @@ impl Collector<'_> {
                 vis: attrs::spelled(&u.vis, file),
                 raw_doc: raw_doc.clone(),
                 lints: lints.clone(),
+                access: None,
             };
             if index == 0 {
                 meta.notes.splice(0..0, notes.iter().cloned());

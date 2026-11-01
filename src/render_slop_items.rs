@@ -4,15 +4,12 @@
 //! outline does not know. The function and value records of members are
 //! built here too.
 
-use std::collections::BTreeMap;
-
-use crate::access::spelled;
 use crate::analysis_items::ItemRef;
+use crate::anatomy::{self, Anatomy};
 use crate::leads_words::split_param;
 use crate::macros;
 use crate::model::{
-    self, Foreign, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, Vis,
-    name_order,
+    self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, name_order,
 };
 use crate::render_slop::{Doc, Outline, Rank};
 use crate::render_slop_catalog::{
@@ -92,32 +89,7 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
         file: module.file,
         line: 1,
     });
-    let mut counts = [0; 4];
-    let mut mix: BTreeMap<String, usize> = BTreeMap::new();
-    let mut count = |slot: usize, vis: Vis| {
-        counts[slot] += 1;
-        *mix.entry(spelled(krate, vis)).or_default() += 1;
-    };
-    for decl in krate.decls.iter().filter(|d| d.module == m) {
-        count(0, decl.vis);
-    }
-    for item in &module.items {
-        let slot = match &item.kind {
-            ItemKind::Foreign {
-                item: Foreign::Type,
-                ..
-            } => 0,
-            ItemKind::Fn(_)
-            | ItemKind::Foreign {
-                item: Foreign::Fn(_),
-                ..
-            } => 1,
-            ItemKind::Const { .. } | ItemKind::Static { .. } | ItemKind::Foreign { .. } => 2,
-            ItemKind::Reexport { .. } => 3,
-            ItemKind::Mark(_) | ItemKind::Unsupported(_) => continue,
-        };
-        count(slot, item.vis);
-    }
+    let Anatomy { counts, mix } = anatomy::of(krate, m);
     let [types, functions, values, reexports] = counts.map(|n| (n > 0).then_some(n));
     let path = module_path(krate, m);
     let record = ModRecord {

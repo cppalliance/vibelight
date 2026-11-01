@@ -108,6 +108,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
             uses: Vec::new(),
             dangling: Vec::new(),
             vis: Vis::Public,
+            access: None,
             parent: source.decl.map(|(parent, _)| parent),
             test_support: false,
             raw_doc: None,

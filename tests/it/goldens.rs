@@ -140,7 +140,6 @@ goldens! {
     special_members => "special-members",
     spellings => "spellings",
     spellings_none => "spellings-none",
-    struct_class => "struct-class",
     structs => "structs",
     surface => "surface",
     test_support => "test-support",
@@ -149,5 +148,6 @@ goldens! {
     unparsable => "unparsable",
     value_links => "value-links",
     visibility => "visibility",
+    visibility_labels => "visibility-labels",
     visibility_scopes => "visibility-scopes",
 }

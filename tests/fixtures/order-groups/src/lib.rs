@@ -1,4 +1,5 @@
-//! Groups of types by module.
+//! Types by module: each module's types follow the order in which they
+//! name each other.
 
 /// The only root: it names Core, Db, and Log, in that order.
 pub struct App {

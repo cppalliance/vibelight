@@ -39,6 +39,7 @@ impl Collector<'_> {
             vis: attrs::spelled(&f.vis, file),
             raw_doc,
             lints,
+            access: None,
         };
         let vis = self.vis(&here, &f.vis);
         self.modules[here.module].items.push(Item {

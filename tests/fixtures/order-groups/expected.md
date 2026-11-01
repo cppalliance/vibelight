@@ -40,7 +40,7 @@
 {"k":"surface","path":"util","kind":"mod"}
 {"k":"surface","path":"util::Spare","kind":"struct"}
 {"k":"mod","path":"crate","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
-{"k":"doc","path":"crate","text":"Groups of types by module."}
+{"k":"doc","path":"crate","text":"Types by module: each module's types follow the order in which they\nname each other."}
 {"k":"struct","path":"App","rust":"pub struct App { pub a_core: engine::Core, pub b_db: store::Db, pub c_log: Log }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"App","text":"The only root: it names Core, Db, and Log, in that order."}
 {"k":"struct","path":"Log","rust":"pub struct Log { pub level: Level }","loc":"src/lib.rs:0","named_by":["App"]}

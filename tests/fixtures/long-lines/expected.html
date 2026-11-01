@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,16 +58,11 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#unconnected">Unconnected types</a>
+<li><a href="#mod.long_lines">long_lines</a>
 <ul>
-<li><a href="#type.long_lines.Container">Container</a></li>
-<li><a href="#type.long_lines.Registry">Registry</a></li>
-<li><a href="#type.long_lines.Wide">Wide</a></li>
-</ul>
-</li>
-<li><a href="#modules">Modules</a>
-<ul>
-<li><a href="#mod.long_lines">long_lines</a></li>
+<li><a href="#type.long_lines.Container"><b>Container</b></a></li>
+<li><a href="#type.long_lines.Registry"><b>Registry</b></a></li>
+<li><a href="#type.long_lines.Wide"><b>Wide</b></a></li>
 </ul>
 </li>
 </ul>
@@ -80,11 +75,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -97,15 +94,16 @@ span.src{cursor:default}
 <li><a href="#type.long_lines.Registry">Registry</a></li>
 <li><a href="#type.long_lines.Wide">Wide</a></li>
 </ul>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
+<h2 id="mod.long_lines">long_lines</h2>
+<p class="anatomy">crate root: 3 types; pub 3</p>
 <h3 id="type.long_lines.Container">Container</h3>
 <div class="doc mc-doc">
 <p><span class="c">A header whose where clause moves.</span></p>
 </div>
-<pre><code><span class="k">class</span> Container&lt;K, V&gt;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Container&lt;K, V&gt;
     <span class="k">where</span> K: Ord + Clone + std::fmt::Debug + Send + Sync, V: Clone + Send
 {
+<span class="k">pub(self):</span>
     <span class="src">keys</span>: Vec&lt;K&gt;,
 <span class="gap"></span>    <span class="src">values</span>: Vec&lt;V&gt;,
 }</code></pre>
@@ -113,12 +111,13 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">A header whose where clause breaks one predicate per line.</span></p>
 </div>
-<pre><code><span class="k">class</span> Registry&lt;K, V, S&gt;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Registry&lt;K, V, S&gt;
     <span class="k">where</span>
         K: Ord + Clone + std::fmt::Debug + Send + Sync + 'static,
         V: Clone + Send + Sync + std::fmt::Debug,
         S: std::hash::BuildHasher + Default
 {
+<span class="k">pub(self):</span>
     <span class="src">keys</span>: Vec&lt;K&gt;,
 <span class="gap"></span>    <span class="src">state</span>: S,
 <span class="gap"></span>    <span class="src">values</span>: Vec&lt;V&gt;,
@@ -127,10 +126,12 @@ span.src{cursor:default}
 <div class="doc mc-doc">
 <p><span class="c">Members that test the long-line rule.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Wide
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wide
 {
+<span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">This doc comment line is deliberately longer than eighty columns so it shows comments never wrap.</span></div>    <span class="src">a_field_with_a_very_long_type</span>: std::collections::BTreeMap&lt;String, std::collections::BTreeSet&lt;u64&gt;&gt;,
-<span class="gap"></span>    <span class="k">static</span> <span class="src">exactly_at_80</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="k">static</span> <span class="src">exactly_at_80</span>(first_value: u64, second_value: u64) -&gt; Option&lt;String&gt;
 <span class="gap"></span>    <span class="k">static</span> <span class="src">fits_with_comment</span>(value: u64) -&gt; u64 <span class="c">// a trailing comment that pushes past eighty</span>
 <span class="gap"></span>    <span class="k">static</span> <span class="src">huge</span>(
         an_extremely_long_parameter_name_for_testing: std::collections::BTreeMap&lt;String, Vec&lt;u64&gt;&gt;)
@@ -157,13 +158,6 @@ span.src{cursor:default}
             R: Fn(String) -&gt; Option&lt;String&gt; + Send + Sync + 'static,
             L: Fn(String, Option&lt;u32&gt;) -&gt; Result&lt;String, u8&gt; + Send
 }</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.long_lines">long_lines</h3>
-<ul>
-<li><a href="#type.long_lines.Container">Container</a></li>
-<li><a href="#type.long_lines.Registry">Registry</a></li>
-<li><a href="#type.long_lines.Wide">Wide</a></li>
-</ul>
 </main>
 </body>
 </html>

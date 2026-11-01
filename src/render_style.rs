@@ -9,7 +9,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -19,7 +19,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -67,8 +67,8 @@ mod tests {
         assert!(STYLE.contains("\na.cross{color:var(--cross)}\n"));
         assert!(STYLE.contains("\nspan.src{cursor:default}\n"));
         assert!(
-            STYLE.contains("\nhr{border:0;border-top:1px solid var(--rule);margin:2rem 0}\n"),
-            "a rule uses the page's line color"
+            STYLE.contains("\nmain>h2{border-top:1px solid var(--rule);"),
+            "a section's rule uses the page's line color"
         );
         assert!(
             STYLE.find("a.cross").unwrap() > STYLE.find(".c a").unwrap(),

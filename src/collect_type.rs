@@ -142,6 +142,7 @@ impl Collector<'_> {
                     vis: String::new(),
                     raw_doc,
                     lints,
+                    access: None,
                 },
                 loc,
             });
@@ -326,6 +327,7 @@ impl Collector<'_> {
                 vis: attrs::spelled(vis, &self.files[here.file]),
                 raw_doc,
                 lints,
+                access: None,
             },
             derives,
             derive_refs,

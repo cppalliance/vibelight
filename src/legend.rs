@@ -6,11 +6,13 @@ use crate::layout::Span;
 
 /// The lines of the HTML legend, in order; backticks mark code.
 const HTML_LINES: &[&str] = &[
-    "A type prints as a C++ declaration: `class` when its body starts with an internal or private member and `struct` when it starts public, with the members of all its impls merged in.",
+    "Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.",
+    "A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as `pub(crate) struct`, with the members of all its impls merged in.",
     "`static` marks a function with no receiver; `() mut` marks one that takes `&mut self`, and a method with no marker takes `&self`.",
     "`: Clone, Debug` is the base list: the standard traits a type derives or implements, by short name.",
-    "A type lists its data first, its fields or variants, then its other members. `internal:` opens the `pub(crate)` members, `private:` the rest, and `public:` goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.",
-    "A module's item that is not public has a line above it that reads `internal` or `private`.",
+    "A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as `pub:`, `pub(crate):`, or `pub(self):` for no keyword, the widest first.",
+    "A module's items are grouped under the same labels, after its macro marks and its extern blocks.",
+    "A dim `reaches pub(crate)` line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.",
     "`[[...]]` is an attribute that shapes the API or its wire format, such as `[[must_use]]` or `[[serde(rename = \"id\")]]`.",
     "`implements: Trait for Type` is an impl with no declared type to attach to, such as a blanket impl.",
     "`MACRO` marks a macro definition, an invocation, a derive from another crate, or an attribute macro.",

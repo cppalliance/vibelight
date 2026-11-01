@@ -19,9 +19,9 @@ use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    analysis, attach, collect, collect_check, document, index, layout_decl, leads, manifest,
-    modtree, order, render_html, render_slop, render_slop_lists, resolve, resolve_run, spellings,
-    test_support,
+    access_stamp, analysis, attach, collect, collect_check, document, index, layout_decl, leads,
+    manifest, modtree, order, render_html, render_slop, render_slop_lists, resolve, resolve_run,
+    spellings, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -80,7 +80,11 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     outcome.spelled = analyzed.spelled;
     outcome.notes = analyzed.notes;
     let mut docs: Vec<Built> = Vec::new();
-    for ((krate, &(p, _)), surface) in krates.iter_mut().zip(&targets).zip(&analyzed.surfaces) {
+    let per_target = (krates.iter_mut().zip(&targets))
+        .zip(&analyzed.surfaces)
+        .zip(analyzed.stamps);
+    for (((krate, &(p, _)), surface), stamps) in per_target {
+        access_stamp::apply(krate, stamps);
         let others = attach::attach(krate);
         let krate: &Crate = krate;
         let spellings = spellings::find(krate);
@@ -153,6 +157,8 @@ struct Analyzed {
     notes: Vec<String>,
     /// Each target's public surface, empty for a target that is no library.
     surfaces: Vec<Vec<crate::surface::Entry>>,
+    /// How far each target's nodes reach, for the HTML.
+    stamps: Vec<access_stamp::Stamps>,
 }
 
 /// Builds the run's analysis view from its resolved, unattached crates and
@@ -226,6 +232,9 @@ fn analyze(
         spelled,
         notes: found.notes,
         surfaces: run.surfaces.clone(),
+        stamps: (0..targets.len())
+            .map(|t| access_stamp::stamps(&run, t))
+            .collect(),
     })
 }
 

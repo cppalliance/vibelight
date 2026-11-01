@@ -291,6 +291,7 @@ impl Collector<'_> {
                 vis: attrs::spelled(vis, file),
                 raw_doc,
                 lints,
+                access: None,
             },
             loc,
             self_fields,

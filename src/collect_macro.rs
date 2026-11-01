@@ -65,6 +65,7 @@ impl Collector<'_> {
             vis: String::new(),
             raw_doc,
             lints,
+            access: None,
         };
         self.modules[here.module].items.push(ModItem {
             name: sort,

@@ -1,4 +1,5 @@
-//! Struct versus class.
+//! Visibility labels: what has no visibility of its own first, then the
+//! fields, then the functions, each set under its visibility.
 
 /// Public and private members.
 pub struct Mixed {

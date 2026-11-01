@@ -164,7 +164,7 @@ struct Links {
     same: usize,
     cross: usize,
     source: usize,
-    /// Links, same-page or cross-page, to a function, constant, or static.
+    /// Cross-page links to a function, constant, or static.
     values: usize,
 }
 
@@ -203,12 +203,9 @@ fn every_link_lands(name: &str) -> Links {
         }
         for href in hrefs(page) {
             let (target, fragment) = href.split_once('#').unwrap_or((href.as_str(), ""));
-            if ["fn.", "const.", "static."]
+            let value = ["fn.", "const.", "static."]
                 .iter()
-                .any(|kind| fragment.starts_with(kind))
-            {
-                counts.values += 1;
-            }
+                .any(|kind| fragment.starts_with(kind));
             if target.is_empty() {
                 assert!(
                     ids(page).contains(fragment),
@@ -223,6 +220,7 @@ fn every_link_lands(name: &str) -> Links {
                     "{file}: {href} is missing"
                 );
                 counts.cross += 1;
+                counts.values += usize::from(value);
             } else {
                 assert!(
                     folder.join(target).is_file(),

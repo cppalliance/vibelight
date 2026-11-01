@@ -160,6 +160,7 @@ impl Collector<'_> {
             vis: attrs::spelled(vis, &self.files[here.file]),
             raw_doc,
             lints,
+            access: None,
         };
         let vis = self.vis(here, vis);
         self.modules[here.module].items.push(Item {
@@ -318,6 +319,7 @@ impl Collector<'_> {
                 vis: attrs::spelled(vis, file),
                 raw_doc,
                 lints,
+                access: None,
             };
             let vis = self.vis(here, vis);
             self.modules[here.module].items.push(Item {

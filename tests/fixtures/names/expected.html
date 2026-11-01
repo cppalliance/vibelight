@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,29 +58,30 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">names · Catalog</a>
+<li><a href="#mod.names">names</a>
 <ul>
-<li><a href="#type.names.model.Record">model::Record</a></li>
-<li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
-<li><a href="#type.names.Pairs">Pairs</a></li>
-<li><a href="#type.names.api.Token">api::Token</a></li>
+<li><a href="#mod.names.api"><b>api</b></a>
+<ul>
+<li><a href="#mod.names.api.inner"><b>inner</b></a>
+<ul>
+<li><a href="#type.names.api.inner.Handle"><b>Handle</b></a></li>
+<li><a href="#type.names.api.inner.Shared"><b>Shared</b></a></li>
 </ul>
 </li>
-<li><a href="#unconnected">Unconnected types</a>
-<ul>
-<li><a href="#type.names.api.inner.Shared">api::inner::Shared</a></li>
-<li><a href="#type.names.model.Shared">model::Shared</a></li>
-<li><a href="#type.names.Twin">Twin</a></li>
-<li><a href="#type.names.Twin-2">Twin</a></li>
-<li><a href="#type.names.Wrapper">Wrapper</a></li>
+<li><a href="#type.names.api.Token"><b>Token</b></a></li>
 </ul>
 </li>
-<li><a href="#modules">Modules</a>
+<li><a href="#type.names.Catalog"><b>Catalog</b></a></li>
+<li><a href="#mod.names.model"><b>model</b></a>
 <ul>
-<li><a href="#mod.names">names</a></li>
-<li><a href="#mod.names.api">api</a></li>
-<li><a href="#mod.names.api.inner">api::inner</a></li>
-<li><a href="#mod.names.model">model</a></li>
+<li><a href="#type.names.model.Record"><b>Record</b></a></li>
+<li><a href="#type.names.model.Shared"><b>Shared</b></a></li>
+</ul>
+</li>
+<li><a href="#type.names.Pairs"><b>Pairs</b></a></li>
+<li><a href="#type.names.Twin"><b>Twin</b></a></li>
+<li><a href="#type.names.Twin-2"><b>Twin</b></a></li>
+<li><a href="#type.names.Wrapper"><b>Wrapper</b></a></li>
 </ul>
 </li>
 </ul>
@@ -93,11 +94,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -122,106 +125,92 @@ span.src{cursor:default}
 <li><a href="#type.names.Twin">Twin</a></li>
 <li><a href="#type.names.Wrapper">Wrapper</a></li>
 </ul>
-<hr>
-<h2 id="group.1">names · Catalog</h2>
+<h2 id="mod.names">names</h2>
+<p class="anatomy">crate root: 5 types, 1 re-export; pub 6</p>
 <h3 id="type.names.Catalog">Catalog</h3>
 <div class="doc mc-doc">
 <p><span class="c">Uses names resolved every way rule 39 allows.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Catalog
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Catalog
 {
+<span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a prefix path.</span></div>    <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a pub use rename at the root.</span></div>    <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a glob import.</span></div>    <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A unique name across the target.</span></div>    <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An ambiguous name stays plain.</span></div>    <span class="src">fifth</span>: Shared,
 }</code></pre>
-<h3 id="type.names.model.Record">model::Record</h3>
-<div class="doc mc-doc">
-<p><span class="c">A record.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Record
-{
-    <span class="src">id</span>: u32,
-}</code></pre>
-<h3 id="type.names.api.inner.Handle">api::inner::Handle</h3>
-<div class="doc mc-doc">
-<p><span class="c">A handle.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Handle</code></pre>
 <h3 id="type.names.Pairs">Pairs</h3>
 <div class="doc mc-doc">
 <p><span class="c">Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span></p>
 </div>
-<pre><code><span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a</code></pre>
-<h3 id="type.names.api.Token">api::Token</h3>
-<div class="doc mc-doc">
-<p><span class="c">A unique token type.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Token</code></pre>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
-<h3 id="type.names.api.inner.Shared">api::inner::Shared</h3>
-<div class="doc mc-doc">
-<p><span class="c">The other type named Shared.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Shared</code></pre>
-<h3 id="type.names.model.Shared">model::Shared</h3>
-<div class="doc mc-doc">
-<p><span class="c">One of two types named Shared.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Shared</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a</code></pre>
 <h3 id="type.names.Twin">Twin</h3>
 <div class="doc mc-doc">
 <p><span class="c">The first of two types named Twin, under different cfgs.</span></p>
 </div>
 <pre><code> <span class="c">unix</span>
-<span class="k">struct</span> Twin</code></pre>
+<span class="k">pub</span> <span class="k">struct</span> Twin</code></pre>
 <h3 id="type.names.Twin-2">Twin</h3>
 <div class="doc mc-doc">
 <p><span class="c">The second Twin.</span></p>
 </div>
 <pre><code> <span class="c">windows</span>
-<span class="k">struct</span> Twin</code></pre>
+<span class="k">pub</span> <span class="k">struct</span> Twin</code></pre>
 <h3 id="type.names.Wrapper">Wrapper</h3>
 <div class="doc mc-doc">
 <p><span class="c">A generic parameter that shares a type's name stays plain.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Wrapper&lt;Record&gt;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;Record&gt;
 {
+<span class="k">pub:</span>
     <span class="src">inner</span>: Record,
 }</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.names">names</h3>
-<ul>
-<li><a href="#type.names.Catalog">Catalog</a></li>
-<li><a href="#type.names.Pairs">Pairs</a></li>
-<li><a href="#type.names.Twin">Twin</a></li>
-<li><a href="#type.names.Twin-2">Twin</a></li>
-<li><a href="#type.names.Wrapper">Wrapper</a></li>
-</ul>
-<pre><code><span class="k">using</span> Entry = <a href="#type.names.model.Record">model::Record</a></code></pre>
-<h3 id="mod.names.api">api</h3>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> Entry = <a href="#type.names.model.Record">model::Record</a></code></pre>
+<h2 id="mod.names.api">api</h2>
 <div class="doc mc-doc">
 <p><span class="c">Re-exports through a glob.</span></p>
 </div>
-<ul>
-<li><a href="#type.names.api.Token">api::Token</a></li>
-</ul>
-<pre><code><span class="k">using</span> self::inner::*</code></pre>
-<h3 id="mod.names.api.inner">api::inner</h3>
-<ul>
-<li><a href="#type.names.api.inner.Handle">api::inner::Handle</a></li>
-<li><a href="#type.names.api.inner.Shared">api::inner::Shared</a></li>
-</ul>
-<h3 id="mod.names.model">model</h3>
+<p class="anatomy">pub mod: 1 type, 1 re-export; pub 2</p>
+<h3 id="type.names.api.Token"><span class="dim">api::</span>Token</h3>
+<div class="doc mc-doc">
+<p><span class="c">A unique token type.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Token</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> self::inner::*</code></pre>
+<h2 id="mod.names.api.inner"><span class="dim">api::</span>inner</h2>
+<p class="anatomy">pub mod: 2 types; pub 2</p>
+<h3 id="type.names.api.inner.Handle"><span class="dim">api::inner::</span>Handle</h3>
+<div class="doc mc-doc">
+<p><span class="c">A handle.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle</code></pre>
+<h3 id="type.names.api.inner.Shared"><span class="dim">api::inner::</span>Shared</h3>
+<div class="doc mc-doc">
+<p><span class="c">The other type named Shared.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
+<h2 id="mod.names.model">model</h2>
 <div class="doc mc-doc">
 <p><span class="c">The record types.</span></p>
 </div>
-<ul>
-<li><a href="#type.names.model.Record">model::Record</a></li>
-<li><a href="#type.names.model.Shared">model::Shared</a></li>
-</ul>
+<p class="anatomy">pub mod: 2 types; pub 2</p>
+<h3 id="type.names.model.Record"><span class="dim">model::</span>Record</h3>
+<div class="doc mc-doc">
+<p><span class="c">A record.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Record
+{
+<span class="k">pub:</span>
+    <span class="src">id</span>: u32,
+}</code></pre>
+<h3 id="type.names.model.Shared"><span class="dim">model::</span>Shared</h3>
+<div class="doc mc-doc">
+<p><span class="c">One of two types named Shared.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
 </main>
 </body>
 </html>

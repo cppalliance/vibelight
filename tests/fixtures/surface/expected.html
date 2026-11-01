@@ -13,7 +13,7 @@ nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18re
 nav ul{list-style:none;margin:0;padding-left:1rem}
 nav>ul{padding-left:0}
 main{flex:1;min-width:0;padding:1rem 2rem}
-hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
 a{color:var(--link);text-decoration:none}
 a:hover{text-decoration:underline}
 pre{background:none;padding:.75rem 0;overflow-x:auto}
@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source{color:var(--muted)}
+.source,.anatomy{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -58,33 +58,52 @@ span.src{cursor:default}
 <ul>
 <li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
-<li><a href="#group.1">api::v1 · Request</a>
+<li><a href="#mod.surface">surface</a>
 <ul>
-<li><a href="#type.surface.detail.Handle">detail::Handle</a></li>
+<li><a href="#mod.surface.api"><b>api</b></a>
+<ul>
+<li><a href="#mod.surface.api.v1"><b>v1</b></a>
+<ul>
+<li><a href="#type.surface.api.v1.Request"><b>Request</b></a></li>
+<li><a href="#fn.surface.api.v1.send"><b>send()</b></a></li>
 </ul>
 </li>
-<li><a href="#test-support">Test support</a>
-<ul>
-<li><a href="#type.surface.Fake">Fake</a></li>
+<li><a href="#const.surface.api.VERSION"><b>VERSION</b></a></li>
 </ul>
 </li>
-<li><a href="#unconnected">Unconnected types</a>
+<li><a href="#static.surface.CALLS"><b>CALLS</b></a></li>
+<li><a href="#mod.surface.detail">detail</a>
 <ul>
-<li><a href="#type.surface.detail.tools.Tool">detail::tools::Tool</a></li>
+<li><a href="#type.surface.detail.Handle"><b>Handle</b></a></li>
+<li><a href="#fn.surface.detail.helper">helper()</a></li>
+<li><a href="#mod.surface.detail.tools"><b>tools</b></a>
+<ul>
+<li><a href="#type.surface.detail.tools.Tool"><b>Tool</b></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#type.surface.Fake"><b>Fake</b></a></li>
 <li><a href="#type.surface.Internal">Internal</a></li>
-<li><a href="#type.surface.prelude.Marker">prelude::Marker</a></li>
+<li><a href="#mod.surface.prelude">prelude</a>
+<ul>
+<li><a href="#fn.surface.prelude.mark"><b>mark()</b></a></li>
+<li><a href="#type.surface.prelude.Marker"><b>Marker</b></a></li>
 </ul>
 </li>
-<li><a href="#modules">Modules</a>
+<li><a href="#fn.surface.start"><b>start()</b></a></li>
+<li><a href="#mod.surface.values">values</a>
 <ul>
-<li><a href="#mod.surface">surface</a></li>
-<li><a href="#mod.surface.api">api</a></li>
-<li><a href="#mod.surface.api.v1">api::v1</a></li>
-<li><a href="#mod.surface.detail">detail</a></li>
-<li><a href="#mod.surface.detail.tools">detail::tools</a></li>
-<li><a href="#mod.surface.prelude">prelude</a></li>
-<li><a href="#mod.surface.values">values</a></li>
-<li><a href="#mod.surface.values.inner">values::inner</a></li>
+<li><a href="#fn.surface.values.build"><b>build()</b></a></li>
+<li><a href="#static.surface.values.CURRENT"><b>CURRENT</b></a></li>
+<li><a href="#mod.surface.values.inner">inner</a>
+<ul>
+<li><a href="#fn.surface.values.inner.deep"><b>deep()</b></a></li>
+</ul>
+</li>
+<li><a href="#const.surface.values.MAX"><b>MAX</b></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -97,11 +116,13 @@ span.src{cursor:default}
 </div>
 <h2 id="legend">Legend</h2>
 <ul class="legend">
-<li>A type prints as a C++ declaration: <code>class</code> when its body starts with an internal or private member and <code>struct</code> when it starts public, with the members of all its impls merged in.</li>
+<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists its data first, its fields or variants, then its other members. <code>internal:</code> opens the <code>pub(crate)</code> members, <code>private:</code> the rest, and <code>public:</code> goes back to public; a label prints only where the access changes from what the keyword gives, so a type can show one twice.</li>
-<li>A module's item that is not public has a line above it that reads <code>internal</code> or <code>private</code>.</li>
+<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
+<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
+<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
 <li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
 <li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
 <li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
@@ -109,74 +130,49 @@ span.src{cursor:default}
 </ul>
 <p class="kill"><b class="m">MACROS:</b> 1 definition</p>
 <ul class="kill">
-<li><b class="m">MACRO</b> <code>macro_rules! hello</code>, in <a href="#macro.1">surface</a></li>
+<li><b class="m">MACRO</b> <code>macro_rules! hello</code>, in <a href="#mod.surface">surface</a></li>
 </ul>
 <h2 id="surface">Public surface</h2>
 <ul class="surface">
 <li><a href="#mod.surface.api">api</a></li>
 <li><a href="#mod.surface.api.v1">api::v1</a></li>
 <li><a href="#type.surface.api.v1.Request">api::v1::Request</a></li>
-<li><a href="#mod.surface.api.v1">api::v1::send()</a></li>
-<li><a href="#mod.surface.api">api::VERSION</a></li>
+<li><a href="#fn.surface.api.v1.send">api::v1::send()</a></li>
+<li><a href="#const.surface.api.VERSION">api::VERSION</a></li>
 <li>BTreeMap (std::collections::BTreeMap)</li>
-<li><a href="#mod.surface.values">build()</a></li>
-<li><a href="#mod.surface">CALLS</a></li>
-<li><a href="#mod.surface.values">CURRENT</a></li>
-<li><a href="#mod.surface.values.inner">deep()</a></li>
+<li><a href="#fn.surface.values.build">build()</a></li>
+<li><a href="#static.surface.CALLS">CALLS</a></li>
+<li><a href="#static.surface.values.CURRENT">CURRENT</a></li>
+<li><a href="#fn.surface.values.inner.deep">deep()</a></li>
 <li><a href="#type.surface.Fake">Fake</a> (test support)</li>
 <li><a href="#type.surface.detail.Handle">Handle</a></li>
 <li><a href="#mod.surface">hello!</a></li>
 <li><a href="#mod.surface.detail.tools">kit</a></li>
 <li><a href="#type.surface.detail.tools.Tool">kit::Tool</a></li>
-<li><a href="#mod.surface.prelude">mark()</a></li>
+<li><a href="#fn.surface.prelude.mark">mark()</a></li>
 <li><a href="#type.surface.prelude.Marker">Marker</a></li>
-<li><a href="#mod.surface.values">MAX</a></li>
-<li><a href="#mod.surface">start()</a></li>
+<li><a href="#const.surface.values.MAX">MAX</a></li>
+<li><a href="#fn.surface.start">start()</a></li>
 </ul>
-<hr>
-<h2 id="group.1">api::v1 · Request</h2>
-<h3 id="type.surface.api.v1.Request">api::v1::Request</h3>
+<h2 id="mod.surface">surface</h2>
+<p class="anatomy">crate root: 2 types, 1 function, 1 value, 8 re-exports; pub 11, pub(crate) 1</p>
+<h3 id="type.surface.Internal">Internal</h3>
 <div class="doc mc-doc">
-<p><span class="c">A request.</span></p>
+<p><span class="c">A crate-only type.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Request</code></pre>
-<h3 id="type.surface.detail.Handle">detail::Handle</h3>
-<div class="doc mc-doc">
-<p><span class="c">A handle made public through a re-export.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Handle</code></pre>
-<hr>
-<h2 id="test-support">Test support</h2>
+<pre><code><span class="k">pub(crate)</span> <span class="k">struct</span> Internal</code></pre>
 <h3 id="type.surface.Fake">Fake</h3>
 <div class="doc mc-doc">
 <p><span class="c">A fake for tests and benches.</span></p>
 </div>
 <pre><code> <span class="c">any(test, feature = "test-support")</span>
-<span class="k">struct</span> Fake</code></pre>
-<hr>
-<h2 id="unconnected">Unconnected types</h2>
-<h3 id="type.surface.detail.tools.Tool">detail::tools::Tool</h3>
+<span class="k">pub</span> <span class="k">struct</span> Fake</code></pre>
 <div class="doc mc-doc">
-<p><span class="c">A tool.</span></p>
+<p><span class="c">Says hello.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Tool</code></pre>
-<h3 id="type.surface.Internal">Internal</h3>
-<div class="doc mc-doc">
-<p><span class="c">A crate-only type.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Internal</code></pre>
-<h3 id="type.surface.prelude.Marker">prelude::Marker</h3>
-<div class="doc mc-doc">
-<p><span class="c">A marker a glob re-exports.</span></p>
-</div>
-<pre><code><span class="k">struct</span> Marker</code></pre>
-<h2 id="modules">Modules</h2>
-<h3 id="mod.surface">surface</h3>
-<ul>
-<li><a href="#type.surface.Fake">Fake</a></li>
-<li><a href="#type.surface.Internal">Internal</a></li>
-</ul>
-<pre><code><span class="k">using</span> prelude::*
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! hello</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> prelude::*
 <span class="k">using</span> std::collections::BTreeMap
 <span class="k">using</span> <a href="#fn.surface.values.build">values::build</a>
 <span class="k">using</span> <a href="#static.surface.values.CURRENT">values::CURRENT</a>
@@ -184,77 +180,88 @@ span.src{cursor:default}
 <span class="k">using</span> <a href="#type.surface.detail.Handle">detail::Handle</a>
 <span class="k">using</span> kit = detail::tools
 <span class="k">using</span> <a href="#const.surface.values.MAX">values::MAX</a>
-<span class="gap"></span><span class="c"> Says hello.</span>
- <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! hello</span>
 <span class="gap"></span><span class="c"> The number of calls so far.</span>
 <span class="k">static</span> <span class="src" id="static.surface.CALLS">CALLS</span>: u8 = 0
 <span class="gap"></span><span class="c"> Starts the library.</span>
 <span class="src" id="fn.surface.start">start</span>()</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! hello</p>
-<h3 id="mod.surface.api">api</h3>
+<h2 id="mod.surface.api">api</h2>
 <div class="doc mc-doc">
 <p><span class="c">The public API.</span></p>
 </div>
-<div class="doc mc-doc">
-<p><span class="c">The version in use.</span></p>
-</div>
-<pre><code><span class="k">constexpr</span> <span class="src" id="const.surface.api.VERSION">VERSION</span>: u8 = 1</code></pre>
-<h3 id="mod.surface.api.v1">api::v1</h3>
+<p class="anatomy">pub mod: 1 value; pub 1</p>
+<pre><code><span class="k">pub:</span>
+<span class="c"> The version in use.</span>
+<span class="k">constexpr</span> <span class="src" id="const.surface.api.VERSION">VERSION</span>: u8 = 1</code></pre>
+<h2 id="mod.surface.api.v1"><span class="dim">api::</span>v1</h2>
 <div class="doc mc-doc">
 <p><span class="c">The first version.</span></p>
 </div>
-<ul>
-<li><a href="#type.surface.api.v1.Request">api::v1::Request</a></li>
-</ul>
+<p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
+<h3 id="type.surface.api.v1.Request"><span class="dim">api::v1::</span>Request</h3>
 <div class="doc mc-doc">
-<p><span class="c">Sends a request.</span></p>
+<p><span class="c">A request.</span></p>
 </div>
-<pre><code><span class="src" id="fn.surface.api.v1.send">send</span>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8</code></pre>
-<h3 id="mod.surface.detail">detail</h3>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Request</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Sends a request.</span>
+<span class="src" id="fn.surface.api.v1.send">send</span>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8</code></pre>
+<h2 id="mod.surface.detail">detail</h2>
 <div class="doc mc-doc">
 <p><span class="c">Hidden helpers.</span></p>
 </div>
-<ul>
-<li><a href="#type.surface.detail.Handle">detail::Handle</a></li>
-</ul>
+<p class="anatomy">mod: 1 type, 1 function; pub 2</p>
+<h3 id="type.surface.detail.Handle"><span class="dim">detail::</span>Handle</h3>
 <div class="doc mc-doc">
-<p><span class="c">A helper that stays hidden.</span></p>
+<p><span class="c">A handle made public through a re-export.</span></p>
 </div>
-<pre><code><span class="src" id="fn.surface.detail.helper">helper</span>()</code></pre>
-<h3 id="mod.surface.detail.tools">detail::tools</h3>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A helper that stays hidden.</span>
+<span class="dim">reaches pub(crate)</span>
+<span class="src" id="fn.surface.detail.helper">helper</span>()</code></pre>
+<h2 id="mod.surface.detail.tools"><span class="dim">detail::</span>tools</h2>
 <div class="doc mc-doc">
 <p><span class="c">Tools reached only through a re-export.</span></p>
 </div>
-<ul>
-<li><a href="#type.surface.detail.tools.Tool">detail::tools::Tool</a></li>
-</ul>
-<h3 id="mod.surface.prelude">prelude</h3>
+<p class="anatomy">pub mod: 1 type; pub 1</p>
+<h3 id="type.surface.detail.tools.Tool"><span class="dim">detail::tools::</span>Tool</h3>
+<div class="doc mc-doc">
+<p><span class="c">A tool.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Tool</code></pre>
+<h2 id="mod.surface.prelude">prelude</h2>
 <div class="doc mc-doc">
 <p><span class="c">Names a glob brings in.</span></p>
 </div>
-<ul>
-<li><a href="#type.surface.prelude.Marker">prelude::Marker</a></li>
-</ul>
+<p class="anatomy">mod: 1 type, 1 function; pub 2</p>
+<h3 id="type.surface.prelude.Marker"><span class="dim">prelude::</span>Marker</h3>
 <div class="doc mc-doc">
-<p><span class="c">A function a glob re-exports.</span></p>
+<p><span class="c">A marker a glob re-exports.</span></p>
 </div>
-<pre><code><span class="src" id="fn.surface.prelude.mark">mark</span>()</code></pre>
-<h3 id="mod.surface.values">values</h3>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A function a glob re-exports.</span>
+<span class="src" id="fn.surface.prelude.mark">mark</span>()</code></pre>
+<h2 id="mod.surface.values">values</h2>
 <div class="doc mc-doc">
 <p><span class="c">Values made public through re-exports.</span></p>
 </div>
-<pre><code><span class="k">using</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>
+<p class="anatomy">mod: 1 function, 2 values, 1 re-export; pub 4</p>
+<pre><code><span class="k">pub:</span>
+<span class="dim">reaches pub(crate)</span>
+<span class="k">using</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>
 <span class="gap"></span><span class="c"> The largest value.</span>
 <span class="k">constexpr</span> <span class="src" id="const.surface.values.MAX">MAX</span>: u8 = 9
 <span class="gap"></span><span class="c"> The current value.</span>
 <span class="k">static</span> <span class="src" id="static.surface.values.CURRENT">CURRENT</span>: u8 = 0
 <span class="gap"></span><span class="c"> Builds a value.</span>
 <span class="src" id="fn.surface.values.build">build</span>() -&gt; u8</code></pre>
-<h3 id="mod.surface.values.inner">values::inner</h3>
-<div class="doc mc-doc">
-<p><span class="c">A function two re-exports away.</span></p>
-</div>
-<pre><code><span class="src" id="fn.surface.values.inner.deep">deep</span>()</code></pre>
+<h2 id="mod.surface.values.inner"><span class="dim">values::</span>inner</h2>
+<p class="anatomy">mod: 1 function; pub 1</p>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A function two re-exports away.</span>
+<span class="src" id="fn.surface.values.inner.deep">deep</span>()</code></pre>
 </main>
 </body>
 </html>
