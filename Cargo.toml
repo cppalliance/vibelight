@@ -4,6 +4,10 @@ version = "0.4.0"
 edition = "2024"
 rust-version = "1.85"
 license = "BSL-1.0"
+# Two targets are built: `vibelight`, and `cargo-vibelight`, which runs it so
+# that `cargo vibelight` works wherever the package is installed. A bare
+# `cargo run` is the tool, never the shim.
+default-run = "vibelight"
 description = "Outlines a Rust crate's declarations and comments: JSON Lines markdown of slop leads and one-line Rust signatures for a model analyzing the code, and linked C++-header-style HTML for browsing it"
 repository = "https://github.com/cppalliance/vibelight"
 homepage = "https://github.com/cppalliance/vibelight"

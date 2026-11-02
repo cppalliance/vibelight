@@ -11,5 +11,6 @@ mod leads;
 mod links;
 mod stamp;
 mod structure;
+mod subcommand;
 mod support;
 mod workspaces;

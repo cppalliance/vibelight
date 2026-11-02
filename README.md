@@ -48,6 +48,14 @@ vibelight is also on crates.io, so `cargo install vibelight` builds and installs
 vibelight [<crate-dir-or-file.rs>...] [-o <dir>]
 ```
 
+Every install puts `cargo-vibelight` beside the `vibelight` binary, so `cargo vibelight` runs the same command with the same arguments, and no `.cargo/config.toml` alias is needed in any repository:
+
+```
+cargo vibelight ../my-crate -o outline
+```
+
+Both binary names come from one `cargo install vibelight`, because they are two targets of one package. `cargo-vibelight` runs the `vibelight` binary in its own folder and keeps its exit code, so the two always agree on every flag, and a `vibelight` moved away from it stops with a message that names the missing file.
+
 - With no arguments, vibelight reads the `vibelight.toml` in the current directory or the first parent that holds one, the way Cargo finds its files, and outlines the crates it chooses. When there is none, it writes one first (see [The first run](#the-first-run)).
 - `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file, in place of the crates the config chooses. Several crates can be named at once. A crate named here is always outlined, even when the config's `exclude` matches it, and the config's `follow` and `exclude` still apply to the crates the run follows into. A single `.rs` file cannot be mixed with crates, and the config's globs pass it by.
 - `-o` (or `--out`) is the folder to write into, in place of the config's. The markdown files and the index go in it, and the HTML files in its `html` folder. It is created if missing.
