@@ -98,6 +98,7 @@ impl AnalysisRun<'_> {
             self.surfaces.len(),
             self.accesses.len(),
             self.graph.len(),
+            self.crate_graph.len(),
             self.spellings.len(),
             self.census.tree.len(),
         ];

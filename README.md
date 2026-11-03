@@ -142,6 +142,12 @@ The folder holds what the last run wrote. After writing, a run removes each outl
 - [gamma.md](gamma.md): `vendor/gamma`, followed, 4 KB
 ```
 
+When the production code of one outline uses items of another, a `## Uses between outlines` section follows the list. It has one line for each outline that uses another or that another uses: the outlines it uses, the outlines that use it, each with the number of distinct items, and its instability, `fan_out / (fan_in + fan_out)`, where `fan_out` counts the outlines it uses and `fan_in` the outlines that use it. Doc links do not count. A use counts for the crate that declares the item when the using crate depends on it, else for the first of its dependencies in the list that re-exports the item by name, directly or through other re-exports, else for the crate that declares it. A glob, or a re-export of a whole crate or module, even under another name, does not re-export its items by name. `html/index.html` has the same section, with each name linked to its page:
+
+```
+- `runvil_engine` uses `runvil_lua` (50 items), `runvil_types` (34 items); used by `runvil` (12 items); instability 0.67
+```
+
 ## Colors
 
 The HTML file colors code the way an editor does. A link inside the page uses the link color, whether it goes to a type or to a function, constant, or static, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. A member name links to the line that declares it.

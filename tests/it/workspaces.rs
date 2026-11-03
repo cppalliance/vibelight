@@ -275,6 +275,15 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
         ),
         "the link goes past relay to the crate that defines the function"
     );
+    let index = fs::read_to_string(repo.join("out").join("index.md")).unwrap();
+    assert!(
+        index.ends_with(
+            "- `front` uses `relay` (3 items); instability 1.00\n\
+             - `origin` used by `relay` (3 items); instability 0.00\n\
+             - `relay` uses `origin` (3 items); used by `front` (3 items); instability 0.50\n"
+        ),
+        "front depends only on relay, so its uses of origin's values count for relay:\n{index}"
+    );
 }
 
 #[test]
@@ -282,8 +291,9 @@ fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
     let found = every_link_lands("values");
     assert_eq!(found.values, 8, "four in relay and four in front");
     assert_eq!(
-        found.cross, 11,
-        "the eight value links, and the index's one link to each of the three pages"
+        found.cross, 18,
+        "the eight value links, the index's one link to each of the three pages, and the \
+         seven names on its three lines of uses between outlines"
     );
 }
 

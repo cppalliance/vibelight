@@ -115,7 +115,7 @@ Record each stderr warning, such as a file that does not parse, an `UNSUPPORTED`
 
 ## Scope
 
-Read the config's `index.md`. It lists each outline with its crate's folder, whether the run selected the crate or followed a path dependency to it, and its size. A repository, or a description that names no particular crates, targets every selected outline. A request that names crates by path, package name, or glob targets only their outlines, and every other outline in the index is context. Context outlines are never analyzed: `external` records show their first doc lines, and analysts read the types the targets use.
+Read the config's `index.md`. It lists each outline with its crate's folder, whether the run selected the crate or followed a path dependency to it, and its size. When an outline uses another, a `## Uses between outlines` section follows: which outlines use which, each with the number of distinct items, and each outline's instability, `fan_out / (fan_in + fan_out)`, counting outlines. A repository, or a description that names no particular crates, targets every selected outline. A request that names crates by path, package name, or glob targets only their outlines, and every other outline in the index is context. Context outlines are never analyzed: `external` records show their first doc lines, and analysts read the types the targets use.
 
 Name each target crate once, with its directory and the outline's size, even when the request names several. A multi-crate request gets one line per crate, never a paragraph about the index.
 

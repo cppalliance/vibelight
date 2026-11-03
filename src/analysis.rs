@@ -221,6 +221,9 @@ pub(crate) struct AnalysisRun<'a> {
     pub(crate) accesses: Vec<access::Accesses>,
     /// For each target, which of its modules use items of which others.
     pub(crate) graph: module_graph::Graph,
+    /// For each target, the other targets whose items its production code
+    /// uses, each with how many distinct items.
+    pub(crate) crate_graph: Vec<BTreeMap<usize, usize>>,
     /// For each target, the outside items its declarations write in more
     /// than one way, with the self types of the impls that belong to its
     /// declarations left out, as after attach.
@@ -291,6 +294,7 @@ impl<'a> AnalysisRun<'a> {
             surfaces,
             accesses,
             graph: Vec::new(),
+            crate_graph: Vec::new(),
             spellings,
             boilerplate: boilerplate.to_vec(),
         };
@@ -302,6 +306,7 @@ impl<'a> AnalysisRun<'a> {
         }
         run.uses = run.observe();
         run.graph = module_graph::build(&run);
+        run.crate_graph = module_graph::crates(&run);
         run
     }
 }

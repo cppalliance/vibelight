@@ -193,6 +193,18 @@ fn a_repository_without_a_config_gets_one_that_chooses_its_crates() {
             "{index}"
         );
     }
+    assert!(
+        index.ends_with(
+            "re-exports the item by name, else for the crate that declares it.\n\n\
+             - `alpha` uses `beta` (2 items), `delta` (1 item), `gamma` (1 item); \
+             used by `facade` (2 items); instability 0.75\n\
+             - `beta` used by `alpha` (2 items), `facade` (1 item); instability 0.00\n\
+             - `delta` used by `alpha` (1 item); instability 0.00\n\
+             - `facade` uses `alpha` (2 items), `beta` (1 item); instability 1.00\n\
+             - `gamma` used by `alpha` (1 item); instability 0.00\n"
+        ),
+        "the followed crates join the uses between outlines:\n{index}"
+    );
     let second = vibelight_in(&repo, &[]);
     assert_eq!(lines(&second.stderr), [NOTE], "the config is written once");
     assert_eq!(

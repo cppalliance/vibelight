@@ -110,12 +110,19 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         })
         .collect();
     let mut entries = Vec::new();
-    for (((&(p, target), page), krate), text) in targets.iter().zip(&docs).zip(&krates).zip(texts) {
+    let per_target = (targets.iter().enumerate())
+        .zip(&docs)
+        .zip(&krates)
+        .zip(texts);
+    for ((((t, &(p, target)), page), krate), text) in per_target {
+        let [uses, used_by] = uses_between(&targets, &analyzed.crate_graph, t);
         entries.push(index::Entry {
             stem: target.stem.clone(),
             dir: shown(&chosen.base, &chosen.packages[p].dir),
             followed: chosen.packages[p].followed,
             bytes: text.len(),
+            uses,
+            used_by,
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
@@ -164,6 +171,9 @@ struct Analyzed {
     stamps: Vec<access_stamp::Stamps>,
     /// Each target's module graph, for the HTML.
     graph: module_graph::Graph,
+    /// For each target, the other targets whose items it uses, each with
+    /// how many distinct items, for the index.
+    crate_graph: Vec<BTreeMap<usize, usize>>,
 }
 
 /// Builds the run's analysis view from its resolved, unattached crates and
@@ -241,6 +251,7 @@ fn analyze(
             .map(|t| access_stamp::stamps(&run, t))
             .collect(),
         graph: run.graph.clone(),
+        crate_graph: run.crate_graph.clone(),
     })
 }
 
@@ -289,6 +300,24 @@ fn shown(base: &Path, dir: &Path) -> String {
         Some(rel) => rel,
         None => dir.display().to_string(),
     }
+}
+
+/// Returns, from the run's crate graph, the targets whose items target `t`
+/// uses and the targets that use its items, each as its stem with how many
+/// distinct items, in target order.
+fn uses_between(
+    targets: &[(usize, &Target)],
+    crate_graph: &[BTreeMap<usize, usize>],
+    t: usize,
+) -> [Vec<(String, usize)>; 2] {
+    let stem = |other: usize| targets[other].1.stem.clone();
+    let uses = (crate_graph[t].iter())
+        .map(|(&other, &items)| (stem(other), items))
+        .collect();
+    let used_by = (crate_graph.iter().enumerate())
+        .filter_map(|(other, edges)| Some((stem(other), *edges.get(&t)?)))
+        .collect();
+    [uses, used_by]
 }
 
 /// Lists every target of the run in output stem order, each with the index

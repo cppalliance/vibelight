@@ -4,7 +4,7 @@
 //! validation, and determinism.
 
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::analysis::{AnalysisRun, PackageInfo, TargetInfo, inputs};
 use crate::analysis_items::{ItemId, ItemRef};
@@ -17,7 +17,7 @@ use crate::model::{Crate, ValueRef};
 use crate::model_body::Role;
 use crate::root::TargetKind;
 
-/// The crates of a one-package run and what analysis gathered beside them.
+/// The crates of a run and what analysis gathered beside them.
 pub(crate) struct Fixture {
     _tmp: tempfile::TempDir,
     krates: Vec<Crate>,
@@ -27,13 +27,24 @@ pub(crate) struct Fixture {
 
 /// Writes a package and reads, resolves, and links it as a run does.
 pub(crate) fn fixture(files: &[(&str, &str)]) -> Fixture {
+    packages(files, &[])
+}
+
+/// Writes `files` under one folder, then reads, resolves, and links the
+/// packages in `dirs` below it together as a run does, or the package at
+/// the top when `dirs` is empty.
+pub(crate) fn packages(files: &[(&str, &str)], dirs: &[&str]) -> Fixture {
     let tmp = tempfile::tempdir().unwrap();
     for (rel, text) in files {
         let path = tmp.path().join(rel);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, text).unwrap();
     }
-    let (krates, targets, packages) = read(tmp.path());
+    let mut named: Vec<PathBuf> = dirs.iter().map(|dir| tmp.path().join(dir)).collect();
+    if named.is_empty() {
+        named.push(tmp.path().to_path_buf());
+    }
+    let (krates, targets, packages) = read(named);
     Fixture {
         _tmp: tmp,
         krates,
@@ -42,9 +53,8 @@ pub(crate) fn fixture(files: &[(&str, &str)]) -> Fixture {
     }
 }
 
-fn read(dir: &Path) -> (Vec<Crate>, Vec<TargetInfo>, Vec<PackageInfo>) {
-    let selection = Selection::Named(vec![dir.to_path_buf()]);
-    let chosen = choose(&selection, &[], &Exclude::default()).unwrap();
+fn read(named: Vec<PathBuf>) -> (Vec<Crate>, Vec<TargetInfo>, Vec<PackageInfo>) {
+    let chosen = choose(&Selection::Named(named), &[], &Exclude::default()).unwrap();
     let listed = crate::pipeline::targets(&chosen).unwrap();
     let mut krates = Vec::new();
     for &(p, target) in &listed {

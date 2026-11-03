@@ -233,14 +233,14 @@ fn anatomy_line(krate: &Crate, m: ModId) -> String {
     format!("{head}: {}; {}", counted.join(", "), mix.join(", "))
 }
 
-/// Returns the instability of a module that `fan_in` modules use and that
-/// uses `fan_out` modules, `fan_out / (fan_in + fan_out)`, with two
-/// decimals.
+/// Returns the instability of a module or an outline that `fan_in` others
+/// use and that uses `fan_out` others, `fan_out / (fan_in + fan_out)`,
+/// with two decimals.
 #[expect(
     clippy::cast_precision_loss,
-    reason = "a count of modules is far below 2^53, so f64 holds it exactly"
+    reason = "a count of modules or outlines is far below 2^53, so f64 holds it exactly"
 )]
-fn instability(fan_in: usize, fan_out: usize) -> String {
+pub(crate) fn instability(fan_in: usize, fan_out: usize) -> String {
     format!("{:.2}", fan_out as f64 / (fan_in + fan_out) as f64)
 }
 
