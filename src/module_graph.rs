@@ -1,6 +1,6 @@
 //! The module graph of each target: which of its modules use items that
 //! other modules of it declare, from the observed uses of its production
-//! code.
+//! code, and the same graph turned around, which modules use each one.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -74,4 +74,16 @@ fn home(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
         ItemRef::Value(at) => at.module,
         ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => impl_home(run, item.target, i),
     }
+}
+
+/// Returns one target's module graph turned around: for each module, the
+/// modules that use its items, each with the edge from it.
+pub(crate) fn used_by(graph: &[BTreeMap<ModId, ModEdge>]) -> Vec<BTreeMap<ModId, ModEdge>> {
+    let mut out = vec![BTreeMap::new(); graph.len()];
+    for (from, edges) in graph.iter().enumerate() {
+        for (&to, &edge) in edges {
+            out[to].insert(from, edge);
+        }
+    }
+    out
 }

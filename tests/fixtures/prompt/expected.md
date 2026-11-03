@@ -40,9 +40,9 @@
 {"k":"doc","path":"Error","text":"The crate's internal error."}
 {"k":"alias","path":"Result","rust":"pub(crate) type Result<T> = std::result::Result<T, Error>","loc":"src/lib.rs:0","named_by":["prompt::Prompt"]}
 {"k":"doc","path":"Result","text":"The crate's result type."}
-{"k":"mod","path":"parse","loc":"src/parse.rs:0"}
+{"k":"mod","path":"parse","loc":"src/parse.rs:0","fan_out":1}
 {"k":"doc","path":"parse","text":"Parses a prompt's source into a [`Prompt`]: frontmatter, H1, and sections."}
-{"k":"mod","path":"prompt","loc":"src/prompt.rs:0","types":3,"mix":{"pub":3}}
+{"k":"mod","path":"prompt","loc":"src/prompt.rs:0","types":3,"mix":{"pub":3},"fan_in":1}
 {"k":"doc","path":"prompt","text":"Holds the parsed prompt tree: [`Prompt`], its [`Section`]s, and their [`Block`]s.\n\nCode outside the Engine reads a prompt's title and frontmatter; the tree\nbelow them is the Engine's, reached through [`crate::detail`].\n\nConstruction happens in the parsing modules; this module holds the value\ntypes and the invariant-preserving operations on them."}
 {"k":"impl","path":"prompt::Prompt","rust":"impl Prompt","locs":["src/parse.rs:0","src/prompt.rs:0"]}
 {"k":"fn","path":"prompt::Prompt::parse","sig":"pub fn parse(input: &str, execution: &str) -> (std::result::Result<Prompt, ParseError>, Vec<Event>)","loc":"src/parse.rs:0","body":{"statements":6,"tokens":98},"ops":["execution","input"]}

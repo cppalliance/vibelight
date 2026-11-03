@@ -48,6 +48,12 @@ pub(crate) struct ModRecord {
     pub(crate) reexports: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) mix: Option<BTreeMap<String, usize>>,
+    /// How many modules use its items, as their `deps` records show.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) fan_in: Option<usize>,
+    /// How many modules' items it uses, as its `deps` record shows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) fan_out: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) comment: Option<String>,
     /// The comments with nothing after them in the module.

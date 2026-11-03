@@ -4,6 +4,8 @@
 //! outline does not know. The function and value records of members are
 //! built here too.
 
+use std::collections::BTreeMap;
+
 use crate::analysis_items::ItemRef;
 use crate::anatomy::{self, Anatomy};
 use crate::leads_words::split_param;
@@ -11,7 +13,8 @@ use crate::macros;
 use crate::model::{
     self, Holder, ItemKind, MacroKind, MemberKind, Meta, ModId, Sig, ValueRef, name_order,
 };
-use crate::render_slop::{Doc, Outline, Rank};
+use crate::module_graph::{self, ModEdge};
+use crate::render_slop::{AnalysisTarget, Doc, Outline, Rank};
 use crate::render_slop_catalog::{
     ExternRecord, FnRecord, MacroRecord, ModRecord, ParamDoc, UnsupportedRecord, UseRecord,
     ValueRecord,
@@ -62,8 +65,10 @@ pub(crate) fn under(path: &[String], name: &str) -> String {
 /// Adds every module's records, its items' records, and every macro's.
 pub(crate) fn modules(outline: &mut Outline<'_>) {
     let krate = outline.krate();
+    let AnalysisTarget { run, target: t } = outline.target;
+    let users = module_graph::used_by(&run.graph[t]);
     for (m, module) in krate.modules.iter().enumerate() {
-        module_record(outline, m);
+        module_record(outline, m, &users);
         for (k, item) in module.items.iter().enumerate() {
             let at = ItemRef::Value(ValueRef { module: m, item: k });
             let place = Place {
@@ -81,9 +86,11 @@ pub(crate) fn modules(outline: &mut Outline<'_>) {
     macros(outline);
 }
 
-/// Adds a module's own record, with its doc after it.
-fn module_record(outline: &mut Outline<'_>, m: ModId) {
+/// Adds a module's own record, with its doc after it. `users` holds, for
+/// each module of the target, the modules that use its items.
+fn module_record(outline: &mut Outline<'_>, m: ModId, users: &[BTreeMap<ModId, ModEdge>]) {
     let krate = outline.krate();
+    let AnalysisTarget { run, target: t } = outline.target;
     let module = &krate.modules[m];
     let loc = module.inline.unwrap_or(model::Loc {
         file: module.file,
@@ -91,6 +98,8 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
     });
     let Anatomy { counts, mix } = anatomy::of(krate, m);
     let [types, functions, values, reexports] = counts.map(|n| (n > 0).then_some(n));
+    let fan = [users[m].len(), run.graph[t][m].len()];
+    let [fan_in, fan_out] = fan.map(|n| (n > 0).then_some(n));
     let path = module_path(krate, m);
     let record = ModRecord {
         path: path.clone(),
@@ -103,6 +112,8 @@ fn module_record(outline: &mut Outline<'_>, m: ModId) {
         values,
         reexports,
         mix: (!mix.is_empty()).then_some(mix),
+        fan_in,
+        fan_out,
         comment: comment(&module.docs, None),
         dangling: comment(&module.dangling, None),
     };

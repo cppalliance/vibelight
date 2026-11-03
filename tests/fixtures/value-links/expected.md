@@ -37,11 +37,11 @@
 {"k":"use","path":"Shape","rust":"pub use tools::Shape","loc":"src/lib.rs:0"}
 {"k":"use","path":"GRAND_TOTAL","rust":"pub use tools::TOTAL as GRAND_TOTAL","loc":"src/lib.rs:0"}
 {"k":"use","path":"backend","rust":"pub use tools::backend","loc":"src/lib.rs:0"}
-{"k":"mod","path":"relay","loc":"src/lib.rs:0","reexports":2,"mix":{"pub":2}}
+{"k":"mod","path":"relay","loc":"src/lib.rs:0","reexports":2,"mix":{"pub":2},"fan_out":1}
 {"k":"doc","path":"relay","text":"Passes values on."}
 {"k":"use","path":"relay::TOTAL","rust":"pub use crate::tools::TOTAL","loc":"src/lib.rs:0"}
 {"k":"use","path":"relay::measure","rust":"pub use crate::tools::measure","loc":"src/lib.rs:0"}
-{"k":"mod","path":"tools","loc":"src/lib.rs:0","types":1,"functions":4,"values":2,"mix":{"pub":7}}
+{"k":"mod","path":"tools","loc":"src/lib.rs:0","types":1,"functions":4,"values":2,"mix":{"pub":7},"fan_in":1}
 {"k":"doc","path":"tools","text":"Defines the values."}
 {"k":"const","path":"tools::LIMIT","rust":"pub const LIMIT: u32","value":"8","loc":"src/lib.rs:0","reexported_by":["crate"],"body":{"statements":1,"tokens":1}}
 {"k":"doc","path":"tools::LIMIT","text":"The highest reading."}

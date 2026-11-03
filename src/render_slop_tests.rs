@@ -157,6 +157,16 @@ fn the_outline_shows_the_module_tree_its_dependencies_and_what_reaches_further()
     let uses = "\"uses\":[{\"path\":\"engine::parse\",\"n\":1},{\"path\":\"store\",\"n\":1}]";
     let deps = format!("{{\"k\":\"deps\",\"path\":\"engine::run\",{uses}}}");
     assert_eq!(kind(&text, "deps"), [deps.as_str()]);
+    let fan = |path: &str| {
+        let open = format!("{{\"k\":\"mod\",\"path\":\"{path}\",");
+        let line = text.lines().find(|l| l.starts_with(&open)).unwrap();
+        let record: serde_json::Value = serde_json::from_str(line).unwrap();
+        (record["fan_in"].as_u64(), record["fan_out"].as_u64())
+    };
+    assert_eq!(fan("engine::run"), (None, Some(2)));
+    assert_eq!(fan("engine::parse"), (Some(1), None));
+    assert_eq!(fan("store"), (Some(1), None));
+    assert_eq!(fan("engine"), (None, None), "no edge rolls up to a parent");
     let root = "\"path\":\"crate\",\"loc\":\"src/lib.rs:1\",\"functions\":1,\"reexports\":1,";
     let root = format!("{root}\"mix\":{{\"pub\":2}}}}");
     let lex = "\"sig\":\"pub fn lex() -> u8\",\"loc\":\"src/lib.rs:3\",\"eff\":\"pub\"";

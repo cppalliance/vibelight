@@ -43,7 +43,7 @@
 {"k":"doc","path":"beta::BetaError","text":"Beta's error."}
 {"k":"alias","path":"beta::Result","rust":"type Result<T> = std::result::Result<T, BetaError>","loc":"src/lib.rs:0"}
 {"k":"doc","path":"beta::Result","text":"The results of beta."}
-{"k":"mod","path":"own","loc":"src/lib.rs:0","types":3,"mix":{"pub":3}}
+{"k":"mod","path":"own","loc":"src/lib.rs:0","types":3,"mix":{"pub":3},"fan_in":1}
 {"k":"doc","path":"own","text":"A module that declares its own Result and uses it."}
 {"k":"struct","path":"own::OwnError","rust":"pub struct OwnError","loc":"src/lib.rs:0","named_by":["own::Result"]}
 {"k":"doc","path":"own::OwnError","text":"The error of this module."}
@@ -55,7 +55,7 @@
 {"k":"doc","path":"plain","text":"A module that names the prelude Result and imports nothing."}
 {"k":"struct","path":"plain::Report","rust":"pub struct Report { pub outcome: Result<u8, String> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"plain::Report","text":"A report whose outcome is the standard Result."}
-{"k":"mod","path":"starred","loc":"src/lib.rs:0","types":1,"mix":{"pub":1}}
+{"k":"mod","path":"starred","loc":"src/lib.rs:0","types":1,"mix":{"pub":1},"fan_out":1}
 {"k":"doc","path":"starred","text":"A module whose glob import brings in the Result of own."}
 {"k":"struct","path":"starred::Starred","rust":"pub struct Starred { pub value: Result<u16> }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"starred::Starred","text":"A value in the Result that the glob brings in."}

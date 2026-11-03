@@ -149,6 +149,8 @@ mod model_macro;
 mod modtree;
 mod modtree_paths;
 mod module_graph;
+#[cfg(test)]
+mod module_graph_tests;
 mod order;
 mod order_graph;
 mod pipeline;

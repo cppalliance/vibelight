@@ -27,7 +27,7 @@
 {"k":"fn","path":"engine::Gauge::level","sig":"pub(super) fn level(&self) -> u8","loc":"src/engine.rs:0","body":{"statements":1,"tokens":7,"single":"method private_level"}}
 {"k":"doc","path":"engine::Gauge::level","text":"Reachable from the engine."}
 {"k":"fn","path":"engine::Gauge::private_level","sig":"fn private_level(&self) -> u8","loc":"src/engine.rs:0","body":{"statements":1,"tokens":3}}
-{"k":"mod","path":"engine::parse","loc":"src/engine.rs:0","types":1,"functions":2,"mix":{"pub(crate)":1,"pub(in crate::engine)":1,"pub(super)":1}}
+{"k":"mod","path":"engine::parse","loc":"src/engine.rs:0","types":1,"functions":2,"mix":{"pub(crate)":1,"pub(in crate::engine)":1,"pub(super)":1},"fan_in":1}
 {"k":"doc","path":"engine::parse","text":"The first layer."}
 {"k":"struct","path":"engine::parse::Token","rust":"pub(in crate::engine) struct Token","loc":"src/engine.rs:0","named_by":["engine::parse"]}
 {"k":"doc","path":"engine::parse::Token","text":"A token, widened to the group so the entry point can match it."}
@@ -40,7 +40,7 @@
 {"k":"fn","path":"engine::parse::inner::helper","sig":"pub(in crate::engine::parse) fn helper() -> u8","loc":"src/engine.rs:0","direct_callers":["engine::parse::local"],"body":{"statements":1,"tokens":3}}
 {"k":"doc","path":"engine::parse::inner::helper","text":"Spelled for the parent, which `pub(super)` says."}
 {"k":"mod","path":"engine::reading","loc":"src/engine.rs:0"}
-{"k":"mod","path":"engine::run","loc":"src/engine.rs:0","functions":1,"mix":{"pub":1}}
+{"k":"mod","path":"engine::run","loc":"src/engine.rs:0","functions":1,"mix":{"pub":1},"fan_out":1}
 {"k":"doc","path":"engine::run","text":"The second layer."}
 {"k":"fn","path":"engine::run::start","sig":"pub fn start() -> u8","loc":"src/engine.rs:0","direct_callers":["launch"],"body":{"statements":2,"tokens":24}}
 {"k":"doc","path":"engine::run::start","text":"Starts a run."}

@@ -28,7 +28,7 @@
 {"k":"doc","path":"Orphan","text":"A value nothing uses."}
 {"k":"impl","path":"Box<Orphan>","rust":"impl Clone for Box<Orphan>","locs":["src/lib.rs:0"]}
 {"k":"fn","path":"Box<Orphan>::clone","sig":"fn clone(&self) -> Self","loc":"src/lib.rs:0","impl":"impl Clone for Box<Orphan>","body":{"statements":1,"tokens":9,"single":"call Box::new"}}
-{"k":"mod","path":"engine","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2}}
+{"k":"mod","path":"engine","loc":"src/lib.rs:0","types":1,"functions":1,"mix":{"pub":2},"fan_in":1,"fan_out":1}
 {"k":"doc","path":"engine","text":"Runs things."}
 {"k":"struct","path":"engine::Runner","rust":"pub struct Runner { pub plan: crate::plan::Plan }","loc":"src/lib.rs:0"}
 {"k":"doc","path":"engine::Runner","text":"A runner."}
@@ -36,7 +36,7 @@
 {"k":"doc","path":"engine::Runner::plan","text":"Its plan."}
 {"k":"fn","path":"engine::start","sig":"pub fn start()","loc":"src/lib.rs:0","direct_callers":["plan::launch"],"body":{"statements":0,"tokens":2}}
 {"k":"doc","path":"engine::start","text":"Starts the engine."}
-{"k":"mod","path":"plan","loc":"src/lib.rs:0","types":3,"functions":1,"mix":{"pub":4}}
+{"k":"mod","path":"plan","loc":"src/lib.rs:0","types":3,"functions":1,"mix":{"pub":4},"fan_in":1,"fan_out":1}
 {"k":"doc","path":"plan","text":"Plans runs."}
 {"k":"struct","path":"plan::Plan","rust":"pub struct Plan { pub steps: Vec<Step> }","loc":"src/lib.rs:0","named_by":["engine::Runner"]}
 {"k":"doc","path":"plan::Plan","text":"A plan."}
