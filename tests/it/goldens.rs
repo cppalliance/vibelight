@@ -111,6 +111,7 @@ goldens! {
     consts => "consts",
     doc_forms => "doc-forms",
     dual => "dual",
+    enum_sets => "enum-sets",
     enums => "enums",
     extern_block => "extern-block",
     facts => "facts",

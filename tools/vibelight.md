@@ -212,7 +212,7 @@ The markdown is compact JSON Lines after the stamp line: one self-contained obje
 Look for these kinds:
 
 - **State:** types that allow states their comments forbid, such as an `Option` or `Vec` documented as empty in some states, parallel maps keyed alike, an `Option` used as a flag, one fact stored twice, an `Option` that exists only so `Drop` can take it, and accessors that fail only because of one. A `direct-field-clusters` lead, whose methods fall into groups that reach separate fields, points to a smaller type inside a larger one.
-- **Duplication:** identical or mirrored types (`same-shape`, `contained-shape`, `generic-twin`, and `mirror-enum` are leads), paired accessors, redundant constructors, wrappers that restate one rule, and lists kept in two places.
+- **Duplication:** identical or mirrored types (`same-shape`, `contained-shape`, `generic-twin`, `mirror-enum`, `contained-enum`, and `near-mirror-enum` are leads), paired accessors, redundant constructors, wrappers that restate one rule, and lists kept in two places.
 - **Vestiges:** items the code or docs show are never produced or used (`no-observed-name-use` and `no-observed-path-use` are leads), compatibility shims inside crates that version together, test knobs in production types (`test-knob` and `test-only-observed-use` are leads), and words left from an earlier design.
 - **Reuse:** an existing type or helper whose fields or logic sibling code repeats.
 - **Naming:** getters and setters that disagree, collisions with std or prelude names, one word for several things or several words for one, names that contradict the docs' defined terms, and stutter.
@@ -255,6 +255,12 @@ Look for these kinds:
 - **mirror-enum**: Enums anywhere in the run with the same variant names, unless they are enums of one shape in one target.
   - Wrong when: the enums name different concepts that happen to share words.
   - Verify: read the conversions between them; if each variant maps to its namesake, one enum can serve both.
+- **contained-enum**: An enum of three or more variants whose every variant name is also a variant name of enums with more variants anywhere in the run, one lead with every enum that holds them.
+  - Wrong when: the larger enum is a deliberate superset, such as an error family that maps each of its codes onto a universal code.
+  - Verify: read the conversions between them; if each variant maps to its namesake, one enum can serve both, or the larger can wrap the smaller.
+- **near-mirror-enum**: Two enums anywhere in the run that share three or more variant names and differ in at most two, or in at most one name in five, when neither holds the other; a pair whose two enums each hold every variant name of a third enum of three or more variants is left out.
+  - Wrong when: the enums name stages of one protocol, such as a request and its answer, or share words by chance.
+  - Verify: read where each is built and matched; if the shared variants mean the same thing, merge them and keep the differences as variants.
 - **field-and-accessor**: A field that is not private beside a method that reaches only that field and is named after it, when the field is at least as visible as the method.
   - Wrong when: the method adds a borrow or a conversion that callers rely on.
   - Verify: search the field's direct reads outside its type; if both forms serve one read, keep one.

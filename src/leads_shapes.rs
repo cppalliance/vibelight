@@ -13,7 +13,10 @@ use crate::leads_types::{Ty, leaf};
 use crate::leads_words::words;
 use crate::model::{DeclId, Shape, VariantFields, Vis};
 use crate::model_body::Root;
-use crate::{leads_shapes_impls, leads_shapes_params, leads_shapes_traits, leads_shapes_twins};
+use crate::{
+    leads_shapes_enums, leads_shapes_impls, leads_shapes_params, leads_shapes_traits,
+    leads_shapes_twins,
+};
 
 /// The fewest variants of a `uniform-payload` enum; two variants of one
 /// payload are the common pair of states, such as found and missing.
@@ -47,6 +50,8 @@ pub(crate) const IDS: &[&str] = &[
     "same-shape",
     "generic-twin",
     "mirror-enum",
+    "contained-enum",
+    "near-mirror-enum",
     "field-and-accessor",
     "redundant-constructor",
     "inverse-pair",
@@ -80,6 +85,7 @@ pub(crate) fn find(run: &AnalysisRun<'_>, out: &mut Vec<Lead>) {
     field_and_accessor(run, &catalog, out);
     enum_shapes(run, &catalog, out);
     leads_shapes_twins::find(run, &catalog, out);
+    leads_shapes_enums::find(run, out);
     leads_shapes_impls::find(run, &catalog, out);
     leads_shapes_traits::find(run, &catalog, out);
     leads_shapes_params::find(run, &catalog, out);

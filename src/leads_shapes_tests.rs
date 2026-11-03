@@ -184,6 +184,59 @@ fn enums_with_the_same_variant_names_mirror_each_other_unless_one_shape_names_th
 }
 
 #[test]
+fn an_enum_whose_every_variant_name_a_larger_enum_has_is_contained_unless_they_are_equal() {
+    let equal = "pub enum Phase { Queued, Running, Done }\n\
+         pub enum State { Done, Queued, Running }\npub enum Step { Queued, Running }\n";
+    finds(
+        "contained-enum",
+        "pub enum Phase { Queued, Running, Done }\n\
+         pub enum State { Queued, Running, Done, Failed }\n",
+        &["Phase, State"],
+        equal,
+    );
+    assert_eq!(lib(equal, "mirror-enum"), ["Phase, State"]);
+    assert_eq!(lib(equal, "near-mirror-enum"), Vec::<String>::new());
+}
+
+#[test]
+fn an_enum_inside_an_enum_of_another_target_is_contained() {
+    let across = [
+        MANIFEST,
+        ("src/lib.rs", "pub enum Phase { Queued, Running, Done }\n"),
+        (
+            "src/main.rs",
+            "enum State { Queued, Running, Done, Failed }\nfn main() {}\n",
+        ),
+    ];
+    assert_eq!(found(&across, "contained-enum"), ["0:Phase, 1:State"]);
+}
+
+#[test]
+fn enums_apart_in_one_name_each_nearly_mirror_unless_both_hold_a_contained_enum() {
+    let pair = "pub enum Probe { Dial, Handshake, Ready, Timeout }\n\
+         pub enum Attempt { Dial, Handshake, Ready, Refused }\n";
+    let held = format!("{pair}pub enum Stage {{ Dial, Handshake, Ready }}\n");
+    finds("near-mirror-enum", pair, &["Attempt, Probe"], &held);
+    assert_eq!(lib(&held, "contained-enum"), ["Attempt, Probe, Stage"]);
+}
+
+#[test]
+fn enums_apart_in_one_name_in_five_nearly_mirror_but_a_request_and_its_answer_do_not() {
+    let shared = "Open, Read, Write, Seek, Stat, List, Make, Move, Copy, Link, Lock, Sync";
+    finds(
+        "near-mirror-enum",
+        &format!(
+            "pub enum Call {{ {shared}, Close }}\npub enum Reply {{ {shared}, Data, Done }}\n"
+        ),
+        &["Call, Reply"],
+        &format!(
+            "pub enum Request {{ {shared}, Close, Flush, Watch, Mount }}\n\
+             pub enum Answer {{ {shared}, Close, Data, Done }}\n"
+        ),
+    );
+}
+
+#[test]
 fn a_field_as_visible_as_its_getter_has_a_redundant_accessor() {
     let getter = "impl Item { pub fn name(&self) -> &str { &self.name } }\n";
     finds(

@@ -114,6 +114,7 @@ mod leads_names_roles;
 mod leads_names_tests;
 mod leads_quiet;
 mod leads_shapes;
+mod leads_shapes_enums;
 mod leads_shapes_impls;
 mod leads_shapes_params;
 #[cfg(test)]

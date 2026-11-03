@@ -9,6 +9,7 @@ use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
 use crate::leads::{Lead, Mode};
 use crate::leads_items::{Catalog, Field, FnKind, Func, escapes, trait_of};
+use crate::leads_shapes_enums::name_sets;
 use crate::leads_types::{Tok, Ty, item_name, leaf};
 use crate::model::{Decl, DeclId, DeclKind, ModId, Shape, name_order};
 use crate::typerefs::strip_raw;
@@ -372,21 +373,8 @@ fn twin_evidence(a: &Twin, b: &Twin, (from, to): (&str, &str), skeleton: &[Tok])
 /// unless they are one target's enums of one shape, which `same-shape`
 /// names.
 fn mirror_enum(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, out: &mut Vec<Lead>) {
-    let mut groups: BTreeMap<Vec<String>, Vec<ItemId>> = BTreeMap::new();
-    for (t, krate) in run.krates.iter().enumerate() {
-        for (d, decl) in krate.decls.iter().enumerate() {
-            let Shape::Enum(variants) = &decl.shape else {
-                continue;
-            };
-            let mut names: Vec<String> = variants.iter().map(|v| strip_raw(&v.name)).collect();
-            names.sort();
-            if names.len() >= MIRROR_FROM {
-                groups.entry(names).or_default().push(ItemId::decl(t, d));
-            }
-        }
-    }
-    for (names, enums) in groups {
-        if enums.len() < 2 {
+    for (names, enums) in name_sets(run) {
+        if names.len() < MIRROR_FROM || enums.len() < 2 {
             continue;
         }
         let shapes: BTreeSet<Option<Vec<String>>> = (enums.iter())

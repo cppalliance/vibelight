@@ -101,11 +101,13 @@ pub(crate) struct Lead {
 /// The leads that find twins or repeats, which one expansion's uniform
 /// output makes by design, so a lead of them whose every location one
 /// expansion wrote is dropped.
-const TWINS: [&str; 9] = [
+const TWINS: [&str; 11] = [
     "same-shape",
     "contained-shape",
     "generic-twin",
     "mirror-enum",
+    "contained-enum",
+    "near-mirror-enum",
     "spelling-table",
     "param-clump",
     "body-clone",
