@@ -7,6 +7,7 @@ use crate::layout::Span;
 /// The lines of the HTML legend, in order; backticks mark code.
 const HTML_LINES: &[&str] = &[
     "Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.",
+    "Under a module's anatomy line, `Used by` names the modules that use its items and `Uses` the modules whose items it uses, each with the number of items used. `Instability` runs from 0 for a module that others use and that uses none to 1 for one that uses others and that none use.",
     "A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as `pub(crate) struct`, with the members of all its impls merged in.",
     "`static` marks a function with no receiver; `() mut` marks one that takes `&mut self`, and a method with no marker takes `&self`.",
     "`: Clone, Debug` is the base list: the standard traits a type derives or implements, by short name.",

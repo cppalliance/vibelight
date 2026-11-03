@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
 use crate::model::{Crate, DeclId, ModId, ValueRef};
+use crate::module_graph::ModEdge;
 use crate::order::Order;
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
@@ -80,6 +81,12 @@ pub(crate) enum Node {
         class: &'static str,
         text: String,
     },
+    /// A line of inline content in a styled paragraph, such as a module's
+    /// coupling, which links the modules it names.
+    Line {
+        class: &'static str,
+        inlines: Vec<Inline>,
+    },
     /// A bold label line outside a block, such as `MACRO derive: Clone`.
     Mark {
         label: &'static str,
@@ -131,6 +138,10 @@ pub(crate) struct Builder<'a> {
     pub(crate) mod_ids: Vec<String>,
     /// The id of each module-level function, constant, and static.
     pub(crate) value_ids: BTreeMap<ValueRef, String>,
+    /// For each module, the other modules whose items it uses.
+    pub(crate) graph: &'a [BTreeMap<ModId, ModEdge>],
+    /// For each module, the other modules that use its items.
+    pub(crate) users: Vec<BTreeMap<ModId, ModEdge>>,
     pub(crate) nodes: Vec<Node>,
     /// Each mark line, in the order it was added.
     pub(crate) marks: Vec<MarkLine>,
@@ -147,6 +158,9 @@ pub(crate) struct Inputs<'a> {
     pub(crate) blocks: &'a [Block],
     pub(crate) spellings: &'a [Entry],
     pub(crate) surface: &'a [crate::surface::Entry],
+    /// The target's module graph: for each module, the other modules whose
+    /// items it uses.
+    pub(crate) graph: &'a [BTreeMap<ModId, ModEdge>],
 }
 
 /// Builds the document from the ordered declarations and their blocks.
@@ -158,6 +172,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         blocks,
         spellings,
         surface,
+        graph,
     } = *inputs;
     let texts = crate::order::block_texts(krate, blocks);
     let decl_ids = decl_ids(krate, &texts);
@@ -169,6 +184,8 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         decl_ids,
         mod_ids,
         value_ids: crate::document_values::value_ids(krate),
+        graph,
+        users: crate::module_graph::used_by(graph),
         nodes: Vec::new(),
         marks: Vec::new(),
         heading_id: String::new(),

@@ -23,7 +23,7 @@ pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .c a{color:inherit;text-decoration:underline}
 a.cross{color:var(--cross)}
 b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source,.anatomy{color:var(--muted)}
+.source,.anatomy,.coupling{color:var(--muted)}
 a.src{color:inherit}
 span.src{cursor:default}
 .stamp{margin:0;color:var(--muted);font-size:13px}
@@ -103,6 +103,7 @@ span.src{cursor:default}
 <h2 id="legend">Legend</h2>
 <ul class="legend">
 <li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
+<li>Under a module's anatomy line, <code>Used by</code> names the modules that use its items and <code>Uses</code> the modules whose items it uses, each with the number of items used. <code>Instability</code> runs from 0 for a module that others use and that uses none to 1 for one that uses others and that none use.</li>
 <li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
 <li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
 <li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
@@ -167,6 +168,7 @@ span.src{cursor:default}
 <p><span class="c">A module that declares its own Result and uses it.</span></p>
 </div>
 <p class="anatomy">pub mod: 3 types; pub 3</p>
+<p class="coupling">Used by 1 module: <a href="#mod.prelude_order.starred">starred</a> (2). Instability 0.00.</p>
 <h3 id="type.prelude_order.own.Owned"><span class="dim">own::</span>Owned</h3>
 <div class="doc mc-doc">
 <p><span class="c">A value in this module's Result.</span></p>
@@ -205,6 +207,7 @@ span.src{cursor:default}
 <p><span class="c">A module whose glob import brings in the Result of own.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
+<p class="coupling">Uses 1 module: <a href="#mod.prelude_order.own">own</a> (2). Instability 1.00.</p>
 <h3 id="type.prelude_order.starred.Starred"><span class="dim">starred::</span>Starred</h3>
 <div class="doc mc-doc">
 <p><span class="c">A value in the Result that the glob brings in.</span></p>

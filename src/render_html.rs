@@ -72,6 +72,46 @@ pub(crate) fn render(
         page.list(&mut out, &doc.kill, "kill");
     }
     for node in &doc.sections {
+        page.node(&mut out, node);
+    }
+    out.push_str("</main>\n</body>\n</html>\n");
+    out
+}
+
+/// One page's renderer: its document, its member links, and the other pages
+/// of the run.
+pub(crate) struct Page<'a> {
+    pub(crate) doc: &'a Document,
+    pub(crate) member_links: Option<&'a dyn Fn(Loc) -> String>,
+    pub(crate) run: &'a [Anchors],
+}
+
+impl Page<'_> {
+    pub(crate) fn refs(&self) -> &[TypeRef] {
+        &self.doc.refs
+    }
+
+    /// Writes the top of the page: the stamp, the title, the crate docs, and
+    /// the legend.
+    fn head(&self, out: &mut String, stamp: &str) {
+        let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
+        let _ = writeln!(
+            out,
+            "<h1 id=\"{}\">{}</h1>",
+            attr(&self.doc.id),
+            escape(&self.doc.title)
+        );
+        if let Some(docs) = &self.doc.crate_docs {
+            self.crate_docs(out, docs);
+        }
+        if !self.doc.legend.is_empty() {
+            out.push_str("<h2 id=\"legend\">Legend</h2>\n");
+            self.list(out, &self.doc.legend, "legend");
+        }
+    }
+
+    /// Writes one node of the page's sections.
+    fn node(&self, out: &mut String, node: &Node) {
         match node {
             Node::Heading {
                 level,
@@ -88,7 +128,12 @@ pub(crate) fn render(
             Node::Note { class, text } => {
                 let _ = writeln!(out, "<p class=\"{class}\">{}</p>", escape(text));
             }
-            Node::Code(block) => page.pre(&mut out, block),
+            Node::Line { class, inlines } => {
+                let _ = write!(out, "<p class=\"{class}\">");
+                self.inlines(out, inlines);
+                out.push_str("</p>\n");
+            }
+            Node::Code(block) => self.pre(out, block),
             Node::Source(links) => {
                 out.push_str("<p class=\"source\">Source: ");
                 for (i, source) in links.iter().enumerate() {
@@ -129,42 +174,7 @@ pub(crate) fn render(
                 }
                 out.push_str("</p>\n");
             }
-            Node::List { class, items } => page.list(&mut out, items, class),
-        }
-    }
-    out.push_str("</main>\n</body>\n</html>\n");
-    out
-}
-
-/// One page's renderer: its document, its member links, and the other pages
-/// of the run.
-pub(crate) struct Page<'a> {
-    pub(crate) doc: &'a Document,
-    pub(crate) member_links: Option<&'a dyn Fn(Loc) -> String>,
-    pub(crate) run: &'a [Anchors],
-}
-
-impl Page<'_> {
-    pub(crate) fn refs(&self) -> &[TypeRef] {
-        &self.doc.refs
-    }
-
-    /// Writes the top of the page: the stamp, the title, the crate docs, and
-    /// the legend.
-    fn head(&self, out: &mut String, stamp: &str) {
-        let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
-        let _ = writeln!(
-            out,
-            "<h1 id=\"{}\">{}</h1>",
-            attr(&self.doc.id),
-            escape(&self.doc.title)
-        );
-        if let Some(docs) = &self.doc.crate_docs {
-            self.crate_docs(out, docs);
-        }
-        if !self.doc.legend.is_empty() {
-            out.push_str("<h2 id=\"legend\">Legend</h2>\n");
-            self.list(out, &self.doc.legend, "legend");
+            Node::List { class, items } => self.list(out, items, class),
         }
     }
 

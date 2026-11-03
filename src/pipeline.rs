@@ -11,7 +11,8 @@ use anyhow::{Context, Result, anyhow, bail};
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
 use crate::layout::Block;
-use crate::model::{Crate, Loc, Warning};
+use crate::model::{Crate, Loc, ModId, Warning};
+use crate::module_graph::ModEdge;
 use crate::render_html::Anchors;
 use crate::render_slop::{AnalysisTarget, RenderInput};
 use crate::root::{Target, TargetKind};
@@ -20,8 +21,8 @@ use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
     access_stamp, analysis, attach, collect, collect_check, document, index, layout_decl, leads,
-    manifest, modtree, order, render_html, render_slop, render_slop_lists, resolve, resolve_run,
-    spellings, test_support,
+    manifest, modtree, module_graph, order, render_html, render_slop, render_slop_lists, resolve,
+    resolve_run, spellings, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -82,8 +83,9 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     let mut docs: Vec<Built> = Vec::new();
     let per_target = (krates.iter_mut().zip(&targets))
         .zip(&analyzed.surfaces)
-        .zip(analyzed.stamps);
-    for (((krate, &(p, _)), surface), stamps) in per_target {
+        .zip(analyzed.stamps)
+        .zip(&analyzed.graph);
+    for ((((krate, &(p, _)), surface), stamps), graph) in per_target {
         access_stamp::apply(krate, stamps);
         let others = attach::attach(krate);
         let krate: &Crate = krate;
@@ -93,6 +95,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
             others: &others,
             spellings: &spellings,
             surface,
+            graph,
             crate_dir: &chosen.packages[p].input.dir,
         };
         docs.push(parts.build(&html)?);
@@ -159,6 +162,8 @@ struct Analyzed {
     surfaces: Vec<Vec<crate::surface::Entry>>,
     /// How far each target's nodes reach, for the HTML.
     stamps: Vec<access_stamp::Stamps>,
+    /// Each target's module graph, for the HTML.
+    graph: module_graph::Graph,
 }
 
 /// Builds the run's analysis view from its resolved, unattached crates and
@@ -235,6 +240,7 @@ fn analyze(
         stamps: (0..targets.len())
             .map(|t| access_stamp::stamps(&run, t))
             .collect(),
+        graph: run.graph.clone(),
     })
 }
 
@@ -245,6 +251,8 @@ struct Parts<'a> {
     others: &'a [usize],
     spellings: &'a [Entry],
     surface: &'a [crate::surface::Entry],
+    /// The target's module graph.
+    graph: &'a [BTreeMap<ModId, ModEdge>],
     crate_dir: &'a Path,
 }
 
@@ -266,6 +274,7 @@ impl Parts<'_> {
             blocks: &blocks,
             spellings: self.spellings,
             surface: self.surface,
+            graph: self.graph,
         };
         let doc = document::build(&inputs, Some(&link_base));
         Ok(Built { doc, link_base })

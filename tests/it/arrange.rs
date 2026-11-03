@@ -3,7 +3,8 @@
 //! links and lines aside. The markdown lists its records by module and by
 //! file and line, so only a rearrangement that keeps every item in its file
 //! and order, such as reversed attributes or a narrower rustfmt, leaves the
-//! markdown unchanged; the HTML stays the same under all of them.
+//! markdown unchanged; the HTML stays the same under all of them, apart
+//! from its coupling lines when items move.
 
 use std::fs;
 use std::path::Path;
@@ -20,10 +21,20 @@ const SKIP: &[&str] = &["unparsable"];
 /// The files a rearrangement must leave the same.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Same {
-    /// The HTML pages, for a rearrangement that moves items.
+    /// The HTML pages less their coupling lines, for a rearrangement that
+    /// moves items.
     Pages,
     /// Every file, for one that keeps each item in its file and order.
     All,
+}
+
+/// Returns an HTML page without its coupling lines. A coupling line counts
+/// uses by the module where code is written, so a rearrangement that moves
+/// items may change it.
+fn without_coupling(page: &str) -> String {
+    page.split_inclusive('\n')
+        .filter(|line| !line.starts_with("<p class=\"coupling\">"))
+        .collect()
 }
 
 /// Rearranges a copy of every fixture and compares its outlines with the
@@ -33,6 +44,10 @@ fn check(same: Same, transform: impl Fn(&Path)) {
         files
             .into_iter()
             .filter(|(file, _)| same == Same::All || has_ext(file, "html"))
+            .map(|(file, text)| match same {
+                Same::Pages => (file, without_coupling(&text)),
+                Same::All => (file, text),
+            })
             .collect()
     };
     for name in fixture_names() {
