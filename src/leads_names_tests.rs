@@ -277,6 +277,22 @@ fn a_restricted_visibility_spelled_narrower_than_it_reaches_is_a_lead() {
 }
 
 #[test]
+fn a_use_spells_one_visibility_for_all_its_names_and_is_one_lead_at_the_use() {
+    let source = "pub mod a {\n    pub mod b {\n        mod c { pub struct X; pub struct Y; pub struct Z; }\n        pub(in crate::a) use c::{X, Y};\n        pub(in crate::a) use c::Z;\n    }\n}\n";
+    assert_eq!(
+        lib(source, "visibility-spelling"),
+        ["a::b::X, a::b::Y", "a::b::Z"]
+    );
+    with_leads(&[MANIFEST, ("src/lib.rs", source)], |_, leads| {
+        let lines: Vec<Vec<u32>> = (leads.iter())
+            .filter(|l| l.id == "visibility-spelling")
+            .map(|l| l.locs.iter().map(|loc| loc.line).collect())
+            .collect();
+        assert_eq!(lines, [[4], [5]]);
+    });
+}
+
+#[test]
 fn sibling_modules_that_import_each_other_form_a_cycle() {
     finds(
         "module-cycle",

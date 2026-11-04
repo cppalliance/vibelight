@@ -10,11 +10,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::access::spelled;
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
-use crate::leads::{Lead, Mode};
+use crate::leads::{Lead, Mode, Subject};
 use crate::leads_census_scope::module_name;
 use crate::leads_words::words;
 use crate::macros;
-use crate::model::{Crate, DeclKind, FileId, ItemKind, MemberKind, ModId, Shape, ValueRef, Vis};
+use crate::model::{
+    Crate, DeclKind, FileId, ItemKind, Loc, MemberKind, ModId, Shape, ValueRef, Vis,
+};
 use crate::order_graph::strongly_connected;
 use crate::root::TargetKind;
 use crate::test_support::is_test_support;
@@ -237,9 +239,13 @@ fn module_cycle(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Le
 /// than it reaches. A `pub(super)` in a module directly under the crate
 /// root reaches the whole crate, which `pub(crate)` says, and a
 /// `pub(in path)` that names the declaring module, its parent, or the root
-/// says what `pub(self)`, `pub(super)`, or `pub(crate)` says.
+/// says what `pub(self)`, `pub(super)`, or `pub(crate)` says. A `use`
+/// spells one visibility for all the names it binds, so one lead names
+/// them all.
 fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec<Lead>) {
+    const ID: &str = "visibility-spelling";
     let mut nodes: Vec<(ItemRef, Vis, ModId, String)> = Vec::new();
+    let mut uses: BTreeMap<(ModId, Loc, &str), (Vis, Vec<&str>)> = BTreeMap::new();
     for (d, decl) in krate.decls.iter().enumerate() {
         nodes.push((
             ItemRef::Decl(d),
@@ -260,8 +266,13 @@ fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut
             nodes.push((ItemRef::Module(m), module.vis, parent, spelled));
         }
         for (k, item) in module.items.iter().enumerate() {
-            let at = ItemRef::Value(ValueRef { module: m, item: k });
-            nodes.push((at, item.vis, m, item.meta.vis.clone()));
+            if matches!(item.kind, ItemKind::Reexport { .. }) {
+                let names = uses.entry((m, item.loc, item.meta.vis.as_str()));
+                names.or_insert((item.vis, Vec::new())).1.push(&item.name);
+            } else {
+                let at = ItemRef::Value(ValueRef { module: m, item: k });
+                nodes.push((at, item.vis, m, item.meta.vis.clone()));
+            }
         }
     }
     for (i, imp) in krate.impls.iter().enumerate() {
@@ -271,21 +282,52 @@ fn visibility_spelling(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut
         }
     }
     for (item, vis, from, spelled) in nodes {
-        let parent = krate.parent_module(from);
-        let canonical = match vis {
-            Vis::Super if parent == Some(0) => "pub(crate)",
-            Vis::In(m) if m == from => "pub(self)",
-            Vis::In(m) if Some(m) == parent => "pub(super)",
-            Vis::In(0) => "pub(crate)",
-            _ => continue,
-        };
-        let evidence = format!(
-            "`{spelled}` in `{}` reaches what `{canonical}` says",
-            module_name(run, t, from)
-        );
-        let at = ItemId { target: t, item };
-        out.push(Lead::new("visibility-spelling", Mode::DirectSyntax, evidence).item(run, at));
+        if let Some(evidence) = spelling_evidence(run, t, krate, vis, from, &spelled) {
+            let at = ItemId { target: t, item };
+            out.push(Lead::new(ID, Mode::DirectSyntax, evidence).item(run, at));
+        }
     }
+    for ((m, loc, spelled), (vis, names)) in uses {
+        let Some(evidence) = spelling_evidence(run, t, krate, vis, m, spelled) else {
+            continue;
+        };
+        let mut lead = Lead::new(ID, Mode::DirectSyntax, evidence);
+        for name in names {
+            let mut path = krate.modules[m].path.clone();
+            path.push(name.to_owned());
+            lead.subjects.push(Subject {
+                target: t,
+                module: m,
+                path,
+            });
+        }
+        out.push(lead.at(t, loc));
+    }
+}
+
+/// Returns the evidence of a visibility `vis`, spelled `spelled` in module
+/// `from`, whose spelling says less than it reaches; `None` when the
+/// spelling says what it reaches.
+fn spelling_evidence(
+    run: &AnalysisRun<'_>,
+    t: usize,
+    krate: &Crate,
+    vis: Vis,
+    from: ModId,
+    spelled: &str,
+) -> Option<String> {
+    let parent = krate.parent_module(from);
+    let canonical = match vis {
+        Vis::Super if parent == Some(0) => "pub(crate)",
+        Vis::In(m) if m == from => "pub(self)",
+        Vis::In(m) if Some(m) == parent => "pub(super)",
+        Vis::In(0) => "pub(crate)",
+        _ => return None,
+    };
+    Some(format!(
+        "`{spelled}` in `{}` reaches what `{canonical}` says",
+        module_name(run, t, from)
+    ))
 }
 
 /// Returns the functions that module `p` of a crate holds or re-exports

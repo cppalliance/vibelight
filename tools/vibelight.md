@@ -369,7 +369,7 @@ Look for these kinds:
 - **module-cycle**: Modules of one target, none inside another, whose production code uses each other's items, directly or around a longer cycle, through resolved references, body paths, or unique qualified paths; the lead is lexical when an edge rests only on qualified paths.
   - Wrong when: the two modules are halves of one concept that the crate keeps in two files on purpose.
   - Verify: read the uses the evidence names; move the shared items into one module, or merge the modules.
-- **visibility-spelling**: A restricted visibility whose spelling says less than it reaches: a `pub(super)` in a module directly under the crate root, which reaches the whole crate as `pub(crate)` says, or a `pub(in path)` that names the declaring module, its parent, or the root, which says what `pub(self)`, `pub(super)`, or `pub(crate)` says.
+- **visibility-spelling**: A restricted visibility whose spelling says less than it reaches: a `pub(super)` in a module directly under the crate root, which reaches the whole crate as `pub(crate)` says, or a `pub(in path)` that names the declaring module, its parent, or the root, which says what `pub(self)`, `pub(super)`, or `pub(crate)` says; a `use` spells one visibility for all the names it binds, so one lead names them all.
   - Wrong when: the module is about to move deeper and the spelling names the audience it will have.
   - Verify: read who uses the item; write the spelling of its real reach, or narrow it to what its users need.
 
