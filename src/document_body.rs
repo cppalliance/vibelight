@@ -38,7 +38,7 @@ impl Surface {
                 Kind::Value(at) | Kind::Function(at) => {
                     out.values.insert(at);
                 }
-                Kind::Macro(_) | Kind::Unlinked(_) => {}
+                Kind::Macro(_) | Kind::Cross(..) | Kind::Unlinked(_) => {}
             }
         }
         out

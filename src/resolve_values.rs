@@ -3,8 +3,21 @@
 
 use std::collections::BTreeMap;
 
-use crate::model::{Crate, ItemKind};
+use crate::model::{Crate, ItemKind, ModId, Use};
 use crate::typerefs::strip_raw;
+
+/// Whether `use` item `u` is `use name::...;` in a module whose child modules
+/// are `children`, one of them named `name`. A module and an import of one
+/// name share a module only in different namespaces, so such an import
+/// brings in a function, constant, or static, and a lookup for a module or
+/// a type skips it.
+pub(crate) fn imports_a_value_beside_module(
+    u: &Use,
+    name: &str,
+    children: &BTreeMap<String, Vec<ModId>>,
+) -> bool {
+    !u.global && u.path.len() > 1 && u.path[0] == name && children.contains_key(name)
+}
 
 /// Returns each module's functions, constants, and statics by name, as
 /// indices into the module's items. Items that share a name, such as one
@@ -145,6 +158,21 @@ mod tests {
         assert_eq!(value_of(&krate, r).as_deref(), Some("fn parse"));
         let inner = reference(&krate, "user", "crate::parse::inner");
         assert_eq!(value_of(&krate, inner).as_deref(), Some("fn parse::inner"));
+    }
+
+    #[test]
+    fn an_import_of_a_function_beside_a_module_of_its_name_leaves_the_module_findable() {
+        let (_tmp, krate, tally) = resolved(
+            "mod inner { pub struct Thing; pub fn inner() {} }\n\
+             pub use inner::inner;\n\
+             pub struct Holder { pub thing: inner::Thing }\n",
+        );
+        let import = reference(&krate, "", "inner::inner");
+        assert_eq!(value_of(&krate, import).as_deref(), Some("fn inner::inner"));
+        let thing = reference(&krate, "", "inner::Thing");
+        let decl = thing.decl().expect("the module is found past the import");
+        assert_eq!(krate.decls[decl].name, "Thing");
+        assert_eq!(tally, Tally::default());
     }
 
     #[test]

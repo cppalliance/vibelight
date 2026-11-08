@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, CrossRef, DeclId, ModId, Reach, TypeRef, ValueRef};
 use crate::resolve::Scope;
+use crate::resolve_values::imports_a_value_beside_module;
 
 /// Where a path leads in a run: a declaration, a function, constant, or
 /// static, or a module of some crate.
@@ -151,7 +152,9 @@ impl World<'_> {
     }
 
     /// Looks up one name in a module in the order of `Scope::lookup_in`, but
-    /// across the crates of the run.
+    /// across the crates of the run, and skipping a `use` that imports a
+    /// value beside a module of the same name when `may_be_value` is not set,
+    /// as it does.
     fn lookup_in(
         &self,
         c: usize,
@@ -165,7 +168,12 @@ impl World<'_> {
         }
         let scope = &self.scopes[c];
         let uses = &scope.krate.modules[module].uses;
-        if let Some(u) = uses.iter().find(|u| u.name.as_deref() == Some(name)) {
+        let children = &scope.children[module];
+        let named = uses.iter().find(|u| {
+            u.name.as_deref() == Some(name)
+                && (may_be_value || !imports_a_value_beside_module(u, name, children))
+        });
+        if let Some(u) = named {
             return if u.global {
                 self.extern_path(c, &u.path, seen, may_be_value)
             } else {

@@ -30,7 +30,9 @@ impl AnalysisRun<'_> {
                 surface::Kind::Module(m) => Some(ItemRef::Module(m)),
                 surface::Kind::Decl(d) => Some(ItemRef::Decl(d)),
                 surface::Kind::Function(at) | surface::Kind::Value(at) => Some(ItemRef::Value(at)),
-                surface::Kind::Macro(_) | surface::Kind::Unlinked(_) => None,
+                surface::Kind::Macro(_) | surface::Kind::Cross(..) | surface::Kind::Unlinked(_) => {
+                    None
+                }
             })
             .collect();
         let world = |access: Access| access == Access::World;

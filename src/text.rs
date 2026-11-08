@@ -153,7 +153,7 @@ pub(crate) struct ValueRef {
 }
 
 /// What a name reaches in another crate of the run.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Reach {
     Decl(DeclId),
     Value(ValueRef),
@@ -161,7 +161,7 @@ pub(crate) enum Reach {
 
 /// An item in another crate of the run: the crate's index in the run and
 /// what the name reaches there.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct CrossRef {
     pub(crate) krate: usize,
     pub(crate) reach: Reach,

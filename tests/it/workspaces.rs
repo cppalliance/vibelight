@@ -289,10 +289,13 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
 #[test]
 fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
     let found = every_link_lands("values");
-    assert_eq!(found.values, 8, "four in relay and four in front");
     assert_eq!(
-        found.cross, 18,
-        "the eight value links, the index's one link to each of the three pages, and the \
+        found.values, 14,
+        "four in relay and four in front, and three more in the public surface of each"
+    );
+    assert_eq!(
+        found.cross, 24,
+        "the fourteen value links, the index's one link to each of the three pages, and the \
          seven names on its three lines of uses between outlines"
     );
 }
@@ -402,4 +405,77 @@ fn a_root_manifest_that_is_also_a_package_is_outlined_with_its_members() {
     let names: Vec<&str> = files.iter().map(|(name, _)| name.as_str()).collect();
     assert_eq!(names, ["rooted.html", "rooted.md", "sub.html", "sub.md"]);
     assert!(files[1].1 == ROOTED, "rooted.md differs:\n{}", files[1].1);
+}
+
+#[test]
+fn a_function_named_like_its_module_links_through_a_re_export() {
+    let tmp = tempfile::tempdir().expect("a temporary folder can be made");
+    let repo = tmp.path().join("namesake");
+    let package = |name: &str, extra: &str, files: &[(&str, &str)]| {
+        let dir = repo.join(name);
+        fs::create_dir_all(dir.join("src")).expect("a crate folder can be made");
+        let manifest = format!("[package]\nname = \"{name}\"\nedition = \"2024\"\n{extra}");
+        fs::write(dir.join("Cargo.toml"), manifest).expect("a manifest can be written");
+        for (file, text) in files {
+            fs::write(dir.join("src").join(file), text).expect("a source can be written");
+        }
+    };
+    package(
+        "inner",
+        "",
+        &[
+            (
+                "lib.rs",
+                "//! Inner.\nmod display_chain;\n\npub use display_chain::display_chain;\n",
+            ),
+            (
+                "display_chain.rs",
+                "/// Shows a chain.\npub fn display_chain() -> String {\n    String::new()\n}\n",
+            ),
+        ],
+    );
+    package(
+        "outer",
+        "\n[dependencies]\ninner = { path = \"../inner\" }\n",
+        &[("lib.rs", "//! Outer.\n\npub use inner::display_chain;\n")],
+    );
+    fs::write(
+        repo.join("vibelight.toml"),
+        "crates = [\"inner\", \"outer\"]\n",
+    )
+    .expect("the config can be written");
+    let result = vibelight_in(&repo, &["-o", "out"]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    assert!(
+        result.stderr.is_empty(),
+        "no name is unresolved or ambiguous"
+    );
+    let written = read_plain(&repo.join("out"));
+    let page = |name: &str| {
+        &(written.iter().find(|(file, _)| file == name))
+            .expect("the page is written")
+            .1
+    };
+    let link = "<a class=\"cross\" href=\"inner.html#fn.inner.display_chain.display_chain\">";
+    let outer = page("outer.html");
+    assert!(
+        outer.contains(&format!(
+            "<li>{link}display_chain</a> (inner::display_chain)</li>"
+        )),
+        "the public surface links to the function:\n{outer}"
+    );
+    assert!(
+        outer.contains(&format!(
+            "<span class=\"k\">using</span> {link}inner::display_chain</a>"
+        )),
+        "the re-export links to the function:\n{outer}"
+    );
+    let inner = page("inner.html");
+    assert!(
+        inner.contains(
+            "<span class=\"k\">using</span> \
+             <a href=\"#fn.inner.display_chain.display_chain\">display_chain::display_chain</a>"
+        ),
+        "the crate's own re-export links to the function, not past the module:\n{inner}"
+    );
 }

@@ -5,7 +5,7 @@
 use std::fmt::Write as _;
 
 use crate::layout::{Line, Span};
-use crate::model::{Loc, Reach};
+use crate::model::{CrossRef, Loc, Reach};
 
 use crate::render_html::{Page, attr, escape};
 
@@ -148,15 +148,7 @@ impl Page<'_> {
             (None, Some(value)) => self.doc.value_ids.get(&value),
             (None, None) => None,
         };
-        let other = reference.foreign.and_then(|f| {
-            let page = self.run.get(f.krate)?;
-            let anchor = match f.reach {
-                Reach::Decl(decl) => page.ids.get(decl)?,
-                Reach::Value(value) => page.values.get(&value)?,
-            };
-            Some((&page.file, anchor))
-        });
-        match (local, other) {
+        match (local, reference.foreign) {
             (Some(href), _) => {
                 let _ = write!(
                     out,
@@ -165,16 +157,33 @@ impl Page<'_> {
                     escape(&reference.text)
                 );
             }
-            (None, Some((file, anchor))) => {
+            (None, Some(to)) => self.cross(out, &reference.text, to),
+            (None, None) => out.push_str(&escape(&reference.text)),
+        }
+    }
+
+    /// Writes `text` as a link into the page of the other crate of the run
+    /// that holds `to`, or as plain text when the run holds no page or
+    /// anchor for it.
+    pub(crate) fn cross(&self, out: &mut String, text: &str, to: CrossRef) {
+        let target = self.run.get(to.krate).and_then(|page| {
+            let anchor = match to.reach {
+                Reach::Decl(decl) => page.ids.get(decl)?,
+                Reach::Value(value) => page.values.get(&value)?,
+            };
+            Some((&page.file, anchor))
+        });
+        match target {
+            Some((file, anchor)) => {
                 let _ = write!(
                     out,
                     "<a class=\"cross\" href=\"{}#{}\">{}</a>",
                     attr(file),
                     attr(anchor),
-                    escape(&reference.text)
+                    escape(text)
                 );
             }
-            (None, None) => out.push_str(&escape(&reference.text)),
+            None => out.push_str(&escape(text)),
         }
     }
 }

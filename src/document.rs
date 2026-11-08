@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 use crate::layout::{Block, Span};
 use crate::layout_items::docs_block;
-use crate::model::{Crate, DeclId, ModId, ValueRef};
+use crate::model::{Crate, CrossRef, DeclId, ModId, ValueRef};
 use crate::module_graph::ModEdge;
 use crate::order::Order;
 use crate::source_links::LinkBase;
@@ -41,6 +41,13 @@ pub(crate) enum Inline {
         text: String,
         id: String,
         strong: bool,
+    },
+    /// A link to an item of another crate of the run, which the renderer
+    /// points at that crate's page, or leaves as plain text when the run
+    /// holds no page for it.
+    Cross {
+        text: String,
+        to: CrossRef,
     },
     /// A kill list link: it points at the mark, under its heading.
     Kill {

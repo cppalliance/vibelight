@@ -1,7 +1,9 @@
 //! Finds a library's public surface: every item a user of the crate can
 //! name, by the path they name it with.
 
-use crate::model::{Crate, DeclId, Foreign, ItemKind, ModId, Seg, Text, ValueRef, Vis, path_order};
+use crate::model::{
+    Crate, CrossRef, DeclId, Foreign, ItemKind, ModId, Seg, Text, ValueRef, Vis, path_order,
+};
 use crate::test_support::is_test_support;
 use crate::typerefs::strip_raw;
 
@@ -28,8 +30,11 @@ pub(crate) enum Kind {
     /// A `#[macro_export]` macro, which links to the module that defines
     /// it.
     Macro(ModId),
-    /// A re-export of another crate's item, or one the walk cannot place:
-    /// the path as written, with no link.
+    /// A re-export of an item of another crate of the run: the path as
+    /// written, and the item, which the entry links to on that crate's page.
+    Cross(String, CrossRef),
+    /// A re-export of an item of a crate outside the run, or one the walk
+    /// cannot place: the path as written, with no link.
     Unlinked(String),
 }
 
@@ -172,7 +177,11 @@ impl Walk<'_> {
             }
             Some(Found::Value(at, own)) => self.push(prefix, name, Kind::Value(at), support || own),
             None => {
-                let kind = Kind::Unlinked(reference.text.clone());
+                let written = reference.text.clone();
+                let kind = match reference.foreign {
+                    Some(cross) => Kind::Cross(written, cross),
+                    None => Kind::Unlinked(written),
+                };
                 self.push(prefix, name, kind, support);
             }
         }

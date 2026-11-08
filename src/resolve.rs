@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::model::{Crate, DeclId, ModId, Res, TypeRef, ValueRef};
 use crate::prelude::prelude_path;
-use crate::resolve_values::value_index;
+use crate::resolve_values::{imports_a_value_beside_module, value_index};
 use crate::typerefs::strip_raw;
 
 /// What a path names.
@@ -221,9 +221,11 @@ impl<'a> Scope<'a> {
 
     /// Looks up one name in a module: its `use` items, then its globs, then
     /// its declarations, then, with `may_be_value` set, its functions,
-    /// constants, and statics, then its child modules. A name already looked
-    /// up in this module during the same query is not found again, which
-    /// stops `use` and glob cycles.
+    /// constants, and statics, then its child modules. Without
+    /// `may_be_value`, a `use` that imports a value beside a module of the
+    /// same name, as `use inner::inner;` does, is skipped, so the name finds
+    /// the module. A name already looked up in this module during the same
+    /// query is not found again, which stops `use` and glob cycles.
     fn lookup_in(
         &self,
         module: ModId,
@@ -235,7 +237,12 @@ impl<'a> Scope<'a> {
             return None;
         }
         let uses = &self.krate.modules[module].uses;
-        if let Some(u) = uses.iter().find(|u| u.name.as_deref() == Some(name)) {
+        let children = &self.children[module];
+        let named = uses.iter().find(|u| {
+            u.name.as_deref() == Some(name)
+                && (may_be_value || !imports_a_value_beside_module(u, name, children))
+        });
+        if let Some(u) = named {
             if u.global {
                 return Some(Hit::External(u.path.clone()));
             }

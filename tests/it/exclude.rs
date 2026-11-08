@@ -143,9 +143,23 @@ fn an_excluded_crate_is_not_followed_through() {
     let result = vibelight_in(&repo, &["-o", "out"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert!(result.stderr.is_empty(), "{:?}", lines(&result.stderr));
+    let out = read_run(&repo.join("out"));
     assert_eq!(
-        names(&read_run(&repo.join("out"))),
+        names(&out),
         ["beta.html", "beta.md", "facade.html", "facade.md"]
+    );
+    let facade = text(&out, "facade.html");
+    assert!(
+        facade.contains(
+            "<li><a class=\"cross\" href=\"beta.html#type.beta.parts.Gauge\">Gauge</a> \
+             (beta::Gauge)</li>"
+        ),
+        "a re-export from a crate of the run links in the public surface"
+    );
+    assert!(
+        facade.contains("<li>Meter (alpha::Meter)</li>")
+            && facade.contains("<li>Reads (alpha::Reads)</li>"),
+        "a re-export from a crate outside the run stays plain text in the public surface"
     );
     fs::write(
         repo.join("vibelight.toml"),

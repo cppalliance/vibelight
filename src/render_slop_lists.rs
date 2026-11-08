@@ -82,7 +82,9 @@ pub(crate) fn surface(outline: &Outline<'_>) -> Vec<Record> {
                 Kind::Function(at) => (SurfaceKind::Fn, value_path(krate, *at)),
                 Kind::Value(at) => (SurfaceKind::Value, value_path(krate, *at)),
                 Kind::Macro(m) => (SurfaceKind::Macro, under(&krate.modules[*m].path, name)),
-                Kind::Unlinked(text) => (SurfaceKind::External, text.clone()),
+                Kind::Cross(text, _) | Kind::Unlinked(text) => {
+                    (SurfaceKind::External, text.clone())
+                }
             };
             SurfaceRecord {
                 item: (item != path).then_some(item),

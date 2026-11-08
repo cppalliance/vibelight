@@ -235,6 +235,7 @@ impl Page<'_> {
                     let text = escape(text);
                     let _ = write!(out, "<a href=\"#{}\">{open}{text}{close}</a>", attr(id));
                 }
+                Inline::Cross { text, to } => self.cross(out, text, *to),
                 Inline::Kill {
                     text,
                     heading_id,
