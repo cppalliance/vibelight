@@ -81,13 +81,13 @@
 <div class="doc">
 <p><span class="c">Production only.</span></p>
 </div>
-<pre><code> <span class="c">not(test)</span>
+<pre><code> <span class="c">cfg: </span><span class="c">not(test)</span>
 <span class="k">pub</span> <span class="k">struct</span> Live</code></pre>
 <h3 id="type.test_support.ScriptedChat">ScriptedChat</h3>
 <div class="doc">
 <p><span class="c">A chat that plays back a script, for tests and benches.</span></p>
 </div>
-<pre><code> <span class="c">any(test, feature = "test-support")</span>
+<pre><code> <span class="c">cfg: </span><span class="c">any(test, feature = "test-support")</span>
 <span class="k">pub</span> <span class="k">struct</span> ScriptedChat
 {
 <span class="k">pub:</span>
@@ -96,13 +96,13 @@
 }</code></pre>
 <pre><code><span class="k">pub:</span>
 <span class="c"> Records into the recording.</span>
- <span class="c">any(test, feature = "test-support")</span>
+ <span class="c">cfg: </span><span class="c">any(test, feature = "test-support")</span>
 <span class="src" id="fn.test_support.record">record</span>(into: <a href="#type.test_support.Recording">Recording</a> mut&amp;)</code></pre>
 <h2 id="mod.test_support.fakes">fakes</h2>
 <div class="doc">
 <p><span class="c">Fakes for tests and benches.</span></p>
 </div>
-<pre><code> <span class="c">any(test, feature = "test-support")</span></code></pre>
+<pre><code> <span class="c">cfg: </span><span class="c">any(test, feature = "test-support")</span></code></pre>
 <p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
 <pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> FakeClock

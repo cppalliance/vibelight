@@ -36,7 +36,7 @@ fn public(krate: &Crate, name: &str, shown: &str) -> Vec<String> {
 }
 
 #[test]
-fn a_public_block_keeps_only_what_users_can_name_and_says_fields_are_hidden() {
+fn a_public_block_keeps_only_what_users_can_name() {
     let (_tmp, krate) = krate(
         "pub struct Holder {\n    pub value: u8,\n    count: u32,\n}\n\
          impl Holder {\n    pub fn get(&self) -> u8 { self.value }\n    fn bump(&mut self) {}\n    \
@@ -47,8 +47,6 @@ fn a_public_block_keeps_only_what_users_can_name_and_says_fields_are_hidden() {
         [
             "pub struct Holder",
             "{",
-            "    /* private fields */",
-            "",
             "pub:",
             "    value: u8,",
             "",
@@ -60,10 +58,12 @@ fn a_public_block_keeps_only_what_users_can_name_and_says_fields_are_hidden() {
 }
 
 #[test]
-fn a_struct_with_every_field_public_says_nothing_is_hidden() {
-    let (_tmp, krate) = krate("pub struct Open {\n    pub a: u8,\n}\n");
-    let lines = public(&krate, "Open", "Open");
-    assert!(!lines.iter().any(|l| l.contains("private")), "{lines:#?}");
+fn a_struct_with_no_public_member_shows_an_empty_body() {
+    let (_tmp, krate) = krate("pub struct Secret {\n    a: u8,\n}\n");
+    assert_eq!(
+        public(&krate, "Secret", "Secret"),
+        ["pub struct Secret", "{", "}"]
+    );
 }
 
 #[test]

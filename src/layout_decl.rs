@@ -19,22 +19,18 @@ use crate::model::{
 
 /// Builds the block of one declaration, its functions ordered by name.
 pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
-    block_of(krate, &krate.decls[id], false)
+    block_of(krate, &krate.decls[id])
 }
 
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its `pub` members, none hidden from
-/// the docs, and no word of how far anything reaches. A struct that hides
-/// fields says `/* private fields */` before its first label, and a hidden
-/// tuple field reads `/* private field */`.
+/// the docs, and no word of how far anything reaches. A hidden tuple field
+/// reads `/* private field */`, so the tuple keeps its shape.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     let shown = |meta: &Meta| meta.vis == "pub" && !meta.attrs.iter().any(|a| a == "doc(hidden)");
     let mut decl = krate.decls[id].clone();
     name.clone_into(&mut decl.name);
-    let is_trait = matches!(decl.shape, Shape::Trait { .. });
-    let hidden_fields = !is_trait
-        && (decl.members.iter()).any(|m| matches!(m.kind, MemberKind::Field(_)) && !shown(&m.meta));
-    if !is_trait {
+    if !matches!(decl.shape, Shape::Trait { .. }) {
         decl.members.retain(|m| shown(&m.meta));
     }
     decl.meta.access = None;
@@ -49,12 +45,11 @@ pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     }
     decl.end_marks.clear();
     decl.dangling.clear();
-    block_of(krate, &decl, hidden_fields)
+    block_of(krate, &decl)
 }
 
-/// Builds a declaration's block, with `/* private fields */` opening its
-/// body when `hidden_fields` is set.
-fn block_of(krate: &Crate, decl: &Decl, hidden_fields: bool) -> Block {
+/// Builds a declaration's block.
+fn block_of(krate: &Crate, decl: &Decl) -> Block {
     let refs = &krate.refs;
     let mut block = Block::default();
     block
@@ -90,7 +85,7 @@ fn block_of(krate: &Crate, decl: &Decl, hidden_fields: bool) -> Block {
         Shape::Enum(variants) => Some(variants.as_slice()),
         _ => None,
     };
-    let mut body = body(
+    let body = body(
         krate,
         &BodyParts {
             members: &decl.members,
@@ -104,19 +99,6 @@ fn block_of(krate: &Crate, decl: &Decl, hidden_fields: bool) -> Block {
             shown: decl.meta.access.as_ref().and_then(Stamp::note),
         },
     );
-    if hidden_fields {
-        // Members before any label are private, as in a C++ class.
-        let mut lines = vec![Line {
-            indent: 4,
-            spans: vec![Span::Comment("/* private fields */".to_owned())],
-            trailing: None,
-        }];
-        if !body.lines.is_empty() {
-            lines.push(Line::default());
-        }
-        lines.append(&mut body.lines);
-        body.lines = lines;
-    }
     block.lines.push(brace("{"));
     block.lines.extend(body.lines);
     block.repeats.extend(body.repeats);

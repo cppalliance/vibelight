@@ -157,8 +157,6 @@ mod tests {
             line(0, vec![Span::Dim("[[non_exhaustive]]".to_owned())]),
             line(0, vec![key("pub struct"), plain(" Point")]),
             line(0, vec![plain("{")]),
-            line(4, vec![Span::Comment("/* private fields */".to_owned())]),
-            Line::default(),
             line(0, vec![plain("pub:")]),
             comment(4, Marker::DOC, "Across."),
             line(4, vec![plain("x: i32,")]),
@@ -174,7 +172,6 @@ mod tests {
             [
                 "pub struct Point",
                 "{",
-                "    /* private fields */",
                 "pub:",
                 "    x: i32,",
                 "    y: i32,",

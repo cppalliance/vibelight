@@ -46,7 +46,7 @@ impl Page<'_> {
         let mut open: Option<usize> = None;
         for span in spans {
             match span {
-                Span::Marker(_) => {}
+                Span::Marker(marker) => Self::piece(out, false, &escape(marker_word(marker))),
                 Span::Comment(text) => {
                     let mut rest = text.as_str();
                     while let Some(at) = rest.find('`') {
@@ -99,7 +99,12 @@ impl Page<'_> {
                 Span::Key(text) => {
                     let _ = write!(out, "<span class=\"k\">{}</span>", escape(text));
                 }
-                Span::Marker(_) => {}
+                Span::Marker(marker) => {
+                    let word = marker_word(marker);
+                    if !word.is_empty() {
+                        let _ = write!(out, "<span class=\"c\">{}</span>", escape(word));
+                    }
+                }
                 Span::Dim(text) => {
                     let _ = write!(out, "<span class=\"dim\">{}</span>", escape(text));
                 }
@@ -242,4 +247,11 @@ impl Page<'_> {
             None => out.push_str(&escape(text)),
         }
     }
+}
+
+/// Returns the word a comment marker carries, which the page prints: `impl `
+/// for `// impl `, `cfg: ` for `// cfg: `, and nothing for the bare `//`,
+/// `///`, and `//!`, whose slashes the page leaves out.
+fn marker_word(marker: &str) -> &str {
+    marker.trim_start_matches(['/', '!']).trim_start()
 }
