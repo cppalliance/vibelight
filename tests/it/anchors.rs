@@ -145,6 +145,9 @@ fn html_escapes_angle_brackets_and_ampersands() {
         .expect("names.html is written")
         .1;
     assert!(html.contains("Option&lt;Vec&lt;"));
-    assert!(html.contains(")]&amp; 'a"));
+    assert!(
+        html.contains("= &amp;'a [("),
+        "a reference prints as Rust spells it"
+    );
     assert!(!html.contains("Option<Vec<"));
 }

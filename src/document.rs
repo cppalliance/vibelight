@@ -80,6 +80,9 @@ pub(crate) enum Node {
         text: String,
     },
     Code(Block),
+    /// A module's compact view: every declaration and item without its
+    /// comments, under an `At a glance` label.
+    Glance(Block),
     /// A `Source:` line: the definition, then any impl blocks.
     Source(Vec<SourceLink>),
     /// A line of plain text in a styled paragraph, such as a module's
@@ -113,8 +116,6 @@ pub(crate) struct Document {
     pub(crate) title: String,
     pub(crate) id: String,
     pub(crate) crate_docs: Option<Block>,
-    /// The Legend section, printed after the crate docs.
-    pub(crate) legend: Vec<Item>,
     pub(crate) contents: Vec<Item>,
     /// The macro counts.
     pub(crate) kill_summary: String,
@@ -197,11 +198,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         marks: Vec::new(),
         heading_id: String::new(),
     };
-    let mut contents = vec![Item {
-        inlines: vec![anchor("Legend", "legend")],
-        children: Vec::new(),
-    }];
-    contents.extend(b.surface(surface));
+    let mut contents: Vec<Item> = b.surface(surface).into_iter().collect();
     contents.push(b.modules_body(order, surface));
     contents.extend(b.other_impls_section(others));
     if !spellings.is_empty() {
@@ -221,7 +218,6 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         title: krate.title.clone(),
         id: format!("crate.{}", krate.name),
         crate_docs: docs_block(&krate.modules[0].docs, &[]),
-        legend: crate::legend::html_items(),
         contents,
         kill_summary,
         kill,

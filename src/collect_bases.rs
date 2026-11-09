@@ -22,14 +22,10 @@ pub(crate) fn single_arg(path: &Path) -> Option<&Type> {
 }
 
 impl Collector<'_> {
-    /// Slices a special member's argument type, adding `&` unless the type
-    /// is a reference already.
+    /// Slices the type argument of a one-argument trait, such as the `T` of
+    /// `From<T>`.
     pub(crate) fn argument(&mut self, here: &Here, ty: &Type) -> Text {
-        let mut text = self.slicer(here).node(ty, |f| f.visit_type(ty));
-        if !matches!(ty, Type::Reference(_)) {
-            text.push_str("&");
-        }
-        text
+        self.slicer(here).node(ty, |f| f.visit_type(ty))
     }
 
     /// Slices one supertrait bound into a base-list entry.

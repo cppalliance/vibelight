@@ -95,7 +95,7 @@ fn the_shim_passes_a_run_through_to_the_tool() {
         "the run wrote its outline"
     );
     assert!(
-        out_dir.join("html/demo.html").is_file(),
+        out_dir.join("html/demo.page.js").is_file(),
         "the run wrote its page"
     );
 }

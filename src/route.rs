@@ -108,7 +108,6 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
                 arg: None,
                 derived: true,
                 notes: Vec::new(),
-                loc: decl.loc,
             }),
             Some(_) => kept.push(name.clone()),
             None => {
@@ -118,6 +117,7 @@ fn route_derives(krate: &mut Crate, id: DeclId) {
                     text: Text(vec![Seg::Ref(r)], None),
                     name: last,
                     path_ref: Some(r),
+                    derived: true,
                     ..Base::default()
                 });
             }

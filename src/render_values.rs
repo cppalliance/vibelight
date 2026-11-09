@@ -8,7 +8,7 @@ mod tests {
     use crate::document::{Document, Node};
     use crate::layout::{Block, Line, Span};
     use crate::model::{CrossRef, Loc, Reach, Res, TypeRef, ValueRef};
-    use crate::render_html::{Anchors, render};
+    use crate::render_html::{Anchors, fragment};
 
     /// A page holding one function name with an id, one name that links to
     /// that function, and one that links to a constant of crate 1.
@@ -46,7 +46,6 @@ mod tests {
             title: "a".into(),
             id: "crate.a".into(),
             crate_docs: None,
-            legend: Vec::new(),
             contents: Vec::new(),
             kill_summary: "none".into(),
             kill: Vec::new(),
@@ -76,7 +75,7 @@ mod tests {
     #[test]
     fn a_function_name_has_an_id_and_value_names_link_to_ids_in_either_crate() {
         let (doc, run) = value_page();
-        let html = render(&doc, None, &run, crate::stamp::PLACEHOLDER);
+        let html = fragment(&doc, None, &run, crate::stamp::PLACEHOLDER);
         assert!(
             html.contains(
                 "<span class=\"src\" id=\"fn.a.run\">run</span>(); \
@@ -91,7 +90,7 @@ mod tests {
     fn with_source_links_on_the_id_sits_on_the_link_around_the_name() {
         let (doc, run) = value_page();
         let to = |loc: Loc| format!("src/lib.rs#L{}", loc.line);
-        let html = render(&doc, Some(&to), &run, crate::stamp::PLACEHOLDER);
+        let html = fragment(&doc, Some(&to), &run, crate::stamp::PLACEHOLDER);
         assert!(
             html.contains("<a class=\"src\" href=\"src/lib.rs#L1\" id=\"fn.a.run\">run</a>"),
             "{html}"

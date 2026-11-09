@@ -8,8 +8,8 @@
 use std::fs;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, has_ext, input_of, locations, read_plain, read_run, root_of,
-    run, split_location,
+    copy_dir, fixture_names, fixtures, has_ext, input_of, locations, page_content, read_plain,
+    read_run, root_of, run, split_location,
 };
 
 #[test]
@@ -21,9 +21,14 @@ fn links_golden_matches_with_the_output_beside_the_crate() {
     assert!(run(&copy, &out).status.success());
     for (written, golden) in [
         (out.join("links.md"), "expected.md"),
-        (out.join("html").join("links.html"), "expected.html"),
+        (out.join("html").join("links.page.js"), "expected.html"),
     ] {
         let actual = fs::read_to_string(&written).expect("the outline was written");
+        let actual = if has_ext(golden, "html") {
+            page_content(&actual)
+        } else {
+            actual
+        };
         let expected = fs::read_to_string(copy.join(golden)).expect("the golden is readable");
         assert!(
             actual == expected,
@@ -135,7 +140,8 @@ fn locations_and_links_resolve_from_inside_beside_and_above_the_crate() {
             "a location's file is relative to the crate"
         );
         let html = out.join("html");
-        let page = fs::read_to_string(html.join("links.html")).expect("the page was written");
+        let data = fs::read_to_string(html.join("links.page.js")).expect("the page was written");
+        let page = page_content(&data);
         let found = targets(&page);
         assert!(found.len() > 5, "too few links in {}", html.display());
         for target in found {

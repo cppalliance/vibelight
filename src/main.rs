@@ -14,6 +14,7 @@ mod analysis_uses;
 mod anatomy;
 mod attach;
 mod attrs;
+mod browse;
 mod census;
 mod census_check;
 mod census_docs;
@@ -51,19 +52,23 @@ mod document_spellings;
 mod document_surface;
 mod document_values;
 mod exclude;
+mod facade_page;
+#[cfg(test)]
+mod facade_page_tests;
 mod flatten;
 mod folders;
+mod glance;
 mod glob;
 mod index;
 mod inputs;
 mod layout;
 mod layout_decl;
+mod layout_generics;
 mod layout_groups;
 mod layout_head;
 mod layout_items;
 mod layout_marker;
 mod layout_members;
-mod layout_special;
 mod leads;
 mod leads_body;
 mod leads_body_clone;
@@ -154,6 +159,7 @@ mod module_graph_tests;
 mod order;
 mod order_graph;
 mod pipeline;
+mod pipeline_html;
 mod prelude;
 mod render_code;
 mod render_html;
@@ -180,7 +186,9 @@ mod render_values;
 mod resolve;
 mod resolve_run;
 mod resolve_values;
+mod roles;
 mod root;
+mod root_page;
 mod route;
 mod scaffold;
 mod settings;
@@ -281,6 +289,12 @@ fn run(args: &Args) -> Result<ExitCode> {
     notes.extend(quiet_notes);
     if let Some(path) = &written.gitignore {
         notes.push(format!("created {}", shown(path, &cwd)));
+    }
+    if let Some(path) = &written.upgraded {
+        notes.push(format!(
+            "updated {} to ignore the pages' script files too",
+            shown(path, &cwd)
+        ));
     }
     for path in &written.removed {
         notes.push(format!(

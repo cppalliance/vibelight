@@ -11,26 +11,26 @@ use anyhow::{Context, Result, anyhow, bail};
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
 use crate::layout::Block;
-use crate::model::{Crate, Loc, ModId, Warning};
+use crate::model::{Crate, ModId, Warning};
 use crate::module_graph::ModEdge;
-use crate::render_html::Anchors;
 use crate::render_slop::{AnalysisTarget, RenderInput};
 use crate::root::{Target, TargetKind};
 use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    access_stamp, analysis, attach, collect, collect_check, document, index, layout_decl, leads,
-    manifest, modtree, module_graph, order, render_html, render_slop, render_slop_lists, resolve,
-    resolve_run, spellings, test_support,
+    access_stamp, analysis, attach, browse, collect, collect_check, document, index, layout_decl,
+    leads, manifest, modtree, module_graph, order, pipeline_html, render_slop, render_slop_lists,
+    resolve, resolve_run, spellings, test_support,
 };
 
 /// What a run would write and what it reports.
 #[derive(Debug, Default)]
 pub(crate) struct Outcome {
     /// Each file the run writes, with its text: for each target in output
-    /// stem order its markdown outline and then its HTML page, then the
-    /// markdown index and the HTML index.
+    /// stem order its markdown outline and its page's data file, then the
+    /// markdown index, and the HTML folder's one page, its index's data
+    /// file, its search index, and its script.
     pub(crate) files: Vec<(PathBuf, String)>,
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
@@ -44,9 +44,9 @@ pub(crate) struct Outcome {
 
 /// The HTML document for a target, with the base its source links are
 /// measured from.
-struct Built {
-    doc: Document,
-    link_base: LinkBase,
+pub(crate) struct Built {
+    pub(crate) doc: Document,
+    pub(crate) link_base: LinkBase,
 }
 
 /// Outlines every target of the chosen crates in memory: a markdown file
@@ -100,25 +100,30 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         };
         docs.push(parts.build(&html)?);
     }
-    let run: Vec<Anchors> = targets
-        .iter()
-        .zip(&docs)
-        .map(|(&(_, target), page)| Anchors {
-            file: format!("{}.html", target.stem),
-            ids: page.doc.decl_ids.clone(),
-            values: page.doc.value_ids.clone(),
-        })
-        .collect();
+    let roles = pipeline_html::roles_of(
+        chosen,
+        plan,
+        &targets,
+        (&analyzed.surfaces, &analyzed.crate_graph),
+    );
+    pipeline_html::keep_public(&mut docs, &roles, &analyzed.surfaces);
+    let run = pipeline_html::anchors(&targets, &docs);
+    let links = pipeline_html::member_links(&krates, &docs);
+    let owners = pipeline_html::owners(&targets, &krates, &docs, &links);
     let mut entries = Vec::new();
+    let mut rows = Vec::new();
+    let mut api = Vec::new();
     let per_target = (targets.iter().enumerate())
         .zip(&docs)
         .zip(&krates)
         .zip(texts);
     for ((((t, &(p, target)), page), krate), text) in per_target {
         let [uses, used_by] = uses_between(&targets, &analyzed.crate_graph, t);
+        let dir = shown(&chosen.base, &chosen.packages[p].dir);
+        rows.push(pipeline_html::row(target, dir.clone(), &page.doc));
         entries.push(index::Entry {
             stem: target.stem.clone(),
-            dir: shown(&chosen.base, &chosen.packages[p].dir),
+            dir,
             followed: chosen.packages[p].followed,
             bytes: text.len(),
             uses,
@@ -126,35 +131,42 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
-        let member_link: &dyn Fn(Loc) -> String = &|loc| {
-            let loc = krate.real_loc(loc);
-            page.link_base
-                .target(&krate.files[loc.file].rel, Some(loc.line))
-        };
-        let text = render_html::render(&page.doc, Some(member_link), &run, stamp);
-        let path = html.dir.join(format!("{}.html", target.stem));
-        outcome.files.push((path, text));
-        let prefix = (chosen.packages.len() > 1)
-            .then(|| manifest::relative(&chosen.base, &chosen.packages[p].dir))
-            .flatten()
-            .filter(|prefix| !prefix.is_empty());
-        outcome
-            .warnings
-            .extend(krate.warnings.iter().cloned().map(|mut warning| {
-                if let Some(prefix) = &prefix {
-                    warning.file = format!("{prefix}/{}", warning.file);
-                }
-                warning
-            }));
+        let (content, headings) =
+            pipeline_html::page_content(t, &owners, &roles, &analyzed.surfaces, &run, stamp);
+        api.push(headings);
+        let data = browse::data(&target.stem, &page.doc.title, &content);
+        let path = html.dir.join(browse::data_file(&target.stem));
+        outcome.files.push((path, data));
+        outcome.warnings.extend(prefixed(chosen, p, krate));
     }
     outcome
         .files
         .push((markdown.join(index::FILE), index::render(&entries)));
-    outcome.files.push((
-        html.dir.join("index.html"),
-        index::render_html(&entries, stamp),
-    ));
+    let folder = pipeline_html::Folder {
+        base: &chosen.base,
+        rows: &rows,
+        roles: &roles,
+        entries: &entries,
+        run: &run,
+        api: &api,
+    };
+    pipeline_html::push_folder(&mut outcome, &html.dir, &folder, stamp);
     Ok(outcome)
+}
+
+/// Returns a crate's warnings, each file prefixed with the crate's folder
+/// below the base when the run has more than one package.
+fn prefixed(chosen: &Chosen, p: usize, krate: &Crate) -> impl Iterator<Item = Warning> {
+    let prefix = (chosen.packages.len() > 1)
+        .then(|| manifest::relative(&chosen.base, &chosen.packages[p].dir))
+        .flatten()
+        .filter(|prefix| !prefix.is_empty());
+    krate.warnings.clone().into_iter().map(move |mut warning| {
+        if let Some(prefix) = &prefix {
+            warning.file = format!("{prefix}/{}", warning.file);
+        }
+        warning
+    })
 }
 
 /// What the analysis of a run yields beside the HTML.

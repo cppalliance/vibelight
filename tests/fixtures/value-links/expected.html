@@ -1,62 +1,5 @@
-<!-- Updated 2026-01-01T00:00:00Z -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>value_links</title>
-<style>
-:root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5;--box:transparent}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000;--box:transparent}}
-body{margin:0;display:flex;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
-nav{position:sticky;top:0;align-self:flex-start;box-sizing:border-box;width:18rem;height:100vh;flex:none;overflow-y:auto;padding:1rem;background:var(--side);border-right:1px solid var(--rule);font-size:13px}
-nav ul{list-style:none;margin:0;padding-left:1rem}
-nav>ul{padding-left:0}
-main{flex:1;min-width:0;padding:1rem 2rem}
-main>h2{border-top:1px solid var(--rule);margin-top:2rem;padding-top:1.25rem}
-a{color:var(--link);text-decoration:none}
-a:hover{text-decoration:underline}
-pre{background:none;padding:.75rem 0;overflow-x:auto}
-pre,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.k{color:var(--key)}
-.c{color:var(--com)}
-.c a{color:inherit;text-decoration:underline}
-a.cross{color:var(--cross)}
-b.m{color:var(--mark);background:var(--mark-bg);padding:0 .2em;border-radius:3px}
-.source,.anatomy,.coupling{color:var(--muted)}
-a.src{color:inherit}
-span.src{cursor:default}
-.stamp{margin:0;color:var(--muted);font-size:13px}
-:target{background:var(--target)}
-.c code{font:inherit;background:none;padding:0}
-.doc p,.doc ul,.doc h4{max-width:46rem}
-.doc p,.doc li{font:15px/1.55 system-ui,sans-serif;color:var(--fg);margin:.5rem 0}
-.doc ul{margin:.5rem 0;padding-left:1.25rem;list-style:disc}
-.doc h4{margin:1rem 0 .35rem;font-size:15px}
-.doc code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--side);border-radius:3px;padding:.05em .25em}
-.doc pre{max-width:64rem}
-.dim{opacity:.5}
-.toggle{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.button{display:block;margin:0 0 1rem;padding:.3rem .6rem;border:1px solid var(--rule);border-radius:5px;background:var(--bg);color:var(--fg);font-size:13px;text-align:center;cursor:pointer}
-.button:hover{background:var(--side)}
-.toggle:focus-visible~nav .button{outline:2px solid var(--link)}
-.toggle~nav .button .on{display:none}
-.toggle:checked~nav .button .on{display:inline}
-.toggle:checked~nav .button .off{display:none}
-.toggle:checked~main .mc,.toggle:checked~main .mc-doc{display:none}
-.gap{display:block;height:1.45em}
-.gap-box{height:0}
-.toggle:checked~main .gap{height:.725em}
-.mc{display:block;width:fit-content;white-space:normal;background:var(--box);border-radius:4px;padding:.2rem .9rem 0;margin:.45rem 0 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:min(80ch,calc(100% - 1rem))}
-.cfg,.sec{display:block}
-</style>
-</head>
-<body>
-<input type="checkbox" id="vibelight-comments" class="toggle" aria-label="Hide member comments">
 <nav>
-<label for="vibelight-comments" class="button"><span class="on">Show comments</span><span class="off">Hide comments</span></label>
 <ul>
-<li><a href="#legend">Legend</a></li>
 <li><a href="#surface">Public surface</a></li>
 <li><a href="#mod.value_links">value_links</a>
 <ul>
@@ -82,21 +25,6 @@ span.src{cursor:default}
 <div class="doc">
 <p><span class="c">Links to functions, constants, and statics.</span></p>
 </div>
-<h2 id="legend">Legend</h2>
-<ul class="legend">
-<li>Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.</li>
-<li>Under a module's anatomy line, <code>Used by</code> names the modules that use its items and <code>Uses</code> the modules whose items it uses, each with the number of items used. <code>Instability</code> runs from 0 for a module that others use and that uses none to 1 for one that uses others and that none use.</li>
-<li>A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as <code>pub(crate) struct</code>, with the members of all its impls merged in.</li>
-<li><code>static</code> marks a function with no receiver; <code>() mut</code> marks one that takes <code>&amp;mut self</code>, and a method with no marker takes <code>&amp;self</code>.</li>
-<li><code>: Clone, Debug</code> is the base list: the standard traits a type derives or implements, by short name.</li>
-<li>A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as <code>pub:</code>, <code>pub(crate):</code>, or <code>pub(self):</code> for no keyword, the widest first.</li>
-<li>A module's items are grouped under the same labels, after its macro marks and its extern blocks.</li>
-<li>A dim <code>reaches pub(crate)</code> line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.</li>
-<li><code>[[...]]</code> is an attribute that shapes the API or its wire format, such as <code>[[must_use]]</code> or <code>[[serde(rename = "id")]]</code>.</li>
-<li><code>implements: Trait for Type</code> is an impl with no declared type to attach to, such as a blanket impl.</li>
-<li><code>MACRO</code> marks a macro definition, an invocation, a derive from another crate, or an attribute macro.</li>
-<li>A doc comment prints as prose, and <code>backticked</code> text prints in the code font; a member's comment reflows as one paragraph.</li>
-</ul>
 <p class="kill"><b class="m">MACROS:</b> none</p>
 <h2 id="surface">Public surface</h2>
 <ul class="surface">
@@ -115,53 +43,77 @@ span.src{cursor:default}
 </ul>
 <h2 id="mod.value_links">value_links</h2>
 <p class="anatomy">crate root: 5 re-exports; pub 5</p>
-<pre><code><span class="k">pub:</span>
-<span class="k">using</span> <a href="#fn.value_links.tools.backend-2">tools::backend</a>
-<span class="k">using</span> GRAND_TOTAL = <a href="#static.value_links.tools.TOTAL">tools::TOTAL</a>
-<span class="k">using</span> <a href="#const.value_links.tools.LIMIT">tools::LIMIT</a>
-<span class="k">using</span> <a href="#fn.value_links.tools.measure">relay::measure</a>
-<span class="k">using</span> <a href="#type.value_links.tools.Shape">tools::Shape</a></code></pre>
+<p class="view">At a glance</p>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.backend-2">tools::backend</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#static.value_links.tools.TOTAL">tools::TOTAL</a> as GRAND_TOTAL;
+<span class="k">pub</span> <span class="k">use</span> <a href="#const.value_links.tools.LIMIT">tools::LIMIT</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.measure">relay::measure</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#type.value_links.tools.Shape">tools::Shape</a>;</code></pre>
+<p class="view">Documented</p>
+<pre><code><span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.backend-2">tools::backend</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#static.value_links.tools.TOTAL">tools::TOTAL</a> as GRAND_TOTAL;
+<span class="k">pub</span> <span class="k">use</span> <a href="#const.value_links.tools.LIMIT">tools::LIMIT</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.measure">relay::measure</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#type.value_links.tools.Shape">tools::Shape</a>;</code></pre>
 <h2 id="mod.value_links.relay">relay</h2>
-<div class="doc mc-doc">
+<div class="doc">
 <p><span class="c">Passes values on.</span></p>
 </div>
 <p class="anatomy">mod: 2 re-exports; pub 2</p>
 <p class="coupling">Uses 1 module: <a href="#mod.value_links.tools">tools</a> (2). Instability 1.00.</p>
-<pre><code><span class="k">pub:</span>
+<p class="view">At a glance</p>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.measure">crate::tools::measure</a>;
+<span class="k">pub</span> <span class="k">use</span> <a href="#static.value_links.tools.TOTAL">crate::tools::TOTAL</a>;</code></pre>
+<p class="view">Documented</p>
+<pre><code><span class="dim">reaches pub(crate)</span>
+<span class="k">pub</span> <span class="k">use</span> <a href="#fn.value_links.tools.measure">crate::tools::measure</a>;
+
 <span class="dim">reaches pub(crate)</span>
-<span class="k">using</span> <a href="#fn.value_links.tools.measure">crate::tools::measure</a>
-<span class="gap"></span><span class="dim">reaches pub(crate)</span>
-<span class="k">using</span> <a href="#static.value_links.tools.TOTAL">crate::tools::TOTAL</a></code></pre>
+<span class="k">pub</span> <span class="k">use</span> <a href="#static.value_links.tools.TOTAL">crate::tools::TOTAL</a>;</code></pre>
 <h2 id="mod.value_links.tools">tools</h2>
-<div class="doc mc-doc">
+<div class="doc">
 <p><span class="c">Defines the values.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type, 4 functions, 2 values; pub 7</p>
 <p class="coupling">Used by 1 module: <a href="#mod.value_links.relay">relay</a> (2). Instability 0.00.</p>
+<p class="view">At a glance</p>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Shape {
+    <span class="k">pub</span> <span class="src">sides</span>: u8,
+}
+
+<span class="k">pub</span> <span class="k">const</span> <span class="src">LIMIT</span>: u32 = 8;
+<span class="k">pub</span> <span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0;
+<span class="k">pub</span> <span class="k">fn</span> <span class="src">backend</span>() -&gt; u8;
+<span class="k">pub</span> <span class="k">fn</span> <span class="src">backend</span>() -&gt; u8;
+<span class="k">pub</span> <span class="k">fn</span> <span class="src">measure</span>() -&gt; u32;
+<span class="k">pub</span> <span class="k">fn</span> <span class="src">Shape</span>();</code></pre>
+<p class="view">Documented</p>
 <h3 id="type.value_links.tools.Shape"><span class="dim">tools::</span>Shape</h3>
-<div class="doc mc-doc">
+<div class="doc">
 <p><span class="c">A shape that </span><code><span class="c"><a href="#fn.value_links.tools.measure">measure</a></span></code><span class="c"> sizes, also reached as </span><code><span class="c"><a href="#fn.value_links.tools.measure">crate::relay::measure</a></span></code><span class="c">.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Shape
-{
-<span class="k">pub:</span>
-    <span class="src">sides</span>: u8,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Shape {
+    <span class="k">pub</span> <span class="src">sides</span>: u8,
 }</code></pre>
-<pre><code><span class="k">pub:</span>
-<span class="c"> The highest reading.</span>
-<span class="k">constexpr</span> <span class="src" id="const.value_links.tools.LIMIT">LIMIT</span>: u32 = 8
-<span class="gap"></span><span class="c"> A running total.</span>
-<span class="k">static</span> <span class="src" id="static.value_links.tools.TOTAL">TOTAL</span>: u32 = 0
-<span class="gap"></span><span class="c"> A Windows backend.</span>
- <span class="c">windows</span>
-<span class="src" id="fn.value_links.tools.backend">backend</span>() -&gt; u8
-<span class="gap"></span><span class="c"> The Unix backend.</span>
- <span class="c">unix</span>
-<span class="src" id="fn.value_links.tools.backend-2">backend</span>() -&gt; u8
-<span class="gap"></span><span class="c"> Reads the gauge, never above </span><code><span class="c"><a href="#const.value_links.tools.LIMIT">LIMIT</a></span></code><span class="c"> and counted in </span><code><span class="c"><a href="#static.value_links.tools.TOTAL">TOTAL</a></span></code><span class="c">.</span>
-<span class="src" id="fn.value_links.tools.measure">measure</span>() -&gt; u32
-<span class="gap"></span><span class="c"> Draws a </span><code><span class="c"><a href="#type.value_links.tools.Shape">Shape</a></span></code><span class="c">, which shares its name.</span>
-<span class="src" id="fn.value_links.tools.Shape">Shape</span>()</code></pre>
+<div class="doc">
+<p><span class="c">The highest reading.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.value_links.tools.LIMIT">LIMIT</span>: u32 = 8;
+
+<span class="c">///</span><span class="c"> A running total.</span>
+<span class="k">pub</span> <span class="k">static</span> <span class="src" id="static.value_links.tools.TOTAL">TOTAL</span>: u32 = 0;
+
+<span class="c">///</span><span class="c"> A Windows backend.</span>
+<span class="dim">#[cfg(windows)]</span>
+<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.value_links.tools.backend">backend</span>() -&gt; u8;
+
+<span class="c">///</span><span class="c"> The Unix backend.</span>
+<span class="dim">#[cfg(unix)]</span>
+<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.value_links.tools.backend-2">backend</span>() -&gt; u8;
+
+<span class="c">///</span><span class="c"> Reads the gauge, never above </span><code><span class="c"><a href="#const.value_links.tools.LIMIT">LIMIT</a></span></code><span class="c"> and counted in </span><code><span class="c"><a href="#static.value_links.tools.TOTAL">TOTAL</a></span></code><span class="c">.</span>
+<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.value_links.tools.measure">measure</span>() -&gt; u32;
+
+<span class="c">///</span><span class="c"> Draws a </span><code><span class="c"><a href="#type.value_links.tools.Shape">Shape</a></span></code><span class="c">, which shares its name.</span>
+<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.value_links.tools.Shape">Shape</span>();</code></pre>
 </main>
-</body>
-</html>

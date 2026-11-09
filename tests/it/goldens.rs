@@ -2,8 +2,10 @@
 //! golden holds no link or source line, since those depend on where the
 //! output is written and how the source is laid out, so the outlines are
 //! compared once normalized; the `links` fixture checks the links
-//! themselves. Each run also lists its files on stdout, sorted, and says
-//! nothing on stderr, but for the fixtures built to warn.
+//! themselves. An HTML golden is a page's content as the HTML folder's
+//! script shows it, which the page's data file holds. Each run also lists
+//! its files on stdout, sorted, and says nothing on stderr, but for the
+//! fixtures built to warn.
 
 use std::fs;
 
@@ -50,7 +52,10 @@ fn check(name: &str) {
     let mut sorted = stdout.clone();
     sorted.sort();
     assert_eq!(stdout, sorted, "{name}: stdout is not sorted");
-    assert_eq!(stdout.len(), written.len() + 2, "{name}: {stdout:?}");
+    // Beside the outlines and pages read above, a run lists the two indexes,
+    // the HTML folder's one page, the index's data file, the search index,
+    // and the script.
+    assert_eq!(stdout.len(), written.len() + 5, "{name}: {stdout:?}");
     if !WARNS.contains(&name) {
         let expected = WARNINGS
             .iter()

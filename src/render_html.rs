@@ -1,5 +1,6 @@
-//! Prints the document as one self-contained HTML file with every type
-//! linked.
+//! Prints the document as one page of the HTML folder, with every type
+//! linked: the sidebar and the page's content, which the folder's one HTML
+//! page shows from the page's data file (see `browse`).
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -7,12 +8,7 @@ use std::fmt::Write as _;
 use crate::document::{Document, Inline, Item, Link, Node};
 use crate::layout::{Block, Span, span_text};
 use crate::model::{Loc, TypeRef, ValueRef};
-use crate::render_code::leading_doc;
-use crate::render_style::STYLE;
-
-/// The id of the checkbox that hides the member comments, which the
-/// checkbox's `id` and the sidebar label's `for` both name.
-const TOGGLE_ID: &str = "vibelight-comments";
+use crate::render_code::{leading_doc, unmarked};
 
 /// A page of the run that other pages link into: its file name, the anchor
 /// id of each of its declarations, and the id of each of its functions,
@@ -24,11 +20,11 @@ pub(crate) struct Anchors {
     pub(crate) values: BTreeMap<ValueRef, String>,
 }
 
-/// Renders the HTML file, with `stamp` in a comment on its first line and
-/// at the top of `<main>`. Member names link to their source lines when
-/// `member_links` is given, and a name that reaches another crate of the
-/// run links into that crate's page in `run`.
-pub(crate) fn render(
+/// Renders the page's content, with `stamp` at the top of `<main>`. Member
+/// names link to their source lines when `member_links` is given, and a name
+/// that reaches another crate of the run links into that crate's page in
+/// `run`.
+pub(crate) fn fragment(
     doc: &Document,
     member_links: Option<&dyn Fn(Loc) -> String>,
     run: &[Anchors],
@@ -38,28 +34,11 @@ pub(crate) fn render(
         doc,
         member_links,
         run,
+        foreign: None,
+        ids: true,
+        api: None,
     };
-    let mut out = String::new();
-    let _ = writeln!(out, "{}", crate::stamp::html_comment(stamp));
-    out.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
-    out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    let _ = writeln!(out, "<title>{}</title>", escape(&doc.title));
-    out.push_str("<style>\n");
-    out.push_str(STYLE);
-    out.push_str("</style>\n</head>\n<body>\n");
-    // The first element of the page: a checkbox the sidebar's label toggles,
-    // so hiding the member comments needs no script.
-    let _ = writeln!(
-        out,
-        "<input type=\"checkbox\" id=\"{TOGGLE_ID}\" class=\"toggle\" aria-label=\"Hide member \
-         comments\">"
-    );
-    out.push_str("<nav>\n");
-    let _ = writeln!(
-        out,
-        "<label for=\"{TOGGLE_ID}\" class=\"button\"><span class=\"on\">Show comments</span>\
-         <span class=\"off\">Hide comments</span></label>"
-    );
+    let mut out = String::from("<nav>\n");
     page.list(&mut out, &doc.contents, "");
     out.push_str("</nav>\n<main>\n");
     page.head(&mut out, stamp);
@@ -74,7 +53,7 @@ pub(crate) fn render(
     for node in &doc.sections {
         page.node(&mut out, node);
     }
-    out.push_str("</main>\n</body>\n</html>\n");
+    out.push_str("</main>\n");
     out
 }
 
@@ -84,15 +63,30 @@ pub(crate) struct Page<'a> {
     pub(crate) doc: &'a Document,
     pub(crate) member_links: Option<&'a dyn Fn(Loc) -> String>,
     pub(crate) run: &'a [Anchors],
+    /// The file of the document's own page when another page shows its
+    /// blocks, as a facade's page does: a link inside the document then
+    /// goes to that file.
+    pub(crate) foreign: Option<&'a str>,
+    /// Whether names take their ids, which a facade's page puts on its
+    /// headings instead.
+    pub(crate) ids: bool,
+    /// On a facade's page, the headings of what the page shows, with the
+    /// index of the document's own target: a link to an item the page
+    /// shows goes to its heading.
+    pub(crate) api: Option<(&'a ApiIds, usize)>,
 }
+
+/// The heading id of each item of the run that a facade's page shows, by
+/// the index of the target that defines it and the item.
+pub(crate) type ApiIds = BTreeMap<(usize, crate::model::Reach), String>;
 
 impl Page<'_> {
     pub(crate) fn refs(&self) -> &[TypeRef] {
         &self.doc.refs
     }
 
-    /// Writes the top of the page: the stamp, the title, the crate docs, and
-    /// the legend.
+    /// Writes the top of the page: the stamp, the title, and the crate docs.
+    /// The overview holds the legend, once for every page.
     fn head(&self, out: &mut String, stamp: &str) {
         let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
         let _ = writeln!(
@@ -103,10 +97,6 @@ impl Page<'_> {
         );
         if let Some(docs) = &self.doc.crate_docs {
             self.crate_docs(out, docs);
-        }
-        if !self.doc.legend.is_empty() {
-            out.push_str("<h2 id=\"legend\">Legend</h2>\n");
-            self.list(out, &self.doc.legend, "legend");
         }
     }
 
@@ -134,6 +124,11 @@ impl Page<'_> {
                 out.push_str("</p>\n");
             }
             Node::Code(block) => self.pre(out, block),
+            Node::Glance(block) => {
+                out.push_str("<p class=\"view\">At a glance</p>\n<pre class=\"glance\"><code>");
+                self.code_lines(out, &block.lines);
+                out.push_str("</code></pre>\n");
+            }
             Node::Source(links) => {
                 out.push_str("<p class=\"source\">Source: ");
                 for (i, source) in links.iter().enumerate() {
@@ -178,14 +173,13 @@ impl Page<'_> {
         }
     }
 
-    /// Writes the crate's own docs: prose that the comment toggle leaves
-    /// alone, since it introduces the page rather than documenting a member.
-    fn crate_docs(&self, out: &mut String, block: &Block) {
+    /// Writes the crate's own docs as prose, which introduces the page.
+    pub(crate) fn crate_docs(&self, out: &mut String, block: &Block) {
         let doc = leading_doc(&block.lines);
         if doc == 0 {
             return;
         }
-        let spans = |out: &mut String, spans: &[Span]| self.ticked(out, spans);
+        let spans = |out: &mut String, spans: &[Span]| self.ticked(out, &unmarked(spans));
         let text_of = |span: &Span| span_text(span, self.refs()).to_owned();
         crate::render_prose::block(
             out,
@@ -193,7 +187,6 @@ impl Page<'_> {
             &crate::render_prose::InlineRenderer {
                 spans: &spans,
                 text_of: &text_of,
-                hideable: false,
             },
         );
     }

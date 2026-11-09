@@ -176,12 +176,14 @@ fn every_link_lands(name: &str) -> Links {
     let out = repo.join("out");
     assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
     let mut pages: Vec<(String, PathBuf, String)> = Vec::new();
-    for folder in [out.clone(), out.join("html")] {
-        for (file, page) in read_outputs(&folder) {
-            if file != "index.md" {
-                pages.push((file, folder.clone(), page));
-            }
+    for (file, page) in read_outputs(&out) {
+        if file != "index.md" && has_ext(&file, "md") {
+            pages.push((file, out.clone(), page));
         }
+    }
+    let html = out.join("html");
+    for (file, page) in crate::support::read_pages(&html) {
+        pages.push((file, html.clone(), page));
     }
     let mut counts = Links {
         same: 0,
@@ -237,8 +239,9 @@ fn every_link_lands(name: &str) -> Links {
 fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
     let found = every_link_lands("garden");
     assert!(
-        found.same > 20 && found.cross >= 8 && found.source > 20,
-        "{} {} {}",
+        found.same > 15 && found.cross >= 8 && found.source > 20,
+        "same-page, cross-crate, and source links; the facade's page links into the crates \
+         that define its API rather than into itself: {} {} {}",
         found.same,
         found.cross,
         found.source
@@ -269,11 +272,15 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
         .find(|(name, _)| name == "front.html")
         .expect("front.html is written")
         .1;
+    let link = "<a class=\"cross\" href=\"origin.html#fn.origin.gauge.measure\">";
     assert!(
-        front.contains(
-            "<a class=\"cross\" href=\"origin.html#fn.origin.gauge.measure\">relay::measure</a>"
-        ),
-        "the link goes past relay to the crate that defines the function"
+        front.contains(&format!("Defined in {link}origin::gauge::measure</a>")),
+        "the facade's page goes past relay to the crate that defines the function"
+    );
+    assert!(
+        front
+            .contains("<code><span class=\"c\"><a href=\"#api.measure\">measure</a></span></code>"),
+        "a doc link to a name that front's API shows goes to its heading on front's page"
     );
     let index = fs::read_to_string(repo.join("out").join("index.md")).unwrap();
     assert!(
@@ -290,13 +297,14 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
 fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
     let found = every_link_lands("values");
     assert_eq!(
-        found.values, 14,
-        "four in relay and four in front, and three more in the public surface of each"
+        found.values, 6,
+        "relay and front are facades, and each one's page names where origin defines its three \
+         values; a doc link to `measure` stays on the facade's page"
     );
     assert_eq!(
-        found.cross, 24,
-        "the fourteen value links, the index's one link to each of the three pages, and the \
-         seven names on its three lines of uses between outlines"
+        found.cross, 21,
+        "the six value links, then on the overview the eight links of its tables and the seven \
+         names on its three lines of uses between outlines"
     );
 }
 
@@ -460,21 +468,15 @@ fn a_function_named_like_its_module_links_through_a_re_export() {
     let outer = page("outer.html");
     assert!(
         outer.contains(&format!(
-            "<li>{link}display_chain</a> (inner::display_chain)</li>"
+            "Defined in {link}inner::display_chain::display_chain</a>"
         )),
-        "the public surface links to the function:\n{outer}"
-    );
-    assert!(
-        outer.contains(&format!(
-            "<span class=\"k\">using</span> {link}inner::display_chain</a>"
-        )),
-        "the re-export links to the function:\n{outer}"
+        "the facade's page names the function where its crate defines it:\n{outer}"
     );
     let inner = page("inner.html");
     assert!(
         inner.contains(
-            "<span class=\"k\">using</span> \
-             <a href=\"#fn.inner.display_chain.display_chain\">display_chain::display_chain</a>"
+            "<span class=\"k\">use</span> \
+             <a href=\"#fn.inner.display_chain.display_chain\">display_chain::display_chain</a>;"
         ),
         "the crate's own re-export links to the function, not past the module:\n{inner}"
     );

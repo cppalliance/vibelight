@@ -84,12 +84,25 @@ fn a_crate_the_exclude_now_leaves_out_loses_its_outlines() {
         [
             NOTE.to_owned(),
             removed(&[".vibelight", "facade.md"]),
-            removed(&[".vibelight", "html", "facade.html"]),
+            removed(&[".vibelight", "html", "facade.page.js"]),
         ]
     );
     assert_eq!(
         names(&read_run(&repo.join(".vibelight"))),
         ["alpha.html", "alpha.md", "beta.html", "beta.md"]
+    );
+    assert!(
+        !repo
+            .join(".vibelight")
+            .join("html")
+            .join("facade.page.js")
+            .exists()
+    );
+    assert!(
+        repo.join(".vibelight")
+            .join("html")
+            .join("vibelight.js")
+            .is_file()
     );
 }
 

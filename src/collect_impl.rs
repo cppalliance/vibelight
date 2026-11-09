@@ -86,6 +86,7 @@ impl Collector<'_> {
                 arg: single_arg(path).map(|ty| self.argument(&here, ty)),
                 generic: !i.generics.params.is_empty() || i.generics.where_clause.is_some(),
                 long: false,
+                derived: false,
             }
         });
         let loc = loc(&here, i.impl_token.span);

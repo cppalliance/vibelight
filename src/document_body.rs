@@ -11,6 +11,7 @@ use std::collections::BTreeSet;
 use crate::anatomy::{self, Anatomy};
 use crate::document::{Builder, Inline, Item, Node, anchor, crumb, strong_anchor};
 use crate::document_sections::plain_links;
+use crate::layout::Block;
 use crate::layout_items::{docs_block, module_block};
 use crate::model::{Crate, DeclId, ItemKind, Loc, ModId, ValueRef, path_order};
 use crate::order::Order;
@@ -102,10 +103,24 @@ impl Builder<'_> {
                 inlines,
             });
         }
+        let items = module_block(krate, m);
+        let blocks = (types.iter().map(|&d| self.blocks[d].lines.as_slice()))
+            .chain(items.iter().map(|block| block.lines.as_slice()));
+        let lines = crate::glance::joined(blocks, &krate.refs);
+        if !lines.is_empty() {
+            self.nodes.push(Node::Glance(Block {
+                lines,
+                repeats: Vec::new(),
+            }));
+            self.nodes.push(Node::Note {
+                class: "view",
+                text: "Documented".to_owned(),
+            });
+        }
         for &d in types {
             self.decl(d);
         }
-        if let Some(block) = module_block(krate, m) {
+        if let Some(block) = items {
             self.code(block);
         }
     }
@@ -287,7 +302,7 @@ mod tests {
             graph: &graph,
         };
         let doc = build(&inputs, None);
-        let page = crate::render_html::render(&doc, None, &[], crate::stamp::PLACEHOLDER);
+        let page = crate::render_html::fragment(&doc, None, &[], crate::stamp::PLACEHOLDER);
         let mut section = "";
         let mut out = Vec::new();
         for line in page.lines() {

@@ -49,6 +49,9 @@ pub(crate) struct Config {
     /// The leads to drop: a lead id, or a lead id, `:`, and a glob of a
     /// subject's path.
     pub(crate) quiet: Vec<String>,
+    /// The globs of the crate folders that are facades, which replace the
+    /// HTML's own choice when set.
+    pub(crate) facades: Option<Vec<String>>,
 }
 
 /// The keys a config may hold.
@@ -60,6 +63,7 @@ const KEYS: &[&str] = &[
     "out",
     "boilerplate",
     "quiet",
+    "facades",
 ];
 
 /// Finds and reads the first `vibelight.toml` in `start` or above it.
@@ -117,6 +121,9 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
     let exclude = list("exclude")?;
     let boilerplate = list("boilerplate")?;
     let quiet = list("quiet")?;
+    let facades = (table.get("facades"))
+        .map(|value| strings(&name, "facades", value))
+        .transpose()?;
     let out = match table.get("out") {
         Some(value) => {
             let out = value
@@ -134,6 +141,7 @@ pub(crate) fn parse(path: &Path, text: &str) -> Result<Config> {
         out,
         boilerplate,
         quiet,
+        facades,
     })
 }
 

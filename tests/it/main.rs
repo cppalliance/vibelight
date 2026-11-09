@@ -2,6 +2,7 @@
 
 mod anchors;
 mod arrange;
+mod browse;
 mod cli;
 mod config;
 mod exclude;

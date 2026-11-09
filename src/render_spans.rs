@@ -16,14 +16,6 @@ impl Page<'_> {
         if !line.spans.is_empty() {
             out.push_str(&" ".repeat(line.indent));
         }
-        // The marker's own text carried the space between it and the
-        // comment, and the marker is not printed, so that one space is added
-        // back here.
-        if let Some(Span::Marker(marker)) = line.spans.first() {
-            if marker.ends_with(' ') {
-                out.push(' ');
-            }
-        }
         self.ticked(out, &line.spans);
         if let Some(trailing) = &line.trailing {
             let _ = write!(out, " <span class=\"c\">{}</span>", escape(trailing));
@@ -46,7 +38,7 @@ impl Page<'_> {
         let mut open: Option<usize> = None;
         for span in spans {
             match span {
-                Span::Marker(_) => {}
+                Span::Marker(text) => Self::piece(out, false, &escape(text)),
                 Span::Comment(text) => {
                     let mut rest = text.as_str();
                     while let Some(at) = rest.find('`') {
@@ -88,7 +80,7 @@ impl Page<'_> {
     pub(crate) fn spans(&self, out: &mut String, spans: &[Span]) {
         let mut in_comment = false;
         for span in spans {
-            let comment = matches!(span, Span::Comment(_) | Span::DocRef(_));
+            let comment = matches!(span, Span::Comment(_) | Span::DocRef(_) | Span::Marker(_));
             if comment && !in_comment {
                 out.push_str("<span class=\"c\">");
             } else if !comment && in_comment {
@@ -99,7 +91,7 @@ impl Page<'_> {
                 Span::Key(text) => {
                     let _ = write!(out, "<span class=\"k\">{}</span>", escape(text));
                 }
-                Span::Marker(_) => {}
+                Span::Marker(text) => out.push_str(&escape(text)),
                 Span::Dim(text) => {
                     let _ = write!(out, "<span class=\"dim\">{}</span>", escape(text));
                 }
@@ -121,9 +113,12 @@ impl Page<'_> {
     }
 
     /// Writes a member or item name: a link to its source line when links
-    /// are on, otherwise a span, with its id when it has one.
+    /// are on, otherwise a span, with its id when it has one and names take
+    /// ids.
     fn name(&self, out: &mut String, text: &str, loc: Loc, id: Option<&str>) {
-        let id = id.map_or_else(String::new, |id| format!(" id=\"{}\"", attr(id)));
+        let id = id
+            .filter(|id| self.ids && !id.is_empty())
+            .map_or_else(String::new, |id| format!(" id=\"{}\"", attr(id)));
         match self.member_links {
             Some(link) => {
                 let _ = write!(
@@ -140,38 +135,79 @@ impl Page<'_> {
     }
 
     /// Writes a type name: a link into this page, a link into another
-    /// crate's page, or plain text when it names nothing of the run.
+    /// crate's page, or plain text when it names nothing of the run. An
+    /// item whose id is empty is one its page leaves out, as a facade's
+    /// page leaves out what is not public.
     fn reference(&self, out: &mut String, id: usize) {
         let reference = &self.doc.refs[id];
+        let reach = match (reference.decl(), reference.value()) {
+            (Some(target), _) => Some(Reach::Decl(target)),
+            (None, Some(value)) => Some(Reach::Value(value)),
+            (None, None) => None,
+        };
+        if let (Some(reach), Some((_, own))) = (reach, self.api)
+            && self.api_link(out, &reference.text, own, reach)
+        {
+            return;
+        }
         let local = match (reference.decl(), reference.value()) {
-            (Some(target), _) => Some(&self.doc.decl_ids[target]),
+            (Some(target), _) => self.doc.decl_ids.get(target),
             (None, Some(value)) => self.doc.value_ids.get(&value),
             (None, None) => None,
         };
+        if local.is_some_and(String::is_empty) {
+            out.push_str(&escape(&reference.text));
+            return;
+        }
         match (local, reference.foreign) {
-            (Some(href), _) => {
-                let _ = write!(
-                    out,
-                    "<a href=\"#{}\">{}</a>",
-                    attr(href),
-                    escape(&reference.text)
-                );
-            }
+            (Some(href), _) => match self.foreign {
+                Some(file) => {
+                    let _ = write!(
+                        out,
+                        "<a class=\"cross\" href=\"{}#{}\">{}</a>",
+                        attr(file),
+                        attr(href),
+                        escape(&reference.text)
+                    );
+                }
+                None => {
+                    let _ = write!(
+                        out,
+                        "<a href=\"#{}\">{}</a>",
+                        attr(href),
+                        escape(&reference.text)
+                    );
+                }
+            },
             (None, Some(to)) => self.cross(out, &reference.text, to),
             (None, None) => out.push_str(&escape(&reference.text)),
         }
+    }
+
+    /// Writes `text` as a link to the heading of an item a facade's page
+    /// shows, when this is that page and it shows the item, and says
+    /// whether it did.
+    fn api_link(&self, out: &mut String, text: &str, krate: usize, reach: Reach) -> bool {
+        let Some(id) = self.api.and_then(|(api, _)| api.get(&(krate, reach))) else {
+            return false;
+        };
+        let _ = write!(out, "<a href=\"#{}\">{}</a>", attr(id), escape(text));
+        true
     }
 
     /// Writes `text` as a link into the page of the other crate of the run
     /// that holds `to`, or as plain text when the run holds no page or
     /// anchor for it.
     pub(crate) fn cross(&self, out: &mut String, text: &str, to: CrossRef) {
+        if self.api_link(out, text, to.krate, to.reach) {
+            return;
+        }
         let target = self.run.get(to.krate).and_then(|page| {
             let anchor = match to.reach {
                 Reach::Decl(decl) => page.ids.get(decl)?,
                 Reach::Value(value) => page.values.get(&value)?,
             };
-            Some((&page.file, anchor))
+            (!anchor.is_empty()).then_some((&page.file, anchor))
         });
         match target {
             Some((file, anchor)) => {

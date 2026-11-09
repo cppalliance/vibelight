@@ -8,11 +8,9 @@ pub(crate) const MAX_WIDTH: usize = 80;
 
 /// A function declaration split where the long-line rule may break it.
 pub(crate) struct FnParts {
-    /// Qualifiers, name, and generics.
+    /// Visibility, qualifiers, `fn`, name, and generics.
     pub(crate) head: Vec<Span>,
     pub(crate) params: Vec<ParamParts>,
-    /// What follows the closing parenthesis, such as ` const`.
-    pub(crate) after: Vec<Span>,
     /// The return type, without the arrow.
     pub(crate) ret: Option<Vec<Span>>,
     pub(crate) where_clause: Option<WhereParts>,
@@ -45,8 +43,12 @@ fn line(indent: usize, spans: Vec<Span>) -> Line {
     }
 }
 
-/// Lays out a function declaration at `indent` under the long-line rule. A
-/// parameter with a comment forces one parameter per line.
+/// Lays out a function declaration at `indent` the way rustfmt does: on
+/// one line when it fits; else the signature on one line and its `where`
+/// clause below it, when the signature fits; else one parameter per line,
+/// each ending in a comma, and `)` with the return type on a line of their
+/// own, the `where` clause below. A parameter with a comment forces one
+/// parameter per line.
 pub(crate) fn function(
     parts: &FnParts,
     indent: usize,
@@ -55,49 +57,56 @@ pub(crate) fn function(
 ) -> Vec<Line> {
     let fits = |l: &Line| width(l.indent, &l.spans, refs) <= MAX_WIDTH;
     let forced = parts.params.iter().any(|p| !p.notes.is_empty());
-    let pieces = Pieces::new(parts);
-
-    let mut current: Vec<Line>;
-    let mut first_fits = false;
-    if parts.ret.is_some() {
-        let whole = line(
-            indent,
-            concat(&[&pieces.one, &[s(" -> ")], &pieces.ret, &pieces.finish]),
-        );
-        if !forced && fits(&whole) {
+    let mut close = vec![s(")")];
+    if let Some(ret) = &parts.ret {
+        close.push(s(" -> "));
+        close.extend(ret.iter().cloned());
+    }
+    let mut signature = concat(&[&parts.head, &[s("(")]]);
+    for (i, param) in parts.params.iter().enumerate() {
+        if i > 0 {
+            signature.push(s(", "));
+        }
+        signature.extend(param.text.iter().cloned());
+    }
+    signature.extend(close.iter().cloned());
+    if !forced {
+        let mut whole = signature.clone();
+        if let Some(clause) = &parts.where_clause {
+            whole.push(s(" "));
+            whole.extend(clause.one.iter().cloned());
+        }
+        whole.extend(parts.end.iter().cloned());
+        let whole = line(indent, whole);
+        if fits(&whole) {
             return finished(vec![whole], trailing);
         }
-        current = vec![
-            line(indent, concat(&[&pieces.one, &[s(" ->")]])),
-            line(indent + 4, concat(&[&pieces.ret, &pieces.finish])),
-        ];
-        first_fits = fits(&current[0]);
-        if !forced && current.iter().all(fits) {
-            return finished(current, trailing);
-        }
-    } else {
-        current = vec![line(indent, concat(&[&pieces.one, &pieces.finish]))];
-        if !forced && fits(&current[0]) {
-            return finished(current, trailing);
+        let alone = line(indent, signature.clone());
+        if parts.params.is_empty() || (parts.where_clause.is_some() && fits(&alone)) {
+            return finished(below(alone, parts, indent, refs), trailing);
         }
     }
-    if (forced || !first_fits) && !parts.params.is_empty() {
-        current = one_per_line(parts, &pieces, indent, &fits);
-        if current.iter().all(fits) {
-            return finished(current, trailing);
+    let mut lines = vec![line(indent, concat(&[&parts.head, &[s("(")]]))];
+    for param in &parts.params {
+        for note in &param.notes {
+            lines.push(line(indent + 4 + note.indent, note.spans.clone()));
         }
+        lines.push(line(indent + 4, concat(&[&param.text, &[s(",")]])));
     }
+    lines.extend(below(line(indent, close), parts, indent, refs));
+    finished(lines, trailing)
+}
+
+/// Returns a declaration's last line, `last`, then its `where` clause below
+/// it when it has one, each ending in the closing punctuation.
+fn below(mut last: Line, parts: &FnParts, indent: usize, refs: &[TypeRef]) -> Vec<Line> {
     if let Some(clause) = &parts.where_clause {
-        let last = current.pop().unwrap_or_default();
-        if fits(&last) {
-            current.push(last);
-        } else {
-            let keep = last.spans.len().saturating_sub(pieces.finish.len());
-            current.push(line(last.indent, last.spans[..keep].to_vec()));
-            current.extend(where_lines(clause, &parts.end, indent + 4, refs));
-        }
+        let mut lines = vec![last];
+        lines.extend(where_lines(clause, &parts.end, indent, refs));
+        return lines;
     }
-    finished(current, trailing)
+    last.spans.extend(parts.end.iter().cloned());
+    vec![last]
 }
 
 /// Lays out a `where` clause at `indent`, followed by `end`: on one line
@@ -126,119 +135,8 @@ pub(crate) fn where_lines(
     lines
 }
 
-/// The runs a function declaration is assembled from.
-struct Pieces {
-    /// The head and parameters on one line, through the closing parenthesis
-    /// and anything after it.
-    one: Vec<Span>,
-    /// The closing parenthesis and anything after it.
-    tail: Vec<Span>,
-    /// The return type.
-    ret: Vec<Span>,
-    /// The `where` clause, if any, and the closing punctuation.
-    finish: Vec<Span>,
-}
-
-impl Pieces {
-    fn new(parts: &FnParts) -> Pieces {
-        let tail = concat(&[&[s(")")], &parts.after]);
-        let mut finish = Vec::new();
-        if let Some(clause) = &parts.where_clause {
-            finish.push(s(" "));
-            finish.extend(clause.one.iter().cloned());
-        }
-        finish.extend(parts.end.iter().cloned());
-        let mut one = parts.head.clone();
-        one.push(s("("));
-        for (i, param) in parts.params.iter().enumerate() {
-            if i > 0 {
-                one.push(s(", "));
-            }
-            one.extend(param.text.iter().cloned());
-        }
-        one.extend(tail.iter().cloned());
-        Pieces {
-            one,
-            tail,
-            ret: parts.ret.clone().unwrap_or_default(),
-            finish,
-        }
-    }
-}
-
-/// Lays out one parameter per line, comments above each, with the tail on
-/// the last parameter when it fits and broken after `->` when not.
-fn one_per_line(
-    parts: &FnParts,
-    pieces: &Pieces,
-    indent: usize,
-    fits: &impl Fn(&Line) -> bool,
-) -> Vec<Line> {
-    let mut lines = vec![line(indent, concat(&[&parts.head, &[s("(")]]))];
-    let count = parts.params.len();
-    for (i, param) in parts.params.iter().enumerate() {
-        for note in &param.notes {
-            lines.push(line(indent + 4 + note.indent, note.spans.clone()));
-        }
-        let mut spans = param.text.clone();
-        if i + 1 < count {
-            spans.push(s(","));
-        }
-        lines.push(line(indent + 4, spans));
-    }
-    let last = lines.pop().unwrap_or_default();
-    let joined = if parts.ret.is_some() {
-        line(
-            indent + 4,
-            concat(&[
-                &last.spans,
-                &pieces.tail,
-                &[s(" -> ")],
-                &pieces.ret,
-                &pieces.finish,
-            ]),
-        )
-    } else {
-        line(
-            indent + 4,
-            concat(&[&last.spans, &pieces.tail, &pieces.finish]),
-        )
-    };
-    if fits(&joined) || parts.ret.is_none() {
-        lines.push(joined);
-    } else {
-        lines.push(line(
-            indent + 4,
-            concat(&[&last.spans, &pieces.tail, &[s(" ->")]]),
-        ));
-        lines.push(line(indent + 4, concat(&[&pieces.ret, &pieces.finish])));
-    }
-    lines
-}
-
 fn concat(parts: &[&[Span]]) -> Vec<Span> {
     parts.iter().flat_map(|p| p.iter().cloned()).collect()
-}
-
-/// Lays out a type header: a `where` clause that makes it too long moves to
-/// its own lines, indented 4 more.
-pub(crate) fn header(
-    spans: Vec<Span>,
-    where_clause: Option<&WhereParts>,
-    refs: &[TypeRef],
-) -> Vec<Line> {
-    let Some(clause) = where_clause else {
-        return vec![line(0, spans)];
-    };
-    let mut whole = spans.clone();
-    whole.push(s(" "));
-    whole.extend(clause.one.iter().cloned());
-    if width(0, &whole, refs) <= MAX_WIDTH {
-        return vec![line(0, whole)];
-    }
-    let mut lines = vec![line(0, spans)];
-    lines.extend(where_lines(clause, &[], 4, refs));
-    lines
 }
 
 fn finished(mut lines: Vec<Line>, trailing: Option<String>) -> Vec<Line> {
@@ -279,7 +177,6 @@ mod tests {
                     text: vec![s(p)],
                 })
                 .collect(),
-            after: Vec::new(),
             ret: ret.map(|r| vec![s(r)]),
             where_clause: clause.map(|c| WhereParts {
                 one: vec![s(c)],
@@ -302,12 +199,16 @@ mod tests {
     }
 
     #[test]
-    fn one_column_more_breaks_after_the_arrow() {
+    fn one_column_more_goes_one_parameter_per_line() {
         let name = format!("f{}", "x".repeat(61));
         let lines = function(&parts(&name, &["a: u8"], Some("u32"), None), 4, None, &[]);
         assert_eq!(
             text(&lines),
-            [format!("    {name}(a: u8) ->"), "        u32;".to_owned()]
+            [
+                format!("    {name}("),
+                "        a: u8,".to_owned(),
+                "    ) -> u32;".to_owned()
+            ]
         );
     }
 
@@ -326,13 +227,14 @@ mod tests {
                 "f(",
                 &format!("    {long},"),
                 &format!("    {long},"),
-                &format!("    {long}) -> u8;")
+                &format!("    {long},"),
+                ") -> u8;"
             ]
         );
     }
 
     #[test]
-    fn where_clause_moves_last() {
+    fn a_where_clause_that_does_not_fit_on_the_line_goes_below_the_signature() {
         let clause = format!("where T: {}", "Clone + ".repeat(8).trim_end_matches(" + "));
         let lines = function(
             &parts("f<T>", &["name: &str", "value: T"], None, Some(&clause)),
@@ -342,12 +244,7 @@ mod tests {
         );
         assert_eq!(
             text(&lines),
-            [
-                "    f<T>(",
-                "        name: &str,",
-                "        value: T)",
-                &format!("        {clause};")
-            ]
+            ["    f<T>(name: &str, value: T)", &format!("    {clause};")]
         );
     }
 
@@ -365,18 +262,16 @@ mod tests {
         assert_eq!(
             text(&lines),
             [
-                "    f<A, B>(",
-                "        a: A,",
-                "        b: B)",
-                "        where",
-                &format!("            {first},"),
-                &format!("            {second};")
+                "    f<A, B>(a: A, b: B)",
+                "    where",
+                &format!("        {first},"),
+                &format!("        {second};")
             ]
         );
     }
 
     #[test]
-    fn a_commented_parameter_list_stays_packed() {
+    fn a_commented_parameter_list_goes_one_parameter_per_line() {
         let mut commented = parts("f", &["a: u8", "b: u8"], None, None);
         commented.params[0].notes = vec![line(0, vec![s("// first")])];
         commented.params[1].notes = vec![line(0, vec![s("// second")])];
@@ -388,7 +283,8 @@ mod tests {
                 "        // first",
                 "        a: u8,",
                 "        // second",
-                "        b: u8);"
+                "        b: u8,",
+                "    );"
             ]
         );
     }
@@ -397,6 +293,9 @@ mod tests {
     fn a_line_that_cannot_fit_stays() {
         let huge = format!("p: {}", "x".repeat(90));
         let lines = function(&parts("f", &[&huge], None, None), 0, None, &[]);
-        assert_eq!(text(&lines), ["f(".to_owned(), format!("    {huge});")]);
+        assert_eq!(
+            text(&lines),
+            ["f(".to_owned(), format!("    {huge},"), ");".to_owned()]
+        );
     }
 }

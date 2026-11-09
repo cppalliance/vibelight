@@ -2,21 +2,22 @@
 
 [![CI](https://github.com/cppalliance/vibelight/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/cppalliance/vibelight/actions/workflows/ci.yml) [![crates.io](https://img.shields.io/crates/v/vibelight)](https://crates.io/crates/vibelight) [![Latest release](https://img.shields.io/github/v/release/cppalliance/vibelight)](https://github.com/cppalliance/vibelight/releases/latest) [![License](https://img.shields.io/github/license/cppalliance/vibelight)](LICENSE) [![Minimum Rust version](https://img.shields.io/badge/rust-1.85%2B-orange)](Cargo.toml)
 
-vibelight reads the Rust crates of a repository and writes an outline of each: every type, trait, function, and module with its comments, and no function bodies. Each target gets two files for two readers. The markdown file is for a model analyzing the code: one JSON record per line, starting with the leads vibelight computes for places that look like slop, then every declaration with its shape or signature as one line of Rust and everything vibelight observed about it, such as what names and uses it, which bodies call it, counts from each function body, the items of other crates, and the file and line of every declaration. The HTML page is for a person browsing the code: the declarations in the style of a C++ header, with every type name linked.
+vibelight reads the Rust crates of a repository and writes an outline of each: every type, trait, function, and module with its comments, and no function bodies. Each target gets two files for two readers. The markdown file is for a model analyzing the code: one JSON record per line, starting with the leads vibelight computes for places that look like slop, then every declaration with its shape or signature as one line of Rust and everything vibelight observed about it, such as what names and uses it, which bodies call it, counts from each function body, the items of other crates, and the file and line of every declaration. The HTML is for a person auditing the code: it makes a program's structure legible, so the reader does not have to wade through its implementation to see how it is put together. It prints each declaration as Rust writes it, with the bodies removed and every type name linked, and it opens on an overview that tells the facades, the crates whose API users write against, from the implementation crates behind them.
 
 ## What it does
 
 - **No switches.** Run `vibelight` at the root of a repository. The first run writes a `vibelight.toml` that chooses the crates worth analyzing and leaves out the ones that only support development, each with a comment that says why. Every later run reads it.
 - **A folder git never sees.** The markdown goes in `.vibelight/`, the HTML in `.vibelight/html/`, and a `.gitignore` there keeps all of it out of git. The folder holds what the last run wrote: the outlines of a crate the run no longer covers are removed.
-- **An index.** `.vibelight/index.md` lists each outline with its crate's folder, whether the run selected the crate or followed a path dependency to it, and its size. `html/index.html` is the same list as a page that links to each other page, so the HTML folder has a place to start.
-- **One outline per target.** The library, each binary, or a single `.rs` file gets `<target>.md` and `html/<target>.html`.
+- **An index.** `.vibelight/index.md` lists each outline with its crate's folder, whether the run selected the crate or followed a path dependency to it, and its size. `html/index.html` opens on an overview of the same crates: the facades first, then the implementation crates behind each one, then the rest, each with a line from its crate docs.
+- **One outline per target.** The library, each binary, or a single `.rs` file gets `<target>.md` and a page of the HTML, `html/<target>.page.js`.
 - **Facts for analysis.** The markdown gives each declaration the facts vibelight observes across the run: what names and re-exports it, which other crates and which kinds of test code use it, which bodies call a function, and for each body, counts of its statements, loops, and error paths, the fields and parameters it touches, and its comments. Before the declarations come the leads: places that look like slop, each with an id, its evidence, the kind of evidence it rests on, and its known blind spots.
-- **A self-contained, linked HTML file.** It has inline CSS, no JavaScript, and makes no network requests. Every type name that refers to a declaration in the outline links to it, and so does a re-exported function, constant, or static. The sidebar is the module tree, with each module's types, functions, constants, and statics, and the names on the public surface in bold; the colors follow your system's light or dark setting.
-- **Module by module, with visibility.** The HTML has one section per module in path order: its path, a line of what it declares and at which visibility, its types, then its items. Inside a module, types are ordered by how they name each other: a type follows the type that owns it, so every type comes after the types that use it. Each type and item prints with its visibility as written, members grouped under labels such as `pub:` and `pub(crate):`, and a dim `reaches pub(crate)` line marks a node that reaches less far than its visibility says. The markdown also goes module by module in path order, with each module's records in source order.
-- **Comments kept.** Doc comments and ordinary comments stay with the item they belong to. In the HTML a doc comment prints as prose, and one button in the sidebar hides or shows every member's comment. The markdown also keeps the comments inside each function body, with their lines.
+- **One HTML page that works from disk, in Cursor's browser too.** `html/index.html` is the only page, and it needs no server. Cursor's browser drops every click on a link to a `file:` URL, so the page is a small app, `html/vibelight.js`, that never leaves it: it loads a crate's page from its data file, `html/<target>.page.js`, with a script tag, only when you open it, and shows it in a tab of its own. The address names what is shown, as `index.html#<target>/<id>`, so Back, Forward, and a reload work, and the tabs come back after a reload. `Ctrl K` or `/` searches every declaration of the run, through `html/search.js`; a click with `Ctrl`, or a middle click, opens a link in a new tab; and a click on a source link copies its file and line, such as `crates/engine/src/run.rs:42`, since a browser inside an editor opens no source file. The page has inline CSS and makes no network requests. Every type name that refers to a declaration of the run links to it, and so does a re-exported function, constant, or static. The colors follow your system's light or dark setting.
+- **Rust, module by module.** A crate's page has one section per module in path order: its path, a line of what it declares and at which visibility, then its types and items twice, first `At a glance`, without comments and packed tight, then `Documented`, each with its docs. Each type prints as Rust declares it with the bodies removed: its attributes, its head and its fields, one `impl` block that holds the members of all its inherent impls, and a `// implements` line that names the other traits it implements. Members go from the widest visibility to the narrowest, and a dim `reaches pub(crate)` line marks a node that reaches less far than its visibility says. Inside a module, types are ordered by how they name each other: a type follows the type that owns it, so every type comes after the types that use it. The markdown also goes module by module in path order, with each module's records in source order.
+- **Facades and their families.** A facade is a crate whose public surface is mostly re-exports of other crates of the run: the API a family of crates offers its users. vibelight finds the facades from their re-exports, or takes them from the config's `facades` key, and puts each other library behind the facade whose code reaches it. A facade's page shows only what its users can name: each item under the path they write, pulled from the crate that defines it, with its `pub` members alone, so the whole API reads in one place. The overview warns when a crate outside a family uses one of the family's implementation crates directly, past its facade.
+- **Comments kept.** Doc comments and ordinary comments stay with the item they belong to. In the HTML a type's or a module's doc comment prints as prose, and a member's comment prints above it as `///` lines; the `At a glance` view leaves them out. The markdown also keeps the comments inside each function body, with their lines.
 - **Every macro marked.** In the HTML, macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and the page lists them all at the top, each with a link to where it sits. The markdown has a `macro` record for each definition and invocation, and lists derives and attribute macros on the record they apply to.
 - **Macros looked through.** Each item-position invocation of one of the crate's own `macro_rules!` macros is expanded, and the items it writes are outlined like any other, in the invoking module and at the invocation's line. The markdown marks each such top-level record with `via`, such as `"via":"events!"`, and the HTML's `Source:` line says "written by `events!`". An invocation that cannot be expanded stays a mark and warns; other macros are not expanded.
-- **The public surface first.** A library's files list every path a user of the crate can name, through public modules and re-exports, before any type: a Public surface section in the HTML, and one `surface` record per path in the markdown.
+- **The public surface first.** A library's files list every path a user of the crate can name, through public modules and re-exports, before any type: a Public surface section in the HTML, and one `surface` record per path in the markdown. A facade's page is its public surface, each path with the declaration it names.
 - **Rust for the model.** The markdown writes each signature and each type's shape as one line of Rust, with visibilities, generics, and `where` clauses as in the source. The leads come first, every record names its kind in `k`, and the header gives the schema version, so a model with only the file can follow it.
 - **Links back to the source.** In the HTML, each declaration, impl block, module, and macro links back to where it is written, such as `src/prompt.rs:136`. The links are relative to the output file and end in `#L136`, which GitHub, VS Code, and Cursor open at that line. An item that a macro writes links to the invocation. In the markdown, each declaration's `loc`, or each lead's and impl's `locs`, is a string such as `src/prompt.rs:136`, and the header's `root` leads from the markdown folder to the crate, so `root` and the file together open the source.
 
@@ -60,7 +61,7 @@ Both binary names come from one `cargo install vibelight`, because they are two 
 - `<crate-dir-or-file.rs>` is a crate directory, with or without a `Cargo.toml`, the `Cargo.toml` itself, or a single `.rs` file, in place of the crates the config chooses. Several crates can be named at once. A crate named here is always outlined, even when the config's `exclude` matches it, and the config's `follow` and `exclude` still apply to the crates the run follows into. A single `.rs` file cannot be mixed with crates, and the config's globs pass it by.
 - `-o` (or `--out`) is the folder to write into, in place of the config's. The markdown files and the index go in it, and the HTML files in its `html` folder. It is created if missing.
 
-A file whose content is the same as the one on disk is left alone; any other file of the same name is overwritten. vibelight prints the path of every file of the run on stdout, sorted, whether it wrote the file or the file was already current. For example, `vibelight ../my-crate -o outline` on a library crate named `my-crate` writes `outline/my_crate.md`, `outline/html/my_crate.html`, and `outline/index.md`.
+A file whose content is the same as the one on disk is left alone; any other file of the same name is overwritten. vibelight prints the path of every file of the run on stdout, sorted, whether it wrote the file or the file was already current. For example, `vibelight ../my-crate -o outline` on a library crate named `my-crate` writes `outline/my_crate.md` and `outline/index.md`, and in `outline/html` the one page `index.html`, the crate's page `my_crate.page.js`, the overview's `index.page.js`, the search index `search.js`, and the app `vibelight.js`.
 
 ## The first run
 
@@ -111,11 +112,11 @@ Three cases get a `note:` line on stderr, which is not a warning, and the exit c
 
 In the HTML file, a type, trait, or re-export that resolves into another crate of the run links to that crate's page, as `runvil_model_client.html#type.runvil_model_client.model.ModelSet`, so all HTML files of a run sit in one folder. A re-exported function, constant, or static links the same way, however many crates re-export it on the way, as `runvil_engine.html#fn.runvil_engine.execute.perform_vfs_op`. vibelight finds the other crate through the `[dependencies]` and `[build-dependencies]` of `Cargo.toml`, the `[build_dependencies]` spelling Cargo still reads, and the same tables under every `[target.*]`, including `workspace = true` entries, `package = "..."` renames, and `[lib] name`, but only path dependencies. The dev tables, `[dev-dependencies]` and `[dev_dependencies]`, are never followed. A crate can name only its own dependencies, and a type whose crate is not in the run stays plain text. In the markdown, an `external` record names each item of another crate that the declarations name, with how often and by what, and its doc summary when that crate is in the run. No file depends on the order the crates are named in.
 
-The markdown is contextual to the run: its leads and facts count what every target and package of the run writes, so adding or excluding a crate can change another crate's markdown, and with it that file's stamp. A cross-crate lead prints in the markdown of every target it involves. An HTML page depends only on its own crate and the crates of the run it links to.
+The markdown is contextual to the run: its leads and facts count what every target and package of the run writes, so adding or excluding a crate can change another crate's markdown, and with it that file's stamp. A cross-crate lead prints in the markdown of every target it involves. An HTML page depends only on its own crate and the crates of the run it links to, and a facade's page also on the crates whose items it shows.
 
 ## vibelight.toml
 
-The config has seven keys, and every path in it is relative to the folder that holds it, so the run is the same from any folder below it:
+The config has eight keys, and every path in it is relative to the folder that holds it, so the run is the same from any folder below it:
 
 - `workspace = true` outlines every member of the workspace that holds the config's folder. `workspace = "<dir>"` starts the search from that directory instead.
 - `crates = ["<path or glob>", ...]` lists the crates instead. A path names one crate, the same as on the command line. A glob such as `crates/*` adds each matching folder that holds a `Cargo.toml`, and skips one with nothing to outline with a `note:` line. Set `workspace` or `crates`, not both.
@@ -124,16 +125,17 @@ The config has seven keys, and every path in it is relative to the folder that h
 - `out = "<dir>"` is the folder to write into. It defaults to `.vibelight` beside the config.
 - `boilerplate = ["<text>", ...]` marks text that is meant to repeat, such as a sentence every crate doc ends with. Every doc detector leaves unread a doc passage, the lines up to a blank line, that holds one of the texts, with runs of white space compared as one space.
 - `quiet = ["<lead-id>", "<lead-id>:<path-glob>", ...]` drops leads from the markdown. An id alone drops every lead of that id, and a glob after `:`, written with `::` between segments such as `forwarder:detail::*`, drops a lead of that id when it matches the path of one of its subjects below its crate root. The header of each markdown file counts the leads it dropped in `quieted`, and an entry that drops no lead is a `note:` line.
+- `facades = ["<glob>", ...]` names the facades instead of letting vibelight find them: a library whose folder matches one of the globs is a facade, and no other crate is one. The other libraries still go behind the facades whose code reaches them. Without the key, a library is a facade when at least half of its public surface re-exports other crates of the run, unless another facade reaches it, all its users are in that facade's family, and it re-exports a smaller share than that facade does.
 
 A key vibelight does not know, or a value of the wrong type, is an error that names the key, such as ``unknown key `markdown` ``. Without `workspace` or `crates`, a run that names no crate is a usage error.
 
 ## The folder
 
-The markdown files and `index.md` go in the folder, and the HTML files in its `html` folder, with `html/index.html` as the page that links to every other one. When the folder is vibelight's own, the config's or the default `.vibelight`, rather than one `-o` names, the run also keeps a `.gitignore` in it that holds `*.md` and `*.html`, so no outline is ever committed. The outlines carry source links and follow how the code is split across files, so they change whenever code moves; they are for reading, not for diffs.
+The markdown files and `index.md` go in the folder, and the HTML files in its `html` folder, with `html/index.html` as the one page that shows them all. When the folder is vibelight's own, the config's or the default `.vibelight`, rather than one `-o` names, the run also keeps a `.gitignore` in it that holds `*.md`, `*.html`, and `*.js`, so no outline is ever committed. A `.gitignore` that holds only the first two lines, as earlier releases wrote it, is replaced with a note; any other `.gitignore` is left alone. The outlines carry source links and follow how the code is split across files, so they change whenever code moves; they are for reading, not for diffs.
 
-Every outline and every HTML page starts with a stamp, the UTC time its content last changed, such as `*Updated 2026-01-01T00:00:00Z*` in markdown and an `<!-- Updated ... -->` comment and a line at the top of the page in HTML. `index.md` and the `.gitignore` have none. A run rewrites a file only when its content changed, so the stamp moves only with the content. The time comes from `SOURCE_DATE_EPOCH` when it is set, for reproducible builds, and otherwise from the clock; a value that is not a whole number of seconds stops the run before it writes anything.
+Every outline and every HTML page starts with a stamp, the UTC time its content last changed, such as `*Updated 2026-01-01T00:00:00Z*` in markdown, an `<!-- Updated ... -->` comment that opens `html/index.html`, and a line at the top of each page's content in its data file. `index.md`, the `.gitignore`, the search index, and the app have none. A run rewrites a file only when its content changed, so the stamp moves only with the content. The time comes from `SOURCE_DATE_EPOCH` when it is set, for reproducible builds, and otherwise from the clock; a value that is not a whole number of seconds stops the run before it writes anything.
 
-The folder holds what the last run wrote. After writing, a run removes each outline that no crate of the run writes any more, such as the files of a crate that was renamed, removed, or excluded, with a `note:` line for each. Only files that start the way every outline does count: in the folder, a `.md` file with the stamp line and then the `vibelight-outline` header record, or an outline of the older markdown format, whose crate anchor opens the file or follows the stamp and a blank line; in `html`, an `.html` file with the stamp comment and then the doctype. So a README beside them, other file types, and the index are left alone. A run that names one crate leaves only that crate's files, so use `-o` for a one-off outline of a crate the config leaves out.
+The folder holds what the last run wrote. After writing, a run removes each outline that no crate of the run writes any more, such as the files of a crate that was renamed, removed, or excluded, with a `note:` line for each. Only files that start the way every outline does count: in the folder, a `.md` file with the stamp line and then the `vibelight-outline` header record, or an outline of the older markdown format, whose crate anchor opens the file or follows the stamp and a blank line; in `html`, an `.html` file with the stamp comment and then the doctype, and a `.js` file whose first line is the `vibelightPage(` call of a page's data file. So a README beside them, other file types, and the index are left alone. A run that names one crate leaves only that crate's files, so use `-o` for a one-off outline of a crate the config leaves out.
 
 `index.md` lists each outline of the run, with its crate's folder below the root, whether the run selected the crate or followed a path dependency to it, and its size in KB:
 
@@ -142,7 +144,7 @@ The folder holds what the last run wrote. After writing, a run removes each outl
 - [gamma.md](gamma.md): `vendor/gamma`, followed, 4 KB
 ```
 
-When the production code of one outline uses items of another, a `## Uses between outlines` section follows the list. It has one line for each outline that uses another or that another uses: the outlines it uses, the outlines that use it, each with the number of distinct items, and its instability, `fan_out / (fan_in + fan_out)`, where `fan_out` counts the outlines it uses and `fan_in` the outlines that use it. Doc links do not count. A use counts for the crate that declares the item when the using crate depends on it, else for the first of its dependencies in the list that re-exports the item by name, directly or through other re-exports, else for the crate that declares it. A glob, or a re-export of a whole crate or module, even under another name, does not re-export its items by name. `html/index.html` has the same section, with each name linked to its page:
+When the production code of one outline uses items of another, a `## Uses between outlines` section follows the list. It has one line for each outline that uses another or that another uses: the outlines it uses, the outlines that use it, each with the number of distinct items, and its instability, `fan_out / (fan_in + fan_out)`, where `fan_out` counts the outlines it uses and `fan_in` the outlines that use it. Doc links do not count. A use counts for the crate that declares the item when the using crate depends on it, else for the first of its dependencies in the list that re-exports the item by name, directly or through other re-exports, else for the crate that declares it. A glob, or a re-export of a whole crate or module, even under another name, does not re-export its items by name. The overview in the HTML has the same section, with each name linked to its page:
 
 ```
 - `runvil_engine` uses `runvil_lua` (50 items), `runvil_types` (34 items); used by `runvil` (12 items); instability 0.67
@@ -150,18 +152,27 @@ When the production code of one outline uses items of another, a `## Uses betwee
 
 ## Colors
 
-The HTML file colors code the way an editor does. A link inside the page uses the link color, whether it goes to a type or to a function, constant, or static, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. A member name links to the line that declares it.
+The HTML file colors code the way an editor does. A link inside the page uses the link color, whether it goes to a type or to a function, constant, or static, and a link to another crate's page is yellow: a darker gold on the light theme and a lighter yellow on the dark theme, so it stays readable on both. On a facade's page, a link to an item that the page shows stays on the page, in the link color. A member name links to the line that declares it.
 
 ## What the output looks like
 
-Each HTML page opens with the stamp, the target's name, its crate docs, and a short **Legend** of its notation (see [The HTML notation](#the-html-notation)). It then has these parts:
+The HTML opens on the overview. It has the run's name, a short description, and counts of its crates, then the **Legend** of the notation (see [The HTML notation](#the-html-notation)), printed once for every page. Then come three tables:
+- **Facades**, each with its folder, the first sentence of its crate docs, how many items and modules its API has, and the crates it re-exports from, with how many items from each.
+- **Implementation crates**, grouped by the facade they sit behind, each with how many of its items that facade re-exports, and a warning when a crate outside the family uses it directly.
+- **Other crates**, the libraries that no facade reaches and the binaries, grouped by folder.
 
-- **Sidebar:** the Legend, the Public surface, then the module tree: every module under its parent, each with its types, functions (shown with `()`), constants, and statics in path order, the names on the public surface in bold. Extern items and macros are not listed.
+The uses between outlines close the page.
+
+A facade's page shows its API and nothing else. Its sidebar lists the modules of the API, each with how many items it holds. After the crate docs, each module of the API has a section with its items `At a glance` and then `Documented`. A documented item has a heading with the path its users write, such as `runvil::vfs::Vfs`, and a dim `Defined in` line that names the item where its crate defines it, with that file and line. Its docs and its block follow, pulled from the crate that defines it. A whole module re-exported from another crate shows as its `pub use` line.
+
+Every other crate's page opens with the stamp, the target's name, and its crate docs. It then has these parts:
+
+- **Sidebar:** the Public surface, then the module tree: every module under its parent, each with its types, functions (shown with `()`), constants, and statics in path order, the names on the public surface in bold. Extern items and macros are not listed.
 - **The `MACROS:` line:** at the top of the page, a count of macros by kind, followed by one entry per macro, linking to the declaration or module that holds it. The sidebar does not link it.
 - **Public surface:** for a library, every path a user of the crate can name, walking public modules and `pub use` re-exports, globs and `#[macro_export]` macros included. Each path links to what it names, a function, constant, or static to its own name in its module's items, a re-export of another crate's item shows the path it comes from after the name, and links to the item on that crate's page when the crate is in the run and stays plain text when it is not, and test-support code is marked `(test support)`.
 - **One section per module,** in path order. The heading shows the module's parent path dim before its name, such as `engine::` then `parse`. Then come its `Source:` line, its docs, and its anatomy line: the module's visibility, how far it reaches when that is less, what it declares, and the same items by visibility, such as `pub mod, reaches pub(crate): 1 type, 2 functions; pub(crate) 2, pub(super) 1`. A module that uses other modules of the target, or that they use, then has a coupling line, such as `Used by 1 module: vm (3). Uses 2 modules: error (4), messages (2). Instability 0.67.`, with each name linked to its module's section. Then come the module's types and its block of items.
 - **The types of a module, in dependency order.** A type follows the type that owns it: a type that only one other type names follows it directly, and a type that several name follows the last of them, so everything that names a type is above it. The types nothing else names are the roots, and they go by how many types they reach. A type's parts go in the order of its fields (or variants, alias target, or supertraits) as declared, and then the types its methods name. Types that name each other in a cycle are placed together. A type that only a free function, a constant, a static, a re-export, or a function body outside its own impls names is in use, so it is a root. After a module's connected types come its types that name nothing and that nothing names, and then its test-support types, those behind a `cfg` that lists `test` inside `any(...)`, such as `cfg(any(test, feature = "test-support"))`. A type's heading shows its module's path dim before its name.
-- **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `implements: Trait for Type` lines.
+- **Other impls:** impls with no declared type to attach to, such as blanket impls or impls for `&T` or `Box<T>`, as `impl Trait for Type {}` lines.
 - **Spellings:** each item from outside the crate that the source writes in more than one way, with every spelling (see [Spellings](#spellings)).
 
 A section shows up only when it has something in it. Only the HTML file links type names.
@@ -185,7 +196,9 @@ Catalog records carry the facts vibelight observes across the run, each left out
 
 In the HTML file, each module-level function, constant, and static has an id on its name, `fn.<crate>.<module path>.<name>`, `const.<crate>.<module path>.<NAME>`, or `static.<crate>.<module path>.<NAME>`, written like the ids of types: parts joined with dots, case kept, and `r#` removed. A repeated id, such as a function declared twice under different `cfg`s, gets `-2`, `-3`, and so on. Methods and the items of `extern` blocks have no ids, and the markdown file has none of these ids.
 
-A re-export line (`using ...;`) links to a function, constant, or static of this crate, or of another crate of the run, through renames and chains of `pub use` items. A backticked name or an intra-doc link in a comment links the same way, when the name is in scope through a `use`, a glob, a path, or an item of the same module. When a type and a function have the same name, the link goes to the type. A function name is never found just because it is the only one of that name in the crate, which is how types are found, so a comment that names a function of another module needs a path or a `use`.
+A facade's page gives each item of its API a heading with the id `api.<module path>.<name>`, such as `api.vfs.Vfs`, and each module of its API the id `api.mod.<module path>`, or `api.mod` for the crate root. An item the facade itself defines keeps its own id on its heading the first time it shows, so links from other pages land on it. The search index lists the `api` headings beside every other id, and the search shows a facade's item before the crate that defines it. A facade's own declarations that its API does not show have no id, and a link to one prints as plain text.
+
+A re-export line (`pub use ...;`) links to a function, constant, or static of this crate, or of another crate of the run, through renames and chains of `pub use` items. A backticked name or an intra-doc link in a comment links the same way, when the name is in scope through a `use`, a glob, a path, or an item of the same module. When a type and a function have the same name, the link goes to the type. A function name is never found just because it is the only one of that name in the crate, which is how types are found, so a comment that names a function of another module needs a path or a `use`.
 
 ### The markdown notation
 
@@ -221,64 +234,59 @@ The `modules` record says lines 16 to 33 hold the root module and lines 34 to 39
 
 ### The HTML notation
 
-Every type prints as one C++-style block that uses Rust's item keyword and its visibility as written, with the members of all its inherent impls merged in, wherever they are written. Here is a public type whose fields and methods are all private:
+Every type prints as Rust declares it, with the bodies removed: its head and its body, then one `impl` block that holds the members of all its inherent impls, wherever they are written. Here is a public type whose fields and methods are all private:
 
 ```
-/// Holds the text the lexer is still reading.
-pub struct Cursor
-{
-pub(self):
+pub struct Cursor {
     text: String,
-
     pos: usize,
+}
 
-pub(self):
-    static new(text: String) -> Cursor
+impl Cursor {
+    fn new(text: String) -> Cursor;
 
-    bump() mut
-
-    into_text(self) -> String
-
-    peek() -> Option<char>
+    fn bump(&mut self);
+    fn into_text(self) -> String;
+    fn peek(&self) -> Option<char>;
 }
 ```
 
-The header names the type with `struct`, `enum`, `union`, or `trait` after its visibility, such as `pub(crate) enum Mode`, and a type with no visibility keyword shows none. The body lists first what has no visibility of its own: an enum's variants, a trait's items, and the type's macro marks. The data comes next, a struct's fields, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into sections by visibility, each opened by its label as written, such as `pub:`, `pub(crate):`, `pub(super):`, or `pub(in crate::engine):`, and `pub(self):` for no keyword. The widest comes first: `pub`, then what reaches the whole crate, then what reaches a deeper module, so a `pub(super)` in a module just under the root sits beside `pub(crate)`, which it means. A visibility that holds both fields and methods prints its label twice, once for each part:
+The head is the type's visibility as written, its keyword, `struct`, `enum`, `union`, or `trait`, its name and generics, and its `where` clause, which takes lines of its own when it does not fit; a trait's supertraits follow a colon. The body holds a struct's fields, an enum's variants, or a trait's items. A unit or tuple struct has no body of braces, so its head ends the line, as `pub struct Pair(pub u8, u16);`. Members go from the widest visibility to the narrowest, `pub` first, then what reaches the whole crate, then what reaches a deeper module, and private last, with a blank line between visibilities:
 
 ```
-pub struct Run
-{
-pub(crate):
-    id: RunId,
+#[derive(Clone, Debug, Default)]
+pub struct Run {
+    pub(crate) id: u32,
 
-pub(self):
-    cache: HashMap<Key, Value>,
-
+    cache: HashMap<String, String>,
     name: String,
-
-pub:
-    static new() -> Run
-
-pub(crate):
-    advance() mut
 }
+
+impl Run {
+    /// Starts a run.
+    #[must_use]
+    pub fn new() -> Run;
+
+    pub(crate) fn advance(&mut self);
+}
+// implements Display, From<u32>
 ```
 
-A module's block of items uses the same labels. Its macro marks and its extern blocks come first, one extern block per ABI with its items labeled inside its braces, and then its re-exports, constants, statics, and functions, each under its label.
+Fields and variants keep their declared order inside a visibility. In the `impl` block, the associated types come first, then the constants, then the functions with no receiver, then the methods, each group sorted by name. A signature keeps its receiver, `&self`, `&mut self`, or `self`, and ends with `;`, and one that does not fit on a line wraps the way rustfmt wraps it, one parameter to a line. The traits a type derives print dim above it, as `#[derive(...)]`, and a `// implements` line after it names every other trait it implements, a standard trait by its short name, and other traits as the source writes them. A derive from another crate keeps its bold **MACRO** line above the block.
+
+A module's block of items goes the same way: its macro marks and its `extern` blocks first, then a section for each visibility, widest first, with its `pub use` re-exports, its constants, its statics, and its functions, each kind sorted by name.
+
+Each module shows its types and items twice. `At a glance` comes first: the same blocks without comments, attributes, or blank lines, with short fields and parameters packed onto shared lines, so a big type fits on a screen and the shape of the module shows at once. `Documented` follows, with every comment, for reading what each part means.
 
 A node that reaches less far than its visibility says, because a module around it is narrower, gets a dim line above it, such as `reaches pub(crate)` above a `pub struct` in a private module: that is the widest place its path can be named from. A member or an item that reaches exactly as far as its type or module leaves the line out, since the type or the module already says it.
 
 A module's coupling line reads the same uses as the markdown's `deps` records: it lists the modules that use the module's items and the modules whose items it uses, each with the number of distinct items used, and gives the module's instability, `fan_out / (fan_in + fan_out)`, with two decimals. It counts each use under the module where the code is written, so moving an impl block or other code to another module changes the line, as it changes source links.
 
-The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. The data keeps its declared order. The other members are grouped (associated types, constants, special members, static functions, then member functions) and sorted by name inside each group.
+Comments stay with what they belong to. A type's or a module's doc comment prints as prose above its block, in the page's own typeface rather than the code font: consecutive lines join one paragraph, a blank line starts a new one, a `- ` or `* ` line starts a bullet list, a `# Errors` line becomes a small heading, and a fenced example stays exactly as written in the code font. Text in `backticks` prints in the code font wherever it appears, so a name reads as a name inside a sentence. A member's comment prints above it as `///` or `//` lines, as written. An inherent impl block's comments print above the `impl` line, a trait impl's under the `// implements` line, and a comment above a `pub use` group prints above the whole group. Attributes that shape the API or its wire format print dim on lines above what they apply to, such as `#[must_use]`, `#[non_exhaustive]`, `#[repr(C)]`, and `#[serde(rename = "id")]`, and so does each `#[cfg(...)]` a node depends on. Other attributes stay hidden. Each inherent impl's link in a `Source:` line is followed by the names of the members it adds.
 
-Comments stay with what they belong to. Each impl block's comments sit under a line in the type's block that names the trait, or the type for an inherent impl, a comment above a `pub use` group prints above the whole group, and a comment inside the braces stays with the name after it. A declaration's doc comment prints as prose, in the page's own typeface rather than the code font: consecutive lines join one paragraph, a blank line starts a new one, a `- ` or `* ` line starts a bullet list, a `# Errors` line becomes a small heading, and a fenced example stays exactly as written in the code font. Text in `backticks` prints in the code font wherever it appears, so a name reads as a name inside a sentence. A comment above a member reflows as one paragraph, at most 80 characters wide: its line breaks, and the blank lines between its paragraphs, become spaces, and a `cfg` condition or a `# Errors` heading keeps its own line. It sits in a box with no fill and no outline, so only its text shows, lined up with the member's own text, and the member's declaration follows on the very next line.
+A facade's page prints each item of its API the same way, but only as the facade's users see it: its `pub` members alone, none marked `#[doc(hidden)]`, and no `reaches` lines. A struct that hides some fields closes its body with `/* private fields */`, and a hidden tuple field reads `/* private field */` in its place. An item re-exported under another name prints under that name, and its `Defined in` line names it as its crate does.
 
-One button in the sidebar hides every one of those member comments at once, and shows them again. It is a checkbox and a label, so it needs no script, it works with the keyboard, and the page still makes no network request. The comments are shown when the page opens. With them hidden, the first member sits right under the opening brace and members sit half a line apart. A comment on the same line as code, such as `field: u8, // note`, stays visible, because removing it would change that line. Attributes that shape the API or its wire format print as `[[...]]` at half contrast. A function or a field closes its line with them, such as `[[must_use]]`, `[[track_caller]]`, and `[[serde(rename = "id")]]`, and anything else gets them on lines above it, such as `[[non_exhaustive]]`, `[[repr(C)]]`, and `[[deprecated]]` on a variant. Other attributes stay hidden, and a signature has no semicolon. Each inherent impl's link in a `Source:` line is followed by the names of the members it adds.
-
-The page opens with a short Legend of this notation, so a reader of the page alone can follow it: the module sections and the sidebar, the coupling line, the item keywords and visibility, `static` and the `() mut` marker, the base list, the labels and the order of a type's body and a module's items, the `reaches` line, `[[...]]`, `implements:`, `MACRO`, and how comments print.
-
-Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together under the type's own label, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A name counts as standard only when it really resolves to `std`, `core`, or `alloc`, so another crate's `Display`, the crate's own `Display`, or a `Display` that only comes through a glob import gets its own line. A derive from another crate keeps its bold **MACRO** line above the block.
+The overview opens with the Legend of this notation, so a reader of the HTML alone can follow it: facades and their families, the two views of each module, the module sections and the sidebar, the coupling line, the order of a type's members and of a module's items, the `reaches` line, the dim attribute lines, `impl Trait for Type {}`, `MACRO`, how comments print, and the links, search, and tabs.
 
 ## Spellings
 

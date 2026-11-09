@@ -14,9 +14,6 @@ pub(crate) struct InlineRenderer<'a> {
     pub(crate) spans: &'a dyn Fn(&mut String, &[Span]),
     /// Returns one span's printed text, references resolved.
     pub(crate) text_of: &'a dyn Fn(&Span) -> String,
-    /// True for a declaration's doc comment, which the page's comment toggle
-    /// hides; the crate's own docs pass false, since they introduce the page.
-    pub(crate) hideable: bool,
 }
 
 /// Writes `lines` as prose.
@@ -25,11 +22,7 @@ pub(crate) fn block(out: &mut String, lines: &[Line], inline: &InlineRenderer<'_
     let mut bullets: Vec<Vec<Vec<Span>>> = Vec::new();
     let mut fence: Option<String> = None;
     let mut in_bullet = false;
-    if inline.hideable {
-        out.push_str("<div class=\"doc mc-doc\">\n");
-    } else {
-        out.push_str("<div class=\"doc\">\n");
-    }
+    out.push_str("<div class=\"doc\">\n");
 
     for line in lines {
         let text = plain(line, inline);

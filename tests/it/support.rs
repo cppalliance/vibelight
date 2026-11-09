@@ -111,20 +111,55 @@ pub(crate) fn outputs_with_streams(
 }
 
 /// Reads the outlines a run wrote into `out`: the markdown files in it,
-/// less the index, and the HTML files in its `html` folder, less the index,
-/// sorted by name.
+/// less the index, and the pages in its `html` folder, less the index, each
+/// named `<stem>.html`, sorted by name.
 pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
     let mut files: Vec<(String, String)> = read_outputs(out)
         .into_iter()
         .filter(|(name, _)| has_ext(name, "md") && name != "index.md")
         .chain(
-            read_outputs(&out.join("html"))
+            read_pages(&out.join("html"))
                 .into_iter()
-                .filter(|(name, _)| has_ext(name, "html") && name != "index.html"),
+                .filter(|(name, _)| name != "index.html"),
         )
         .collect();
     files.sort();
     files
+}
+
+/// Reads every page of an HTML folder from its data file, `<stem>.page.js`:
+/// the content the folder's script shows for it, named `<stem>.html`,
+/// sorted by name.
+pub(crate) fn read_pages(html: &Path) -> Vec<(String, String)> {
+    read_outputs(html)
+        .into_iter()
+        .filter_map(|(name, data)| {
+            let stem = name.strip_suffix(".page.js")?;
+            Some((format!("{stem}.html"), page_content(&data)))
+        })
+        .collect()
+}
+
+/// Returns the content a page's data file holds: the text of the template
+/// literal that opens at the end of its first line and closes the file, with
+/// its escapes undone.
+pub(crate) fn page_content(data: &str) -> String {
+    let (_, rest) = data
+        .split_once("`\n")
+        .expect("a data file opens a template");
+    let inner = rest
+        .strip_suffix("`);\n")
+        .expect("a data file closes its template");
+    let mut out = String::with_capacity(inner.len());
+    let mut chars = inner.chars();
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            out.extend(chars.next());
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// Like `read_run`, with the source links and the markdown's `root`

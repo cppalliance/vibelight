@@ -1,8 +1,7 @@
 //! Styled lines and blocks, and the helpers every layout step shares.
 
 use crate::layout_marker::Marker;
-use crate::model::{Crate, Loc, Meta, Note, RefId, Seg, Text, TypeRef, ValueRef, Where};
-use crate::typerefs_edits::MUT;
+use crate::model::{Crate, Loc, Meta, Note, Receiver, RefId, Seg, Text, TypeRef, ValueRef, Where};
 use crate::wrap::{self, FnParts, MAX_WIDTH, ParamParts, WhereParts};
 
 /// One styled run of a line.
@@ -83,9 +82,9 @@ pub(crate) fn width(indent: usize, spans: &[Span], refs: &[TypeRef]) -> usize {
             .sum::<usize>()
 }
 
-/// Turns text into code spans.
+/// Turns text into code spans, as Rust spells it.
 pub(crate) fn code(text: &Text) -> Vec<Span> {
-    text.0
+    text.rust()
         .iter()
         .map(|seg| match seg {
             Seg::Plain(s) => Span::Code(s.clone()),
@@ -215,31 +214,20 @@ pub(crate) fn mark_line(
     (line, repeat)
 }
 
-/// Returns the lines printed above a node: its notes, `cfg` lines, its
-/// attributes when `with_attrs` is set, each dimmed, and marks, with the marks'
-/// repeats. A function and a field set it off: their attributes close the
-/// line they belong to.
-pub(crate) fn above(
-    meta: &Meta,
-    indent: usize,
-    loc: Loc,
-    with_attrs: bool,
-) -> (Vec<Line>, Vec<Repeat>) {
+/// Returns the lines printed above a node: its notes, its `cfg`s and its
+/// attributes as dim `#[...]` lines, and its marks, with the marks' repeats.
+pub(crate) fn above(meta: &Meta, indent: usize, loc: Loc) -> (Vec<Line>, Vec<Repeat>) {
     let mut lines = note_lines(&meta.notes, indent, Marker::DOC);
-    for cfg in &meta.cfgs {
-        lines.push(Line {
-            indent,
-            spans: vec![Span::Marker(Marker::CFG.spaced), Span::Comment(cfg.clone())],
-            trailing: None,
-        });
-    }
-    for attr in meta.attrs.iter().filter(|_| with_attrs) {
-        lines.push(Line {
-            indent,
-            spans: vec![Span::Dim(format!("[[{attr}]]"))],
-            trailing: None,
-        });
-    }
+    let attrs = meta
+        .cfgs
+        .iter()
+        .map(|cfg| format!("#[cfg({cfg})]"))
+        .chain(meta.attrs.iter().map(|attr| format!("#[{attr}]")));
+    lines.extend(attrs.map(|text| Line {
+        indent,
+        spans: vec![Span::Dim(text)],
+        trailing: None,
+    }));
     let mut repeats = Vec::new();
     for mark in &meta.marks {
         let (line, repeat) = mark_line("MACRO", mark, indent, Some(loc));
@@ -249,68 +237,69 @@ pub(crate) fn above(
     (lines, repeats)
 }
 
-/// Builds a function's lines, with `static` first when `is_static`. `name`
-/// is the span that prints the function's name. The function's attributes
-/// close the signature, in place of the semicolon, so `[[must_use]]` reads as
-/// a note on the line rather than a line of its own.
+/// Builds a function's lines as Rust declares it, ending in `;`: its
+/// visibility `vis` as written, its qualifiers, `fn`, and `name`, the span
+/// that prints the function's name, then its receiver and parameters.
 pub(crate) fn fn_lines(
     krate: &Crate,
     sig: &crate::model::Sig,
+    vis: &str,
     name: Span,
     trailing: Option<String>,
     indent: usize,
-    is_static: bool,
-    attrs: &[String],
 ) -> Vec<Line> {
-    let mut head = Vec::new();
-    if is_static {
-        head.push(key("static"));
-        head.push(plain(" "));
-    }
+    let mut head = vis_spans(vis);
     for qual in &sig.quals {
-        head.push(key(qual));
+        head.push(key(crate::render_slop_text::qualifier(qual)));
         head.push(plain(" "));
     }
-    head.push(name);
+    head.extend([key("fn"), plain(" "), name]);
     head.extend(code(&sig.generics));
-    let params = sig
-        .params
-        .iter()
-        .map(|p| ParamParts {
-            notes: note_lines(&p.meta.notes, 0, Marker::DOC),
-            text: code(&p.text),
-        })
-        .collect();
-    let after = if matches!(sig.receiver, crate::model::Receiver::Mutable(_)) {
-        vec![plain(" "), key(MUT)]
-    } else {
-        Vec::new()
-    };
+    let mut params = Vec::new();
+    if let Receiver::Shared(text) | Receiver::Mutable(text) = &sig.receiver {
+        params.push(ParamParts {
+            notes: Vec::new(),
+            text: receiver(text),
+        });
+    }
+    params.extend(sig.params.iter().map(|p| ParamParts {
+        notes: note_lines(&p.meta.notes, 0, Marker::DOC),
+        text: code(&p.text),
+    }));
     let parts = FnParts {
         head,
         params,
-        after,
         ret: sig.ret.as_ref().map(code),
         where_clause: sig.where_clause.as_ref().map(where_parts),
-        // An attribute closes the signature. The page needs no semicolon, so
-        // a function without one ends at its return type.
-        end: attributes_end(attrs),
+        end: vec![plain(";")],
     };
     wrap::function(&parts, indent, trailing, &krate.refs)
 }
 
-/// Returns the spans that close a signature or a field: its attributes, each
-/// dimmed, or nothing when it has none. Each attribute is separated from
-/// what comes before by one space.
-pub(crate) fn attributes_end(attrs: &[String]) -> Vec<Span> {
-    attrs
-        .iter()
-        .flat_map(|attr| [plain(" "), Span::Dim(format!("[[{attr}]]"))])
-        .collect()
+/// Returns a reference receiver as written, such as `&'a mut self`, with
+/// `mut` and `self` as keywords.
+fn receiver(text: &str) -> Vec<Span> {
+    let mut spans = Vec::new();
+    for (i, word) in text.split(' ').enumerate() {
+        if i > 0 {
+            spans.push(plain(" "));
+        }
+        if let Some(before) = word.strip_suffix("self") {
+            if !before.is_empty() {
+                spans.push(plain(before));
+            }
+            spans.push(key("self"));
+        } else if word == "mut" {
+            spans.push(key("mut"));
+        } else {
+            spans.push(plain(word));
+        }
+    }
+    spans
 }
 
-/// Returns a constant's line, showing its value only when the whole line
-/// fits.
+/// Returns a constant's line, ending in `;`, showing its value only when the
+/// whole line fits.
 pub(crate) fn const_line(
     spans: Vec<Span>,
     value: Option<&str>,
@@ -318,9 +307,14 @@ pub(crate) fn const_line(
     trailing: Option<String>,
     refs: &[TypeRef],
 ) -> Line {
+    let end = |mut spans: Vec<Span>| {
+        spans.push(plain(";"));
+        spans
+    };
     if let Some(value) = value {
         let mut with = spans.clone();
         with.push(plain(&format!(" = {value}")));
+        let with = end(with);
         if width(indent, &with, refs) <= MAX_WIDTH {
             return Line {
                 indent,
@@ -331,7 +325,7 @@ pub(crate) fn const_line(
     }
     Line {
         indent,
-        spans,
+        spans: end(spans),
         trailing,
     }
 }

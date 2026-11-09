@@ -9,7 +9,7 @@ use std::path::Path;
 use std::process::Output;
 
 use crate::config::{MEMBERS, garden, lines};
-use crate::support::{read_outputs, vibelight};
+use crate::support::{page_content, read_outputs, vibelight};
 
 const LATER: &str = "1798761600";
 const LATER_STAMP: &str = "*Updated 2027-01-01T00:00:00Z*";
@@ -45,10 +45,21 @@ fn a_second_run_at_another_time_rewrites_nothing_and_still_lists_every_file() {
     let second = run_at(&repo, LATER, &[]);
     assert!(second.status.success(), "{:?}", lines(&second.stderr));
     assert_eq!(lines(&second.stdout), lines(&first.stdout));
-    assert_eq!(lines(&second.stdout).len(), 8);
+    assert_eq!(lines(&second.stdout).len(), 11);
     assert_eq!(read_outputs(&folder), before);
     assert_eq!(read_outputs(&folder.join("html")), html_before);
     assert_eq!(first_line(&folder.join("alpha.md")), FIRST_STAMP);
+}
+
+/// Returns the stamp line of a page, which its data file holds.
+fn page_stamp(folder: &Path, stem: &str) -> String {
+    let data = fs::read_to_string(folder.join("html").join(format!("{stem}.page.js")))
+        .expect("the page was written");
+    page_content(&data)
+        .lines()
+        .find(|line| line.starts_with("<p class=\"stamp\">"))
+        .expect("a page has a stamp")
+        .to_owned()
 }
 
 /// Tells, for each outline of the garden, whether a run restamped it.
@@ -56,8 +67,8 @@ fn restamped(folder: &Path) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for stem in ["alpha", "beta", "facade"] {
         let md = first_line(&folder.join(format!("{stem}.md")));
-        let page = first_line(&folder.join("html").join(format!("{stem}.html")));
         out.push((format!("{stem}.md"), md == LATER_STAMP));
+        let page = page_stamp(folder, stem);
         out.push((format!("{stem}.html"), page.contains("2027-01-01")));
     }
     out
@@ -81,7 +92,7 @@ fn edited(repo: &Path, edit: impl FnOnce(String) -> String) -> std::path::PathBu
 }
 
 #[test]
-fn a_changed_declaration_restamps_only_its_files() {
+fn a_changed_declaration_restamps_only_the_files_that_show_it() {
     let (_tmp, repo) = garden(MEMBERS);
     let folder = edited(&repo, |text| {
         text.replace("fn read(&self) -> u32;", "fn read(&self) -> u64;")
@@ -94,11 +105,12 @@ fn a_changed_declaration_restamps_only_its_files() {
             ("beta.md", false),
             ("beta.html", false),
             ("facade.md", false),
-            ("facade.html", false),
-        ])
+            ("facade.html", true),
+        ]),
+        "facade's page shows alpha's trait as its own API"
     );
-    let page = fs::read_to_string(folder.join("html").join("alpha.html")).unwrap();
-    assert!(page.starts_with("<!-- Updated 2027-01-01T00:00:00Z -->\n<!DOCTYPE html>\n"));
+    let data = fs::read_to_string(folder.join("html").join("alpha.page.js")).unwrap();
+    let page = page_content(&data);
     assert!(page.contains(
         "<main>\n<p class=\"stamp\">Updated \
          <time datetime=\"2027-01-01T00:00:00Z\">2027-01-01T00:00:00Z</time></p>\n<h1 "
@@ -106,7 +118,7 @@ fn a_changed_declaration_restamps_only_its_files() {
 }
 
 #[test]
-fn a_changed_doc_restamps_the_markdown_that_quotes_it_and_no_other_page() {
+fn a_changed_doc_restamps_the_files_that_quote_it() {
     let (_tmp, repo) = garden(MEMBERS);
     let folder = edited(&repo, |text| {
         text.replace(
@@ -122,9 +134,9 @@ fn a_changed_doc_restamps_the_markdown_that_quotes_it_and_no_other_page() {
             ("beta.md", false),
             ("beta.html", false),
             ("facade.md", true),
-            ("facade.html", false),
+            ("facade.html", true),
         ]),
-        "facade's markdown quotes alpha's doc summary; its page is target-local"
+        "facade's markdown quotes alpha's doc summary, and its page shows alpha's declaration"
     );
     let facade = fs::read_to_string(folder.join("facade.md")).unwrap();
     assert!(facade.contains("\"summary\":\"A meter that reads one gauge.\""));

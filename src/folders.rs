@@ -16,14 +16,21 @@ use crate::settings::Plan;
 use crate::stamp;
 
 /// The `.gitignore` of vibelight's own folder: the outlines, the HTML
-/// pages, and the index.
-const GITIGNORE: &str = "*.md\n*.html\n";
+/// pages, the index, and the script and data files that let the pages open
+/// each other.
+const GITIGNORE: &str = "*.md\n*.html\n*.js\n";
+
+/// The `.gitignore` that earlier releases wrote. A run replaces a file that
+/// holds exactly this and leaves any other `.gitignore` alone.
+const OLD_GITIGNORE: &str = "*.md\n*.html\n";
 
 /// What writing a run did beside writing its files.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct Written {
     /// The `.gitignore` the run created.
     pub(crate) gitignore: Option<PathBuf>,
+    /// The `.gitignore` of an earlier release that the run replaced.
+    pub(crate) upgraded: Option<PathBuf>,
     /// The outlines the run removed, sorted.
     pub(crate) removed: Vec<PathBuf>,
 }
@@ -44,10 +51,16 @@ pub(crate) fn write(files: &[(PathBuf, String)], plan: &Plan) -> Result<Written>
     }
     let mut written = Written::default();
     let ignore = markdown.join(".gitignore");
-    if plan.owned && !ignore.exists() {
-        fs::write(&ignore, GITIGNORE)
-            .with_context(|| format!("cannot write {}", ignore.display()))?;
-        written.gitignore = Some(ignore);
+    if plan.owned {
+        if !ignore.exists() {
+            fs::write(&ignore, GITIGNORE)
+                .with_context(|| format!("cannot write {}", ignore.display()))?;
+            written.gitignore = Some(ignore);
+        } else if fs::read_to_string(&ignore).is_ok_and(|text| text == OLD_GITIGNORE) {
+            fs::write(&ignore, GITIGNORE)
+                .with_context(|| format!("cannot write {}", ignore.display()))?;
+            written.upgraded = Some(ignore);
+        }
     }
     for (path, text) in files {
         if changed(path, text) {
@@ -57,6 +70,7 @@ pub(crate) fn write(files: &[(PathBuf, String)], plan: &Plan) -> Result<Written>
     let kept: BTreeSet<&Path> = files.iter().map(|(path, _)| path.as_path()).collect();
     written.removed = stale(&markdown, "md", &kept);
     written.removed.extend(stale(&html, "html", &kept));
+    written.removed.extend(stale(&html, "js", &kept));
     written.removed.sort();
     for path in &written.removed {
         fs::remove_file(path).with_context(|| format!("cannot remove {}", path.display()))?;
@@ -96,7 +110,8 @@ fn stale(dir: &Path, ext: &str, kept: &BTreeSet<&Path>) -> Vec<PathBuf> {
 
 /// Tells whether a file starts like an outline: a markdown outline with a
 /// stamp line and then the outline header record; an HTML page with its
-/// stamp comment and then the doctype. A markdown outline of an older
+/// stamp comment and then the doctype; a page's data file, whose first
+/// line is the call that `browse` writes. A markdown outline of an older
 /// release counts too, so a stale one is still cleaned up: a stamp line, a
 /// blank line, and a crate anchor, or the anchor first.
 fn is_outline(path: &Path) -> bool {
@@ -115,6 +130,7 @@ fn is_outline(path: &Path) -> bool {
     let stamped = stamp::is_line(&head[0]);
     (stamped && head[0].starts_with('*') && head[1].starts_with(HEADER))
         || (stamped && head[0].starts_with("<!--") && head[1] == "<!DOCTYPE html>")
+        || head[0].starts_with(crate::browse::DATA_START)
         || is_anchor(&head[0])
         || (stamped && head[1].is_empty() && is_anchor(&head[2]))
 }
@@ -171,6 +187,20 @@ mod tests {
             [dir.join("new.md"), dir.join("old.md")]
         );
         assert_eq!(stale(dir, "html", &kept), [dir.join("old.html")]);
+    }
+
+    #[test]
+    fn a_page_data_file_the_run_no_longer_writes_is_stale_and_other_scripts_are_not() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        let data = "vibelightPage(\"old\", \"old\", `\n<main>\n</main>\n`);\n";
+        fs::write(dir.join("old.page.js"), data).unwrap();
+        fs::write(dir.join("kept.page.js"), data).unwrap();
+        fs::write(dir.join("vibelight.js"), "(function () {})();\n").unwrap();
+        fs::write(dir.join("app.js"), "console.log(1);\n").unwrap();
+        let kept_path = dir.join("kept.page.js");
+        let kept: BTreeSet<&Path> = [kept_path.as_path()].into();
+        assert_eq!(stale(dir, "js", &kept), [dir.join("old.page.js")]);
     }
 
     #[test]

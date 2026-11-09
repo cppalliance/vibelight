@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use crate::config::{self, Config, Crates};
 use crate::exclude::Exclude;
 use crate::inputs::Selection;
+use crate::roles::Chosen;
 
 /// Where the HTML is written.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,6 +32,9 @@ pub(crate) struct Plan {
     pub(crate) boilerplate: Vec<String>,
     /// The config's `quiet` entries, whose leads the markdown leaves out.
     pub(crate) quiet: Vec<String>,
+    /// The config's `facades` globs, which choose the HTML's facades when
+    /// set.
+    pub(crate) facades: Option<Chosen>,
 }
 
 impl Plan {
@@ -80,6 +84,12 @@ pub(crate) fn plan(paths: &[PathBuf], out: Option<&Path>, config: Option<&Config
         owned,
         boilerplate: config.map(|c| c.boilerplate.clone()).unwrap_or_default(),
         quiet: config.map(|c| c.quiet.clone()).unwrap_or_default(),
+        facades: config.and_then(|c| {
+            c.facades.clone().map(|globs| Chosen {
+                globs,
+                from: c.dir.clone(),
+            })
+        }),
     }
 }
 
@@ -96,6 +106,7 @@ mod tests {
             out: PathBuf::from("/repo/.vibelight"),
             boilerplate: vec!["Enforced by xtask.".to_owned()],
             quiet: vec!["forwarder".to_owned()],
+            facades: None,
         }
     }
 
