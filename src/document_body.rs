@@ -9,8 +9,7 @@
 use std::collections::BTreeSet;
 
 use crate::anatomy::{self, Anatomy};
-use crate::document::{Builder, Inline, Item, Node, anchor, crumb, strong_anchor};
-use crate::document_sections::plain_links;
+use crate::document::{Builder, Inline, Item, Node, anchor, crumb, plain_links, strong_anchor};
 use crate::glance;
 use crate::layout::{Block, Line};
 use crate::layout_items::{docs_block, module_block};

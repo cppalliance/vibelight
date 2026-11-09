@@ -1,17 +1,19 @@
-//! Collects declarations, impls, and module items from the parsed tree.
+//! Collects declarations, impls, and module items from the parsed tree,
+//! with generic parameter lists and `where` clauses sliced into text with
+//! type references.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
 use std::path::Path;
 
 use proc_macro2::Span;
-use syn::{Attribute, Generics, Item, ItemMod};
+use syn::{Attribute, Generics, Item, ItemMod, WhereClause};
 
 use crate::comments::{NoteCx, Placed, Pool, place_comments};
 use crate::macro_expand::Expansions;
 use crate::model::{
     BodyName, Crate, Decl, FileId, Item as ModItem, ItemKind, Loc, MacroUse, Meta, ModId, Module,
-    Note, TypeRef, Vis, Warning,
+    Note, Text, TypeRef, Vis, Warning, Where,
 };
 use crate::model_body::{AttrPath, Body};
 use crate::modtree::{ModSource, Tree};
@@ -374,6 +376,43 @@ impl Collector<'_> {
             line: loc.line,
             message,
         });
+    }
+
+    /// Returns a generic parameter list as `<...>`, each parameter sliced
+    /// on its own, or empty text.
+    pub(crate) fn generics_text(&mut self, here: &Here, generics: &Generics) -> Text {
+        let mut text = Text::default();
+        if generics.params.is_empty() {
+            return text;
+        }
+        text.push_str("<");
+        for (i, param) in generics.params.iter().enumerate() {
+            if i > 0 {
+                text.push_str(", ");
+            }
+            let part = self
+                .slicer(here)
+                .node(param, |f| syn::visit::Visit::visit_generic_param(f, param));
+            text.append(&part);
+        }
+        text.push_str(">");
+        text
+    }
+
+    /// Returns a `where` clause, each predicate sliced on its own.
+    pub(crate) fn where_text(
+        &mut self,
+        here: &Here,
+        clause: Option<&WhereClause>,
+    ) -> Option<Where> {
+        let clause = clause.filter(|c| !c.predicates.is_empty())?;
+        let mut predicates = Vec::new();
+        for predicate in &clause.predicates {
+            predicates.push(self.slicer(here).node(predicate, |f| {
+                syn::visit::Visit::visit_where_predicate(f, predicate);
+            }));
+        }
+        Some(Where(predicates))
     }
 }
 

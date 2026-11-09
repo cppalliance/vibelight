@@ -1,7 +1,8 @@
 //! Outlines the crates of a run in two phases: every crate is read and
 //! resolved against one fixed crate map, then each target's markdown is
 //! rendered from the run's analysis view and each crate's HTML document is
-//! built and rendered, all in memory, ready to write.
+//! built and rendered, a facade's as its public API, all in memory, ready
+//! to write, with the files of the HTML folder that no one target writes.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -11,17 +12,18 @@ use anyhow::{Context, Result, anyhow, bail};
 use crate::document::Document;
 use crate::inputs::{self, Chosen};
 use crate::layout::Block;
-use crate::model::{Crate, ModId, Warning};
+use crate::model::{Crate, Loc, ModId, Warning};
 use crate::module_graph::ModEdge;
+use crate::render_html::Anchors;
 use crate::render_slop::{AnalysisTarget, RenderInput};
 use crate::root::{Target, TargetKind};
 use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    access_stamp, analysis, attach, browse, collect, collect_check, document, index, layout_decl,
-    leads, manifest, modtree, module_graph, order, pipeline_html, render_slop, render_slop_lists,
-    resolve, resolve_run, spellings, test_support,
+    access_stamp, analysis, attach, browse, collect, collect_check, document, facade_page, index,
+    layout_decl, leads, manifest, modtree, module_graph, order, render_html, render_slop,
+    render_slop_lists, resolve, resolve_run, roles, root_page, spellings, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -44,9 +46,9 @@ pub(crate) struct Outcome {
 
 /// The HTML document for a target, with the base its source links are
 /// measured from.
-pub(crate) struct Built {
-    pub(crate) doc: Document,
-    pub(crate) link_base: LinkBase,
+struct Built {
+    doc: Document,
+    link_base: LinkBase,
 }
 
 /// Outlines every target of the chosen crates in memory: a markdown file
@@ -100,16 +102,16 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         };
         docs.push(parts.build(&html)?);
     }
-    let roles = pipeline_html::roles_of(
+    let roles = roles_of(
         chosen,
         plan,
         &targets,
         (&analyzed.surfaces, &analyzed.crate_graph),
     );
-    pipeline_html::keep_public(&mut docs, &roles, &analyzed.surfaces);
-    let run = pipeline_html::anchors(&targets, &docs);
-    let links = pipeline_html::member_links(&krates, &docs);
-    let owners = pipeline_html::owners(&targets, &krates, &docs, &links);
+    keep_public(&mut docs, &roles, &analyzed.surfaces);
+    let run = anchors(&targets, &docs);
+    let links = member_links(&krates, &docs);
+    let owners = owners(&targets, &krates, &docs, &links);
     let mut entries = Vec::new();
     let mut rows = Vec::new();
     let mut api = Vec::new();
@@ -120,7 +122,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     for ((((t, &(p, target)), page), krate), text) in per_target {
         let [uses, used_by] = uses_between(&targets, &analyzed.crate_graph, t);
         let dir = shown(&chosen.base, &chosen.packages[p].dir);
-        rows.push(pipeline_html::row(target, dir.clone(), &page.doc));
+        rows.push(row(target, dir.clone(), &page.doc));
         entries.push(index::Entry {
             stem: target.stem.clone(),
             dir,
@@ -131,8 +133,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
-        let (content, headings) =
-            pipeline_html::page_content(t, &owners, &roles, &analyzed.surfaces, &run, stamp);
+        let (content, headings) = page_content(t, &owners, &roles, &analyzed.surfaces, &run, stamp);
         api.push(headings);
         let data = browse::data(&target.stem, &page.doc.title, &content);
         let path = html.dir.join(browse::data_file(&target.stem));
@@ -142,7 +143,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     outcome
         .files
         .push((markdown.join(index::FILE), index::render(&entries)));
-    let folder = pipeline_html::Folder {
+    let folder = Folder {
         base: &chosen.base,
         rows: &rows,
         roles: &roles,
@@ -150,7 +151,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         run: &run,
         api: &api,
     };
-    pipeline_html::push_folder(&mut outcome, &html.dir, &folder, stamp);
+    push_folder(&mut outcome, &html.dir, &folder, stamp);
     Ok(outcome)
 }
 
@@ -389,4 +390,165 @@ pub(crate) fn crate_map(
                 .collect()
         })
         .collect()
+}
+
+/// A link to the source line of a location, one per target, relative to
+/// the HTML folder.
+type MemberLink<'a> = Box<dyn Fn(Loc) -> String + 'a>;
+
+/// Returns each target's member links, in target order.
+fn member_links<'a>(krates: &'a [Crate], docs: &'a [Built]) -> Vec<MemberLink<'a>> {
+    (krates.iter().zip(docs))
+        .map(|(krate, page)| {
+            Box::new(move |loc: Loc| {
+                let loc = krate.real_loc(loc);
+                page.link_base
+                    .target(&krate.files[loc.file].rel, Some(loc.line))
+            }) as MemberLink<'a>
+        })
+        .collect()
+}
+
+/// Returns every target as a facade's page reaches into it, in target
+/// order.
+fn owners<'a>(
+    targets: &[(usize, &Target)],
+    krates: &'a [Crate],
+    docs: &'a [Built],
+    links: &'a [MemberLink<'a>],
+) -> Vec<facade_page::Owner<'a>> {
+    (targets.iter().zip(krates).zip(docs).zip(links))
+        .map(|(((&(_, target), krate), page), link)| facade_page::Owner {
+            krate,
+            doc: &page.doc,
+            links: Some(&**link),
+            file: format!("{}.html", target.stem),
+        })
+        .collect()
+}
+
+/// Returns the ids each target's page declares, in target order.
+fn anchors(targets: &[(usize, &Target)], docs: &[Built]) -> Vec<Anchors> {
+    (targets.iter().zip(docs))
+        .map(|(&(_, target), page)| Anchors {
+            file: format!("{}.html", target.stem),
+            ids: page.doc.decl_ids.clone(),
+            values: page.doc.value_ids.clone(),
+        })
+        .collect()
+}
+
+/// Leaves each facade's document with ids for only what its page shows, so
+/// the run's anchors and search index name nothing the page leaves out.
+fn keep_public(docs: &mut [Built], roles: &roles::Roles, surfaces: &[Vec<crate::surface::Entry>]) {
+    for ((page, role), surface) in docs.iter_mut().zip(&roles.each).zip(surfaces) {
+        if *role == roles::Role::Facade {
+            facade_page::keep_public(&mut page.doc, surface);
+        }
+    }
+}
+
+/// Renders target `t`'s page content, a facade's public API or a page of
+/// everything its crate declares, with the ids of the headings a facade's
+/// page adds for the search index.
+fn page_content(
+    t: usize,
+    owners: &[facade_page::Owner<'_>],
+    roles: &roles::Roles,
+    surfaces: &[Vec<crate::surface::Entry>],
+    run: &[Anchors],
+    stamp: &str,
+) -> (String, Vec<String>) {
+    if roles.each[t] == roles::Role::Facade {
+        let facade = facade_page::Facade {
+            index: t,
+            owners,
+            surface: &surfaces[t],
+            run,
+        };
+        return facade_page::fragment(&facade, stamp);
+    }
+    let own = &owners[t];
+    let content = render_html::fragment(own.doc, own.links, run, stamp);
+    (content, Vec::new())
+}
+
+/// What the files of the HTML folder that no one target writes are made
+/// of.
+struct Folder<'a> {
+    base: &'a Path,
+    rows: &'a [root_page::Row],
+    roles: &'a roles::Roles,
+    entries: &'a [index::Entry],
+    run: &'a [Anchors],
+    /// The headings each facade's page adds, by page.
+    api: &'a [Vec<String>],
+}
+
+/// Returns the part each target plays, chosen by the config's `facades`
+/// globs when it has them and by each target's surface otherwise.
+fn roles_of(
+    chosen: &Chosen,
+    plan: &Plan,
+    targets: &[(usize, &Target)],
+    (surfaces, uses): (&[Vec<crate::surface::Entry>], &[BTreeMap<usize, usize>]),
+) -> roles::Roles {
+    let kinds: Vec<TargetKind> = targets.iter().map(|(_, target)| target.kind).collect();
+    let named: Option<Vec<bool>> = plan.facades.as_ref().map(|facades| {
+        (targets.iter())
+            .map(|&(p, _)| facades.names(&chosen.packages[p].dir))
+            .collect()
+    });
+    roles::of(&kinds, surfaces, uses, named.as_deref())
+}
+
+/// Returns a target's row of the overview.
+fn row(target: &Target, dir: String, doc: &Document) -> root_page::Row {
+    let dashed = target.title.replace('_', "-");
+    let names = [
+        target.title.as_str(),
+        target.crate_name.as_str(),
+        dashed.as_str(),
+    ];
+    root_page::Row {
+        stem: target.stem.clone(),
+        title: target.title.clone(),
+        dir,
+        summary: root_page::summary(doc.crate_docs.as_ref(), &doc.refs, &names),
+    }
+}
+
+/// Adds the files of the HTML folder that no one target writes: the one
+/// HTML page, the overview's data file, the search index, and the script.
+/// The overview takes its name from the base folder of the run.
+fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &str) {
+    let uses = index::uses_html(folder.entries);
+    let name = folder.base.file_name().map_or_else(
+        || "Outlines".to_owned(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    let overview = root_page::Overview {
+        name: &name,
+        rows: folder.rows,
+        roles: folder.roles,
+        declarations: (folder.run.iter())
+            .flat_map(|page| page.ids.iter().chain(page.values.values()))
+            .filter(|id| !id.is_empty())
+            .count(),
+        uses: &uses,
+    };
+    let content = root_page::fragment(&overview, stamp);
+    let files = [
+        (dir.join("index.html"), browse::shell(stamp)),
+        (
+            dir.join(browse::data_file(browse::INDEX)),
+            browse::data(browse::INDEX, &name, &content),
+        ),
+        (
+            dir.join(browse::SEARCH_FILE),
+            browse::search(folder.run, folder.api),
+        ),
+        (dir.join(browse::SCRIPT_FILE), browse::SCRIPT.to_owned()),
+    ];
+    outcome.files.extend(files);
 }
