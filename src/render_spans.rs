@@ -170,10 +170,10 @@ impl Page<'_> {
             (None, Some(value)) => Some(Reach::Value(value)),
             (None, None) => None,
         };
-        if let (Some(reach), Some((_, own))) = (reach, self.api)
-            && self.api_link(out, &reference.text, own, reach)
-        {
-            return;
+        if let (Some(reach), Some((_, own))) = (reach, self.api) {
+            if self.api_link(out, &reference.text, own, reach) {
+                return;
+            }
         }
         let local = match (reference.decl(), reference.value()) {
             (Some(target), _) => self.doc.decl_ids.get(target),
