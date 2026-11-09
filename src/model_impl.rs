@@ -1,32 +1,34 @@
-//! The model of impl blocks and the standard traits routing sets apart, and
-//! where a crate's locations are written.
+//! The model of impl blocks and the special members they become, and where
+//! a crate's locations are written.
 
 use crate::model::{
     Base, Crate, Decl, DeclId, FileId, Loc, Member, MemberKind, ModId, Note, RefId, Sig, Text,
 };
 
-/// A standard trait that builds or drops a value, which routing keeps apart
-/// from the base list, in print order.
+/// The standard trait behind a C++ special member function, a constructor
+/// or the destructor, in print order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum SpecialKind {
-    /// `Default`.
+    /// The default constructor, `Type();`
     Default,
-    /// `From<T>`, a conversion.
+    /// A converting constructor, `Type(T&);`
     From,
-    /// `Drop`.
+    /// The destructor, `~Type();`
     Drop,
 }
 
-/// One standard trait that builds or drops a value of a type.
+/// One special member of a type.
 #[derive(Clone, Debug)]
 pub(crate) struct Special {
     pub(crate) kind: SpecialKind,
-    /// The type a `From` impl converts from.
+    /// The argument of a converting constructor, already ending in a
+    /// reference.
     pub(crate) arg: Option<Text>,
-    /// Whether a derive wrote it, so the type's `#[derive]` line names it.
+    /// Whether a derive wrote it, which prints `= default`.
     pub(crate) derived: bool,
     /// Comments above the impl it came from.
     pub(crate) notes: Vec<Note>,
+    pub(crate) loc: Loc,
 }
 
 /// An attached impl block that adds members or base-list entries, for the

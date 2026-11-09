@@ -9,10 +9,11 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use crate::document::Document;
+use crate::glance;
 use crate::layout::{Block, Line, Span, key, plain};
 use crate::layout_decl::public_block;
 use crate::layout_items::{docs_block, item_block};
-use crate::model::{Crate, Loc, ModId, Reach, name_order};
+use crate::model::{Crate, ItemKind, Loc, ModId, Reach, name_order, path_order};
 use crate::render_html::{Anchors, ApiIds, Page, attr, escape};
 use crate::surface::{Entry, Kind};
 
@@ -39,6 +40,9 @@ pub(crate) struct Facade<'a> {
 /// that defines it, and where that target writes it.
 struct Named {
     name: String,
+    /// What the symbol list prints after the name: `()` for a function and
+    /// `!` for a macro, as the Public surface does.
+    suffix: &'static str,
     block: Block,
     owner: usize,
     /// What the path names in the crate that defines it, when that is an
@@ -119,7 +123,9 @@ pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>
             items.len()
         );
     }
-    out.push_str("</ul>\n</li>\n</ul>\n</nav>\n<main>\n");
+    out.push_str("</ul>\n</li>\n</ul>\n");
+    symbols(&mut out, &groups);
+    out.push_str("</nav>\n<main>\n");
     let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
     let _ = writeln!(
         out,
@@ -216,20 +222,21 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
                 spans: vec![key("macro_rules!"), plain(&format!(" {name} {{ ... }}"))],
                 trailing: None,
             };
-            return Some(plain_named(name, own, line));
+            return Some(plain_named(name, "!", own, line));
         }
         Kind::Unlinked(path) => {
             let line = Line {
                 indent: 0,
-                spans: vec![key("pub use"), plain(&format!(" {path};"))],
+                spans: vec![key("using"), plain(&format!(" {path}"))],
                 trailing: None,
             };
-            return Some(plain_named(name, own, line));
+            return Some(plain_named(name, "", own, line));
         }
         Kind::Module(_) => return None,
     };
     let target = facade.owners.get(owner)?;
     let krate = target.krate;
+    let mut suffix = "";
     let (block, mut defined) = match reach {
         Reach::Decl(d) => {
             let decl = krate.decls.get(d)?;
@@ -246,6 +253,9 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
         }
         Reach::Value(at) => {
             let item = krate.modules.get(at.module)?.items.get(at.item)?;
+            if matches!(item.kind, ItemKind::Fn(_)) {
+                suffix = "()";
+            }
             let path = item_path(krate, at.module, &item.name);
             let id = target.doc.value_ids.get(&at).cloned();
             let mut block = item_block(krate, at, name);
@@ -267,6 +277,7 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
     };
     Some(Named {
         name: name.to_owned(),
+        suffix,
         block,
         owner,
         item: Some(reach),
@@ -282,9 +293,10 @@ fn is_reach(line: &Line) -> bool {
     matches!(line.spans.first(), Some(Span::Dim(text)) if text.starts_with("reaches "))
 }
 
-fn plain_named(name: &str, owner: usize, line: Line) -> Named {
+fn plain_named(name: &str, suffix: &'static str, owner: usize, line: Line) -> Named {
     Named {
         name: name.to_owned(),
+        suffix,
         block: Block {
             lines: vec![line],
             repeats: Vec::new(),
@@ -295,6 +307,39 @@ fn plain_named(name: &str, owner: usize, line: Line) -> Named {
         id: String::new(),
         defined: None,
     }
+}
+
+/// Writes the sidebar's list of every symbol of the API by name, under a
+/// rule, each linking to its heading. A name that more than one module
+/// holds shows its module, dim.
+fn symbols(out: &mut String, groups: &Groups) {
+    let mut all: Vec<(&[String], &Named)> = (groups.iter())
+        .flat_map(|(path, (_, items))| items.iter().map(move |named| (path.as_slice(), named)))
+        .collect();
+    if all.is_empty() {
+        return;
+    }
+    all.sort_by(|a, b| name_order(&a.1.name, &b.1.name).then_with(|| path_order(a.0, b.0)));
+    let mut seen: BTreeMap<&str, usize> = BTreeMap::new();
+    for (_, named) in &all {
+        *seen.entry(named.name.as_str()).or_insert(0) += 1;
+    }
+    out.push_str("<hr>\n<ul class=\"symbols\">\n");
+    for (path, named) in all {
+        let module = if seen[named.name.as_str()] > 1 && !path.is_empty() {
+            format!(" <span class=\"dim\">{}</span>", escape(&path.join("::")))
+        } else {
+            String::new()
+        };
+        let _ = writeln!(
+            out,
+            "<li><a href=\"#{}\">{}{}</a>{module}</li>",
+            attr(&named.id),
+            escape(&named.name),
+            named.suffix
+        );
+    }
+    out.push_str("</ul>\n");
 }
 
 /// Returns a count with its noun, `1 item` or `2 items`.
@@ -373,11 +418,10 @@ impl View<'_> {
         let compacts: Vec<(usize, Vec<Line>)> = items
             .iter()
             .map(|named| {
-                let refs = &facade.owners[named.owner].krate.refs;
-                (
-                    named.owner,
-                    crate::glance::compact(&named.block.lines, refs),
-                )
+                let prefix = glance::fn_prefix(&named.id);
+                let lines = glance::anchored(&named.block.lines, &prefix, true);
+                let lines = glance::linked(&lines, |_| self.is_fn(named).then(|| named.id.clone()));
+                (named.owner, glance::compact(&lines))
             })
             .filter(|(_, lines)| !lines.is_empty())
             .collect();
@@ -440,6 +484,23 @@ impl View<'_> {
             };
             let _ = writeln!(out, "<p class=\"defined\">{at}{file}</p>");
         }
-        self.page(named.owner).pre(out, &named.block);
+        let block = Block {
+            lines: glance::anchored(&named.block.lines, &glance::fn_prefix(&named.id), false),
+            repeats: named.block.repeats.clone(),
+        };
+        self.page(named.owner).pre(out, &block);
+    }
+
+    /// Whether an item of the API is a module-level function, whose name the
+    /// compact view links to the item's heading.
+    fn is_fn(&self, named: &Named) -> bool {
+        let Some(Reach::Value(at)) = named.item else {
+            return false;
+        };
+        let krate = self.facade.owners[named.owner].krate;
+        matches!(
+            krate.modules[at.module].items[at.item].kind,
+            ItemKind::Fn(_)
+        )
     }
 }

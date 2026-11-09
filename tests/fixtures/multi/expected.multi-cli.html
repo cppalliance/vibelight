@@ -18,18 +18,23 @@
 <h2 id="mod.multi_cli">multi-cli</h2>
 <p class="anatomy">crate root: 1 type, 1 function; pub(self) 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">struct</span> Args {
+<pre class="glance"><code><span class="k">struct</span> Args
+{
+<span class="k">pub(self):</span>
     <span class="src">verbose</span>: bool,
 }
-
-<span class="k">fn</span> <span class="src">main</span>();</code></pre>
+<span class="gap"></span><span class="k">pub(self):</span>
+<a class="fn" href="#fn.multi_cli.main">main</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.multi_cli.Args">Args</h3>
 <div class="doc">
 <p><span class="c">Only in the binary.</span></p>
 </div>
-<pre><code><span class="k">struct</span> Args {
+<pre><code><span class="k">struct</span> Args
+{
+<span class="k">pub(self):</span>
     <span class="src">verbose</span>: bool,
 }</code></pre>
-<pre><code><span class="k">fn</span> <span class="src" id="fn.multi_cli.main">main</span>();</code></pre>
+<pre><code><span class="k">pub(self):</span>
+<span class="src" id="fn.multi_cli.main">main</span>()</code></pre>
 </main>

@@ -230,6 +230,8 @@ Where the build differs from the plan:
 - **Roles on runvil:** the result is 4 facades, `harness`, `runvil`, `runvil_plugin`, and `workshop_server_api`, with 25 implementation crates and 1 other crate, instead of the expected 3, 10, and 17. A facade's family is every crate its code reaches, so the plugin crates and the shared client crates land behind `workshop_server_api`, because the workshop server's code uses them. A half-facade is demoted to an implementation crate when another facade reaches it, all its users are in that facade's family, and it re-exports a smaller share. That rule keeps `workshop_server` out of the facades.
 - **`pipeline.rs`:** its HTML helpers moved to `pipeline_html.rs` to keep each file under 500 lines.
 
+Later the same day, at the user's request, the declarations went back to the C++-style form of the earlier release: a type's data members first, members under visibility labels, and the members of all its impls merged into one block. The `At a glance` view and the facade pages print the same blocks, and the Rust layout was removed. The documented code of every page that is not a facade's matches the earlier release's goldens byte for byte.
+
 Known gaps:
 - A whole module re-exported from another crate, such as `pub use workshop_server::discovery;`, shows as its `pub use` line rather than the module's items.
 - The `facades` key can name facades, but it cannot mark a library as standalone, outside every family.

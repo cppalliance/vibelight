@@ -24,37 +24,37 @@
 <h2 id="mod.alpha">alpha</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Meter {
-    <span class="k">pub</span> <span class="src">gauge</span>: <a class="cross" href="beta.html#type.beta.parts.Gauge">Gauge</a>, <span class="k">pub</span> <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>, <span class="k">pub</span> <span class="src">stray</span>: delta::Stray,
-    <span class="k">pub</span> <span class="src">vendored</span>: gamma::Vendored,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Meter
+{
+<span class="k">pub:</span>
+    <span class="src">gauge</span>: <a class="cross" href="beta.html#type.beta.parts.Gauge">Gauge</a>,
+    <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
+    <span class="src">stray</span>: delta::Stray,
+    <span class="src">vendored</span>: gamma::Vendored,
 }
-
-<span class="k">pub</span> <span class="k">trait</span> Reads {
-    <span class="k">fn</span> <span class="src">read</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Reads
+{
+    <a class="fn" href="#fn.alpha.Reads.read">read</a>() -&gt; u32
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.alpha.Meter">Meter</h3>
 <div class="doc">
 <p><span class="c">A meter that reads a gauge of beta.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Meter {
-    <span class="c">///</span><span class="c"> Through a use of the re-export at beta's root.</span>
-    <span class="k">pub</span> <span class="src">gauge</span>: <a class="cross" href="beta.html#type.beta.parts.Gauge">Gauge</a>,
-
-    <span class="c">///</span><span class="c"> Through beta's module path.</span>
-    <span class="k">pub</span> <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
-
-    <span class="c">///</span><span class="c"> A crate outside the run stays plain.</span>
-    <span class="k">pub</span> <span class="src">stray</span>: delta::Stray,
-
-    <span class="c">///</span><span class="c"> A crate that no follow glob allows stays plain.</span>
-    <span class="k">pub</span> <span class="src">vendored</span>: gamma::Vendored,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Meter
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a use of the re-export at beta's root.</span></div>    <span class="src">gauge</span>: <a class="cross" href="beta.html#type.beta.parts.Gauge">Gauge</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through beta's module path.</span></div>    <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A crate outside the run stays plain.</span></div>    <span class="src">stray</span>: delta::Stray,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A crate that no follow glob allows stays plain.</span></div>    <span class="src">vendored</span>: gamma::Vendored,
 }</code></pre>
 <h3 id="type.alpha.Reads">Reads</h3>
 <div class="doc">
 <p><span class="c">A trait other crates implement.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Reads {
-    <span class="k">fn</span> <span class="src">read</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Reads
+{
+    <span class="src" id="fn.alpha.Reads.read">read</span>() -&gt; u32
 }</code></pre>
 </main>

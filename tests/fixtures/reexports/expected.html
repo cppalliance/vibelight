@@ -33,51 +33,49 @@
 <h2 id="mod.reexports">reexports</h2>
 <p class="anatomy">crate root: 7 re-exports; pub 6, pub(crate) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">use</span> inner::*;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.reexports.inner.helper">inner::helper</a> as assist;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Other">inner::Other</a> as Extra;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a> as OldThing;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Other">inner::Other</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a>;
-<span class="k">pub(crate)</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a> as CrateThing;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<span class="k">using</span> inner::*
+<span class="k">using</span> assist = <a href="#fn.reexports.inner.helper">inner::helper</a>
+<span class="k">using</span> Extra = <a href="#type.reexports.inner.Other">inner::Other</a>
+<span class="k">using</span> OldThing = <a href="#type.reexports.inner.Thing">inner::Thing</a>
+<span class="k">using</span> <a href="#type.reexports.inner.Other">inner::Other</a>
+<span class="k">using</span> <a href="#type.reexports.inner.Thing">inner::Thing</a>
+<span class="k">pub(crate):</span>
+<span class="k">using</span> CrateThing = <a href="#type.reexports.inner.Thing">inner::Thing</a></code></pre>
 <p class="view">Documented</p>
-<pre><code><span class="k">pub</span> <span class="k">use</span> inner::*;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.reexports.inner.helper">inner::helper</a> as assist;
-
-<span class="dim">#[cfg(feature = "extra")]</span>
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Other">inner::Other</a> as Extra;
-
-<span class="c">///</span><span class="c"> The thing under its old name.</span>
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a> as OldThing;
-
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Other">inner::Other</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a>;
-
-<span class="k">pub(crate)</span> <span class="k">use</span> <a href="#type.reexports.inner.Thing">inner::Thing</a> as CrateThing;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> inner::*
+<span class="k">using</span> assist = <a href="#fn.reexports.inner.helper">inner::helper</a>
+<span class="gap"></span> <span class="c">feature = "extra"</span>
+<span class="k">using</span> Extra = <a href="#type.reexports.inner.Other">inner::Other</a>
+<span class="gap"></span><span class="c"> The thing under its old name.</span>
+<span class="k">using</span> OldThing = <a href="#type.reexports.inner.Thing">inner::Thing</a>
+<span class="gap"></span><span class="k">using</span> <a href="#type.reexports.inner.Other">inner::Other</a>
+<span class="k">using</span> <a href="#type.reexports.inner.Thing">inner::Thing</a>
+<span class="gap"></span><span class="k">pub(crate):</span>
+<span class="k">using</span> CrateThing = <a href="#type.reexports.inner.Thing">inner::Thing</a></code></pre>
 <h2 id="mod.reexports.inner">inner</h2>
 <div class="doc">
 <p><span class="c">Holds the items.</span></p>
 </div>
 <p class="anatomy">mod: 2 types, 1 function; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Other;
-
-<span class="k">pub</span> <span class="k">struct</span> Thing;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">helper</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Other
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Thing
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.reexports.inner.helper">helper</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.reexports.inner.Other"><span class="dim">inner::</span>Other</h3>
 <div class="doc">
 <p><span class="c">Another thing.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Other;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Other</code></pre>
 <h3 id="type.reexports.inner.Thing"><span class="dim">inner::</span>Thing</h3>
 <div class="doc">
 <p><span class="c">A thing.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Thing;</code></pre>
-<div class="doc">
-<p><span class="c">A helper.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.reexports.inner.helper">helper</span>();</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Thing</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A helper.</span>
+<span class="src" id="fn.reexports.inner.helper">helper</span>()</code></pre>
 </main>

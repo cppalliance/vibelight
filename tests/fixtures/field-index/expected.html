@@ -24,81 +24,69 @@
 <h2 id="mod.field_index">field_index</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Scheduler {
-    <span class="src">chains</span>: Vec&lt;u32&gt;, <span class="src">tasks</span>: Vec&lt;u32&gt;, <span class="src">queue</span>: Vec&lt;u32&gt;, <span class="src">pending</span>: Vec&lt;u32&gt;,
-    <span class="src">issued</span>: Vec&lt;u32&gt;, <span class="src">spare</span>: u8,
-}
-<span class="k">impl</span> Scheduler {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">admit</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">apply</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">count_tasks</span>(&amp;<span class="k">self</span>) -&gt; usize;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">issue</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">len</span>(&amp;<span class="k">self</span>) -&gt; usize;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">spawn</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">withdraw</span>(&amp;mut <span class="k">self</span>);
-}
-
-<span class="k">pub</span> <span class="k">struct</span> Small {
-    <span class="src">a</span>: u8, <span class="src">b</span>: u8,
-}
-<span class="k">impl</span> Small {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">both</span>(&amp;<span class="k">self</span>) -&gt; u8;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">first</span>(&amp;<span class="k">self</span>) -&gt; u8;
-}</code></pre>
-<p class="view">Documented</p>
-<h3 id="type.field_index.Scheduler">Scheduler</h3>
-<div class="doc">
-<p><span class="c">A scheduler whose fields its functions reach in groups.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Scheduler {
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Scheduler
+{
+<span class="k">pub(self):</span>
     <span class="src">chains</span>: Vec&lt;u32&gt;,
     <span class="src">tasks</span>: Vec&lt;u32&gt;,
     <span class="src">queue</span>: Vec&lt;u32&gt;,
     <span class="src">pending</span>: Vec&lt;u32&gt;,
     <span class="src">issued</span>: Vec&lt;u32&gt;,
     <span class="src">spare</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.field_index.Scheduler.new">new</a>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>
+    <a class="fn" href="#fn.field_index.Scheduler.admit">admit</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.field_index.Scheduler.apply">apply</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.field_index.Scheduler.count_tasks">count_tasks</a>() -&gt; usize
+    <a class="fn" href="#fn.field_index.Scheduler.issue">issue</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.field_index.Scheduler.len">len</a>() -&gt; usize
+    <a class="fn" href="#fn.field_index.Scheduler.spawn">spawn</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.field_index.Scheduler.withdraw">withdraw</a>() <span class="k">mut</span>
 }
-
-<span class="k">impl</span> Scheduler {
-    <span class="c">///</span><span class="c"> Makes one.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>;
-
-    <span class="c">///</span><span class="c"> Admits queued tasks.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">admit</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Applies an answer.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">apply</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Counts the tasks.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">count_tasks</span>(&amp;<span class="k">self</span>) -&gt; usize;
-
-    <span class="c">///</span><span class="c"> Issues an effect.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">issue</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Counts the chains.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">len</span>(&amp;<span class="k">self</span>) -&gt; usize;
-
-    <span class="c">///</span><span class="c"> Starts a task.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">spawn</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Forgets the issued effects.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">withdraw</span>(&amp;mut <span class="k">self</span>);
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Small
+{
+<span class="k">pub(self):</span>
+    <span class="src">a</span>: u8,
+    <span class="src">b</span>: u8,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.field_index.Small.both">both</a>() -&gt; u8
+    <a class="fn" href="#fn.field_index.Small.first">first</a>() -&gt; u8
+}</code></pre>
+<p class="view">Documented</p>
+<h3 id="type.field_index.Scheduler">Scheduler</h3>
+<div class="doc">
+<p><span class="c">A scheduler whose fields its functions reach in groups.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Scheduler
+{
+<span class="k">pub(self):</span>
+    <span class="src">chains</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">tasks</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">queue</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">pending</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">issued</span>: Vec&lt;u32&gt;,
+<span class="gap"></span>    <span class="src">spare</span>: u8,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src" id="fn.field_index.Scheduler.new">new</span>() -&gt; <a href="#type.field_index.Scheduler">Scheduler</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Admits queued tasks.</span></div>    <span class="src" id="fn.field_index.Scheduler.admit">admit</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Applies an answer.</span></div>    <span class="src" id="fn.field_index.Scheduler.apply">apply</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the tasks.</span></div>    <span class="src" id="fn.field_index.Scheduler.count_tasks">count_tasks</span>() -&gt; usize
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Issues an effect.</span></div>    <span class="src" id="fn.field_index.Scheduler.issue">issue</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Counts the chains.</span></div>    <span class="src" id="fn.field_index.Scheduler.len">len</span>() -&gt; usize
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts a task.</span></div>    <span class="src" id="fn.field_index.Scheduler.spawn">spawn</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Forgets the issued effects.</span></div>    <span class="src" id="fn.field_index.Scheduler.withdraw">withdraw</span>() <span class="k">mut</span>
 }</code></pre>
 <h3 id="type.field_index.Small">Small</h3>
 <div class="doc">
 <p><span class="c">A type with too few functions for a fields list.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Small {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Small
+{
+<span class="k">pub(self):</span>
     <span class="src">a</span>: u8,
-    <span class="src">b</span>: u8,
-}
-
-<span class="k">impl</span> Small {
-    <span class="c">///</span><span class="c"> Returns both.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">both</span>(&amp;<span class="k">self</span>) -&gt; u8;
-
-    <span class="c">///</span><span class="c"> Returns the first.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">first</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<span class="gap"></span>    <span class="src">b</span>: u8,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns both.</span></div>    <span class="src" id="fn.field_index.Small.both">both</span>() -&gt; u8
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the first.</span></div>    <span class="src" id="fn.field_index.Small.first">first</span>() -&gt; u8
 }</code></pre>
 </main>

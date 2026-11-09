@@ -29,68 +29,59 @@
 <h2 id="mod.comments_attach">comments_attach</h2>
 <p class="anatomy">crate root: 2 types, 1 value; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Config {
-    <span class="k">pub</span> <span class="src">first</span>: u8, <span class="k">pub</span> <span class="src">second</span>: u8, <span class="k">pub</span> <span class="src">third</span>: u8,
-}
-<span class="k">impl</span> Config {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">build</span>(
-        first: u8, second: u8,
-    ) -&gt; <a href="#type.comments_attach.Config">Config</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">typed</span>(
-        &amp;<span class="k">self</span>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Config
+{
+<span class="k">pub:</span>
+    <span class="src">first</span>: u8,
+    <span class="src">second</span>: u8,
+    <span class="src">third</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.comments_attach.Config.build">build</a>(
+        first: u8,
+        second: u8) -&gt; <a href="#type.comments_attach.Config">Config</a>
+    <a class="fn" href="#fn.comments_attach.Config.typed">typed</a>(
         <span class="c">/* the count */</span>
-        items: Vec&lt;u32&gt;,
-    );
+        items: Vec&lt;u32&gt;)
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Holder {
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Holder
+{
+<span class="k">pub:</span>
     <span class="c">/* inner */</span>
-    <span class="k">pub</span> <span class="src">items</span>: Vec&lt;u8&gt;,
+    <span class="src">items</span>: Vec&lt;u8&gt;,
 }
-
-<span class="k">pub</span> <span class="k">const</span> <span class="src">PATTERN</span>: &amp;str = "// not a comment";</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src">PATTERN</span>: str&amp; = "// not a comment"</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.comments_attach.Config">Config</h3>
-<pre><code><span class="c">//</span><span class="c"> Attached to the struct below.</span>
-<span class="c">///</span><span class="c"> Docs for Config.</span>
-<span class="k">pub</span> <span class="k">struct</span> Config {
-    <span class="c">//</span><span class="c"> Directly above the field.</span>
-    <span class="k">pub</span> <span class="src">first</span>: u8,
-
-    <span class="c">//</span><span class="c"> Separated from the field by a blank line.</span>
-    <span class="k">pub</span> <span class="src">second</span>: u8, <span class="c">// Trailing comment on the same line.</span>
-
-    <span class="k">pub</span> <span class="src">third</span>: u8,
-
-    <span class="c">//</span><span class="c"> Nothing follows this comment in the struct.</span>
-}
-
-<span class="k">impl</span> Config {
-    <span class="c">///</span><span class="c"> Takes commented parameters.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">build</span>(
-        <span class="c">//</span><span class="c"> The first input.</span>
-        first: u8,
-        second: u8,
-    ) -&gt; <a href="#type.comments_attach.Config">Config</a>;
-
-    <span class="c">///</span><span class="c"> Holds a comment inside its type.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">typed</span>(
-        &amp;<span class="k">self</span>,
+<pre><code><span class="c"> Attached to the struct below.</span>
+<span class="c"> Docs for Config.</span>
+<span class="k">pub</span> <span class="k">struct</span> Config
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Directly above the field.</span></div>    <span class="src">first</span>: u8,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Separated from the field by a blank line.</span></div>    <span class="src">second</span>: u8, <span class="c">// Trailing comment on the same line.</span>
+<span class="gap"></span>    <span class="src">third</span>: u8,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes commented parameters.</span></div>    <span class="k">static</span> <span class="src" id="fn.comments_attach.Config.build">build</span>(
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The first input.</span></div>        first: u8,
+        second: u8) -&gt; <a href="#type.comments_attach.Config">Config</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Holds a comment inside its type.</span></div>    <span class="src" id="fn.comments_attach.Config.typed">typed</span>(
         <span class="c">/* the count */</span>
-        items: Vec&lt;u32&gt;,
-    );
-}</code></pre>
+        items: Vec&lt;u32&gt;)
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Nothing follows this comment in the struct.</span></div>}</code></pre>
 <h3 id="type.comments_attach.Holder">Holder</h3>
 <div class="doc">
 <p><span class="c">A field whose type holds a comment.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Holder {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Holder
+{
+<span class="k">pub:</span>
     <span class="c">/* inner */</span>
-    <span class="k">pub</span> <span class="src">items</span>: Vec&lt;u8&gt;,
+    <span class="src">items</span>: Vec&lt;u8&gt;,
 }</code></pre>
-<pre><code><span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! noop</span>
-
-<span class="c">///</span><span class="c"> Holds a string with comment-like text.</span>
-<span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.comments_attach.PATTERN">PATTERN</span>: &amp;str = "// not a comment";</code></pre>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! noop</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="c"> Holds a string with comment-like text.</span>
+<span class="k">constexpr</span> <span class="src" id="const.comments_attach.PATTERN">PATTERN</span>: str&amp; = "// not a comment"</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! noop</p>
 </main>

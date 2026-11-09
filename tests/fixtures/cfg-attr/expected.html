@@ -24,44 +24,38 @@
 <h2 id="mod.cfg_attr">cfg_attr</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Plain;
-
-<span class="k">pub</span> <span class="k">struct</span> Settings {
-    <span class="k">pub</span> <span class="src">extra</span>: u32, <span class="k">pub</span> <span class="src">both</span>: u8,
-}
-<span class="k">impl</span> Settings {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">doubly</span>(&amp;<span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">gated</span>(&amp;<span class="k">self</span>);
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Plain
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Settings : Clone, Debug
+{
+<span class="k">pub:</span>
+    <span class="src">extra</span>: u32,
+    <span class="src">both</span>: u8,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.cfg_attr.Settings.doubly">doubly</a>()
+    <a class="fn" href="#fn.cfg_attr.Settings.gated">gated</a>()
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.cfg_attr.Plain">Plain</h3>
 <div class="doc">
 <p><span class="c">A test-only cfg_attr is ignored.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Plain;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Plain</code></pre>
 <h3 id="type.cfg_attr.Settings">Settings</h3>
 <div class="doc">
 <p><span class="c">Derives through cfg_attr.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Clone, Debug)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Settings {
-    <span class="c">///</span><span class="c"> Only with a feature.</span>
-    <span class="dim">#[cfg(feature = "extra")]</span>
-    <span class="k">pub</span> <span class="src">extra</span>: u32,
-
-    <span class="dim">#[cfg(feature = "fast")]</span>
-    <span class="dim">#[cfg(unix)]</span>
-    <span class="k">pub</span> <span class="src">both</span>: u8,
-}
-
-<span class="k">impl</span> Settings {
-    <span class="c">///</span><span class="c"> Also gated, with its own cfg.</span>
-    <span class="dim">#[cfg(feature = "methods")]</span>
-    <span class="dim">#[cfg(windows)]</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">doubly</span>(&amp;<span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Gated by the impl's cfg.</span>
-    <span class="dim">#[cfg(feature = "methods")]</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">gated</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Settings : Clone, Debug
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Only with a feature.</span>
+<span class="cfg"><span class="c">feature = "extra"</span></span></div>    <span class="src">extra</span>: u32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="cfg"><span class="c">feature = "fast"</span></span>
+<span class="cfg"><span class="c">unix</span></span></div>    <span class="src">both</span>: u8,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Also gated, with its own cfg.</span>
+<span class="cfg"><span class="c">feature = "methods"</span></span>
+<span class="cfg"><span class="c">windows</span></span></div>    <span class="src" id="fn.cfg_attr.Settings.doubly">doubly</span>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Gated by the impl's cfg.</span>
+<span class="cfg"><span class="c">feature = "methods"</span></span></div>    <span class="src" id="fn.cfg_attr.Settings.gated">gated</span>()
 }</code></pre>
 </main>

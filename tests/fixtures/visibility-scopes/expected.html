@@ -45,22 +45,24 @@
 <h2 id="mod.visibility_scopes">visibility_scopes</h2>
 <p class="anatomy">crate root: 1 function; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">launch</span>() -&gt; u8;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<a class="fn" href="#fn.visibility_scopes.launch">launch</a>() -&gt; u8</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">Runs the engine.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.visibility_scopes.launch">launch</span>() -&gt; u8;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Runs the engine.</span>
+<span class="src" id="fn.visibility_scopes.launch">launch</span>() -&gt; u8</code></pre>
 <h2 id="mod.visibility_scopes.engine">engine</h2>
 <div class="doc">
 <p><span class="c">The engine: two layers under one group, and a type whose impl is</span> <span class="c">written in a sibling module.</span></p>
 </div>
 <p class="anatomy">mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge;
-<span class="k">impl</span> Gauge {
-    <span class="k">pub(super)</span> <span class="k">fn</span> <span class="src">level</span>(&amp;<span class="k">self</span>) -&gt; u8;
-    <span class="k">fn</span> <span class="src">private_level</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge
+{
+<span class="k">pub(super):</span>
+    <a class="fn" href="#fn.visibility_scopes.engine.Gauge.level">level</a>() -&gt; u8
+<span class="k">pub(self):</span>
+    <a class="fn" href="#fn.visibility_scopes.engine.Gauge.private_level">private_level</a>() -&gt; u8
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.visibility_scopes.engine.Gauge"><span class="dim">engine::</span>Gauge</h3>
@@ -68,13 +70,12 @@
 <p><span class="c">A type with members in an impl of another module.</span></p>
 </div>
 <pre><code><span class="dim">reaches pub(crate)</span>
-<span class="k">pub</span> <span class="k">struct</span> Gauge;
-
-<span class="k">impl</span> Gauge {
-    <span class="c">///</span><span class="c"> Reachable from the engine.</span>
-    <span class="k">pub(super)</span> <span class="k">fn</span> <span class="src">level</span>(&amp;<span class="k">self</span>) -&gt; u8;
-
-    <span class="k">fn</span> <span class="src">private_level</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<span class="k">pub</span> <span class="k">struct</span> Gauge
+{
+<span class="k">pub(super):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reachable from the engine.</span></div>    <span class="src" id="fn.visibility_scopes.engine.Gauge.level">level</span>() -&gt; u8
+<span class="gap"></span><span class="k">pub(self):</span>
+    <span class="src" id="fn.visibility_scopes.engine.Gauge.private_level">private_level</span>() -&gt; u8
 }</code></pre>
 <h2 id="mod.visibility_scopes.engine.parse"><span class="dim">engine::</span>parse</h2>
 <div class="doc">
@@ -83,35 +84,35 @@
 <p class="anatomy">pub mod, reaches pub(crate): 1 type, 2 functions; pub(crate) 1, pub(in crate::engine) 1, pub(super) 1</p>
 <p class="coupling">Used by 1 module: <a href="#mod.visibility_scopes.engine.run">engine::run</a> (2). Instability 0.00.</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub(in crate::engine)</span> <span class="k">struct</span> Token;
-
-<span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">local</span>() -&gt; u8;
-<span class="k">pub(super)</span> <span class="k">fn</span> <span class="src">lex</span>() -&gt; <a href="#type.visibility_scopes.engine.parse.Token">Token</a>;</code></pre>
+<pre class="glance"><code><span class="k">pub(in crate::engine)</span> <span class="k">struct</span> Token
+<span class="gap"></span><span class="k">pub(crate):</span>
+<a class="fn" href="#fn.visibility_scopes.engine.parse.local">local</a>() -&gt; u8
+<span class="k">pub(super):</span>
+<a class="fn" href="#fn.visibility_scopes.engine.parse.lex">lex</a>() -&gt; <a href="#type.visibility_scopes.engine.parse.Token">Token</a></code></pre>
 <p class="view">Documented</p>
 <h3 id="type.visibility_scopes.engine.parse.Token"><span class="dim">engine::parse::</span>Token</h3>
 <div class="doc">
 <p><span class="c">A token, widened to the group so the entry point can match it.</span></p>
 </div>
-<pre><code><span class="k">pub(in crate::engine)</span> <span class="k">struct</span> Token;</code></pre>
-<div class="doc">
-<p><span class="c">Used only by the other layer of the group.</span></p>
-</div>
-<pre><code><span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src" id="fn.visibility_scopes.engine.parse.local">local</span>() -&gt; u8;
-
-<span class="c">///</span><span class="c"> Reads one token.</span>
-<span class="k">pub(super)</span> <span class="k">fn</span> <span class="src" id="fn.visibility_scopes.engine.parse.lex">lex</span>() -&gt; <a href="#type.visibility_scopes.engine.parse.Token">Token</a>;</code></pre>
+<pre><code><span class="k">pub(in crate::engine)</span> <span class="k">struct</span> Token</code></pre>
+<pre><code><span class="k">pub(crate):</span>
+<span class="c"> Used only by the other layer of the group.</span>
+<span class="src" id="fn.visibility_scopes.engine.parse.local">local</span>() -&gt; u8
+<span class="gap"></span><span class="k">pub(super):</span>
+<span class="c"> Reads one token.</span>
+<span class="src" id="fn.visibility_scopes.engine.parse.lex">lex</span>() -&gt; <a href="#type.visibility_scopes.engine.parse.Token">Token</a></code></pre>
 <h2 id="mod.visibility_scopes.engine.parse.inner"><span class="dim">engine::parse::</span>inner</h2>
 <div class="doc">
 <p><span class="c">Deeper.</span></p>
 </div>
 <p class="anatomy">pub mod, reaches pub(crate): 1 function; pub(in crate::engine::parse) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub(in crate::engine::parse)</span> <span class="k">fn</span> <span class="src">helper</span>() -&gt; u8;</code></pre>
+<pre class="glance"><code><span class="k">pub(in crate::engine::parse):</span>
+<a class="fn" href="#fn.visibility_scopes.engine.parse.inner.helper">helper</a>() -&gt; u8</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">Spelled for the parent, which </span><code>pub(super)</code><span class="c"> says.</span></p>
-</div>
-<pre><code><span class="k">pub(in crate::engine::parse)</span> <span class="k">fn</span> <span class="src" id="fn.visibility_scopes.engine.parse.inner.helper">helper</span>() -&gt; u8;</code></pre>
+<pre><code><span class="k">pub(in crate::engine::parse):</span>
+<span class="c"> Spelled for the parent, which </span><code>pub(super)</code><span class="c"> says.</span>
+<span class="src" id="fn.visibility_scopes.engine.parse.inner.helper">helper</span>() -&gt; u8</code></pre>
 <h2 id="mod.visibility_scopes.engine.reading"><span class="dim">engine::</span>reading</h2>
 <p class="anatomy">mod</p>
 <h2 id="mod.visibility_scopes.engine.run"><span class="dim">engine::</span>run</h2>
@@ -121,10 +122,10 @@
 <p class="anatomy">pub mod, reaches pub(crate): 1 function; pub 1</p>
 <p class="coupling">Uses 1 module: <a href="#mod.visibility_scopes.engine.parse">engine::parse</a> (2). Instability 1.00.</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">start</span>() -&gt; u8;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<a class="fn" href="#fn.visibility_scopes.engine.run.start">start</a>() -&gt; u8</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">Starts a run.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.visibility_scopes.engine.run.start">start</span>() -&gt; u8;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Starts a run.</span>
+<span class="src" id="fn.visibility_scopes.engine.run.start">start</span>() -&gt; u8</code></pre>
 </main>

@@ -1,18 +1,18 @@
 //! The compact view of a module's items, which the HTML prints above the
-//! documented view of the same items: every declaration and item as Rust
-//! writes it, without comments, attributes, or blank lines, its one-line
-//! fields and variants packed onto as few lines as the width allows.
+//! documented view of the same items: every declaration and item in the
+//! same C++-style blocks, without comments, attributes, or blank lines, so
+//! each type's labels and members stack one to a line.
 
-use crate::layout::{Line, Span, line_text, plain, width};
-use crate::model::TypeRef;
-use crate::wrap::MAX_WIDTH;
+use std::collections::BTreeMap;
+
+use crate::layout::{Anchor, Line, Span};
+use crate::model::ValueRef;
 
 /// Returns the compact lines of a block: its code lines less every comment
-/// line but the one that names the traits a type implements, every
-/// attribute and `reaches` line, every blank line, and every trailing
-/// comment, with runs of short lines that end in a comma packed.
-pub(crate) fn compact(lines: &[Line], refs: &[TypeRef]) -> Vec<Line> {
-    let kept: Vec<Line> = lines
+/// line, every attribute and `reaches` line, every blank line, and every
+/// trailing comment.
+pub(crate) fn compact(lines: &[Line]) -> Vec<Line> {
+    lines
         .iter()
         .filter(|line| kept(line))
         .map(|line| Line {
@@ -20,8 +20,7 @@ pub(crate) fn compact(lines: &[Line], refs: &[TypeRef]) -> Vec<Line> {
             spans: line.spans.iter().map(without_id).collect(),
             trailing: None,
         })
-        .collect();
-    pack(kept, refs)
+        .collect()
 }
 
 /// Returns a span as the compact view prints it: the name of a function,
@@ -34,15 +33,74 @@ fn without_id(span: &Span) -> Span {
     }
 }
 
+/// Gives each function name of a declaration's block the id it has on the
+/// page, `<prefix>.<name>`, with `-2`, `-3`, and so on for a name that
+/// repeats in the block. The documented view puts the id on the name, and
+/// the compact view, when `link` is set, links the name to it; both number
+/// the names of the same block, so the two always agree.
+pub(crate) fn anchored(lines: &[Line], prefix: &str, link: bool) -> Vec<Line> {
+    let mut seen: BTreeMap<&str, usize> = BTreeMap::new();
+    lines
+        .iter()
+        .map(|line| Line {
+            spans: (line.spans.iter())
+                .map(|span| match span {
+                    Span::Fn(text, loc, _) => {
+                        let count = seen.entry(text.as_str()).or_insert(0);
+                        *count += 1;
+                        let id = match *count {
+                            1 => format!("{prefix}.{text}"),
+                            n => format!("{prefix}.{text}-{n}"),
+                        };
+                        let anchor = if link {
+                            Anchor::Link(id)
+                        } else {
+                            Anchor::Id(id)
+                        };
+                        Span::Fn(text.clone(), *loc, anchor)
+                    }
+                    other => other.clone(),
+                })
+                .collect(),
+            ..line.clone()
+        })
+        .collect()
+}
+
+/// Returns the prefix of a declaration's function ids from the id of its
+/// heading: `type.a.m.T` gives `fn.a.m.T`, and any other id stays as it is.
+pub(crate) fn fn_prefix(heading: &str) -> String {
+    heading
+        .strip_prefix("type.")
+        .map_or_else(|| heading.to_owned(), |rest| format!("fn.{rest}"))
+}
+
+/// Links each module-level name that `link` gives an id to that id, for the
+/// compact view, as a function's name links to where the page documents it.
+pub(crate) fn linked(lines: &[Line], link: impl Fn(ValueRef) -> Option<String>) -> Vec<Line> {
+    lines
+        .iter()
+        .map(|line| Line {
+            spans: (line.spans.iter())
+                .map(|span| match span {
+                    Span::Value(text, loc, at) => link(*at).map_or_else(
+                        || span.clone(),
+                        |id| Span::Fn(text.clone(), *loc, Anchor::Link(id)),
+                    ),
+                    other => other.clone(),
+                })
+                .collect(),
+            ..line.clone()
+        })
+        .collect()
+}
+
 /// Joins the compact lines of several blocks, one blank line between two
 /// blocks.
-pub(crate) fn joined<'a>(
-    blocks: impl IntoIterator<Item = &'a [Line]>,
-    refs: &[TypeRef],
-) -> Vec<Line> {
+pub(crate) fn joined<'a>(blocks: impl IntoIterator<Item = &'a [Line]>) -> Vec<Line> {
     let mut out = Vec::new();
     for lines in blocks {
-        let lines = compact(lines, refs);
+        let lines = compact(lines);
         if lines.is_empty() {
             continue;
         }
@@ -54,45 +112,21 @@ pub(crate) fn joined<'a>(
     out
 }
 
+/// Whether a line stays in the compact view: a comment line opens with its
+/// marker, and an attribute or `reaches` line is dim.
 fn kept(line: &Line) -> bool {
-    match line.spans.first() {
-        None | Some(Span::Dim(_)) => false,
-        Some(Span::Marker(_)) => {
-            matches!(line.spans.get(1), Some(Span::Comment(text)) if text == "implements ")
-        }
-        Some(_) => true,
-    }
-}
-
-/// Packs each run of lines of one indent that end in a comma onto as few
-/// lines as fit within the width, joined by a space.
-fn pack(lines: Vec<Line>, refs: &[TypeRef]) -> Vec<Line> {
-    let packable = |line: &Line| line.indent > 0 && line_text(line, refs).ends_with(',');
-    let mut out: Vec<Line> = Vec::new();
-    let mut open = false;
-    for line in lines {
-        if open && packable(&line) {
-            if let Some(last) = out.last_mut().filter(|last| last.indent == line.indent) {
-                let mut spans = last.spans.clone();
-                spans.push(plain(" "));
-                spans.extend(line.spans.iter().cloned());
-                if width(last.indent, &spans, refs) <= MAX_WIDTH {
-                    last.spans = spans;
-                    continue;
-                }
-            }
-        }
-        open = packable(&line);
-        out.push(line);
-    }
-    out
+    !matches!(
+        line.spans.first(),
+        None | Some(Span::Dim(_) | Span::Marker(_))
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::key;
+    use crate::layout::{key, line_text, plain};
     use crate::layout_marker::Marker;
+    use crate::model::{Loc, ValueRef};
 
     fn line(indent: usize, spans: Vec<Span>) -> Line {
         Line {
@@ -109,69 +143,107 @@ mod tests {
             .collect()
     }
 
+    fn comment(indent: usize, marker: Marker, text: &str) -> Line {
+        line(
+            indent,
+            vec![Span::Marker(marker.spaced), Span::Comment(text.to_owned())],
+        )
+    }
+
     #[test]
-    fn comments_attributes_and_blank_lines_go_and_short_fields_pack() {
+    fn comments_attributes_and_blank_lines_go_and_labels_and_members_stay() {
         let lines = vec![
-            line(
-                0,
-                vec![
-                    Span::Marker(Marker::DOC.spaced),
-                    Span::Comment("A point.".to_owned()),
-                ],
-            ),
-            line(0, vec![Span::Dim("#[derive(Debug)]".to_owned())]),
-            line(0, vec![key("pub struct"), plain(" Point {")]),
-            line(
-                4,
-                vec![
-                    Span::Marker(Marker::DOC.spaced),
-                    Span::Comment("Across.".to_owned()),
-                ],
-            ),
-            line(4, vec![plain("pub x: i32,")]),
+            comment(0, Marker::DOC, "A point."),
+            line(0, vec![Span::Dim("[[non_exhaustive]]".to_owned())]),
+            line(0, vec![key("pub struct"), plain(" Point")]),
+            line(0, vec![plain("{")]),
+            line(4, vec![Span::Comment("/* private fields */".to_owned())]),
             Line::default(),
-            line(4, vec![plain("pub y: i32,")]),
-            line(4, vec![plain("label: String,")]),
-            line(0, vec![plain("}")]),
+            line(0, vec![plain("pub:")]),
+            comment(4, Marker::DOC, "Across."),
+            line(4, vec![plain("x: i32,")]),
             Line::default(),
-            line(0, vec![key("impl"), plain(" Point {")]),
-            line(4, vec![plain("pub fn new() -> Point;")]),
-            line(4, vec![plain("pub fn len(&self) -> usize;")]),
+            line(4, vec![plain("y: i32,")]),
+            comment(4, Marker::CFG, "test"),
+            line(0, vec![plain("pub(self):")]),
+            line(4, vec![key("static"), plain(" new() -> Point")]),
             line(0, vec![plain("}")]),
-            line(
-                0,
-                vec![
-                    Span::Marker(Marker::PLAIN.spaced),
-                    Span::Comment("implements ".to_owned()),
-                    Span::Comment("Display".to_owned()),
-                ],
-            ),
         ];
         assert_eq!(
-            text(&compact(&lines, &[])),
+            text(&compact(&lines)),
             [
-                "pub struct Point {",
-                "    pub x: i32, pub y: i32, label: String,",
+                "pub struct Point",
+                "{",
+                "    /* private fields */",
+                "pub:",
+                "    x: i32,",
+                "    y: i32,",
+                "pub(self):",
+                "    static new() -> Point",
                 "}",
-                "impl Point {",
-                "    pub fn new() -> Point;",
-                "    pub fn len(&self) -> usize;",
-                "}",
-                "// implements Display",
             ]
         );
     }
 
     #[test]
-    fn a_run_wider_than_the_width_wraps_onto_more_lines() {
-        let field = |name: &str| line(4, vec![plain(&format!("pub {name}: SomeLongTypeName,"))]);
-        let lines: Vec<Line> = ["first", "second", "third", "fourth"].map(field).to_vec();
-        let packed = compact(&lines, &[]);
-        assert_eq!(packed.len(), 2, "{:?}", text(&packed));
-        assert!(
-            packed
-                .iter()
-                .all(|l| width(l.indent, &l.spans, &[]) <= MAX_WIDTH)
+    fn a_trailing_comment_goes_and_a_value_name_leaves_its_id_behind() {
+        let loc = Loc { file: 0, line: 1 };
+        let at = ValueRef { module: 0, item: 0 };
+        let lines = vec![Line {
+            indent: 0,
+            spans: vec![
+                key("constexpr"),
+                plain(" "),
+                Span::Value("MAX".to_owned(), loc, at),
+            ],
+            trailing: Some("the most".to_owned()),
+        }];
+        let compacted = compact(&lines);
+        assert_eq!(compacted[0].trailing, None);
+        assert!(matches!(&compacted[0].spans[2], Span::Name(name, _) if name == "MAX"));
+    }
+
+    #[test]
+    fn both_views_give_a_function_the_same_id_and_a_repeated_name_the_next_number() {
+        let loc = Loc { file: 0, line: 1 };
+        let function = |name: &str| line(4, vec![Span::Fn(name.to_owned(), loc, Anchor::None)]);
+        let lines = vec![function("new"), function("len"), function("new")];
+        let anchors = |link: bool| -> Vec<Anchor> {
+            anchored(&lines, "fn.a.T", link)
+                .into_iter()
+                .map(|line| match &line.spans[0] {
+                    Span::Fn(_, _, anchor) => anchor.clone(),
+                    other => panic!("not a function name: {other:?}"),
+                })
+                .collect()
+        };
+        let ids = ["fn.a.T.new", "fn.a.T.len", "fn.a.T.new-2"].map(str::to_owned);
+        assert_eq!(anchors(false), ids.clone().map(Anchor::Id));
+        assert_eq!(anchors(true), ids.map(Anchor::Link));
+        assert_eq!(fn_prefix("type.a.m.T"), "fn.a.m.T");
+        assert_eq!(fn_prefix("api.T"), "api.T");
+    }
+
+    #[test]
+    fn a_value_name_links_only_when_given_an_id() {
+        let loc = Loc { file: 0, line: 1 };
+        let value =
+            |item: usize| Span::Value(format!("v{item}"), loc, ValueRef { module: 0, item });
+        let lines = vec![line(0, vec![value(0), value(1)])];
+        let linked = linked(&lines, |at| (at.item == 0).then(|| "fn.a.v0".to_owned()));
+        assert_eq!(
+            linked[0].spans[0],
+            Span::Fn("v0".to_owned(), loc, Anchor::Link("fn.a.v0".to_owned()))
         );
+        assert_eq!(linked[0].spans[1], value(1));
+    }
+
+    #[test]
+    fn blocks_join_with_one_blank_line_between() {
+        let a = vec![line(0, vec![plain("a")])];
+        let b = vec![comment(0, Marker::DOC, "only a comment")];
+        let c = vec![line(0, vec![plain("c")])];
+        let joined = joined([a.as_slice(), b.as_slice(), c.as_slice()]);
+        assert_eq!(text(&joined), ["a", "", "c"]);
     }
 }

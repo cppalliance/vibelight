@@ -52,7 +52,7 @@ fn inline_attrs(meta: &Meta) -> String {
 }
 
 /// Spells a qualifier the way Rust writes it.
-pub(crate) fn qualifier(text: &str) -> &str {
+fn qualifier(text: &str) -> &str {
     if text == "constexpr" { "const" } else { text }
 }
 

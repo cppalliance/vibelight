@@ -24,34 +24,42 @@
 <h2 id="mod.unions">unions</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">union</span> Bits {
-    <span class="k">pub</span> <span class="src">int</span>: u32, <span class="k">pub</span> <span class="src">float</span>: f32, <span class="src">raw</span>: [u8; 4],
+<pre class="glance"><code><span class="k">pub</span> <span class="k">union</span> Bits
+{
+<span class="k">pub:</span>
+    <span class="src">int</span>: u32,
+    <span class="src">float</span>: f32,
+<span class="k">pub(self):</span>
+    <span class="src">raw</span>: [u8; 4],
 }
-
-<span class="k">pub</span> <span class="k">union</span> Hidden {
-    <span class="src">b</span>: i8, <span class="src">a</span>: u8,
+<span class="gap"></span><span class="k">pub</span> <span class="k">union</span> Hidden
+{
+<span class="k">pub(self):</span>
+    <span class="src">b</span>: i8,
+    <span class="src">a</span>: u8,
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.unions.Bits">Bits</h3>
 <div class="doc">
 <p><span class="c">Raw bits viewed two ways.</span></p>
 </div>
-<pre><code><span class="dim">#[repr(C)]</span>
-<span class="k">pub</span> <span class="k">union</span> Bits {
-    <span class="c">///</span><span class="c"> As an integer.</span>
-    <span class="k">pub</span> <span class="src">int</span>: u32,
-
-    <span class="c">///</span><span class="c"> As a float.</span>
-    <span class="k">pub</span> <span class="src">float</span>: f32,
-
+<pre><code><span class="dim">[[repr(C)]]</span>
+<span class="k">pub</span> <span class="k">union</span> Bits
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As an integer.</span></div>    <span class="src">int</span>: u32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">As a float.</span></div>    <span class="src">float</span>: f32,
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">raw</span>: [u8; 4],
 }</code></pre>
 <h3 id="type.unions.Hidden">Hidden</h3>
 <div class="doc">
 <p><span class="c">A union with only private fields.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">union</span> Hidden {
+<pre><code><span class="k">pub</span> <span class="k">union</span> Hidden
+{
+<span class="k">pub(self):</span>
     <span class="src">b</span>: i8,
-    <span class="src">a</span>: u8,
+<span class="gap"></span>    <span class="src">a</span>: u8,
 }</code></pre>
 </main>

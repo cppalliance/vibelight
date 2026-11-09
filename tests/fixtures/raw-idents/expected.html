@@ -31,47 +31,48 @@
 <h2 id="mod.raw_idents">raw_idents</h2>
 <p class="anatomy">crate root: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Keywords {
-    <span class="k">pub</span> <span class="src">r#type</span>: u8, <span class="k">pub</span> <span class="src">r#match</span>: u8, <span class="src">kind</span>: u8,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Keywords
+{
+<span class="k">pub:</span>
+    <span class="src">r#type</span>: u8,
+    <span class="src">r#match</span>: u8,
+<span class="k">pub(self):</span>
+    <span class="src">kind</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.raw_idents.Keywords.r#async">r#async</a>()
+    <a class="fn" href="#fn.raw_idents.Keywords.r#as">r#as</a>() -&gt; u8
 }
-<span class="k">impl</span> Keywords {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">r#async</span>();
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">r#as</span>(&amp;<span class="k">self</span>) -&gt; u8;
-}
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">r#fn</span>();</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.raw_idents.fn">r#fn</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.raw_idents.Keywords">Keywords</h3>
 <div class="doc">
 <p><span class="c">Raw names in a struct.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Keywords {
-    <span class="c">///</span><span class="c"> A raw field.</span>
-    <span class="k">pub</span> <span class="src">r#type</span>: u8,
-
-    <span class="k">pub</span> <span class="src">r#match</span>: u8,
-
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Keywords
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw field.</span></div>    <span class="src">r#type</span>: u8,
+<span class="gap"></span>    <span class="src">r#match</span>: u8,
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">kind</span>: u8,
-}
-
-<span class="k">impl</span> Keywords {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">r#async</span>();
-
-    <span class="c">///</span><span class="c"> A raw method.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">r#as</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="k">static</span> <span class="src" id="fn.raw_idents.Keywords.r#async">r#async</span>()
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A raw method.</span></div>    <span class="src" id="fn.raw_idents.Keywords.r#as">r#as</span>() -&gt; u8
 }</code></pre>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.raw_idents.fn">r#fn</span>();</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="src" id="fn.raw_idents.fn">r#fn</span>()</code></pre>
 <h2 id="mod.raw_idents.impl">r#impl</h2>
 <div class="doc">
 <p><span class="c">A module with a raw name.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Inner;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Inner</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.raw_idents.impl.Inner"><span class="dim">r#impl::</span>Inner</h3>
 <div class="doc">
 <p><span class="c">Lives in a raw module.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Inner;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Inner</code></pre>
 </main>

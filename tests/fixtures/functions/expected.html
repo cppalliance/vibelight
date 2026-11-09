@@ -39,60 +39,45 @@
 <h2 id="mod.functions">functions</h2>
 <p class="anatomy">crate root: 10 functions; pub 9, pub(self) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">const</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <span class="k">fn</span> <span class="src">all_qualifiers</span>();
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">apply</span>&lt;F&gt;(f: F) -&gt; usize <span class="k">where</span> F: for&lt;'a&gt; Fn(&amp;'a str) -&gt; usize;
-<span class="k">pub</span> <span class="k">extern "C"</span> <span class="k">fn</span> <span class="src">callback</span>(code: i32) -&gt; i32;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">merge</span>&lt;A, B, C&gt;(a: A, b: B) -&gt; C
-<span class="k">where</span> A: Into&lt;C&gt;, B: Into&lt;C&gt;, C: std::ops::Add&lt;Output = C&gt;;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">parse</span>(
-    input: &amp;str, execution: &amp;str,
-) -&gt; (std::result::Result&lt;String, String&gt;, Vec&lt;String&gt;);
-<span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> <span class="src">peek</span>(ptr: *const u8) -&gt; u8;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">render</span>(
-    out: &amp;mut impl std::io::Write, items: &amp;[Box&lt;dyn std::fmt::Display&gt;],
-);
-<span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> <span class="src">square</span>(x: u32) -&gt; u32;
-<span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="src">wait</span>(seconds: u64);
-<span class="k">fn</span> <span class="src">private_helper</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <a class="fn" href="#fn.functions.all_qualifiers">all_qualifiers</a>()
+<a class="fn" href="#fn.functions.apply">apply</a>&lt;F&gt;(f: F) -&gt; usize <span class="k">where</span> F: for&lt;'a&gt; Fn(str&amp; 'a) -&gt; usize
+<span class="k">extern "C"</span> <a class="fn" href="#fn.functions.callback">callback</a>(code: i32) -&gt; i32
+<a class="fn" href="#fn.functions.merge">merge</a>&lt;A, B, C&gt;(a: A, b: B) -&gt;
+    C <span class="k">where</span> A: Into&lt;C&gt;, B: Into&lt;C&gt;, C: std::ops::Add&lt;Output = C&gt;
+<a class="fn" href="#fn.functions.parse">parse</a>(input: str&amp;, execution: str&amp;) -&gt;
+    (std::result::Result&lt;String, String&gt;, Vec&lt;String&gt;)
+<span class="k">unsafe</span> <a class="fn" href="#fn.functions.peek">peek</a>(ptr: u8*) -&gt; u8
+<a class="fn" href="#fn.functions.render">render</a>(out: impl std::io::Write mut&amp;, items: [Box&lt;dyn std::fmt::Display&gt;]&amp;)
+<span class="k">constexpr</span> <a class="fn" href="#fn.functions.square">square</a>(x: u32) -&gt; u32
+<span class="k">async</span> <a class="fn" href="#fn.functions.wait">wait</a>(seconds: u64)
+<span class="k">pub(self):</span>
+<a class="fn" href="#fn.functions.private_helper">private_helper</a>()</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">Every qualifier at once.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <span class="k">fn</span> <span class="src" id="fn.functions.all_qualifiers">all_qualifiers</span>();
+<pre><code><span class="k">pub:</span>
+<span class="c"> Every qualifier at once.</span>
+<span class="k">constexpr</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <span class="src" id="fn.functions.all_qualifiers">all_qualifiers</span>()
+<span class="gap"></span><span class="c"> Uses a higher-ranked bound.</span>
+<span class="src" id="fn.functions.apply">apply</span>&lt;F&gt;(f: F) -&gt; usize <span class="k">where</span> F: for&lt;'a&gt; Fn(str&amp; 'a) -&gt; usize
+<span class="gap"></span><span class="c"> Exported to C.</span>
+<span class="k">extern "C"</span> <span class="src" id="fn.functions.callback">callback</span>(code: i32) -&gt; i32
+<span class="gap"></span><span class="c"> Has a where clause on several lines.</span>
+<span class="src" id="fn.functions.merge">merge</span>&lt;A, B, C&gt;(a: A, b: B) -&gt;
+    C <span class="k">where</span> A: Into&lt;C&gt;, B: Into&lt;C&gt;, C: std::ops::Add&lt;Output = C&gt;
+<span class="gap"></span><span class="c"> A rustfmt-style signature over several lines.</span>
+<span class="src" id="fn.functions.parse">parse</span>(input: str&amp;, execution: str&amp;) -&gt;
+    (std::result::Result&lt;String, String&gt;, Vec&lt;String&gt;)
+<span class="gap"></span><span class="c"> Reads raw memory.</span>
 
-<span class="c">///</span><span class="c"> Uses a higher-ranked bound.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.functions.apply">apply</span>&lt;F&gt;(f: F) -&gt; usize <span class="k">where</span> F: for&lt;'a&gt; Fn(&amp;'a str) -&gt; usize;
-
-<span class="c">///</span><span class="c"> Exported to C.</span>
-<span class="k">pub</span> <span class="k">extern "C"</span> <span class="k">fn</span> <span class="src" id="fn.functions.callback">callback</span>(code: i32) -&gt; i32;
-
-<span class="c">///</span><span class="c"> Has a where clause on several lines.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.functions.merge">merge</span>&lt;A, B, C&gt;(a: A, b: B) -&gt; C
-<span class="k">where</span> A: Into&lt;C&gt;, B: Into&lt;C&gt;, C: std::ops::Add&lt;Output = C&gt;;
-
-<span class="c">///</span><span class="c"> A rustfmt-style signature over several lines.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.functions.parse">parse</span>(
-    input: &amp;str,
-    execution: &amp;str,
-) -&gt; (std::result::Result&lt;String, String&gt;, Vec&lt;String&gt;);
-
-<span class="c">///</span><span class="c"> Reads raw memory.</span>
-<span class="c">///</span>
-<span class="c">///</span><span class="c"> # Safety</span>
-<span class="c">///</span><span class="c"> The pointer must be valid.</span>
-<span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> <span class="src" id="fn.functions.peek">peek</span>(ptr: *const u8) -&gt; u8;
-
-<span class="c">///</span><span class="c"> Takes impl and dyn traits.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.functions.render">render</span>(
-    out: &amp;mut impl std::io::Write,
-    items: &amp;[Box&lt;dyn std::fmt::Display&gt;],
-);
-
-<span class="c">///</span><span class="c"> Computes at compile time.</span>
-<span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> <span class="src" id="fn.functions.square">square</span>(x: u32) -&gt; u32;
-
-<span class="c">///</span><span class="c"> Waits for input.</span>
-<span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="src" id="fn.functions.wait">wait</span>(seconds: u64);
-
-<span class="k">fn</span> <span class="src" id="fn.functions.private_helper">private_helper</span>();</code></pre>
+<span class="c"> # Safety</span>
+<span class="c"> The pointer must be valid.</span>
+<span class="k">unsafe</span> <span class="src" id="fn.functions.peek">peek</span>(ptr: u8*) -&gt; u8
+<span class="gap"></span><span class="c"> Takes impl and dyn traits.</span>
+<span class="src" id="fn.functions.render">render</span>(out: impl std::io::Write mut&amp;, items: [Box&lt;dyn std::fmt::Display&gt;]&amp;)
+<span class="gap"></span><span class="c"> Computes at compile time.</span>
+<span class="k">constexpr</span> <span class="src" id="fn.functions.square">square</span>(x: u32) -&gt; u32
+<span class="gap"></span><span class="c"> Waits for input.</span>
+<span class="k">async</span> <span class="src" id="fn.functions.wait">wait</span>(seconds: u64)
+<span class="gap"></span><span class="k">pub(self):</span>
+<span class="src" id="fn.functions.private_helper">private_helper</span>()</code></pre>
 </main>

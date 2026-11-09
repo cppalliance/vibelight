@@ -30,9 +30,9 @@
 <h2 id="mod.kill_list">kill_list</h2>
 <p class="anatomy">crate root: 1 type, 1 value; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Event;
-
-<span class="k">pub</span> <span class="k">const</span> <span class="src">ONE</span>: u8 = 1;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Event : Debug
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src">ONE</span>: u8 = 1</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.kill_list.Event">Event</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> derive: serde::Serialize</p>
@@ -40,14 +40,12 @@
 <div class="doc">
 <p><span class="c">A type with a derive from another crate and an attribute macro.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Debug, serde::Serialize)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Event;</code></pre>
-<pre><code><span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> constant!</span>
-
-<span class="c">///</span><span class="c"> Defines a constant.</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! constant</span>
-
-<span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.kill_list.ONE">ONE</span>: u8 = 1;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Event : Debug</code></pre>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> constant!</span>
+<span class="gap"></span><span class="c"> Defines a constant.</span>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! constant</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src" id="const.kill_list.ONE">ONE</span>: u8 = 1</code></pre>
 <p class="mark" id="macro.3"><b class="m">MACRO</b> constant!</p>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> macro_rules! constant</p>
 </main>

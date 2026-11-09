@@ -6,7 +6,7 @@ use crate::access::Access;
 use crate::access_stamp::Stamp;
 use crate::layout::{
     Block, Line, Span, above, code, const_line, fn_lines, key, line_text, mark_line, note_lines,
-    plain, vis_spans,
+    plain,
 };
 use crate::layout_decl::{BodyParts, body};
 use crate::layout_groups::{
@@ -16,11 +16,11 @@ use crate::layout_marker::Marker;
 use crate::macros;
 use crate::model::{Crate, Foreign, Impl, Item, ItemKind, Loc, ModId, Note, ValueRef, name_order};
 
-/// Builds a module's trailing block: first what has no visibility of its
-/// own, macro marks, one extern block per ABI, and unsupported lines; then
-/// the items in sections by visibility, the widest first, each grouped as
-/// re-exports, constants, statics, and free functions in the order they are
-/// written; then comments with nothing after them.
+/// Builds a module's trailing block: first what has no label of its own,
+/// macro marks, one extern block per ABI with its items labeled inside,
+/// and unsupported lines; then the items in sections by visibility, every
+/// section opened by its label and grouped as re-exports, constants,
+/// statics, and free functions; then comments with nothing after them.
 pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
     let module = &krate.modules[id];
     let shown = module.access.as_ref().and_then(Stamp::note);
@@ -81,7 +81,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         }
         let reexports = std::mem::take(&mut groups[0]);
         if !reexports.is_empty() {
-            groups[0] = vec![packed(reexports, "use")];
+            groups[0] = vec![packed(reexports, "using")];
         }
     }
     sort_entries(&mut marks, &krate.refs);
@@ -97,7 +97,7 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         unsupported.into_iter().collect(),
     ];
     let mut block = Block::default();
-    join_sections(first, sections, &mut block);
+    join_sections(first, [sections, Sections::new()], &mut block);
     let dangling = note_lines(&module.dangling, 0, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
@@ -138,17 +138,15 @@ pub(crate) fn item_text(krate: &Crate, at: ValueRef) -> String {
 /// says otherwise.
 fn item_entry(krate: &Crate, item: &Item, at: ValueRef, shown: Option<Access>) -> Entry {
     let refs = &krate.refs;
-    let (mut lines, mut repeats) = above(&item.meta, 0, item.loc);
+    let attrs_above = !matches!(item.kind, ItemKind::Fn(_));
+    let (mut lines, mut repeats) = above(&item.meta, 0, item.loc, attrs_above);
     lines.extend(reaches_line(&item.meta, 0, shown));
     let name = Span::Value(item.name.clone(), item.loc, at);
     let trailing = item.meta.trailing.clone();
-    let vis = &item.meta.vis;
     match &item.kind {
         ItemKind::Reexport { text, .. } => {
-            let mut spans = vis_spans(vis);
-            spans.extend([key("use"), plain(" ")]);
+            let mut spans = vec![key("using"), plain(" ")];
             spans.extend(code(text));
-            spans.push(plain(";"));
             lines.push(Line {
                 indent: 0,
                 spans,
@@ -161,14 +159,12 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef, shown: Option<Access>) -
             repeats.push(repeat);
         }
         ItemKind::Const { ty, value } => {
-            let mut spans = vis_spans(vis);
-            spans.extend([key("const"), plain(" "), name, plain(": ")]);
+            let mut spans = vec![key("constexpr"), plain(" "), name, plain(": ")];
             spans.extend(code(ty));
             lines.push(const_line(spans, value.as_deref(), 0, trailing, refs));
         }
         ItemKind::Static { mutable, ty, value } => {
-            let mut spans = vis_spans(vis);
-            spans.extend([key("static"), plain(" ")]);
+            let mut spans = vec![key("static"), plain(" ")];
             if *mutable {
                 spans.push(key("mut"));
                 spans.push(plain(" "));
@@ -177,7 +173,15 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef, shown: Option<Access>) -
             spans.extend(code(ty));
             lines.push(const_line(spans, value.as_deref(), 0, trailing, refs));
         }
-        ItemKind::Fn(sig) => lines.extend(fn_lines(krate, sig, vis, name, trailing, 0)),
+        ItemKind::Fn(sig) => lines.extend(fn_lines(
+            krate,
+            sig,
+            name,
+            trailing,
+            0,
+            false,
+            &item.meta.attrs,
+        )),
         ItemKind::Foreign { .. } | ItemKind::Unsupported(_) => {}
     }
     Entry {
@@ -187,9 +191,9 @@ fn item_entry(krate: &Crate, item: &Item, at: ValueRef, shown: Option<Access>) -
     }
 }
 
-/// Packs sorted re-export entries into one entry, so their `use` lines
+/// Packs sorted re-export entries into one entry, so their `using` lines
 /// sit together; `word` is the keyword. An entry with a line above
-/// its first `use` line, such as a comment or a `#[cfg]` line, keeps a
+/// its first `using` line, such as a comment or a `// cfg:` line, keeps a
 /// blank line on each side, so that line never seems to cover its
 /// neighbors.
 fn packed(entries: Vec<Entry>, word: &str) -> Entry {
@@ -245,32 +249,28 @@ fn extern_blocks(krate: &Crate, items: &[&Item], shown: Option<Access>) -> Vec<E
             if own != abi {
                 continue;
             }
-            let (mut lines, repeats) = above(&item.meta, 4, item.loc);
+            let attrs_above = !matches!(foreign, Foreign::Fn(_));
+            let (mut lines, repeats) = above(&item.meta, 4, item.loc, attrs_above);
             lines.extend(reaches_line(&item.meta, 4, shown));
             let name = Span::Name(item.name.clone(), item.loc);
             let trailing = item.meta.trailing.clone();
-            let vis = &item.meta.vis;
             let group = match foreign {
                 Foreign::Type => {
-                    let mut spans = vis_spans(vis);
-                    spans.extend([key("type"), plain(" "), name, plain(";")]);
                     lines.push(Line {
                         indent: 4,
-                        spans,
+                        spans: vec![key("struct"), plain(" "), name],
                         trailing,
                     });
                     0
                 }
                 Foreign::Static { mutable, ty } => {
-                    let mut spans = vis_spans(vis);
-                    spans.extend([key("static"), plain(" ")]);
+                    let mut spans = vec![key("static"), plain(" ")];
                     if *mutable {
                         spans.push(key("mut"));
                         spans.push(plain(" "));
                     }
                     spans.extend([name, plain(": ")]);
                     spans.extend(code(ty));
-                    spans.push(plain(";"));
                     lines.push(Line {
                         indent: 4,
                         spans,
@@ -280,7 +280,8 @@ fn extern_blocks(krate: &Crate, items: &[&Item], shown: Option<Access>) -> Vec<E
                 }
                 Foreign::Fn(sig) => {
                     let fn_name = Span::Name(sig.name.clone(), item.loc);
-                    lines.extend(fn_lines(krate, sig, vis, fn_name, trailing, 4));
+                    let attrs = &item.meta.attrs;
+                    lines.extend(fn_lines(krate, sig, fn_name, trailing, 4, false, attrs));
                     2
                 }
             };
@@ -295,12 +296,19 @@ fn extern_blocks(krate: &Crate, items: &[&Item], shown: Option<Access>) -> Vec<E
             sort_entries(group, &krate.refs);
         }
         let mut inner = Block::default();
-        join_sections(Vec::new(), sections, &mut inner);
-        let mut lines = vec![Line {
-            indent: 0,
-            spans: vec![key("extern"), plain(&format!(" {abi} {{"))],
-            trailing: None,
-        }];
+        join_sections(Vec::new(), [sections, Sections::new()], &mut inner);
+        let mut lines = vec![
+            Line {
+                indent: 0,
+                spans: vec![key("extern"), plain(&format!(" {abi}"))],
+                trailing: None,
+            },
+            Line {
+                indent: 0,
+                spans: vec![plain("{")],
+                trailing: None,
+            },
+        ];
         lines.extend(inner.lines);
         lines.push(Line {
             indent: 0,
@@ -332,15 +340,14 @@ pub(crate) fn docs_block(notes: &[Note], cfgs: &[String]) -> Option<Block> {
     })
 }
 
-/// Returns `impl Trait for Type {}`.
+/// Returns `implements: Trait for Type;`.
 fn implements(item: &Impl) -> Vec<Span> {
-    let mut spans = vec![key("impl"), plain(" ")];
+    let mut spans = vec![key("implements:"), plain(" ")];
     if let Some(base) = &item.trait_ {
         spans.extend(code(&base.text));
     }
-    spans.extend([plain(" "), key("for"), plain(" ")]);
+    spans.push(plain(" for "));
     spans.extend(code(&item.self_text));
-    spans.push(plain(" {}"));
     spans
 }
 
@@ -348,7 +355,7 @@ fn implements(item: &Impl) -> Vec<Span> {
 pub(crate) struct Implements {
     /// Comment lines printed above the line.
     pub(crate) notes: Vec<Line>,
-    /// `impl Trait for Type {}`
+    /// `implements: Trait for Type;`
     pub(crate) spans: Vec<Span>,
     /// Macro marks from the impl's body and attributes.
     pub(crate) marks: Vec<String>,
@@ -356,8 +363,8 @@ pub(crate) struct Implements {
 }
 
 /// Builds the Other impls section: a line for each trait impl, sorted by
-/// trait and then by self type, `impl Trait for Type {}`, and a block for
-/// each inherent impl, sorted by self type.
+/// trait and then by self type, `implements: Trait for Type;`, and a block
+/// for each inherent impl, sorted by self type.
 pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec<(Block, Loc)>) {
     let refs = &krate.refs;
     let mut traits: Vec<&Impl> = Vec::new();
@@ -405,13 +412,17 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
             };
             let mut header = vec![key("impl"), plain(" ")];
             header.extend(code(&item.self_text));
-            header.push(plain(" {"));
             block.lines.push(Line {
                 indent: 0,
                 spans: header,
                 trailing: None,
             });
-            let bodies = body(
+            block.lines.push(Line {
+                indent: 0,
+                spans: vec![plain("{")],
+                trailing: None,
+            });
+            let inner = body(
                 krate,
                 &BodyParts {
                     members: &item.members,
@@ -419,16 +430,14 @@ pub(crate) fn other_impls(krate: &Crate, ids: &[usize]) -> (Vec<Implements>, Vec
                     unlabeled: false,
                     dangling: &item.dangling,
                     end_marks: &item.marks,
+                    special: &[],
+                    name: "",
+                    own: (0, "pub".to_owned()),
                     shown: None,
                 },
             );
-            block.lines.extend(bodies.methods.lines);
-            block.repeats.extend(bodies.methods.repeats);
-            if !bodies.inner.lines.is_empty() && block.lines.len() > 1 {
-                block.lines.push(Line::default());
-            }
-            block.lines.extend(bodies.inner.lines);
-            block.repeats.extend(bodies.inner.repeats);
+            block.lines.extend(inner.lines);
+            block.repeats.extend(inner.repeats);
             block.lines.push(Line {
                 indent: 0,
                 spans: vec![plain("}")],

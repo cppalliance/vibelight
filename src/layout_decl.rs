@@ -1,26 +1,23 @@
-//! Lays out declaration blocks as Rust writes them: a type's attributes,
-//! its head and body, one impl holding the members of all its inherent
-//! impls, and the traits it implements.
+//! Lays out declaration blocks: headers and bodies.
 
 use crate::access::Access;
 use crate::access_stamp::Stamp;
 use crate::layout::{
-    Block, Line, Span, above, code, key, mark_line, note_lines, plain, span_text, vis_spans,
-    where_parts,
+    Block, Line, Span, above, code, key, mark_line, note_lines, plain, vis_spans, where_parts,
 };
-use crate::layout_generics::generic_params;
 use crate::layout_groups::{
-    Entry, Sections, add, join_groups, join_sections, label, reaches_line, sort_entries,
+    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries,
 };
 use crate::layout_head::header_lines;
 use crate::layout_marker::Marker;
 use crate::layout_members::{member_entry, variant_entry};
+use crate::layout_special::special_entry;
 use crate::model::{
-    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, SpecialKind,
-    Text, TypeRef, Variant, name_order,
+    Crate, Decl, DeclId, DeclKind, Member, MemberKind, Meta, Note, Shape, Special, Text, Variant,
+    name_order,
 };
 
-/// Builds the block of one declaration.
+/// Builds the block of one declaration, its functions ordered by name.
 pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block_of(krate, &krate.decls[id], false)
 }
@@ -28,8 +25,8 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its `pub` members, none hidden from
 /// the docs, and no word of how far anything reaches. A struct that hides
-/// fields says `/* private fields */`, and a hidden tuple field reads
-/// `/* private field */`.
+/// fields says `/* private fields */` before its first label, and a hidden
+/// tuple field reads `/* private field */`.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     let shown = |meta: &Meta| meta.vis == "pub" && !meta.attrs.iter().any(|a| a == "doc(hidden)");
     let mut decl = krate.decls[id].clone();
@@ -55,40 +52,45 @@ pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     block_of(krate, &decl, hidden_fields)
 }
 
-/// Builds a declaration's block, with `/* private fields */` closing its body
-/// when `hidden_fields` is set.
+/// Builds a declaration's block, with `/* private fields */` opening its
+/// body when `hidden_fields` is set.
 fn block_of(krate: &Crate, decl: &Decl, hidden_fields: bool) -> Block {
     let refs = &krate.refs;
     let mut block = Block::default();
     block
         .lines
         .extend(note_lines(&decl.meta.notes, 0, Marker::DOC));
-    if !decl.written_derives.is_empty() {
-        block.lines.push(Line {
-            indent: 0,
-            spans: vec![Span::Dim(format!(
-                "#[derive({})]",
-                decl.written_derives.join(", ")
-            ))],
-            trailing: None,
-        });
+    for group in &decl.impl_notes {
+        block.lines.push(impl_header(decl, group.base));
+        block.lines.extend(note_lines(&group.notes, 0, Marker::DOC));
     }
-    let attrs = Meta {
+    let cfgs = Meta {
         cfgs: decl.meta.cfgs.clone(),
         attrs: decl.meta.attrs.clone(),
         ..Meta::default()
     };
-    block.lines.extend(above(&attrs, 0, decl.loc).0);
+    block.lines.extend(above(&cfgs, 0, decl.loc, true).0);
     block.lines.extend(reaches_line(&decl.meta, 0, None));
     if let Shape::Alias(target) = &decl.shape {
         block.lines.push(alias_line(decl, target));
+        return block;
+    }
+    let has_body = !matches!(decl.shape, Shape::Unit | Shape::Tuple(_))
+        || !decl.members.is_empty()
+        || !decl.special.is_empty()
+        || !decl.end_marks.is_empty()
+        || !decl.dangling.is_empty();
+    block
+        .lines
+        .extend(header_lines(decl, head_spans(decl), has_body, refs));
+    if !has_body {
         return block;
     }
     let variants = match &decl.shape {
         Shape::Enum(variants) => Some(variants.as_slice()),
         _ => None,
     };
-    let mut bodies = body(
+    let mut body = body(
         krate,
         &BodyParts {
             members: &decl.members,
@@ -96,77 +98,30 @@ fn block_of(krate: &Crate, decl: &Decl, hidden_fields: bool) -> Block {
             unlabeled: matches!(decl.shape, Shape::Trait { .. }),
             dangling: &decl.dangling,
             end_marks: &decl.end_marks,
+            special: &decl.special,
+            name: &decl.name,
+            own: label(&decl.meta),
             shown: decl.meta.access.as_ref().and_then(Stamp::note),
         },
     );
-    let has_body = matches!(
-        decl.shape,
-        Shape::Named | Shape::Enum(_) | Shape::Trait { .. }
-    );
     if hidden_fields {
-        bodies.inner.lines.push(Line {
+        // Members before any label are private, as in a C++ class.
+        let mut lines = vec![Line {
             indent: 4,
             spans: vec![Span::Comment("/* private fields */".to_owned())],
             trailing: None,
-        });
+        }];
+        if !body.lines.is_empty() {
+            lines.push(Line::default());
+        }
+        lines.append(&mut body.lines);
+        body.lines = lines;
     }
+    block.lines.push(brace("{"));
+    block.lines.extend(body.lines);
+    block.repeats.extend(body.repeats);
+    block.lines.push(brace("}"));
     block
-        .lines
-        .extend(header_lines(decl, head_spans(decl), has_body, refs));
-    if has_body && bodies.inner.lines.is_empty() {
-        // An empty body closes on its head line, as `pub struct Empty {}`.
-        if let Some(head) = block.lines.last_mut() {
-            head.spans.push(plain("}"));
-        }
-    } else if has_body {
-        block.lines.extend(bodies.inner.lines);
-        block.repeats.extend(bodies.inner.repeats);
-        block.lines.push(brace("}"));
-    } else if !bodies.inner.lines.is_empty() {
-        // A unit or tuple struct has no body of its own, so what would go
-        // in it, its end marks and its dangling comments, goes in its impl.
-        let mut inner = bodies.inner;
-        if !bodies.methods.lines.is_empty() {
-            inner.lines.push(Line::default());
-        }
-        inner.lines.append(&mut bodies.methods.lines);
-        inner.repeats.append(&mut bodies.methods.repeats);
-        bodies.methods = inner;
-    }
-    if !bodies.methods.lines.is_empty() {
-        block.lines.push(Line::default());
-        for group in decl.impl_notes.iter().filter(|g| g.base.is_none()) {
-            block.lines.extend(note_lines(&group.notes, 0, Marker::DOC));
-        }
-        block.lines.push(impl_line(decl, refs));
-        block.lines.extend(bodies.methods.lines);
-        block.repeats.extend(bodies.methods.repeats);
-        block.lines.push(brace("}"));
-    }
-    block.lines.extend(implements_line(decl, refs));
-    block.lines.extend(trait_impl_notes(decl));
-    block
-}
-
-/// Returns the comments above the type's trait impls, each set under an
-/// `// impl Trait` line, after the line that names those traits.
-fn trait_impl_notes(decl: &Decl) -> Vec<Line> {
-    let mut lines = Vec::new();
-    for group in decl.impl_notes.iter().filter(|g| g.base.is_some()) {
-        lines.push(impl_header(decl, group.base));
-        lines.extend(note_lines(&group.notes, 0, Marker::DOC));
-    }
-    for special in decl.special.iter().filter(|s| !s.notes.is_empty()) {
-        let mut spans = vec![Span::Marker(Marker::IMPL.spaced)];
-        spans.extend(commented(special_spans(special)));
-        lines.push(Line {
-            indent: 0,
-            spans,
-            trailing: None,
-        });
-        lines.extend(note_lines(&special.notes, 0, Marker::DOC));
-    }
-    lines
 }
 
 fn brace(text: &str) -> Line {
@@ -177,98 +132,19 @@ fn brace(text: &str) -> Line {
     }
 }
 
-/// Returns the `// impl Trait` line above one trait impl's comments, the
-/// trait as a comment reference, so it links in HTML and names nothing.
+/// Returns the `// impl` line above one impl's comments: the trait as the
+/// base list prints it, or the type's own name for an inherent impl. The
+/// trait is a comment reference, so it links in HTML and names nothing.
 fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
     let mut spans = vec![Span::Marker(Marker::IMPL.spaced)];
-    if let Some(base) = base.and_then(|index| decl.bases.get(index)) {
-        spans.extend(commented(code(&base.text)));
+    match base.and_then(|index| decl.bases.get(index)) {
+        Some(base) => spans.extend(code(&base.text).into_iter().map(|span| match span {
+            Span::Ref(id) => Span::DocRef(id),
+            Span::Code(text) => Span::Comment(text),
+            other => other,
+        })),
+        None => spans.push(Span::Comment(decl.name.clone())),
     }
-    Line {
-        indent: 0,
-        spans,
-        trailing: None,
-    }
-}
-
-/// Turns code spans into comment spans, a type name into a comment
-/// reference, so it links and names nothing.
-fn commented(spans: Vec<Span>) -> impl Iterator<Item = Span> {
-    spans.into_iter().map(|span| match span {
-        Span::Ref(id) => Span::DocRef(id),
-        Span::Code(text) => Span::Comment(text),
-        other => other,
-    })
-}
-
-/// Returns the line that names the traits a type implements, other than
-/// those it derives, which its `#[derive]` line names: a dim comment such
-/// as `// implements Display, From<String>`, each trait linked, by name and
-/// then by path.
-fn implements_line(decl: &Decl, refs: &[TypeRef]) -> Option<Line> {
-    let text = |spans: &[Span]| -> String { spans.iter().map(|s| span_text(s, refs)).collect() };
-    let mut traits: Vec<(String, Vec<Span>)> = (decl.bases.iter())
-        .filter(|base| !base.derived)
-        .map(|base| (base.name.clone(), code(&base.text)))
-        .collect();
-    for special in decl.special.iter().filter(|special| !special.derived) {
-        let name = match special.kind {
-            SpecialKind::Default => "Default",
-            SpecialKind::Drop => "Drop",
-            SpecialKind::From => "From",
-        };
-        traits.push((name.to_owned(), special_spans(special)));
-    }
-    if traits.is_empty() {
-        return None;
-    }
-    traits.sort_by(|a, b| name_order(&a.0, &b.0).then_with(|| text(&a.1).cmp(&text(&b.1))));
-    let mut spans = vec![
-        Span::Marker(Marker::PLAIN.spaced),
-        Span::Comment("implements ".to_owned()),
-    ];
-    for (i, (_, entry)) in traits.into_iter().enumerate() {
-        if i > 0 {
-            spans.push(Span::Comment(", ".to_owned()));
-        }
-        spans.extend(commented(entry));
-    }
-    Some(Line {
-        indent: 0,
-        spans,
-        trailing: None,
-    })
-}
-
-/// Returns the trait of a special impl as code: `Default`, `Drop`, or
-/// `From<T>`.
-fn special_spans(special: &Special) -> Vec<Span> {
-    match special.kind {
-        SpecialKind::Default => vec![plain("Default")],
-        SpecialKind::Drop => vec![plain("Drop")],
-        SpecialKind::From => {
-            let mut spans = vec![plain("From<")];
-            spans.extend(special.arg.iter().flat_map(code));
-            spans.push(plain(">"));
-            spans
-        }
-    }
-}
-
-/// Returns the line that opens a type's impl: `impl`, the type's generic
-/// parameters less their defaults, and the type with their names.
-fn impl_line(decl: &Decl, refs: &[TypeRef]) -> Line {
-    let params = generic_params(&decl.generics.rust_visible(refs));
-    let mut spans = vec![key("impl")];
-    let list = |parts: Vec<&str>| format!("<{}>", parts.join(", "));
-    if !params.is_empty() {
-        spans.push(plain(&list(params.iter().map(|p| p.0.as_str()).collect())));
-    }
-    spans.push(plain(&format!(" {}", decl.name)));
-    if !params.is_empty() {
-        spans.push(plain(&list(params.iter().map(|p| p.1.as_str()).collect())));
-    }
-    spans.push(plain(" {"));
     Line {
         indent: 0,
         spans,
@@ -281,7 +157,7 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
     let keyword = if decl.kind == DeclKind::TraitAlias {
         "trait"
     } else {
-        "type"
+        "using"
     };
     let mut spans = vis_spans(&decl.meta.vis);
     spans.extend([key(keyword), plain(&format!(" {}", decl.name))]);
@@ -292,7 +168,6 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
         spans.push(plain(" "));
         spans.extend(where_parts(clause).one);
     }
-    spans.push(plain(";"));
     Line {
         indent: 0,
         spans,
@@ -321,35 +196,33 @@ fn head_spans(decl: &Decl) -> Vec<Span> {
     spans
 }
 
-/// What goes between a type's braces and in its impl.
+/// What goes between a type's braces.
 pub(crate) struct BodyParts<'b> {
     pub(crate) members: &'b [Member],
-    /// An enum's variants, which print first, in declared order.
+    /// An enum's variants, which print first, unlabeled, in declared order.
     pub(crate) variants: Option<&'b [Variant]>,
-    /// Every member of a trait is as visible as the trait and goes in its
-    /// body, so a trait has no impl.
+    /// Every member of a trait is as visible as the trait, so a trait's
+    /// members print unlabeled.
     pub(crate) unlabeled: bool,
     pub(crate) dangling: &'b [Note],
     pub(crate) end_marks: &'b [String],
+    /// The special members, printed as one packed group under the type's
+    /// own label.
+    pub(crate) special: &'b [Special],
+    /// The type's name, which the special members spell.
+    pub(crate) name: &'b str,
+    /// The type's own label.
+    pub(crate) own: Label,
     /// The access the type's `reaches` note shows, if it shows one.
     pub(crate) shown: Option<Access>,
 }
 
-/// The two blocks of a type: what goes between its braces, and what goes
-/// in its impl.
-pub(crate) struct Bodies {
-    /// An enum's variants, a struct's fields, or a trait's members, then the
-    /// macro marks at the end of the body and its dangling comments.
-    pub(crate) inner: Block,
-    /// The constants, types, and functions of the type's inherent impls, by
-    /// visibility, the widest first, each set in the order they are written,
-    /// then the macro marks and unsupported lines in those impls.
-    pub(crate) methods: Block,
-}
-
-/// Builds a type's two blocks. In each, a set of entries of one visibility
-/// follows the wider sets after a blank line.
-pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Bodies {
+/// Builds the lines between a type's braces: first what has no label of
+/// its own, an enum's variants or a trait's members, then macro marks and
+/// unsupported lines; then the data, a struct's fields, and then every
+/// other member, each set in sections by visibility, every section opened
+/// by its label; then comments with nothing after them.
+pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
     let refs = &krate.refs;
     let mut first: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
     let mut data = Sections::new();
@@ -363,14 +236,14 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Bodies {
             MemberKind::Type(_) => 0,
             MemberKind::Const { .. } => 1,
             MemberKind::Field(_) => 2,
-            MemberKind::Fn(_) if member.kind.is_static_fn() => 3,
-            _ => 4,
+            MemberKind::Fn(_) if member.kind.is_static_fn() => 4,
+            _ => 5,
         };
         let entry = member_entry(krate, member, parts.shown);
         match (parts.unlabeled, group) {
             (true, _) => first[group].push(entry),
-            (false, 2) => add(&mut data, label(&member.meta), 5, group, entry),
-            (false, _) => add(&mut members, label(&member.meta), 5, group, entry),
+            (false, 2) => add(&mut data, label(&member.meta), 6, group, entry),
+            (false, _) => add(&mut members, label(&member.meta), 6, group, entry),
         }
     }
     for group in first.iter_mut().chain(members.values_mut().flatten()) {
@@ -379,56 +252,35 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Bodies {
     if let Some(variants) = parts.variants {
         first[2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
     }
-    let (impl_marks, end_marks) = marks(parts);
-    let mut inner = Block::default();
-    let mut methods = Block::default();
-    if parts.unlabeled {
-        first.push(impl_marks.into_iter().chain(end_marks).collect());
-        join_sections(first, data, &mut inner);
-    } else {
-        join_sections(first, data, &mut inner);
-        append(&mut inner, end_marks);
-        join_sections(Vec::new(), members, &mut methods);
-        append(&mut methods, impl_marks);
+    if let Some(entry) = special_entry(parts.special, parts.name, refs) {
+        add(&mut members, parts.own.clone(), 6, 3, entry);
     }
+    first.push(marks(parts));
+    let mut block = Block::default();
+    join_sections(first, [data, members], &mut block);
     let dangling = note_lines(parts.dangling, 4, Marker::DOC);
     if !dangling.is_empty() {
-        if !inner.lines.is_empty() {
-            inner.lines.push(Line::default());
+        if !block.lines.is_empty() {
+            block.lines.push(Line::default());
         }
-        inner.lines.extend(dangling);
+        block.lines.extend(dangling);
     }
-    Bodies { inner, methods }
+    block
 }
 
-/// Adds entries to the end of a block, after a blank line.
-fn append(block: &mut Block, entries: Vec<Entry>) {
-    if entries.is_empty() {
-        return;
-    }
-    if !block.lines.is_empty() {
-        block.lines.push(Line::default());
-    }
-    join_groups(vec![entries], block);
-}
-
-/// Returns a body's macro marks and unsupported lines, each kind as one
-/// packed entry: first those the impls hold, then those at the end of the
-/// type's own body.
-fn marks(parts: &BodyParts<'_>) -> (Vec<Entry>, Vec<Entry>) {
-    let mut texts: Vec<&str> = parts
-        .members
-        .iter()
-        .filter_map(|m| match &m.kind {
-            MemberKind::Mark(text) => Some(text.as_str()),
-            _ => None,
-        })
-        .collect();
+/// Returns a body's macro marks, sorted, then its unsupported lines, as
+/// one packed entry each.
+fn marks(parts: &BodyParts<'_>) -> Vec<Entry> {
+    let mut texts: Vec<&str> = parts.end_marks.iter().map(String::as_str).collect();
+    texts.extend(parts.members.iter().filter_map(|m| match &m.kind {
+        MemberKind::Mark(text) => Some(text.as_str()),
+        _ => None,
+    }));
     texts.sort_by(|a, b| name_order(a, b));
     texts.dedup();
-    let mut end: Vec<&str> = parts.end_marks.iter().map(String::as_str).collect();
-    end.sort_by(|a, b| name_order(a, b));
-    end.dedup();
+    let marks = texts
+        .into_iter()
+        .map(|text| mark_line("MACRO", text, 4, None));
     let unsupported = parts
         .members
         .iter()
@@ -446,17 +298,7 @@ fn marks(parts: &BodyParts<'_>) -> (Vec<Entry>, Vec<Entry>) {
             repeats,
         })
     };
-    let as_marks = |texts: Vec<&str>| {
-        packed(
-            texts
-                .into_iter()
-                .map(|text| mark_line("MACRO", text, 4, None))
-                .collect(),
-        )
-    };
-    let in_impls = as_marks(texts)
-        .into_iter()
-        .chain(packed(unsupported.collect()))
-        .collect();
-    (in_impls, as_marks(end).into_iter().collect())
+    let marks = packed(marks.collect());
+    let unsupported = packed(unsupported.collect());
+    marks.into_iter().chain(unsupported).collect()
 }

@@ -26,77 +26,77 @@
 <h2 id="mod.enums">enums</h2>
 <p class="anatomy">crate root: 3 types; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event {
-    <span class="src">Started</span> {
-        id: u64, name: String,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event
+{
+    <span class="src">Started</span>
+    {
+        id: u64,
+        name: String,
     },
-    <span class="src">Finished</span> {
-        identifier: u64, summary: String, duration_in_milliseconds: u128,
+    <span class="src">Finished</span>
+    {
+        identifier: u64,
+        summary: String,
+        duration_in_milliseconds: u128,
     },
 }
-
-<span class="k">pub</span> <span class="k">enum</span> Level {
-    <span class="src">Low</span>, <span class="src">High</span>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Level
+{
+    <span class="src">Low</span>,
+    <span class="src">High</span>,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.enums.Level.max">max</a>() -&gt; <a href="#type.enums.Level">Level</a>
+<span class="k">pub(self):</span>
+    <a class="fn" href="#fn.enums.Level.rank">rank</a>() -&gt; u8
 }
-<span class="k">impl</span> Level {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">max</span>() -&gt; <a href="#type.enums.Level">Level</a>;
-    <span class="k">fn</span> <span class="src">rank</span>(&amp;<span class="k">self</span>) -&gt; u8;
-}
-
-<span class="k">pub</span> <span class="k">enum</span> Shape {
-    <span class="src">Unit</span>, <span class="src">Tuple</span>(u8, String), <span class="src">Named</span> { x: i32, y: i32 }, <span class="src">Valued</span> = 4,
+<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Shape
+{
+    <span class="src">Unit</span>,
+    <span class="src">Tuple</span>(u8, String),
+    <span class="src">Named</span> { x: i32, y: i32 },
+    <span class="src">Valued</span> = 4,
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.enums.Event">Event</h3>
 <div class="doc">
 <p><span class="c">Struct-like variants that expand.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">enum</span> Event {
-    <span class="c">///</span><span class="c"> Expands because a field has a comment.</span>
-    <span class="src">Started</span> {
-        <span class="c">///</span><span class="c"> The run identifier.</span>
-        id: u64,
-
-        name: String,
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Event
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because a field has a comment.</span></div>    <span class="src">Started</span>
+    {
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run identifier.</span></div>        id: u64,
+<span class="gap"></span>        name: String,
     },
-
-    <span class="c">///</span><span class="c"> Expands because its one-line form is too wide.</span>
-    <span class="src">Finished</span> {
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Expands because its one-line form is too wide.</span></div>    <span class="src">Finished</span>
+    {
         identifier: u64,
-        summary: String,
-        duration_in_milliseconds: u128,
+<span class="gap"></span>        summary: String,
+<span class="gap"></span>        duration_in_milliseconds: u128,
     },
 }</code></pre>
 <h3 id="type.enums.Level">Level</h3>
 <div class="doc">
 <p><span class="c">An enum with methods.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">enum</span> Level {
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Level
+{
     <span class="src">Low</span>,
-    <span class="src">High</span>,
-}
-
-<span class="k">impl</span> Level {
-    <span class="c">///</span><span class="c"> Returns the highest level.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">max</span>() -&gt; <a href="#type.enums.Level">Level</a>;
-
-    <span class="k">fn</span> <span class="src">rank</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<span class="gap"></span>    <span class="src">High</span>,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the highest level.</span></div>    <span class="k">static</span> <span class="src" id="fn.enums.Level.max">max</span>() -&gt; <a href="#type.enums.Level">Level</a>
+<span class="gap"></span><span class="k">pub(self):</span>
+    <span class="src" id="fn.enums.Level.rank">rank</span>() -&gt; u8
 }</code></pre>
 <h3 id="type.enums.Shape">Shape</h3>
 <div class="doc">
 <p><span class="c">Every variant shape.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">enum</span> Shape {
-    <span class="c">///</span><span class="c"> A unit variant.</span>
-    <span class="src">Unit</span>,
-
-    <span class="c">///</span><span class="c"> A tuple variant.</span>
-    <span class="src">Tuple</span>(u8, String),
-
-    <span class="c">///</span><span class="c"> A struct-like variant.</span>
-    <span class="src">Named</span> { x: i32, y: i32 },
-
-    <span class="c">///</span><span class="c"> A variant with a discriminant.</span>
-    <span class="src">Valued</span> = 4,
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Shape
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A unit variant.</span></div>    <span class="src">Unit</span>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A tuple variant.</span></div>    <span class="src">Tuple</span>(u8, String),
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A struct-like variant.</span></div>    <span class="src">Named</span> { x: i32, y: i32 },
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A variant with a discriminant.</span></div>    <span class="src">Valued</span> = 4,
 }</code></pre>
 </main>

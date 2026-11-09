@@ -7,16 +7,19 @@ use crate::render_html::escape;
 const LINES: &[&str] = &[
     "A facade is a crate whose public surface is mostly re-exports of other crates here: the API that users of a crate family write against. Its implementation crates are its family: the crates its code reaches, short of other facades. A warning marks a crate outside a family that uses one of its implementation crates directly, past the facade.",
     "A facade's page shows only what its users can name: each item under the path they write, with its `pub` members alone and `/* private fields */` where it hides some, pulled from the crate that defines it, under a dim line that says where that crate writes it.",
-    "Each module's section opens with its items `At a glance`, as Rust declares them without comments, then shows them again `Documented`, each with its docs.",
+    "Each module's section opens with its items `At a glance`, the same declarations without comments, then shows them again `Documented`, each with its docs. A function's name in the first view goes to it in the second.",
     "Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.",
     "Under a module's anatomy line, `Used by` names the modules that use its items and `Uses` the modules whose items it uses, each with the number of items used. `Instability` runs from 0 for a module that others use and that uses none to 1 for one that uses others and that none use.",
-    "A type prints as Rust declares it, without bodies: its `#[derive]` and other attributes, its head and its fields, variants, or trait items, then one `impl` that holds the members of all its inherent impls, then a `// implements` line that names the other traits it implements.",
-    "Members print from the widest visibility to the narrowest, `pub` first and private last, each set by name, with a blank line between sets. A module's items go the same way, as re-exports, constants, statics, and functions.",
+    "A type prints as a C++-style declaration with Rust's item keyword and its visibility as written, such as `pub(crate) struct`, with the members of all its impls merged in.",
+    "`static` marks a function with no receiver; `() mut` marks one that takes `&mut self`, and a method with no marker takes `&self`.",
+    "`: Clone, Debug` is the base list: the standard traits a type derives or implements, by short name.",
+    "A type lists first what has no visibility of its own: an enum's variants, a trait's items, and its macro marks. Then come its fields, then its other members, each set grouped by visibility under a label such as `pub:`, `pub(crate):`, or `pub(self):` for no keyword, the widest first.",
+    "A module's items are grouped under the same labels, after its macro marks and its extern blocks.",
     "A dim `reaches pub(crate)` line says that a node reaches less far than its visibility gives, because a module around it is narrower; a member that reaches as far as its type leaves it unsaid.",
-    "A dim `#[...]` line is an attribute that shapes the API or its wire format, such as `#[must_use]` or `#[serde(rename = \"id\")]`, or a `#[cfg(...)]` the node depends on.",
-    "`impl Trait for Type {}` under Other impls is an impl with no declared type to attach to, such as a blanket impl.",
+    "`[[...]]` is an attribute that shapes the API or its wire format, such as `[[must_use]]` or `[[serde(rename = \"id\")]]`.",
+    "`implements: Trait for Type` is an impl with no declared type to attach to, such as a blanket impl.",
     "`MACRO` marks a macro definition, an invocation, a derive from another crate, or an attribute macro.",
-    "A type's or a module's doc comment prints as prose, and `backticked` text prints in the code font; a member's comment prints above it as `///` lines.",
+    "A doc comment prints as prose, and `backticked` text prints in the code font; a member's comment reflows as one paragraph.",
     "A gold link goes to another crate's page. `Ctrl K` searches every declaration, a click with `Ctrl` opens a link in a new tab, and a click on a source link copies its file and line.",
 ];
 
@@ -48,8 +51,9 @@ mod tests {
     fn backticks_turn_into_code_and_text_is_escaped() {
         let html = html();
         assert!(html.starts_with("<ul class=\"legend\">\n<li>A facade is "));
-        assert!(html.contains("<code>#[derive]</code>"));
-        assert!(html.contains("<code>#[serde(rename = \"id\")]</code>"));
+        assert!(html.contains("<code>[[must_use]]</code>"));
+        assert!(html.contains("<code>[[serde(rename = \"id\")]]</code>"));
+        assert!(html.contains("<code>() mut</code>"));
         assert!(!html.contains('`'));
     }
 }

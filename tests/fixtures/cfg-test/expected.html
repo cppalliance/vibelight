@@ -28,54 +28,54 @@
 <h2 id="mod.cfg_test">cfg_test</h2>
 <p class="anatomy">crate root: 3 types, 1 function; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Kept {
-    <span class="k">pub</span> <span class="src">value</span>: u32,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Kept
+{
+<span class="k">pub:</span>
+    <span class="src">value</span>: u32,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.cfg_test.Kept.get">get</a>() -&gt; u32
 }
-<span class="k">impl</span> Kept {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">get</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Mode
+{
+    <span class="src">On</span>,
+    <span class="src">Debug</span>,
 }
-
-<span class="k">pub</span> <span class="k">enum</span> Mode {
-    <span class="src">On</span>, <span class="src">Debug</span>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Probe
+{
+    <a class="fn" href="#fn.cfg_test.Probe.check">check</a>()
 }
-
-<span class="k">pub</span> <span class="k">trait</span> Probe {
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>);
-}
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">production_only</span>();</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.cfg_test.production_only">production_only</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.cfg_test.Kept">Kept</h3>
 <div class="doc">
 <p><span class="c">Kept.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Kept {
-    <span class="c">///</span><span class="c"> A kept field.</span>
-    <span class="k">pub</span> <span class="src">value</span>: u32,
-}
-
-<span class="k">impl</span> Kept {
-    <span class="c">///</span><span class="c"> A kept method.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">get</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Kept
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A kept field.</span></div>    <span class="src">value</span>: u32,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A kept method.</span></div>    <span class="src" id="fn.cfg_test.Kept.get">get</span>() -&gt; u32
 }</code></pre>
 <h3 id="type.cfg_test.Mode">Mode</h3>
 <div class="doc">
 <p><span class="c">A kept enum.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">enum</span> Mode {
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Mode
+{
     <span class="src">On</span>,
-
-    <span class="dim">#[cfg(any(test, feature = "debug"))]</span>
-    <span class="src">Debug</span>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="cfg"><span class="c">any(test, feature = "debug")</span></span></div>    <span class="src">Debug</span>,
 }</code></pre>
 <h3 id="type.cfg_test.Probe">Probe</h3>
 <div class="doc">
 <p><span class="c">A test-only trait item stays out.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Probe {
-    <span class="c">///</span><span class="c"> Kept.</span>
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Probe
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Kept.</span></div>    <span class="src" id="fn.cfg_test.Probe.check">check</span>()
 }</code></pre>
-<pre><code><span class="dim">#[cfg(not(test))]</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.cfg_test.production_only">production_only</span>();</code></pre>
+<pre><code><span class="k">pub:</span>
+ <span class="c">not(test)</span>
+<span class="src" id="fn.cfg_test.production_only">production_only</span>()</code></pre>
 </main>

@@ -36,18 +36,16 @@
 </div>
 <p class="anatomy">pub mod: 1 function, 2 values; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">const</span> <span class="src">LIMIT</span>: u32 = 8;
-<span class="k">pub</span> <span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">measure</span>() -&gt; u32;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src">LIMIT</span>: u32 = 8
+<span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0
+<a class="fn" href="#fn.origin.gauge.measure">measure</a>() -&gt; u32</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">The highest reading.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.origin.gauge.LIMIT">LIMIT</span>: u32 = 8;
-
-<span class="c">///</span><span class="c"> A running total.</span>
-<span class="k">pub</span> <span class="k">static</span> <span class="src" id="static.origin.gauge.TOTAL">TOTAL</span>: u32 = 0;
-
-<span class="c">///</span><span class="c"> Takes one reading.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.origin.gauge.measure">measure</span>() -&gt; u32;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> The highest reading.</span>
+<span class="k">constexpr</span> <span class="src" id="const.origin.gauge.LIMIT">LIMIT</span>: u32 = 8
+<span class="gap"></span><span class="c"> A running total.</span>
+<span class="k">static</span> <span class="src" id="static.origin.gauge.TOTAL">TOTAL</span>: u32 = 0
+<span class="gap"></span><span class="c"> Takes one reading.</span>
+<span class="src" id="fn.origin.gauge.measure">measure</span>() -&gt; u32</code></pre>
 </main>

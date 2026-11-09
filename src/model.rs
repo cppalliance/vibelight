@@ -231,8 +231,6 @@ pub(crate) struct Base {
     pub(crate) generic: bool,
     /// Whether routing put the entry in the long list.
     pub(crate) long: bool,
-    /// Whether a derive wrote the entry, rather than an impl.
-    pub(crate) derived: bool,
 }
 
 /// A struct, enum, union, trait, trait alias, or type alias.

@@ -4,7 +4,7 @@
 
 use std::fmt::Write as _;
 
-use crate::layout::{Line, Span};
+use crate::layout::{Anchor, Line, Span};
 use crate::model::{CrossRef, Loc, Reach};
 
 use crate::render_html::{Page, attr, escape};
@@ -15,6 +15,14 @@ impl Page<'_> {
     pub(crate) fn line(&self, out: &mut String, line: &Line) {
         if !line.spans.is_empty() {
             out.push_str(&" ".repeat(line.indent));
+        }
+        // The marker's own text carried the space between it and the
+        // comment, and the marker is not printed, so that one space is added
+        // back here.
+        if let Some(Span::Marker(marker)) = line.spans.first() {
+            if marker.ends_with(' ') {
+                out.push(' ');
+            }
         }
         self.ticked(out, &line.spans);
         if let Some(trailing) = &line.trailing {
@@ -38,7 +46,7 @@ impl Page<'_> {
         let mut open: Option<usize> = None;
         for span in spans {
             match span {
-                Span::Marker(text) => Self::piece(out, false, &escape(text)),
+                Span::Marker(_) => {}
                 Span::Comment(text) => {
                     let mut rest = text.as_str();
                     while let Some(at) = rest.find('`') {
@@ -80,7 +88,7 @@ impl Page<'_> {
     pub(crate) fn spans(&self, out: &mut String, spans: &[Span]) {
         let mut in_comment = false;
         for span in spans {
-            let comment = matches!(span, Span::Comment(_) | Span::DocRef(_) | Span::Marker(_));
+            let comment = matches!(span, Span::Comment(_) | Span::DocRef(_));
             if comment && !in_comment {
                 out.push_str("<span class=\"c\">");
             } else if !comment && in_comment {
@@ -91,7 +99,7 @@ impl Page<'_> {
                 Span::Key(text) => {
                     let _ = write!(out, "<span class=\"k\">{}</span>", escape(text));
                 }
-                Span::Marker(text) => out.push_str(&escape(text)),
+                Span::Marker(_) => {}
                 Span::Dim(text) => {
                     let _ = write!(out, "<span class=\"dim\">{}</span>", escape(text));
                 }
@@ -102,9 +110,22 @@ impl Page<'_> {
                 }
                 Span::Name(text, loc) => self.name(out, text, *loc, None),
                 Span::Value(text, loc, value) => {
-                    let id = self.doc.value_ids.get(value).map(String::as_str);
+                    let id =
+                        (self.doc.value_ids.get(value).map(String::as_str)).filter(|_| self.ids);
                     self.name(out, text, *loc, id);
                 }
+                Span::Fn(text, loc, anchor) => match anchor {
+                    Anchor::None => self.name(out, text, *loc, None),
+                    Anchor::Id(id) => self.name(out, text, *loc, Some(id)),
+                    Anchor::Link(id) => {
+                        let _ = write!(
+                            out,
+                            "<a class=\"fn\" href=\"#{}\">{}</a>",
+                            attr(id),
+                            escape(text)
+                        );
+                    }
+                },
             }
         }
         if in_comment {
@@ -113,11 +134,10 @@ impl Page<'_> {
     }
 
     /// Writes a member or item name: a link to its source line when links
-    /// are on, otherwise a span, with its id when it has one and names take
-    /// ids.
+    /// are on, otherwise a span, with its id when it has one.
     fn name(&self, out: &mut String, text: &str, loc: Loc, id: Option<&str>) {
         let id = id
-            .filter(|id| self.ids && !id.is_empty())
+            .filter(|id| !id.is_empty())
             .map_or_else(String::new, |id| format!(" id=\"{}\"", attr(id)));
         match self.member_links {
             Some(link) => {

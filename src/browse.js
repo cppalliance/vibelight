@@ -183,6 +183,21 @@
     });
   }
 
+  // A documented name sits under its comment, so the scroll goes to the
+  // first comment line or box right before it, past the keywords and dim
+  // attributes on its own line; a blank line between members stops it.
+  function scrollTarget(el) {
+    var top = el;
+    var prev = el.previousElementSibling;
+    while (prev && prev.matches('span.k, span.dim, span.c, div.mc')) {
+      if (prev.matches('span.c, div.mc')) {
+        top = prev;
+      }
+      prev = prev.previousElementSibling;
+    }
+    return top;
+  }
+
   function mark(tab) {
     var old = tab.view.querySelector('.' + MARK);
     if (old) {
@@ -191,7 +206,7 @@
     var el = tab.id ? tab.view.querySelector('[id="' + tab.id.replace(/"/g, '\\"') + '"]') : null;
     if (el) {
       el.classList.add(MARK);
-      el.scrollIntoView();
+      scrollTarget(el).scrollIntoView();
       window.scrollBy(0, -bar.offsetHeight - 8);
     } else {
       window.scrollTo(0, 0);

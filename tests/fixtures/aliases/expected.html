@@ -26,11 +26,11 @@
 <h2 id="mod.aliases">aliases</h2>
 <p class="anatomy">crate root: 3 types; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">type</span> Callback&lt;'a, T&gt; = Box&lt;dyn Fn(T) -&gt; <a href="#type.aliases.Result">Result</a>&lt;()&gt; + 'a&gt;;
-
-<span class="k">pub</span> <span class="k">type</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.aliases.Error">Error</a>&gt;;
-
-<span class="k">pub</span> <span class="k">struct</span> Error {
+<pre class="glance"><code><span class="k">pub</span> <span class="k">using</span> Callback&lt;'a, T&gt; = Box&lt;dyn Fn(T) -&gt; <a href="#type.aliases.Result">Result</a>&lt;()&gt; + 'a&gt;
+<span class="gap"></span><span class="k">pub</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.aliases.Error">Error</a>&gt;
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Error : Debug
+{
+<span class="k">pub(self):</span>
     <span class="src">message</span>: String,
 }</code></pre>
 <p class="view">Documented</p>
@@ -38,18 +38,19 @@
 <div class="doc">
 <p><span class="c">A callback with a bound.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">type</span> Callback&lt;'a, T&gt; = Box&lt;dyn Fn(T) -&gt; <a href="#type.aliases.Result">Result</a>&lt;()&gt; + 'a&gt;;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">using</span> Callback&lt;'a, T&gt; = Box&lt;dyn Fn(T) -&gt; <a href="#type.aliases.Result">Result</a>&lt;()&gt; + 'a&gt;</code></pre>
 <h3 id="type.aliases.Result">Result</h3>
 <div class="doc">
 <p><span class="c">The crate's result type.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">type</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.aliases.Error">Error</a>&gt;;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.aliases.Error">Error</a>&gt;</code></pre>
 <h3 id="type.aliases.Error">Error</h3>
 <div class="doc">
 <p><span class="c">The crate's error.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Debug)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Error {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Error : Debug
+{
+<span class="k">pub(self):</span>
     <span class="src">message</span>: String,
 }</code></pre>
 </main>

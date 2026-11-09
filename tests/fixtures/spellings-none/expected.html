@@ -24,41 +24,41 @@
 <h2 id="mod.spellings_none">spellings_none</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Line {
-    <span class="k">pub</span> <span class="src">start</span>: <a href="#type.spellings_none.Point">crate::Point</a>, <span class="k">pub</span> <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Line : Debug
+{
+<span class="k">pub:</span>
+    <span class="src">start</span>: <a href="#type.spellings_none.Point">crate::Point</a>,
+    <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.spellings_none.Line.label">label</a>&lt;T: Clone&gt;(fallback: T) -&gt; Option&lt;T&gt;
 }
-<span class="k">impl</span> Line {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">label</span>&lt;T: Clone&gt;(&amp;<span class="k">self</span>, fallback: T) -&gt; Option&lt;T&gt;;
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span>
-
-<span class="k">pub</span> <span class="k">struct</span> Point {
-    <span class="k">pub</span> <span class="src">label</span>: Option&lt;String&gt;, <span class="k">pub</span> <span class="src">tags</span>: Vec&lt;String&gt;,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Point : Clone, Debug, Display, PartialEq
+{
+<span class="k">pub:</span>
+    <span class="src">label</span>: Option&lt;String&gt;,
+    <span class="src">tags</span>: Vec&lt;String&gt;,
+}</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.spellings_none.Line">Line</h3>
 <div class="doc">
 <p><span class="c">A local type written two ways, which the section leaves out.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Line {
-    <span class="k">pub</span> <span class="src">start</span>: <a href="#type.spellings_none.Point">crate::Point</a>,
-    <span class="k">pub</span> <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
-}
-
-<span class="k">impl</span> Line {
-    <span class="c">///</span><span class="c"> Returns the label; see </span><code><span class="c">std::option::Option</span></code><span class="c">.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">label</span>&lt;T: Clone&gt;(&amp;<span class="k">self</span>, fallback: T) -&gt; Option&lt;T&gt;;
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Line : Debug
+{
+<span class="k">pub:</span>
+    <span class="src">start</span>: <a href="#type.spellings_none.Point">crate::Point</a>,
+<span class="gap"></span>    <span class="src">end</span>: <a href="#type.spellings_none.Point">Point</a>,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the label; see </span><code><span class="c">std::option::Option</span></code><span class="c">.</span></div>    <span class="src" id="fn.spellings_none.Line.label">label</span>&lt;T: Clone&gt;(fallback: T) -&gt; Option&lt;T&gt;
+}</code></pre>
 <h3 id="type.spellings_none.Point">Point</h3>
 <div class="doc">
 <p><span class="c">A point whose standard names each have one spelling.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Clone, Debug, PartialEq)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Point {
-    <span class="k">pub</span> <span class="src">label</span>: Option&lt;String&gt;,
-    <span class="k">pub</span> <span class="src">tags</span>: Vec&lt;String&gt;,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Point : Clone, Debug, Display, PartialEq
+{
+<span class="k">pub:</span>
+    <span class="src">label</span>: Option&lt;String&gt;,
+<span class="gap"></span>    <span class="src">tags</span>: Vec&lt;String&gt;,
+}</code></pre>
 </main>

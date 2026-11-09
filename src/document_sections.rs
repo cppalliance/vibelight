@@ -103,7 +103,11 @@ impl Builder<'_> {
                 None,
             );
         }
-        self.code(self.blocks[d].clone());
+        let block = &self.blocks[d];
+        self.code(Block {
+            lines: crate::glance::anchored(&block.lines, &crate::glance::fn_prefix(&id), false),
+            repeats: block.repeats.clone(),
+        });
     }
 
     /// Adds the Other impls section and returns its contents entry, when

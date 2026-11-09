@@ -30,70 +30,60 @@
 <h2 id="mod.attributes">attributes</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 re-export; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Record {
-    <span class="k">pub</span> <span class="src">name</span>: String, <span class="k">pub</span> <span class="src">cache</span>: u8, <span class="src">count</span>: u8,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Record
+{
+<span class="k">pub:</span>
+    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
+    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
+<span class="k">pub(self):</span>
+    <span class="src">count</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.attributes.Record.empty">empty</a>() -&gt;
+        <a href="#type.attributes.Record">Record</a> <span class="dim">[[must_use = "a record does nothing until it is stored"]]</span>
+    <a class="fn" href="#fn.attributes.Record.name">name</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span> <span class="dim">[[track_caller]]</span>
 }
-<span class="k">impl</span> Record {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">empty</span>() -&gt; <a href="#type.attributes.Record">Record</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">name</span>(&amp;<span class="k">self</span>) -&gt; &amp;str;
+<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Level : Clone, Copy
+{
+    <span class="src">Top</span> = 2,
+    <span class="src">Low</span> = 0,
 }
-
-<span class="k">pub</span> <span class="k">enum</span> Level {
-    <span class="src">Top</span> = 2, <span class="src">Low</span> = 0,
-}
-
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.attributes.Record">Record</a> as Row;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">helper</span>();</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> Row = <a href="#type.attributes.Record">Record</a>
+<a class="fn" href="#fn.attributes.helper">helper</a>() <span class="dim">[[deprecated]]</span> <span class="dim">[[doc(hidden)]]</span></code></pre>
 <p class="view">Documented</p>
 <h3 id="type.attributes.Record">Record</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> derive: serde::Serialize</p>
 <div class="doc">
 <p><span class="c">A record with a wire format.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(serde::Serialize)]</span>
-<span class="dim">#[serde(rename_all = "camelCase")]</span>
-<span class="k">pub</span> <span class="k">struct</span> Record {
-    <span class="c">///</span><span class="c"> The record's name.</span>
-    <span class="dim">#[serde(rename = "id")]</span>
-    <span class="k">pub</span> <span class="src">name</span>: String,
-
-    <span class="c">///</span><span class="c"> Kept out of the docs.</span>
-    <span class="dim">#[doc(hidden)]</span>
-    <span class="k">pub</span> <span class="src">cache</span>: u8,
-
+<pre><code><span class="dim">[[serde(rename_all = "camelCase")]]</span>
+<span class="k">pub</span> <span class="k">struct</span> Record
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The record's name.</span></div>    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Kept out of the docs.</span></div>    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">count</span>: u8,
-}
-
-<span class="k">impl</span> Record {
-    <span class="c">///</span><span class="c"> Makes an empty record.</span>
-    <span class="dim">#[must_use = "a record does nothing until it is stored"]</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">empty</span>() -&gt; <a href="#type.attributes.Record">Record</a>;
-
-    <span class="c">///</span><span class="c"> Reads the name.</span>
-    <span class="dim">#[must_use]</span>
-    <span class="dim">#[track_caller]</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">name</span>(&amp;<span class="k">self</span>) -&gt; &amp;str;
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes an empty record.</span></div>    <span class="k">static</span> <span class="src" id="fn.attributes.Record.empty">empty</span>() -&gt;
+        <a href="#type.attributes.Record">Record</a> <span class="dim">[[must_use = "a record does nothing until it is stored"]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reads the name.</span></div>    <span class="src" id="fn.attributes.Record.name">name</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span> <span class="dim">[[track_caller]]</span>
 }</code></pre>
 <h3 id="type.attributes.Level">Level</h3>
 <div class="doc">
 <p><span class="c">A level.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Clone, Copy)]</span>
-<span class="dim">#[non_exhaustive]</span>
-<span class="dim">#[repr(u8)]</span>
-<span class="k">pub</span> <span class="k">enum</span> Level {
-    <span class="c">///</span><span class="c"> The top.</span>
-    <span class="dim">#[deprecated(since = "1.2", note = "use High")]</span>
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="dim">[[repr(u8)]]</span>
+<span class="k">pub</span> <span class="k">enum</span> Level : Clone, Copy
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The top.</span></div>    <span class="dim">[[deprecated(since = "1.2", note = "use High")]]</span>
     <span class="src">Top</span> = 2,
-
-    <span class="c">///</span><span class="c"> The bottom.</span>
-    <span class="src">Low</span> = 0,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The bottom.</span></div>    <span class="src">Low</span> = 0,
 }</code></pre>
-<pre><code><span class="dim">#[doc(hidden)]</span>
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.attributes.Record">Record</a> as Row;
-
-<span class="c">///</span><span class="c"> A hidden helper.</span>
-<span class="dim">#[deprecated]</span>
-<span class="dim">#[doc(hidden)]</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.attributes.helper">helper</span>();</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="dim">[[doc(hidden)]]</span>
+<span class="k">using</span> Row = <a href="#type.attributes.Record">Record</a>
+<span class="gap"></span><span class="c"> A hidden helper.</span>
+<span class="src" id="fn.attributes.helper">helper</span>() <span class="dim">[[deprecated]]</span> <span class="dim">[[doc(hidden)]]</span></code></pre>
 </main>

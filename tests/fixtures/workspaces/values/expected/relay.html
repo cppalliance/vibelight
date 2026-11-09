@@ -6,6 +6,13 @@
 </ul>
 </li>
 </ul>
+<hr>
+<ul class="symbols">
+<li><a href="#api.LIMIT">LIMIT</a></li>
+<li><a href="#api.measure">measure()</a></li>
+<li><a href="#fn.relay.read">read()</a></li>
+<li><a href="#api.TOTAL">TOTAL</a></li>
+</ul>
 </nav>
 <main>
 <p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
@@ -16,36 +23,36 @@
 <p class="note" id="api">The public API of relay: 4 items, from 1 other crate. Each shows only what a user of relay can name.</p>
 <h2 id="api.mod">relay</h2>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">const</span> <span class="src">LIMIT</span>: u32 = 8;
+<pre class="glance"><code><span class="k">constexpr</span> <span class="src">LIMIT</span>: u32 = 8
 
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">measure</span>() -&gt; u32;
+<a class="fn" href="#api.measure">measure</a>() -&gt; u32
 
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">read</span>() -&gt; u32;
+<a class="fn" href="#fn.relay.read">read</a>() -&gt; u32
 
-<span class="k">pub</span> <span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0;</code></pre>
+<span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0</code></pre>
 <p class="view">Documented</p>
 <h3 id="api.LIMIT"><span class="dim">relay::</span>LIMIT</h3>
 <p class="defined">Defined in <a class="cross" href="origin.html#const.origin.gauge.LIMIT">origin::gauge::LIMIT</a>, <span class="src">src/lib.rs:7</span></p>
 <div class="doc">
 <p><span class="c">The highest reading.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">const</span> <span class="src">LIMIT</span>: u32 = 8;</code></pre>
+<pre><code><span class="k">constexpr</span> <span class="src">LIMIT</span>: u32 = 8</code></pre>
 <h3 id="api.measure"><span class="dim">relay::</span>measure</h3>
 <p class="defined">Defined in <a class="cross" href="origin.html#fn.origin.gauge.measure">origin::gauge::measure</a>, <span class="src">src/lib.rs:13</span></p>
 <div class="doc">
 <p><span class="c">Takes one reading.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">measure</span>() -&gt; u32;</code></pre>
+<pre><code><span class="src">measure</span>() -&gt; u32</code></pre>
 <h3 id="fn.relay.read"><span class="dim">relay::</span>read</h3>
 <p class="defined"><span class="src">src/lib.rs:6</span></p>
 <div class="doc">
 <p><span class="c">Takes a reading through </span><code><span class="c"><a href="#api.measure">origin::gauge::measure</a></span></code><span class="c">.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">read</span>() -&gt; u32;</code></pre>
+<pre><code><span class="src">read</span>() -&gt; u32</code></pre>
 <h3 id="api.TOTAL"><span class="dim">relay::</span>TOTAL</h3>
 <p class="defined">Defined in <a class="cross" href="origin.html#static.origin.gauge.TOTAL">origin::gauge::TOTAL</a>, <span class="src">src/lib.rs:10</span></p>
 <div class="doc">
 <p><span class="c">A running total.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0;</code></pre>
+<pre><code><span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0</code></pre>
 </main>

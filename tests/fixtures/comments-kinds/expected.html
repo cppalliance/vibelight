@@ -35,33 +35,29 @@
 <p class="view">At a glance</p>
 <pre class="glance"><code><span class="c">/* A block comment</span>
 <span class="c">kept as written. */</span>
-<span class="k">pub</span> <span class="k">struct</span> BlockComment;
-
-<span class="k">pub</span> <span class="k">struct</span> DocFirst;
-
-<span class="k">pub</span> <span class="k">struct</span> Fenced;
-
-<span class="k">pub</span> <span class="k">struct</span> Linked;
-
-<span class="k">pub</span> <span class="k">struct</span> PlainFirst;
-
+<span class="k">pub</span> <span class="k">struct</span> BlockComment
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> DocFirst
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Fenced
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Linked
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> PlainFirst
+<span class="gap"></span><span class="k">pub:</span>
 <span class="c">/*</span>
 
 <span class="c">not code</span>
 
 <span class="c">*/</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">after_block</span>();</code></pre>
+<a class="fn" href="#fn.comments_kinds.after_block">after_block</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.comments_kinds.BlockComment">BlockComment</h3>
 <pre><code><span class="c">/* A block comment</span>
 <span class="c">kept as written. */</span>
-<span class="k">pub</span> <span class="k">struct</span> BlockComment;</code></pre>
+<span class="k">pub</span> <span class="k">struct</span> BlockComment</code></pre>
 <h3 id="type.comments_kinds.DocFirst">DocFirst</h3>
 <div class="doc">
 <p><span class="c">A doc comment first.</span></p>
 </div>
-<pre><code><span class="c">//</span><span class="c"> Then an ordinary comment.</span>
-<span class="k">pub</span> <span class="k">struct</span> DocFirst;</code></pre>
+<pre><code><span class="c"> Then an ordinary comment.</span>
+<span class="k">pub</span> <span class="k">struct</span> DocFirst</code></pre>
 <h3 id="type.comments_kinds.Fenced">Fenced</h3>
 <div class="doc">
 <p><span class="c">Docs with their own code fence:</span></p>
@@ -69,20 +65,21 @@
 </code></pre>
 <p><span class="c">And a </span><code> four-backtick run inside.</code></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Fenced;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Fenced</code></pre>
 <h3 id="type.comments_kinds.Linked">Linked</h3>
 <div class="doc">
 <p><span class="c">Links: </span><code><span class="c"><a href="#type.comments_kinds.DocFirst">DocFirst</a></span></code><span class="c">, </span><span class="c"><span class="c"><a href="#type.comments_kinds.PlainFirst">the plain one</a></span></span><span class="c">, and </span><code>inline code</code><span class="c">.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Linked;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Linked</code></pre>
 <h3 id="type.comments_kinds.PlainFirst">PlainFirst</h3>
-<pre><code><span class="c">//</span><span class="c"> An ordinary comment first.</span>
-<span class="c">///</span><span class="c"> Then a doc comment.</span>
-<span class="k">pub</span> <span class="k">struct</span> PlainFirst;</code></pre>
-<pre><code><span class="c">/*</span>
+<pre><code><span class="c"> An ordinary comment first.</span>
+<span class="c"> Then a doc comment.</span>
+<span class="k">pub</span> <span class="k">struct</span> PlainFirst</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c">/*</span>
 
 <span class="c">not code</span>
 
 <span class="c">*/</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.comments_kinds.after_block">after_block</span>();</code></pre>
+<span class="src" id="fn.comments_kinds.after_block">after_block</span>()</code></pre>
 </main>

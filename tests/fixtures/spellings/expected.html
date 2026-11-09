@@ -60,31 +60,32 @@
 <h2 id="mod.spellings">spellings</h2>
 <p class="anatomy">crate root: 4 types; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Timer {
-    <span class="k">pub</span> <span class="src">laps</span>: Map&lt;u32, String&gt;,
-    <span class="k">pub</span> <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
-    <span class="k">pub</span> <span class="src">period</span>: ::std::time::Duration,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Timer : Display
+{
+<span class="k">pub:</span>
+    <span class="src">laps</span>: Map&lt;u32, String&gt;,
+    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
+    <span class="src">period</span>: ::std::time::Duration,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.spellings.Timer.next">next</a>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
+    <a class="fn" href="#fn.spellings.Timer.wait">wait</a>(extra: std::time::Duration) -&gt; Vec&lt;String&gt;
 }
-<span class="k">impl</span> Timer {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">next</span>(&amp;<span class="k">self</span>, clock: &amp;<a href="#type.spellings.Clock">crate::Clock</a>) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">wait</span>(&amp;<span class="k">self</span>, extra: std::time::Duration) -&gt; Vec&lt;String&gt;;
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Clock : Display
+{
+<span class="k">pub:</span>
+    <span class="src">alarm</span>: Option&lt;u8&gt;,
+    <span class="src">label</span>: String,
+    <span class="src">snooze</span>: Option&lt;u8&gt;,
+    <span class="src">step</span>: core::time::Duration,
 }
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span>
-
-<span class="k">pub</span> <span class="k">struct</span> Clock {
-    <span class="k">pub</span> <span class="src">alarm</span>: Option&lt;u8&gt;, <span class="k">pub</span> <span class="src">label</span>: String, <span class="k">pub</span> <span class="src">snooze</span>: Option&lt;u8&gt;,
-    <span class="k">pub</span> <span class="src">step</span>: core::time::Duration,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span>
-
-<span class="k">pub</span> <span class="k">struct</span> Duration;
-
-<span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt; {
-    <span class="k">pub</span> <span class="src">inner</span>: T,
-}
-<span class="k">impl</span>&lt;T&gt; Wrapper&lt;T&gt; {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">is_empty</span>(&amp;<span class="k">self</span>) -&gt; bool;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">len</span>(&amp;<span class="k">self</span>) -&gt; usize;
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Duration
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">inner</span>: T,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.spellings.Wrapper.is_empty">is_empty</a>() -&gt; bool
+    <a class="fn" href="#fn.spellings.Wrapper.len">len</a>() -&gt; usize
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.spellings.Timer">Timer</h3>
@@ -92,49 +93,45 @@
 <div class="doc">
 <p><span class="c">A timer that names its laps.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(serde::Serialize)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Timer {
-    <span class="k">pub</span> <span class="src">laps</span>: Map&lt;u32, String&gt;,
-    <span class="k">pub</span> <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
-    <span class="k">pub</span> <span class="src">period</span>: ::std::time::Duration,
-}
-
-<span class="k">impl</span> Timer {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">next</span>(&amp;<span class="k">self</span>, clock: &amp;<a href="#type.spellings.Clock">crate::Clock</a>) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">wait</span>(&amp;<span class="k">self</span>, extra: std::time::Duration) -&gt; Vec&lt;String&gt;;
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Timer : Display
+{
+<span class="k">pub:</span>
+    <span class="src">laps</span>: Map&lt;u32, String&gt;,
+<span class="gap"></span>    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
+<span class="gap"></span>    <span class="src">period</span>: ::std::time::Duration,
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="src" id="fn.spellings.Timer.next">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
+<span class="gap"></span>    <span class="src" id="fn.spellings.Timer.wait">wait</span>(extra: std::time::Duration) -&gt; Vec&lt;String&gt;
+}</code></pre>
 <h3 id="type.spellings.Clock">Clock</h3>
 <p class="mark" id="macro.2"><b class="m">MACRO</b> derive: Serialize</p>
 <div class="doc">
 <p><span class="c">A clock with an optional alarm.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Serialize)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Clock {
-    <span class="c">///</span><span class="c"> When the alarm rings; see </span><code><span class="c">core::option::Option</span></code><span class="c">.</span>
-    <span class="k">pub</span> <span class="src">alarm</span>: Option&lt;u8&gt;,
-
-    <span class="k">pub</span> <span class="src">label</span>: String,
-    <span class="k">pub</span> <span class="src">snooze</span>: Option&lt;u8&gt;,
-    <span class="k">pub</span> <span class="src">step</span>: core::time::Duration,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Clock : Display
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">When the alarm rings; see </span><code><span class="c">core::option::Option</span></code><span class="c">.</span></div>    <span class="src">alarm</span>: Option&lt;u8&gt;,
+<span class="gap"></span>    <span class="src">label</span>: String,
+<span class="gap"></span>    <span class="src">snooze</span>: Option&lt;u8&gt;,
+<span class="gap"></span>    <span class="src">step</span>: core::time::Duration,
+}</code></pre>
 <h3 id="type.spellings.Duration">Duration</h3>
 <div class="doc">
 <p><span class="c">The crate's own Duration, so the standard one has no bare spelling to</span> <span class="c">prefer.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Duration;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Duration</code></pre>
 <h3 id="type.spellings.Wrapper">Wrapper</h3>
 <div class="doc">
 <p><span class="c">A wrapper whose impl names std::string::String only in its self type,</span> <span class="c">which does not count.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt; {
-    <span class="k">pub</span> <span class="src">inner</span>: T,
-}
-
-<span class="k">impl</span>&lt;T&gt; Wrapper&lt;T&gt; {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">is_empty</span>(&amp;<span class="k">self</span>) -&gt; bool;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">len</span>(&amp;<span class="k">self</span>) -&gt; usize;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">inner</span>: T,
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="src" id="fn.spellings.Wrapper.is_empty">is_empty</span>() -&gt; bool
+<span class="gap"></span>    <span class="src" id="fn.spellings.Wrapper.len">len</span>() -&gt; usize
 }</code></pre>
 <h2 id="mod.spellings.bare">bare</h2>
 <div class="doc">
@@ -142,71 +139,61 @@
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Label;
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Label : Display</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.spellings.bare.Label"><span class="dim">bare::</span>Label</h3>
 <div class="doc">
 <p><span class="c">A label that shows itself through the standard Display.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Label;
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Label : Display</code></pre>
 <h2 id="mod.spellings.debug">debug</h2>
 <div class="doc">
 <p><span class="c">Debug by derive and by hand. A derive name is never counted.</span></p>
 </div>
 <p class="anatomy">pub mod: 3 types; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Dial;
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span>
-
-<span class="k">pub</span> <span class="k">struct</span> Gauge;
-
-<span class="k">pub</span> <span class="k">struct</span> Knob;
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span></code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Dial : Debug
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Gauge : Debug
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Knob : Debug</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.spellings.debug.Dial"><span class="dim">debug::</span>Dial</h3>
 <div class="doc">
 <p><span class="c">A dial that writes Debug through the fmt module.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Dial;
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Dial : Debug</code></pre>
 <h3 id="type.spellings.debug.Gauge"><span class="dim">debug::</span>Gauge</h3>
 <div class="doc">
 <p><span class="c">A gauge that derives Debug, which adds no spelling.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Debug)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Gauge;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Gauge : Debug</code></pre>
 <h3 id="type.spellings.debug.Knob"><span class="dim">debug::</span>Knob</h3>
 <div class="doc">
 <p><span class="c">A knob that writes Debug with its full path.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Knob;
-<span class="c">// </span><span class="c">implements </span><span class="c">Debug</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Knob : Debug</code></pre>
 <h2 id="mod.spellings.other">other</h2>
 <div class="doc">
 <p><span class="c">Another crate's Display, which never merges with the standard one.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Badge;
-<span class="c">// </span><span class="c">implements </span><span class="c">other_crate::Display</span>
-
-<span class="k">pub</span> <span class="k">struct</span> Pin;
-<span class="c">// </span><span class="c">implements </span><span class="c">other_crate::Display</span></code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Badge
+    : other_crate::Display
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Pin
+    : other_crate::Display</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.spellings.other.Badge"><span class="dim">other::</span>Badge</h3>
 <div class="doc">
 <p><span class="c">A badge that shows itself through the other crate's Display.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Badge;
-<span class="c">// </span><span class="c">implements </span><span class="c">other_crate::Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Badge
+    : other_crate::Display</code></pre>
 <h3 id="type.spellings.other.Pin"><span class="dim">other::</span>Pin</h3>
 <div class="doc">
 <p><span class="c">A pin that names the other crate's Display by its full path.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Pin;
-<span class="c">// </span><span class="c">implements </span><span class="c">other_crate::Display</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Pin
+    : other_crate::Display</code></pre>
 <h2 id="spellings">Spellings</h2>
 <ul class="spellings">
 <li><code>other_crate::Display</code> is written 2 ways; pick one and search for the rest:

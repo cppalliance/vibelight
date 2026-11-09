@@ -1,10 +1,9 @@
-//! Lays out a declaration's head as Rust writes it: the keyword line with
-//! any tuple fields and a trait's supertraits, the `where` clause, and the
-//! brace that opens the body or the `;` that ends the declaration.
+//! Lays out a declaration's head: the keyword line with any tuple fields,
+//! the base list, and the `where` clause.
 
 use crate::layout::{Line, Span, code, plain, vis_spans, where_parts, width};
 use crate::layout_members::param_lines;
-use crate::model::{Decl, Shape, TypeRef};
+use crate::model::{Base, Decl, Shape, TypeRef, name_order};
 use crate::wrap::{self, MAX_WIDTH};
 
 fn line(indent: usize, spans: Vec<Span>) -> Line {
@@ -15,11 +14,11 @@ fn line(indent: usize, spans: Vec<Span>) -> Line {
     }
 }
 
-/// Finishes a header with any tuple fields, a trait's supertraits after a
-/// colon, and the `where` clause, then ` {` when the declaration has a body
-/// and `;` when it has none. A `where` clause that keeps the line within the
-/// width stays on it; otherwise it takes lines of its own after the head,
-/// and the brace or the `;` a line of its own after the clause.
+/// Finishes a header with any tuple fields, the base list, and the `where`
+/// clause; a type with no body ends in `;`. The base list stays on the head
+/// line while it holds only short entries and the line fits. Otherwise each
+/// base line starts with `: ` or `, `: the short names first, wrapping to
+/// fit, then one long path per line, then the `where` clause on its own line.
 pub(crate) fn header_lines(
     decl: &Decl,
     header: Vec<Span>,
@@ -27,31 +26,44 @@ pub(crate) fn header_lines(
     refs: &[TypeRef],
 ) -> Vec<Line> {
     let mut lines = head_lines(decl, header);
-    let mut last = lines.pop().unwrap_or_default();
-    if let Shape::Trait { supertraits, .. } = &decl.shape {
-        for (i, base) in supertraits.iter().enumerate() {
-            last.spans.push(plain(if i == 0 { ": " } else { " + " }));
-            last.spans.extend(code(&base.text));
+    let bases = match &decl.shape {
+        Shape::Trait { supertraits, .. } => supertraits.as_slice(),
+        _ => decl.bases.as_slice(),
+    };
+    let (short, long) = lists(bases, refs);
+    let where_clause = decl.where_clause.as_ref().map(where_parts);
+    let last = lines.pop().unwrap_or_default();
+    let mut one = last.spans.clone();
+    if !short.is_empty() {
+        one.push(plain(" : "));
+        for (i, entry) in short.iter().enumerate() {
+            if i > 0 {
+                one.push(plain(", "));
+            }
+            one.extend(entry.iter().cloned());
         }
     }
-    let end = if has_body { " {" } else { ";" };
-    match decl.where_clause.as_ref().map(where_parts) {
-        None => {
-            last.spans.push(plain(end));
-            lines.push(last);
-        }
-        Some(clause) => {
-            let mut one = last.spans.clone();
-            one.push(plain(" "));
-            one.extend(clause.one.iter().cloned());
-            one.push(plain(end));
-            if width(last.indent, &one, refs) <= MAX_WIDTH {
-                lines.push(line(last.indent, one));
-            } else {
-                lines.push(last);
-                lines.extend(wrap::where_lines(&clause, &[], 0, refs));
-                lines.push(line(0, vec![plain(end.trim_start())]));
+    if long.is_empty() && width(last.indent, &one, refs) <= MAX_WIDTH {
+        match &where_clause {
+            Some(clause) if has_body && last.indent == 0 => {
+                lines.extend(wrap::header(one, Some(clause), refs));
             }
+            Some(clause) if has_body => {
+                lines.push(line(last.indent, one));
+                lines.extend(wrap::where_lines(clause, &[], 4, refs));
+            }
+            Some(clause) => {
+                one.push(plain(" "));
+                one.extend(clause.one.iter().cloned());
+                lines.push(line(last.indent, one));
+            }
+            None => lines.push(line(last.indent, one)),
+        }
+    } else {
+        lines.push(last);
+        lines.extend(comma_lines(&short, &long, refs));
+        if let Some(clause) = &where_clause {
+            lines.extend(wrap::where_lines(clause, &[], 4, refs));
         }
     }
     if !has_body {
@@ -62,8 +74,8 @@ pub(crate) fn header_lines(
     lines
 }
 
-/// Returns the head without its `where` clause: the header line, with a
-/// tuple struct's fields on it, or one field per line when any field has a
+/// Returns the head without its base list: the header line, with a tuple
+/// struct's fields on it, or one field per line when any field has a
 /// comment.
 fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
     let Shape::Tuple(fields) = &decl.shape else {
@@ -90,6 +102,50 @@ fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
     vec![line(0, header)]
 }
 
+/// Returns the short entries, sorted by name, and the long entries, sorted
+/// by path.
+fn lists(bases: &[Base], refs: &[TypeRef]) -> (Vec<Vec<Span>>, Vec<Vec<Span>>) {
+    let mut short: Vec<&Base> = bases.iter().filter(|b| !b.long).collect();
+    short.sort_by(|a, b| {
+        name_order(&a.name, &b.name).then_with(|| a.text.visible(refs).cmp(&b.text.visible(refs)))
+    });
+    let mut long: Vec<&Base> = bases.iter().filter(|b| b.long).collect();
+    long.sort_by(|a, b| name_order(&a.text.visible(refs), &b.text.visible(refs)));
+    let spans = |list: Vec<&Base>| list.into_iter().map(|b| code(&b.text)).collect();
+    (spans(short), spans(long))
+}
+
+/// Returns the base lines of the leading-comma form.
+fn comma_lines(short: &[Vec<Span>], long: &[Vec<Span>], refs: &[TypeRef]) -> Vec<Line> {
+    let mut lines = Vec::new();
+    let mut current: Vec<Span> = Vec::new();
+    for entry in short {
+        if current.is_empty() {
+            current.push(plain(": "));
+        } else {
+            let mut longer = current.clone();
+            longer.push(plain(", "));
+            longer.extend(entry.iter().cloned());
+            if width(4, &longer, refs) <= MAX_WIDTH {
+                current = longer;
+                continue;
+            }
+            lines.push(line(4, std::mem::take(&mut current)));
+            current.push(plain(", "));
+        }
+        current.extend(entry.iter().cloned());
+    }
+    if !current.is_empty() {
+        lines.push(line(4, current));
+    }
+    for entry in long {
+        let mut spans = vec![plain(if lines.is_empty() { ": " } else { ", " })];
+        spans.extend(entry.iter().cloned());
+        lines.push(line(4, spans));
+    }
+    lines
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -98,8 +154,7 @@ mod tests {
     use crate::layout::line_text;
 
     /// Returns the head of the declaration `name` in a one-file crate: its
-    /// lines up to the one that opens its body or ends it, less the
-    /// attribute lines above it.
+    /// lines before the opening brace.
     fn head(source: &str, name: &str) -> Vec<String> {
         let tmp = tempfile::tempdir().unwrap();
         let src = tmp.path().join("src");
@@ -110,56 +165,61 @@ mod tests {
         crate::resolve::resolve(&mut krate);
         crate::attach::attach(&mut krate);
         let id = krate.decls.iter().position(|d| d.name == name).unwrap();
-        let lines: Vec<String> = crate::layout_decl::decl_block(&krate, id)
+        crate::layout_decl::decl_block(&krate, id)
             .lines
             .iter()
             .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))
-            .filter(|l| !l.starts_with("#["))
-            .collect();
-        let end = lines
-            .iter()
-            .position(|l| l.ends_with('{') || l.ends_with(';'))
-            .unwrap();
-        lines[..=end].to_vec()
+            .take_while(|l| l != "{")
+            .collect()
     }
 
     #[test]
-    fn the_traits_a_type_implements_stay_off_the_head_line() {
+    fn standard_traits_that_fit_stay_on_the_head_line() {
         let source = "pub struct Run;\n\
                       impl std::fmt::Display for Run {}\n\
                       impl std::fmt::Debug for Run {}\n";
-        assert_eq!(head(source, "Run"), ["pub struct Run;"]);
+        assert_eq!(head(source, "Run"), ["pub struct Run : Debug, Display"]);
     }
 
     #[test]
-    fn a_where_clause_that_fits_stays_on_the_head_line() {
-        let source = "pub struct Holder<T> where T: Copy { pub value: T }\n";
+    fn a_long_entry_puts_each_base_on_its_own_line_before_the_where_clause() {
+        let source = "pub trait Named {}\n\
+                      pub struct Holder<T> where T: Copy { pub value: T }\n\
+                      impl<T> Named for Holder<T> where T: Copy {}\n\
+                      impl<T: Copy> std::fmt::Debug for Holder<T> {}\n";
         assert_eq!(
             head(source, "Holder"),
-            ["pub struct Holder<T> where T: Copy {"]
+            [
+                "pub struct Holder<T>",
+                "    : Debug",
+                "    , Named",
+                "    where T: Copy"
+            ]
         );
     }
 
     #[test]
-    fn a_long_where_clause_takes_lines_of_its_own_before_the_brace() {
-        let source = "pub struct Holder<T, U> where T: Copy + Clone + Default + \
-                      std::fmt::Debug + std::fmt::Display, U: Iterator<Item = T> + Clone \
-                      { pub value: T, pub other: U }\n";
-        let lines = head(source, "Holder");
-        assert_eq!(lines[0], "pub struct Holder<T, U>");
-        assert!(lines[1].starts_with("where"), "{lines:?}");
-        assert_eq!(lines.last().unwrap(), "{");
-        assert!(lines.iter().all(|l| l.chars().count() <= MAX_WIDTH));
-    }
-
-    #[test]
-    fn a_trait_lists_its_supertraits_after_a_colon() {
-        let source = "pub trait Named: Clone + std::fmt::Debug { fn name(&self) -> String; }\n";
+    fn a_short_list_past_the_width_wraps_with_a_leading_comma() {
+        let traits = [
+            "Binary", "Debug", "Display", "LowerExp", "LowerHex", "Octal", "Pointer", "UpperExp",
+            "UpperHex", "Write",
+        ];
+        let mut source = String::from("pub struct Wide;\n");
+        for name in traits {
+            source.push_str("impl std::fmt::");
+            source.push_str(name);
+            source.push_str(" for Wide {}\n");
+        }
+        let lines = head(&source, "Wide");
         assert_eq!(
-            head(source, "Named"),
-            ["pub trait Named: Clone + Debug {"],
-            "a standard trait prints by its short name"
+            lines,
+            [
+                "pub struct Wide",
+                "    : Binary, Debug, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp",
+                "    , UpperHex, Write"
+            ]
         );
+        assert!(lines.iter().all(|l| l.chars().count() <= MAX_WIDTH));
     }
 
     #[test]
@@ -168,7 +228,7 @@ mod tests {
                       where\n    T: Copy;\n";
         let lines = head(source, "Pair");
         assert!(
-            lines.last().unwrap().ends_with("where T: Copy;"),
+            lines.last().unwrap().ends_with("where T: Copy"),
             "{lines:?}"
         );
     }

@@ -29,80 +29,75 @@
 <h2 id="mod.impls">impls</h2>
 <p class="anatomy">crate root: 4 types; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">trait</span> Describe {
-    <span class="k">fn</span> <span class="src">describe</span>(&amp;<span class="k">self</span>) -&gt; String;
+<pre class="glance"><code><span class="k">pub</span> <span class="k">trait</span> Describe
+{
+    <a class="fn" href="#fn.impls.Describe.describe">describe</a>() -&gt; String
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Holder&lt;'a, T&gt; {
-    <span class="src">item</span>: &amp;'a T,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Holder&lt;'a, T&gt;
+{
+<span class="k">pub(self):</span>
+    <span class="src">item</span>: T&amp; 'a,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.impls.Holder.item">item</a>() -&gt; T&amp; 'a
 }
-<span class="k">impl</span>&lt;'a, T&gt; Holder&lt;'a, T&gt; {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">item</span>(&amp;<span class="k">self</span>) -&gt; &amp;'a T;
+<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Render
+{
+    <a class="fn" href="#fn.impls.Render.render">render</a>() -&gt; String
 }
-
-<span class="k">pub</span> <span class="k">trait</span> Render {
-    <span class="k">fn</span> <span class="src">render</span>(&amp;<span class="k">self</span>) -&gt; String;
-}
-
-<span class="k">pub</span> <span class="k">struct</span> Widget {
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Widget : Display, From&lt;str&amp; 'a&gt;, unsafe Send, !Sync
+{
+<span class="k">pub(self):</span>
     <span class="src">id</span>: u32,
-}
-<span class="k">impl</span> Widget {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">id</span>(&amp;<span class="k">self</span>) -&gt; u32;
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span><span class="c">, </span><span class="c"><span class="c">From</span></span><span class="c">&lt;&amp;'a </span><span class="c"><span class="c">str</span></span><span class="c">&gt;</span><span class="c">, </span><span class="c">unsafe </span><span class="c">Send</span><span class="c">, </span><span class="c">!</span><span class="c">Sync</span></code></pre>
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.impls.Widget.new">new</a>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>
+    <a class="fn" href="#fn.impls.Widget.id">id</a>() -&gt; u32
+}</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.impls.Describe">Describe</h3>
 <div class="doc">
 <p><span class="c">Describes itself.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Describe {
-    <span class="c">///</span><span class="c"> Returns a description.</span>
-    <span class="k">fn</span> <span class="src">describe</span>(&amp;<span class="k">self</span>) -&gt; String;
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Describe
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns a description.</span></div>    <span class="src" id="fn.impls.Describe.describe">describe</span>() -&gt; String
 }</code></pre>
 <h3 id="type.impls.Holder">Holder</h3>
 <div class="doc">
 <p><span class="c">A generic holder.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Holder&lt;'a, T&gt; {
-    <span class="src">item</span>: &amp;'a T,
-}
-
-<span class="k">impl</span>&lt;'a, T&gt; Holder&lt;'a, T&gt; {
-    <span class="c">///</span><span class="c"> Returns the held item.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">item</span>(&amp;<span class="k">self</span>) -&gt; &amp;'a T;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Holder&lt;'a, T&gt;
+{
+<span class="k">pub(self):</span>
+    <span class="src">item</span>: T&amp; 'a,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the held item.</span></div>    <span class="src" id="fn.impls.Holder.item">item</span>() -&gt; T&amp; 'a
 }</code></pre>
 <h3 id="type.impls.Render">Render</h3>
 <div class="doc">
 <p><span class="c">Renders itself.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Render {
-    <span class="c">///</span><span class="c"> Renders to a string.</span>
-    <span class="k">fn</span> <span class="src">render</span>(&amp;<span class="k">self</span>) -&gt; String;
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Render
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Renders to a string.</span></div>    <span class="src" id="fn.impls.Render.render">render</span>() -&gt; String
 }</code></pre>
 <h3 id="type.impls.Widget">Widget</h3>
 <div class="doc">
 <p><span class="c">A type with split impls and trait impls.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Widget {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Widget : Display, From&lt;str&amp; 'a&gt;, unsafe Send, !Sync
+{
+<span class="k">pub(self):</span>
     <span class="src">id</span>: u32,
-}
-
-<span class="k">impl</span> Widget {
-    <span class="c">///</span><span class="c"> Makes a widget.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>;
-
-    <span class="c">///</span><span class="c"> Returns the identifier.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">id</span>(&amp;<span class="k">self</span>) -&gt; u32;
-}
-<span class="c">// </span><span class="c">implements </span><span class="c">Display</span><span class="c">, </span><span class="c"><span class="c">From</span></span><span class="c">&lt;&amp;'a </span><span class="c"><span class="c">str</span></span><span class="c">&gt;</span><span class="c">, </span><span class="c">unsafe </span><span class="c">Send</span><span class="c">, </span><span class="c">!</span><span class="c">Sync</span></code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a widget.</span></div>    <span class="k">static</span> <span class="src" id="fn.impls.Widget.new">new</span>(id: u32) -&gt; <a href="#type.impls.Widget">Widget</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the identifier.</span></div>    <span class="src" id="fn.impls.Widget.id">id</span>() -&gt; u32
+}</code></pre>
 <h2 id="impls">Other impls</h2>
 <ul class="impls">
-<li><code><span class="k">impl</span> <a href="#type.impls.Describe">Describe</a> <span class="k">for</span> T {}</code></li>
-<li><code><span class="k">impl</span> <a href="#type.impls.Render">Render</a> <span class="k">for</span> (u8, u8) {}</code></li>
-<li><code><span class="k">impl</span> <a href="#type.impls.Render">Render</a> <span class="k">for</span> [<a href="#type.impls.Widget">Widget</a>] {}</code></li>
-<li><code><span class="k">impl</span> <a href="#type.impls.Render">Render</a> <span class="k">for</span> Box&lt;<a href="#type.impls.Widget">Widget</a>&gt; {}</code></li>
-<li><code><span class="k">impl</span> <a href="#type.impls.Render">Render</a> <span class="k">for</span> &amp;<a href="#type.impls.Widget">Widget</a> {}</code></li>
+<li><code><span class="k">implements:</span> <a href="#type.impls.Describe">Describe</a> for T</code></li>
+<li><code><span class="k">implements:</span> <a href="#type.impls.Render">Render</a> for (u8, u8)</code></li>
+<li><code><span class="k">implements:</span> <a href="#type.impls.Render">Render</a> for [<a href="#type.impls.Widget">Widget</a>]</code></li>
+<li><code><span class="k">implements:</span> <a href="#type.impls.Render">Render</a> for Box&lt;<a href="#type.impls.Widget">Widget</a>&gt;</code></li>
+<li><code><span class="k">implements:</span> <a href="#type.impls.Render">Render</a> for <a href="#type.impls.Widget">Widget</a>&amp;</code></li>
 </ul>
 </main>

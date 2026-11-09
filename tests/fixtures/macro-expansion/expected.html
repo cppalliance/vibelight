@@ -40,30 +40,28 @@
 <h2 id="mod.macro_expansion">macro_expansion</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 re-export; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Alpha;
-
-<span class="k">pub</span> <span class="k">struct</span> Beta;
-
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.macro_expansion.events.Event">events::Event</a>;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">run_of</span>(event: &amp;<a href="#type.macro_expansion.events.Event">Event</a>) -&gt; &amp;str;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Alpha
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Beta
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> <a href="#type.macro_expansion.events.Event">events::Event</a>
+<a class="fn" href="#fn.macro_expansion.run_of">run_of</a>(event: <a href="#type.macro_expansion.events.Event">Event</a>&amp;) -&gt; str&amp;</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.macro_expansion.Alpha">Alpha</h3>
 <div class="doc">
 <p><span class="c">A marker that the macro writes.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Alpha;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Alpha</code></pre>
 <h3 id="type.macro_expansion.Beta">Beta</h3>
 <div class="doc">
 <p><span class="c">A marker that the macro writes.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Beta;</code></pre>
-<pre><code><span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> markers!</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> markers!</span>
-
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.macro_expansion.events.Event">events::Event</a>;
-
-<span class="c">///</span><span class="c"> Reads the run of an event.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.macro_expansion.run_of">run_of</span>(event: &amp;<a href="#type.macro_expansion.events.Event">Event</a>) -&gt; &amp;str;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Beta</code></pre>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> markers!</span>
+<span class="gap"></span> <span class="c"><b class="m">MACRO</b></span><span class="c"> markers!</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> <a href="#type.macro_expansion.events.Event">events::Event</a>
+<span class="gap"></span><span class="c"> Reads the run of an event.</span>
+<span class="src" id="fn.macro_expansion.run_of">run_of</span>(event: <a href="#type.macro_expansion.events.Event">Event</a>&amp;) -&gt; str&amp;</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> markers!</p>
 <p class="mark" id="macro.2"><b class="m">MACRO</b> markers!</p>
 <h2 id="mod.macro_expansion.events">events</h2>
@@ -72,61 +70,58 @@
 </div>
 <p class="anatomy">mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event {
-    <span class="src">Started</span> {
+<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event : Clone, Debug
+{
+    <span class="src">Started</span>
+    {
         execution: String,
     },
-    <span class="src">Stopped</span> {
-        execution: String, code: i32,
+    <span class="src">Stopped</span>
+    {
+        execution: String,
+        code: i32,
     },
-    <span class="src">Moved</span> {
-        execution: String, from: u32, to: u32,
+    <span class="src">Moved</span>
+    {
+        execution: String,
+        from: u32,
+        to: u32,
     },
-}
-<span class="k">impl</span> Event {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">execution</span>(&amp;<span class="k">self</span>) -&gt; &amp;str;
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.macro_expansion.events.Event.execution">execution</a>() -&gt; str&amp;
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.macro_expansion.events.Event"><span class="dim">events::</span>Event</h3>
 <div class="doc">
 <p><span class="c">One thing that happened during a run.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Clone, Debug)]</span>
-<span class="k">pub</span> <span class="k">enum</span> Event {
-    <span class="c">///</span><span class="c"> The run started.</span>
-    <span class="src">Started</span> {
-        <span class="c">///</span><span class="c"> The run that produced the event, as the scheduler names it in every log line.</span>
-        execution: String,
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Event : Clone, Debug
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The run started.</span></div>    <span class="src">Started</span>
+    {
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run that produced the event, as the scheduler names it in every log line.</span></div>        execution: String,
     },
-
-    <span class="src">Stopped</span> {
-        <span class="c">///</span><span class="c"> The run that produced the event, as the scheduler names it in every log line.</span>
-        execution: String,
-
-        code: i32,
+<span class="gap"></span>    <span class="src">Stopped</span>
+    {
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run that produced the event, as the scheduler names it in every log line.</span></div>        execution: String,
+<span class="gap"></span>        code: i32,
     },
-
-    <span class="src">Moved</span> {
-        <span class="c">///</span><span class="c"> The run that produced the event, as the scheduler names it in every log line.</span>
-        execution: String,
-
-        from: u32,
-        to: u32,
+<span class="gap"></span>    <span class="src">Moved</span>
+    {
+<div class="mc" style="margin-left:calc(8ch - .9rem)"><span class="c">The run that produced the event, as the scheduler names it in every log line.</span></div>        execution: String,
+<span class="gap"></span>        from: u32,
+<span class="gap"></span>        to: u32,
     },
-}
-
-<span class="k">impl</span> Event {
-    <span class="c">///</span><span class="c"> Returns the run that produced the event.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">execution</span>(&amp;<span class="k">self</span>) -&gt; &amp;str;
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the run that produced the event.</span></div>    <span class="src" id="fn.macro_expansion.events.Event.execution">execution</span>() -&gt; str&amp;
 }</code></pre>
 <div class="doc">
 <p><span class="c">Declares the event enum and its accessor: every variant carries</span> <code><span class="c">execution</span></code><span class="c"> first, then its own fields.</span></p>
 </div>
 <pre><code><span class="dim">reaches pub(crate)</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! events</span>
-
-<span class="dim">reaches pub(crate)</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span></code></pre>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! events</span>
+<span class="gap"></span><span class="dim">reaches pub(crate)</span>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span></code></pre>
 <p class="mark" id="macro.3"><b class="m">MACRO</b> macro_rules! events</p>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> events!</p>
 <h2 id="mod.macro_expansion.shapes">shapes</h2>
@@ -138,6 +133,6 @@
 <p><span class="c">Writes one marker type per name, one name at a time.</span></p>
 </div>
 <pre><code><span class="dim">reaches pub(crate)</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! markers</span></code></pre>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! markers</span></code></pre>
 <p class="mark" id="macro.5"><b class="m">MACRO</b> macro_rules! markers</p>
 </main>

@@ -37,84 +37,78 @@
 <h2 id="mod.body_uses">body_uses</h2>
 <p class="anatomy">crate root: 7 types, 1 function; pub 8</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Listed;
-
-<span class="k">pub</span> <span class="k">struct</span> Marker;
-
-<span class="k">pub</span> <span class="k">struct</span> Probe;
-
-<span class="k">pub</span> <span class="k">trait</span> Lister {
-    <span class="k">fn</span> <span class="src">mark</span>(&amp;<span class="k">self</span>);
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Listed
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Marker
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Probe
+<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Lister
+{
+    <a class="fn" href="#fn.body_uses.Lister.mark">mark</a>()
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Lonely;
-<span class="k">impl</span> Lonely {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">again</span>();
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Lonely
+{
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.body_uses.Lonely.again">again</a>()
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Runner;
-<span class="k">impl</span> Runner {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">probe</span>(&amp;<span class="k">self</span>);
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Runner
+{
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.body_uses.Runner.probe">probe</a>()
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Wrapped;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">list</span>();</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Wrapped
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.body_uses.list">list</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.body_uses.Listed">Listed</h3>
 <div class="doc">
 <p><span class="c">Named only inside a free function's body.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Listed;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Listed</code></pre>
 <h3 id="type.body_uses.Marker">Marker</h3>
 <div class="doc">
 <p><span class="c">Named only in a trait's default method body.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker</code></pre>
 <h3 id="type.body_uses.Probe">Probe</h3>
 <div class="doc">
 <p><span class="c">Named only inside a method body of another type.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Probe;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Probe</code></pre>
 <h3 id="type.body_uses.Lister">Lister</h3>
 <div class="doc">
 <p><span class="c">Lists things.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Lister {
-    <span class="c">///</span><span class="c"> Marks.</span>
-    <span class="k">fn</span> <span class="src">mark</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Lister
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Marks.</span></div>    <span class="src" id="fn.body_uses.Lister.mark">mark</span>()
 }</code></pre>
 <h3 id="type.body_uses.Lonely">Lonely</h3>
 <div class="doc">
 <p><span class="c">Named only inside its own method body, so it stays unconnected.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Lonely;
-
-<span class="k">impl</span> Lonely {
-    <span class="c">///</span><span class="c"> Makes another one.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">again</span>();
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Lonely
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes another one.</span></div>    <span class="k">static</span> <span class="src" id="fn.body_uses.Lonely.again">again</span>()
 }</code></pre>
 <h3 id="type.body_uses.Runner">Runner</h3>
 <div class="doc">
 <p><span class="c">Runs things.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Runner;
-
-<span class="k">impl</span> Runner {
-    <span class="c">///</span><span class="c"> Makes a probe.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">probe</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Runner
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a probe.</span></div>    <span class="src" id="fn.body_uses.Runner.probe">probe</span>()
 }</code></pre>
 <h3 id="type.body_uses.Wrapped">Wrapped</h3>
 <div class="doc">
 <p><span class="c">Named only inside an impl on a wrapper of itself, so it stays</span> <span class="c">unconnected.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapped;</code></pre>
-<div class="doc">
-<p><span class="c">Lists one thing.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.body_uses.list">list</span>();</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapped</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Lists one thing.</span>
+<span class="src" id="fn.body_uses.list">list</span>()</code></pre>
 <h2 id="impls">Other impls</h2>
 <ul class="impls">
-<li><code><span class="k">impl</span> Default <span class="k">for</span> Box&lt;<a href="#type.body_uses.Wrapped">Wrapped</a>&gt; {}</code></li>
+<li><code><span class="k">implements:</span> Default for Box&lt;<a href="#type.body_uses.Wrapped">Wrapped</a>&gt;</code></li>
 </ul>
 </main>

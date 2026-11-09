@@ -90,6 +90,7 @@ pub(crate) fn attach(krate: &mut Crate) -> Vec<usize> {
                 arg: base.arg.clone(),
                 derived: false,
                 notes: std::mem::take(&mut impl_notes),
+                loc,
             });
         }
         if !impl_notes.is_empty() {

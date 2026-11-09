@@ -180,32 +180,14 @@ fn module_named_lib_passes() {
 }
 
 #[test]
-fn file_over_500_lines_is_a_violation() {
-    let long = "//! Line.\n".repeat(501);
+fn a_file_has_no_length_limit() {
+    let long = "//! Line.\n".repeat(5000);
     let dir = package(&[
         ("build/big.rs", long.as_str()),
         ("src/big.rs", long.as_str()),
         ("tests/it/big.rs", long.as_str()),
     ]);
-    let found = rules::long_files(dir.path()).unwrap();
-    let expected = ["build/big.rs", "src/big.rs", "tests/it/big.rs"];
-    assert_eq!(
-        summary(&found),
-        expected.map(|path| (path, rules::LONG_FILE))
-    );
-    assert_eq!(found[0].fix, "split its 501 lines into smaller modules");
-}
-
-#[test]
-fn file_of_500_lines_passes() {
-    let full = "//! Line.\n".repeat(500);
-    let long = "//! Line.\n".repeat(501);
-    let dir = package(&[
-        ("src/full.rs", full.as_str()),
-        ("src/notes.txt", long.as_str()),
-        ("examples/long.rs", long.as_str()),
-    ]);
-    assert_clean(&rules::long_files(dir.path()).unwrap());
+    assert_clean(&rules::check(dir.path()).unwrap());
 }
 
 #[test]

@@ -38,37 +38,32 @@
 <h2 id="mod.macros">macros</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 value; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Event {
-    <span class="k">pub</span> <span class="src">name</span>: String,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Event : Clone, Debug, PartialEq
+{
+<span class="k">pub:</span>
+    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.macros.Event.emit">emit</a>()
 }
-<span class="k">impl</span> Event {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">emit</span>(&amp;<span class="k">self</span>);
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Started
+{
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Started;
-<span class="k">impl</span> Started {
-}
-
-<span class="k">pub</span> <span class="k">const</span> <span class="src">NAME</span>: &amp;str;
-<span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="src">main</span>();</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src">NAME</span>: str&amp;
+<span class="k">async</span> <a class="fn" href="#fn.macros.main">main</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.macros.Event">Event</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> attribute: serde_like::tag</p>
 <div class="doc">
 <p><span class="c">A type with derives and an attribute macro.</span></p>
 </div>
-<pre><code><span class="dim">#[derive(Clone, Debug, PartialEq)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Event {
-    <span class="dim">#[serde(rename = "n")]</span>
-    <span class="k">pub</span> <span class="src">name</span>: String,
-
-    <span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span>
-}
-
-<span class="k">impl</span> Event {
-    <span class="c">///</span><span class="c"> Has an attribute macro.</span>
-    <span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">emit</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Event : Clone, Debug, PartialEq
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span></div><span class="gap"></span><span class="k">pub:</span>
+    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
+<span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span></div>    <span class="src" id="fn.macros.Event.emit">emit</span>()
 }</code></pre>
 <p class="mark" id="macro.2"><b class="m">MACRO</b> forward_methods!</p>
 <p class="mark" id="macro.3"><b class="m">MACRO</b> attribute: tracing::instrument</p>
@@ -76,28 +71,23 @@
 <div class="doc">
 <p><span class="c">Named by the module-level invocations.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Started;
-
-<span class="k">impl</span> Started {
-    <span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
-    <span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span>
-}</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Started
+{
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
+<span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span></div>}</code></pre>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> events!</p>
 <p class="mark" id="macro.5"><b class="m">MACRO</b> lifecycle_constants!</p>
-<pre><code><span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
-
-<span class="c">///</span><span class="c"> Defines the events.</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! events</span>
-
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span>
-
-<span class="c">///</span><span class="c"> A value with a macro.</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> stringify!</span>
-<span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.macros.NAME">NAME</span>: &amp;str;
-
-<span class="c">///</span><span class="c"> The entry point.</span>
-<span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tokio::main</span>
-<span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="src" id="fn.macros.main">main</span>();</code></pre>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
+<span class="gap"></span><span class="c"> Defines the events.</span>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! events</span>
+<span class="gap"></span> <span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="c"> A value with a macro.</span>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> stringify!</span>
+<span class="k">constexpr</span> <span class="src" id="const.macros.NAME">NAME</span>: str&amp;
+<span class="gap"></span><span class="c"> The entry point.</span>
+ <span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tokio::main</span>
+<span class="k">async</span> <span class="src" id="fn.macros.main">main</span>()</code></pre>
 <p class="mark" id="macro.6"><b class="m">MACRO</b> events!</p>
 <p class="mark" id="macro.7"><b class="m">MACRO</b> macro_rules! events</p>
 <p class="mark" id="macro.8"><b class="m">MACRO</b> lifecycle_constants!</p>

@@ -14,4 +14,5 @@ mod stamp;
 mod structure;
 mod subcommand;
 mod support;
+mod type_size;
 mod workspaces;

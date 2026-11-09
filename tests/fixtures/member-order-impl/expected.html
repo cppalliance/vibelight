@@ -23,40 +23,34 @@
 <h2 id="mod.member_order_impl">member_order_impl</h2>
 <p class="anatomy">crate root: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Engine {
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Engine
+{
+<span class="k">pub(self):</span>
     <span class="src">speed</span>: u32,
-}
-<span class="k">impl</span> Engine {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.member_order_impl.Engine">Engine</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">brake</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">start</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">stop</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>) -&gt; bool;
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.member_order_impl.Engine.new">new</a>() -&gt; <a href="#type.member_order_impl.Engine">Engine</a>
+    <a class="fn" href="#fn.member_order_impl.Engine.brake">brake</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.member_order_impl.Engine.start">start</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.member_order_impl.Engine.stop">stop</a>() <span class="k">mut</span>
+<span class="k">pub(self):</span>
+    <a class="fn" href="#fn.member_order_impl.Engine.check">check</a>() -&gt; bool
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.member_order_impl.Engine">Engine</h3>
 <div class="doc">
 <p><span class="c">A type with methods in two files.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Engine {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Engine
+{
+<span class="k">pub(self):</span>
     <span class="src">speed</span>: u32,
-}
-
-<span class="k">impl</span> Engine {
-    <span class="c">///</span><span class="c"> Makes one.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.member_order_impl.Engine">Engine</a>;
-
-    <span class="c">///</span><span class="c"> Brakes.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">brake</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Starts it.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">start</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Stops it.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">stop</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Checks it.</span>
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>) -&gt; bool;
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src" id="fn.member_order_impl.Engine.new">new</span>() -&gt; <a href="#type.member_order_impl.Engine">Engine</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Brakes.</span></div>    <span class="src" id="fn.member_order_impl.Engine.brake">brake</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Starts it.</span></div>    <span class="src" id="fn.member_order_impl.Engine.start">start</span>() <span class="k">mut</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Stops it.</span></div>    <span class="src" id="fn.member_order_impl.Engine.stop">stop</span>() <span class="k">mut</span>
+<span class="gap"></span><span class="k">pub(self):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>    <span class="src" id="fn.member_order_impl.Engine.check">check</span>() -&gt; bool
 }</code></pre>
 <h2 id="mod.member_order_impl.more">more</h2>
 <div class="doc">

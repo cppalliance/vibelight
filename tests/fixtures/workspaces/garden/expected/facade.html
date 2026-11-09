@@ -6,6 +6,14 @@
 </ul>
 </li>
 </ul>
+<hr>
+<ul class="symbols">
+<li><a href="#api.Gauge">Gauge</a></li>
+<li><a href="#api.Meter">Meter</a></li>
+<li><a href="#type.facade.Panel">Panel</a></li>
+<li><a href="#api.Reads">Reads</a></li>
+<li><a href="#fn.facade.show">show()</a></li>
+</ul>
 </nav>
 <main>
 <p class="stamp">Updated <time datetime="2026-01-01T00:00:00Z">2026-01-01T00:00:00Z</time></p>
@@ -16,70 +24,74 @@
 <p class="note" id="api">The public API of facade: 5 items, from 2 other crates. Each shows only what a user of facade can name.</p>
 <h2 id="api.mod">facade</h2>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge;
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge
 
-<span class="k">pub</span> <span class="k">struct</span> Meter {
-    <span class="k">pub</span> <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>, <span class="k">pub</span> <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>, <span class="k">pub</span> <span class="src">stray</span>: delta::Stray,
-    <span class="k">pub</span> <span class="src">vendored</span>: gamma::Vendored,
+<span class="k">pub</span> <span class="k">struct</span> Meter
+{
+<span class="k">pub:</span>
+    <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
+    <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
+    <span class="src">stray</span>: delta::Stray,
+    <span class="src">vendored</span>: gamma::Vendored,
 }
 
-<span class="k">pub</span> <span class="k">struct</span> Panel {
-    <span class="k">pub</span> <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c"><span class="c"><a href="#api.Reads">alpha::Reads</a></span></span>
-
-<span class="k">pub</span> <span class="k">trait</span> Reads {
-    <span class="k">fn</span> <span class="src">read</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<span class="k">pub</span> <span class="k">struct</span> Panel
+    : <a href="#api.Reads">alpha::Reads</a>
+{
+<span class="k">pub:</span>
+    <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
 }
 
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">show</span>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: &amp;T) -&gt; u32;</code></pre>
+<span class="k">pub</span> <span class="k">trait</span> Reads
+{
+    <a class="fn" href="#api.Reads.read">read</a>() -&gt; u32
+}
+
+<a class="fn" href="#fn.facade.show">show</a>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: T&amp;) -&gt; u32</code></pre>
 <p class="view">Documented</p>
 <h3 id="api.Gauge"><span class="dim">facade::</span>Gauge</h3>
 <p class="defined">Defined in <a class="cross" href="beta.html#type.beta.parts.Gauge">beta::parts::Gauge</a>, <span class="src">src/lib.rs:7</span></p>
 <div class="doc">
 <p><span class="c">A gauge.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Gauge;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Gauge</code></pre>
 <h3 id="api.Meter"><span class="dim">facade::</span>Meter</h3>
 <p class="defined">Defined in <a class="cross" href="alpha.html#type.alpha.Meter">alpha::Meter</a>, <span class="src">src/lib.rs:6</span></p>
 <div class="doc">
 <p><span class="c">A meter that reads a gauge of beta.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Meter {
-    <span class="c">///</span><span class="c"> Through a use of the re-export at beta's root.</span>
-    <span class="k">pub</span> <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
-
-    <span class="c">///</span><span class="c"> Through beta's module path.</span>
-    <span class="k">pub</span> <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
-
-    <span class="c">///</span><span class="c"> A crate outside the run stays plain.</span>
-    <span class="k">pub</span> <span class="src">stray</span>: delta::Stray,
-
-    <span class="c">///</span><span class="c"> A crate that no follow glob allows stays plain.</span>
-    <span class="k">pub</span> <span class="src">vendored</span>: gamma::Vendored,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Meter
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a use of the re-export at beta's root.</span></div>    <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through beta's module path.</span></div>    <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A crate outside the run stays plain.</span></div>    <span class="src">stray</span>: delta::Stray,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A crate that no follow glob allows stays plain.</span></div>    <span class="src">vendored</span>: gamma::Vendored,
 }</code></pre>
 <h3 id="type.facade.Panel"><span class="dim">facade::</span>Panel</h3>
 <p class="defined"><span class="src">src/lib.rs:8</span></p>
 <div class="doc">
 <p><span class="c">A panel that reads through alpha's trait.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Panel {
-    <span class="c">///</span><span class="c"> A meter from alpha.</span>
-    <span class="k">pub</span> <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
-}
-<span class="c">// </span><span class="c">implements </span><span class="c"><span class="c"><a href="#api.Reads">alpha::Reads</a></span></span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Panel
+    : <a href="#api.Reads">alpha::Reads</a>
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A meter from alpha.</span></div>    <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
+}</code></pre>
 <h3 id="api.Reads"><span class="dim">facade::</span>Reads</h3>
 <p class="defined">Defined in <a class="cross" href="alpha.html#type.alpha.Reads">alpha::Reads</a>, <span class="src">src/lib.rs:18</span></p>
 <div class="doc">
 <p><span class="c">A trait other crates implement.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Reads {
-    <span class="k">fn</span> <span class="src">read</span>(&amp;<span class="k">self</span>) -&gt; u32;
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Reads
+{
+    <span class="src" id="api.Reads.read">read</span>() -&gt; u32
 }</code></pre>
 <h3 id="fn.facade.show"><span class="dim">facade::</span>show</h3>
 <p class="defined"><span class="src">src/lib.rs:20</span></p>
 <div class="doc">
 <p><span class="c">Shows any reader.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">show</span>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: &amp;T) -&gt; u32;</code></pre>
+<pre><code><span class="src">show</span>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: T&amp;) -&gt; u32</code></pre>
 </main>

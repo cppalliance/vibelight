@@ -30,88 +30,97 @@
 <h2 id="mod.member_order">member_order</h2>
 <p class="anatomy">crate root: 5 types; pub 5</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Based;
-<span class="c">// </span><span class="c">implements </span><span class="c">AsRef</span><span class="c">&lt;</span><span class="c"><span class="c">str</span></span><span class="c">&gt;</span><span class="c">, </span><span class="c">Clone</span><span class="c">, </span><span class="c">Debug</span><span class="c">, </span><span class="c">Default</span>
-
-<span class="k">pub</span> <span class="k">trait</span> Grouped {
-    <span class="k">type</span> <span class="src">Out</span>;
-    <span class="k">const</span> <span class="src">LIMIT</span>: u8;
-    <span class="k">fn</span> <span class="src">build</span>() -&gt; Self;
-    <span class="k">fn</span> <span class="src">member</span>(&amp;<span class="k">self</span>);
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Based : AsRef&lt;str&gt;, Clone, Debug
+{
+<span class="k">pub:</span>
+    <span class="src">Based</span>()
 }
-
-<span class="k">pub</span> <span class="k">enum</span> Order {
-    <span class="src">Zulu</span>, <span class="src">Alpha</span>, <span class="src">Mike</span>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Grouped
+{
+    <span class="k">using</span> <span class="src">Out</span>
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8
+    <span class="k">static</span> <a class="fn" href="#fn.member_order.Grouped.build">build</a>() -&gt; Self
+    <a class="fn" href="#fn.member_order.Grouped.member">member</a>()
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Scrambled {
-    <span class="k">pub</span> <span class="src">zeta</span>: u8, <span class="k">pub</span> <span class="src">alpha</span>: u8, <span class="k">pub</span> <span class="src">Alpha</span>: u8, <span class="src">beta</span>: u8,
+<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Order
+{
+    <span class="src">Zulu</span>,
+    <span class="src">Alpha</span>,
+    <span class="src">Mike</span>,
 }
-<span class="k">impl</span> Scrambled {
-    <span class="k">pub</span> <span class="k">const</span> <span class="src">MAX</span>: u8 = 9;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">Apply</span>(&amp;<span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">apply</span>(&amp;<span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">zed</span>(&amp;<span class="k">self</span>);
-    <span class="k">fn</span> <span class="src">hidden</span>();
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Scrambled
+{
+<span class="k">pub:</span>
+    <span class="src">zeta</span>: u8,
+    <span class="src">alpha</span>: u8,
+    <span class="src">Alpha</span>: u8,
+<span class="k">pub(self):</span>
+    <span class="src">beta</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
+    <span class="k">static</span> <a class="fn" href="#fn.member_order.Scrambled.make">make</a>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
+    <a class="fn" href="#fn.member_order.Scrambled.Apply">Apply</a>()
+    <a class="fn" href="#fn.member_order.Scrambled.apply">apply</a>()
+    <a class="fn" href="#fn.member_order.Scrambled.zed">zed</a>()
+<span class="k">pub(self):</span>
+    <span class="k">static</span> <a class="fn" href="#fn.member_order.Scrambled.hidden">hidden</a>()
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Triple(<span class="k">pub</span> u8, <span class="k">pub</span> String, <span class="k">pub</span> bool);</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Triple(<span class="k">pub</span> u8, <span class="k">pub</span> String, <span class="k">pub</span> bool)</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.member_order.Based">Based</h3>
 <div class="doc">
 <p><span class="c">The base list is sorted.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Based;
-<span class="c">// </span><span class="c">implements </span><span class="c">AsRef</span><span class="c">&lt;</span><span class="c"><span class="c">str</span></span><span class="c">&gt;</span><span class="c">, </span><span class="c">Clone</span><span class="c">, </span><span class="c">Debug</span><span class="c">, </span><span class="c">Default</span></code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Based : AsRef&lt;str&gt;, Clone, Debug
+{
+<span class="k">pub:</span>
+    <span class="src">Based</span>()
+}</code></pre>
 <h3 id="type.member_order.Grouped">Grouped</h3>
 <div class="doc">
 <p><span class="c">Trait items in scrambled order.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Grouped {
-    <span class="k">type</span> <span class="src">Out</span>;
-
-    <span class="k">const</span> <span class="src">LIMIT</span>: u8;
-
-    <span class="k">fn</span> <span class="src">build</span>() -&gt; Self;
-
-    <span class="k">fn</span> <span class="src">member</span>(&amp;<span class="k">self</span>);
+<pre><code><span class="k">pub</span> <span class="k">trait</span> Grouped
+{
+    <span class="k">using</span> <span class="src">Out</span>
+<span class="gap"></span>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8
+<span class="gap"></span>    <span class="k">static</span> <span class="src" id="fn.member_order.Grouped.build">build</span>() -&gt; Self
+<span class="gap"></span>    <span class="src" id="fn.member_order.Grouped.member">member</span>()
 }</code></pre>
 <h3 id="type.member_order.Order">Order</h3>
 <div class="doc">
 <p><span class="c">Variants keep their declared order.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">enum</span> Order {
+<pre><code><span class="k">pub</span> <span class="k">enum</span> Order
+{
     <span class="src">Zulu</span>,
-    <span class="src">Alpha</span>,
-    <span class="src">Mike</span>,
+<span class="gap"></span>    <span class="src">Alpha</span>,
+<span class="gap"></span>    <span class="src">Mike</span>,
 }</code></pre>
 <h3 id="type.member_order.Scrambled">Scrambled</h3>
 <div class="doc">
 <p><span class="c">Members in scrambled order.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Scrambled {
-    <span class="k">pub</span> <span class="src">zeta</span>: u8,
-    <span class="k">pub</span> <span class="src">alpha</span>: u8,
-    <span class="k">pub</span> <span class="src">Alpha</span>: u8,
-
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Scrambled
+{
+<span class="k">pub:</span>
+    <span class="src">zeta</span>: u8,
+<span class="gap"></span>    <span class="src">alpha</span>: u8,
+<span class="gap"></span>    <span class="src">Alpha</span>: u8,
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">beta</span>: u8,
-}
-
-<span class="k">impl</span> Scrambled {
-    <span class="k">pub</span> <span class="k">const</span> <span class="src">MAX</span>: u8 = 9;
-
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>;
-
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">Apply</span>(&amp;<span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">apply</span>(&amp;<span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">zed</span>(&amp;<span class="k">self</span>);
-
-    <span class="k">fn</span> <span class="src">hidden</span>();
+<span class="gap"></span><span class="k">pub:</span>
+    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
+<span class="gap"></span>    <span class="k">static</span> <span class="src" id="fn.member_order.Scrambled.make">make</span>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
+<span class="gap"></span>    <span class="src" id="fn.member_order.Scrambled.Apply">Apply</span>()
+<span class="gap"></span>    <span class="src" id="fn.member_order.Scrambled.apply">apply</span>()
+<span class="gap"></span>    <span class="src" id="fn.member_order.Scrambled.zed">zed</span>()
+<span class="gap"></span><span class="k">pub(self):</span>
+    <span class="k">static</span> <span class="src" id="fn.member_order.Scrambled.hidden">hidden</span>()
 }</code></pre>
 <h3 id="type.member_order.Triple">Triple</h3>
 <div class="doc">
 <p><span class="c">Tuple fields keep their declared order.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Triple(<span class="k">pub</span> u8, <span class="k">pub</span> String, <span class="k">pub</span> bool);</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Triple(<span class="k">pub</span> u8, <span class="k">pub</span> String, <span class="k">pub</span> bool)</code></pre>
 </main>

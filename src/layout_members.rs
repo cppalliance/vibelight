@@ -1,9 +1,9 @@
-//! Lays out the entries between a type's braces and an impl's: members and
-//! variants, each as Rust declares it, with its own visibility.
+//! Lays out the entries between a type's braces: members and variants.
 
 use crate::access::Access;
 use crate::layout::{
-    Line, Span, above, code, const_line, fn_lines, key, note_lines, plain, vis_spans, width,
+    Anchor, Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
+    vis_spans, width,
 };
 use crate::layout_groups::{Entry, reaches_line, spaced};
 use crate::layout_marker::Marker;
@@ -15,15 +15,13 @@ use crate::wrap::MAX_WIDTH;
 /// otherwise.
 pub(crate) fn member_entry(krate: &Crate, member: &Member, shown: Option<Access>) -> Entry {
     let refs = &krate.refs;
-    let (mut lines, repeats) = above(&member.meta, 4, member.loc);
+    let attrs_above = matches!(member.kind, MemberKind::Type(_) | MemberKind::Const { .. });
+    let (mut lines, repeats) = above(&member.meta, 4, member.loc, attrs_above);
     lines.extend(reaches_line(&member.meta, 4, shown));
     let name = Span::Name(member.name.clone(), member.loc);
-    let trailing = member.meta.trailing.clone();
-    let vis = &member.meta.vis;
     match &member.kind {
         MemberKind::Type(text) => {
-            let mut spans = vis_spans(vis);
-            spans.extend([key("type"), plain(" ")]);
+            let mut spans = vec![key("using"), plain(" ")];
             let mut rest = code(text);
             if let Some(Span::Code(first)) = rest.first_mut() {
                 let split = first
@@ -35,33 +33,52 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member, shown: Option<Access>
                 *first = after;
             }
             spans.extend(rest);
-            spans.push(plain(";"));
             lines.push(Line {
                 indent: 4,
                 spans,
-                trailing,
+                trailing: member.meta.trailing.clone(),
             });
         }
         MemberKind::Const { ty, value } => {
-            let mut spans = vis_spans(vis);
-            spans.extend([key("const"), plain(" "), name, plain(": ")]);
+            let mut spans = vec![
+                key("static"),
+                plain(" "),
+                key("constexpr"),
+                plain(" "),
+                name,
+                plain(": "),
+            ];
             spans.extend(code(ty));
-            lines.push(const_line(spans, value.as_deref(), 4, trailing, refs));
+            lines.push(const_line(
+                spans,
+                value.as_deref(),
+                4,
+                member.meta.trailing.clone(),
+                refs,
+            ));
         }
         MemberKind::Field(ty) => {
-            let mut spans = vis_spans(vis);
-            spans.extend([name, plain(": ")]);
+            let mut spans = vec![name, plain(": ")];
             spans.extend(code(ty));
             spans.push(plain(","));
+            spans.extend(attributes_end(&member.meta.attrs));
             lines.push(Line {
                 indent: 4,
                 spans,
-                trailing,
+                trailing: member.meta.trailing.clone(),
             });
         }
         MemberKind::Fn(sig) => {
-            let name = Span::Name(sig.name.clone(), member.loc);
-            lines.extend(fn_lines(krate, sig, vis, name, trailing, 4));
+            let trailing = member.meta.trailing.clone();
+            lines.extend(fn_lines(
+                krate,
+                sig,
+                Span::Fn(sig.name.clone(), member.loc, Anchor::None),
+                trailing,
+                4,
+                member.kind.is_static_fn(),
+                &member.meta.attrs,
+            ));
         }
         MemberKind::Mark(_) | MemberKind::Unsupported(_) => {}
     }
@@ -73,7 +90,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member, shown: Option<Access>
 }
 
 pub(crate) fn variant_entry(variant: &Variant, refs: &[TypeRef]) -> Entry {
-    let (mut lines, repeats) = above(&variant.meta, 4, variant.loc);
+    let (mut lines, repeats) = above(&variant.meta, 4, variant.loc, true);
     let name = Span::Name(variant.name.clone(), variant.loc);
     let discriminant = variant
         .discriminant
@@ -161,11 +178,18 @@ fn expanded_variant(
     discriminant: Option<Span>,
     trailing: Option<String>,
 ) -> Vec<Line> {
-    let mut lines = vec![Line {
-        indent: 4,
-        spans: vec![name, plain(" {")],
-        trailing: None,
-    }];
+    let mut lines = vec![
+        Line {
+            indent: 4,
+            spans: vec![name],
+            trailing: None,
+        },
+        Line {
+            indent: 4,
+            spans: vec![plain("{")],
+            trailing: None,
+        },
+    ];
     lines.extend(spaced(fields.iter().map(|field| {
         let mut field_lines = note_lines(&field.meta.notes, 8, Marker::DOC);
         let mut spans = code(&field.text);

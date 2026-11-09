@@ -63,78 +63,94 @@
 <h2 id="mod.order_groups">order_groups</h2>
 <p class="anatomy">crate root: 3 types; pub 3</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> App {
-    <span class="k">pub</span> <span class="src">a_core</span>: <a href="#type.order_groups.engine.Core">engine::Core</a>, <span class="k">pub</span> <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>, <span class="k">pub</span> <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> App
+{
+<span class="k">pub:</span>
+    <span class="src">a_core</span>: <a href="#type.order_groups.engine.Core">engine::Core</a>,
+    <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>,
+    <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Log {
-    <span class="k">pub</span> <span class="src">level</span>: <a href="#type.order_groups.Level">Level</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Log
+{
+<span class="k">pub:</span>
+    <span class="src">level</span>: <a href="#type.order_groups.Level">Level</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Level;</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Level</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.App">App</h3>
 <div class="doc">
 <p><span class="c">The only root: it names Core, Db, and Log, in that order.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> App {
-    <span class="k">pub</span> <span class="src">a_core</span>: <a href="#type.order_groups.engine.Core">engine::Core</a>,
-    <span class="k">pub</span> <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>,
-    <span class="k">pub</span> <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> App
+{
+<span class="k">pub:</span>
+    <span class="src">a_core</span>: <a href="#type.order_groups.engine.Core">engine::Core</a>,
+<span class="gap"></span>    <span class="src">b_db</span>: <a href="#type.order_groups.store.Db">store::Db</a>,
+<span class="gap"></span>    <span class="src">c_log</span>: <a href="#type.order_groups.Log">Log</a>,
 }</code></pre>
 <h3 id="type.order_groups.Log">Log</h3>
 <div class="doc">
 <p><span class="c">Named only by App, in the crate root.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Log {
-    <span class="k">pub</span> <span class="src">level</span>: <a href="#type.order_groups.Level">Level</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Log
+{
+<span class="k">pub:</span>
+    <span class="src">level</span>: <a href="#type.order_groups.Level">Level</a>,
 }</code></pre>
 <h3 id="type.order_groups.Level">Level</h3>
 <div class="doc">
 <p><span class="c">Named only by Log, in the crate root.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Level;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Level</code></pre>
 <h2 id="mod.order_groups.engine">engine</h2>
 <div class="doc">
 <p><span class="c">The engine.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Core {
-    <span class="k">pub</span> <span class="src">a_plan</span>: <a href="#type.order_groups.engine.Plan">Plan</a>, <span class="k">pub</span> <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Core
+{
+<span class="k">pub:</span>
+    <span class="src">a_plan</span>: <a href="#type.order_groups.engine.Plan">Plan</a>,
+    <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Plan;</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Plan</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.engine.Core"><span class="dim">engine::</span>Core</h3>
 <div class="doc">
 <p><span class="c">Named only by App; names Plan, then Queue.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Core {
-    <span class="k">pub</span> <span class="src">a_plan</span>: <a href="#type.order_groups.engine.Plan">Plan</a>,
-    <span class="k">pub</span> <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Core
+{
+<span class="k">pub:</span>
+    <span class="src">a_plan</span>: <a href="#type.order_groups.engine.Plan">Plan</a>,
+<span class="gap"></span>    <span class="src">b_queue</span>: <a href="#type.order_groups.engine.sched.Queue">sched::Queue</a>,
 }</code></pre>
 <h3 id="type.order_groups.engine.Plan"><span class="dim">engine::</span>Plan</h3>
 <div class="doc">
 <p><span class="c">Named only by Core.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Plan;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Plan</code></pre>
 <h2 id="mod.order_groups.engine.sched"><span class="dim">engine::</span>sched</h2>
 <div class="doc">
 <p><span class="c">The scheduler.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Queue {
-    <span class="k">pub</span> <span class="src">slot</span>: <a href="#type.order_groups.engine.sched.deep.Slot">deep::Slot</a>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Queue
+{
+<span class="k">pub:</span>
+    <span class="src">slot</span>: <a href="#type.order_groups.engine.sched.deep.Slot">deep::Slot</a>,
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.engine.sched.Queue"><span class="dim">engine::sched::</span>Queue</h3>
 <div class="doc">
 <p><span class="c">Named only by Core; names Slot.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Queue {
-    <span class="k">pub</span> <span class="src">slot</span>: <a href="#type.order_groups.engine.sched.deep.Slot">deep::Slot</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Queue
+{
+<span class="k">pub:</span>
+    <span class="src">slot</span>: <a href="#type.order_groups.engine.sched.deep.Slot">deep::Slot</a>,
 }</code></pre>
 <h2 id="mod.order_groups.engine.sched.deep"><span class="dim">engine::sched::</span>deep</h2>
 <div class="doc">
@@ -142,37 +158,37 @@
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Slot;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Slot</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.engine.sched.deep.Slot"><span class="dim">engine::sched::deep::</span>Slot</h3>
 <div class="doc">
 <p><span class="c">Named only by Queue.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Slot;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Slot</code></pre>
 <h2 id="mod.order_groups.store">store</h2>
 <div class="doc">
 <p><span class="c">The store.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Db;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Db</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.store.Db"><span class="dim">store::</span>Db</h3>
 <div class="doc">
 <p><span class="c">Named only by App: a lone type in its module.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Db;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Db</code></pre>
 <h2 id="mod.order_groups.util">util</h2>
 <div class="doc">
 <p><span class="c">Helpers nothing uses.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Spare;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Spare</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_groups.util.Spare"><span class="dim">util::</span>Spare</h3>
 <div class="doc">
 <p><span class="c">Names nothing and nothing names it.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Spare;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Spare</code></pre>
 </main>

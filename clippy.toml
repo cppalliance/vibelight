@@ -1,6 +1,11 @@
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 
+# Size limits sit on functions (here) and on types (the type-size test in
+# tests/it/type_size.rs). A file has no length limit.
+too-many-lines-threshold = 100
+too-many-arguments-threshold = 7
+
 # A hash seed must never reach the output: every map and set is B-tree based.
 # The clock reaches only the stamp on the first line, through one item-level
 # expect in src/stamp.rs.

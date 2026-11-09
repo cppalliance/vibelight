@@ -54,171 +54,191 @@
 <h2 id="mod.order_nesting">order_nesting</h2>
 <p class="anatomy">crate root: 17 types; pub 17</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Run {
-    <span class="k">pub</span> <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>, <span class="k">pub</span> <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Run
+{
+<span class="k">pub:</span>
+    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
+    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Step {
-    <span class="k">pub</span> <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>, <span class="k">pub</span> <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>, <span class="k">pub</span> <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Step
+{
+<span class="k">pub:</span>
+    <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
+    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
+    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Trace;
-
-<span class="k">pub</span> <span class="k">struct</span> Log;
-
-<span class="k">pub</span> <span class="k">struct</span> Config {
-    <span class="k">pub</span> <span class="src">limit</span>: u32,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Trace
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Log
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Config
+{
+<span class="k">pub:</span>
+    <span class="src">limit</span>: u32,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Fork {
-    <span class="k">pub</span> <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>, <span class="k">pub</span> <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Fork
+{
+<span class="k">pub:</span>
+    <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
+    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Left {
-    <span class="k">pub</span> <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Left
+{
+<span class="k">pub:</span>
+    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Right {
-    <span class="k">pub</span> <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Right
+{
+<span class="k">pub:</span>
+    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Base;
-
-<span class="k">pub</span> <span class="k">struct</span> Host {
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Base
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Host
+{
+<span class="k">pub(self):</span>
     <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.order_nesting.Host.run">run</a>(job: <a href="#type.order_nesting.Job">Job</a>)
 }
-<span class="k">impl</span> Host {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">run</span>(&amp;<span class="k">self</span>, job: <a href="#type.order_nesting.Job">Job</a>);
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Store
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Job
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Able
+{
+<span class="k">pub:</span>
+    <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Store;
-
-<span class="k">pub</span> <span class="k">struct</span> Job;
-
-<span class="k">pub</span> <span class="k">struct</span> Able {
-    <span class="k">pub</span> <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Leaf
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Report
+{
+<span class="k">pub:</span>
+    <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Leaf;
-
-<span class="k">pub</span> <span class="k">struct</span> Report {
-    <span class="k">pub</span> <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
-}
-
-<span class="k">pub</span> <span class="k">struct</span> Summary;
-
-<span class="k">pub</span> <span class="k">struct</span> Orphan;</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Summary
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Orphan</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.order_nesting.Run">Run</h3>
 <div class="doc">
 <p><span class="c">The main entry: it reaches the most declarations.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Run {
-    <span class="k">pub</span> <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
-    <span class="k">pub</span> <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Run
+{
+<span class="k">pub:</span>
+    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
+<span class="gap"></span>    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
 }</code></pre>
 <h3 id="type.order_nesting.Step">Step</h3>
 <div class="doc">
 <p><span class="c">Named by Run; first names Trace, then Log, then Config.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Step {
-    <span class="k">pub</span> <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
-    <span class="k">pub</span> <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
-    <span class="k">pub</span> <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Step
+{
+<span class="k">pub:</span>
+    <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
+<span class="gap"></span>    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
+<span class="gap"></span>    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Trace">Trace</h3>
 <div class="doc">
 <p><span class="c">Named only by Step, before Log.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Trace;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Trace</code></pre>
 <h3 id="type.order_nesting.Log">Log</h3>
 <div class="doc">
 <p><span class="c">Named only by Step.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Log;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Log</code></pre>
 <h3 id="type.order_nesting.Config">Config</h3>
 <div class="doc">
 <p><span class="c">Named by Run and by Step, so it follows Step's last part, not Run.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Config {
-    <span class="k">pub</span> <span class="src">limit</span>: u32,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Config
+{
+<span class="k">pub:</span>
+    <span class="src">limit</span>: u32,
 }</code></pre>
 <h3 id="type.order_nesting.Fork">Fork</h3>
 <div class="doc">
 <p><span class="c">A diamond root: it reaches three declarations through two branches.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Fork {
-    <span class="k">pub</span> <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
-    <span class="k">pub</span> <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Fork
+{
+<span class="k">pub:</span>
+    <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
+<span class="gap"></span>    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Left">Left</h3>
 <div class="doc">
 <p><span class="c">Named only by Fork.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Left {
-    <span class="k">pub</span> <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Left
+{
+<span class="k">pub:</span>
+    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Right">Right</h3>
 <div class="doc">
 <p><span class="c">Named only by Fork, after Left.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Right {
-    <span class="k">pub</span> <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Right
+{
+<span class="k">pub:</span>
+    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Base">Base</h3>
 <div class="doc">
 <p><span class="c">Named by Left and by Right, so it follows Right, the last of them.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Base;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Base</code></pre>
 <h3 id="type.order_nesting.Host">Host</h3>
 <div class="doc">
 <p><span class="c">A root whose public method prints before its private field, so its</span> <span class="c">block names Job first, yet its field type, Store, still comes first.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Host {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Host
+{
+<span class="k">pub(self):</span>
     <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
-}
-
-<span class="k">impl</span> Host {
-    <span class="c">///</span><span class="c"> Runs a job.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">run</span>(&amp;<span class="k">self</span>, job: <a href="#type.order_nesting.Job">Job</a>);
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Runs a job.</span></div>    <span class="src" id="fn.order_nesting.Host.run">run</span>(job: <a href="#type.order_nesting.Job">Job</a>)
 }</code></pre>
 <h3 id="type.order_nesting.Store">Store</h3>
 <div class="doc">
 <p><span class="c">Named only by Host's field.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Store;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Store</code></pre>
 <h3 id="type.order_nesting.Job">Job</h3>
 <div class="doc">
 <p><span class="c">Named only by Host's method.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Job;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Job</code></pre>
 <h3 id="type.order_nesting.Able">Able</h3>
 <div class="doc">
 <p><span class="c">A root that ties Report on reach and comes first by path.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Able {
-    <span class="k">pub</span> <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Able
+{
+<span class="k">pub:</span>
+    <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Leaf">Leaf</h3>
 <div class="doc">
 <p><span class="c">Named only by Able.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Leaf;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Leaf</code></pre>
 <h3 id="type.order_nesting.Report">Report</h3>
 <div class="doc">
 <p><span class="c">A root that ties Able on reach.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Report {
-    <span class="k">pub</span> <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Report
+{
+<span class="k">pub:</span>
+    <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Summary">Summary</h3>
 <div class="doc">
 <p><span class="c">Named only by Report.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Summary;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Summary</code></pre>
 <h3 id="type.order_nesting.Orphan">Orphan</h3>
 <div class="doc">
 <p><span class="c">Names nothing and nothing names it.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Orphan;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Orphan</code></pre>
 </main>

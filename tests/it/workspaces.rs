@@ -475,8 +475,8 @@ fn a_function_named_like_its_module_links_through_a_re_export() {
     let inner = page("inner.html");
     assert!(
         inner.contains(
-            "<span class=\"k\">use</span> \
-             <a href=\"#fn.inner.display_chain.display_chain\">display_chain::display_chain</a>;"
+            "<span class=\"k\">using</span> \
+             <a href=\"#fn.inner.display_chain.display_chain\">display_chain::display_chain</a>"
         ),
         "the crate's own re-export links to the function, not past the module:\n{inner}"
     );

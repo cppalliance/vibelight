@@ -1,11 +1,11 @@
-//! The groups of a type body, an impl, or a module block: sortable entries,
-//! the sections they print in, one per visibility, the widest first, and the
-//! blank lines between them.
+//! The groups of a type body or a module block: sortable entries, the
+//! sections they print in, labeled by visibility, and the blank lines
+//! between them.
 
 use std::collections::BTreeMap;
 
 use crate::access::Access;
-use crate::layout::{Block, Line, Repeat, Span, line_text};
+use crate::layout::{Block, Line, Repeat, Span, key, line_text};
 use crate::model::{Meta, TypeRef, name_order};
 
 /// One sortable entry of a group: a member, a variant, or an item.
@@ -15,8 +15,7 @@ pub(crate) struct Entry {
     pub(crate) repeats: Vec<Repeat>,
 }
 
-/// Sorts entries by name, then by their printed text, so moving code
-/// between files or impls changes no outline.
+/// Sorts entries by name, then by their printed text.
 pub(crate) fn sort_entries(entries: &mut [Entry], refs: &[TypeRef]) {
     let text = |e: &Entry| -> String {
         e.lines
@@ -28,22 +27,15 @@ pub(crate) fn sort_entries(entries: &mut [Entry], refs: &[TypeRef]) {
     entries.sort_by(|a, b| name_order(&a.name, &b.name).then_with(|| text(a).cmp(&text(b))));
 }
 
-/// Joins the groups of a body or a module block in order, with a blank line
-/// between two groups, and between two entries of a group as `spaced` puts
-/// one.
+/// Joins the groups of a type body or a module block in order, with one
+/// blank line between every two entries.
 pub(crate) fn join_groups(groups: Vec<Vec<Entry>>, block: &mut Block) {
-    let groups = groups.into_iter().filter(|group| !group.is_empty());
-    for (i, group) in groups.enumerate() {
-        let mut members = Vec::new();
-        for entry in group {
-            block.repeats.extend(entry.repeats);
-            members.push(entry.lines);
-        }
-        if i > 0 {
-            block.lines.push(Line::default());
-        }
-        block.lines.extend(spaced(members));
+    let mut members = Vec::new();
+    for entry in groups.into_iter().flatten() {
+        block.repeats.extend(entry.repeats);
+        members.push(entry.lines);
     }
+    block.lines.extend(spaced(members));
 }
 
 /// A section's label: the rank its written visibility sorts by, wider
@@ -93,41 +85,43 @@ pub(crate) fn reaches_line(meta: &Meta, indent: usize, shown: Option<Access>) ->
     })
 }
 
-/// Joins a body's or a module block's groups: the groups `first`, which have
-/// no visibility of their own, then each section of `sections`, the widest
-/// visibility first, with a blank line before each. Every entry spells its
-/// own visibility, so a section needs no label.
-pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sections: Sections, block: &mut Block) {
+/// Joins a type body's or a module block's groups: the unlabeled groups
+/// `first`, then each set of labeled sections, data first and then
+/// members, every section opened by its label, such as `pub(crate):`, with
+/// a blank line before it. A visibility that holds both data and members
+/// prints its label twice.
+pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sets: [Sections; 2], block: &mut Block) {
     if first.iter().any(|group| !group.is_empty()) {
         if !block.lines.is_empty() {
             block.lines.push(Line::default());
         }
         join_groups(first, block);
     }
-    for groups in sections.into_values() {
-        if groups.iter().all(Vec::is_empty) {
-            continue;
+    for set in sets {
+        for ((_, spelling), groups) in set {
+            if groups.iter().all(Vec::is_empty) {
+                continue;
+            }
+            if !block.lines.is_empty() {
+                block.lines.push(Line::default());
+            }
+            block.lines.push(Line {
+                spans: vec![key(&format!("{spelling}:"))],
+                ..Line::default()
+            });
+            join_groups(groups, block);
         }
-        if !block.lines.is_empty() {
-            block.lines.push(Line::default());
-        }
-        join_groups(groups, block);
     }
 }
 
-/// Joins the lines of each member of a list, with a blank line between two
-/// members when either takes more than one line, as a member with a comment
-/// or an attribute above it does, so one-line members stack as rustfmt
-/// leaves them.
+/// Joins the lines of each member of a list, one blank line between every
+/// two members.
 pub(crate) fn spaced(members: impl IntoIterator<Item = Vec<Line>>) -> Vec<Line> {
     let mut out = Vec::new();
-    let mut last_tall = false;
     for lines in members {
-        let tall = lines.len() > 1;
-        if !out.is_empty() && (tall || last_tall) {
+        if !out.is_empty() {
             out.push(Line::default());
         }
-        last_tall = tall;
         out.extend(lines);
     }
     out
@@ -154,7 +148,7 @@ mod tests {
     }
 
     #[test]
-    fn a_blank_line_sets_off_each_member_that_takes_more_than_one_line() {
+    fn every_member_of_a_list_gets_one_blank_line_between() {
         let members = vec![
             lines(&["/// Horizontal position.", "x: i32,"]),
             lines(&["/// Vertical position.", "y: i32,"]),
@@ -169,39 +163,41 @@ mod tests {
             "y: i32,",
             "",
             "z: i32,",
+            "",
             "w: i32,",
         ];
         assert_eq!(text(&spaced(members)), expected);
     }
 
     #[test]
-    fn a_module_block_sets_its_groups_apart_and_stacks_one_line_entries() {
+    fn a_module_block_gets_one_blank_line_between_entries_in_and_across_groups() {
         let entry = |texts: &[&str]| Entry {
             name: String::new(),
             lines: lines(texts),
             repeats: Vec::new(),
         };
         let groups = vec![
-            vec![entry(&["pub use a::B;"]), entry(&["pub use a::C;"])],
+            vec![entry(&["using a::B;"]), entry(&["using a::C;"])],
             Vec::new(),
-            vec![entry(&["pub const LIMIT: u8 = 4;"])],
+            vec![entry(&["constexpr LIMIT: u8 = 4;"])],
             vec![
-                entry(&["pub fn run(", "input: &str) -> bool;"]),
-                entry(&["pub fn stop();"]),
+                entry(&["run(", "input: &str) -> bool;"]),
+                entry(&["stop();"]),
             ],
         ];
         let mut block = Block::default();
         join_groups(groups, &mut block);
         let expected = [
-            "pub use a::B;",
-            "pub use a::C;",
+            "using a::B;",
             "",
-            "pub const LIMIT: u8 = 4;",
+            "using a::C;",
             "",
-            "pub fn run(",
+            "constexpr LIMIT: u8 = 4;",
+            "",
+            "run(",
             "input: &str) -> bool;",
             "",
-            "pub fn stop();",
+            "stop();",
         ];
         assert_eq!(text(&block.lines), expected);
     }

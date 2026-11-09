@@ -38,86 +38,93 @@
 <h2 id="mod.structs">structs</h2>
 <p class="anatomy">crate root: 9 types; pub 9</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt; {
-    <span class="k">pub</span> <span class="src">data</span>: &amp;'a [T; N], <span class="src">len</span>: usize,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">data</span>: [T; N]&amp; 'a,
+<span class="k">pub(self):</span>
+    <span class="src">len</span>: usize,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Empty {}
-
-<span class="k">pub</span> <span class="k">struct</span> Index(usize);
-<span class="k">impl</span> Index {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">get</span>(&amp;<span class="k">self</span>) -&gt; usize;
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Empty
+{
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Marker;
-
-<span class="k">pub</span> <span class="k">struct</span> Meters(<span class="k">pub</span> f64);
-
-<span class="k">pub</span> <span class="k">struct</span> Pair(<span class="k">pub</span> u8, u16);
-
-<span class="k">pub</span> <span class="k">struct</span> Point {
-    <span class="k">pub</span> <span class="src">x</span>: i32, <span class="k">pub</span> <span class="src">y</span>: i32, <span class="src">label</span>: String,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Index(usize)
+{
+<span class="k">pub:</span>
+    <a class="fn" href="#fn.structs.Index.get">get</a>() -&gt; usize
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Span(
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Marker
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Meters(<span class="k">pub</span> f64)
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Pair(<span class="k">pub</span> u8, u16)
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Point
+{
+<span class="k">pub:</span>
+    <span class="src">x</span>: i32,
+    <span class="src">y</span>: i32,
+<span class="k">pub(self):</span>
+    <span class="src">label</span>: String,
+}
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Span(
     <span class="k">pub</span> usize,
-    <span class="k">pub</span> usize);
-
-<span class="k">pub</span> <span class="k">struct</span> Token;
-<span class="k">impl</span> Token {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.structs.Token">Token</a>;
+    <span class="k">pub</span> usize)
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Token
+{
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.structs.Token.new">new</a>() -&gt; <a href="#type.structs.Token">Token</a>
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.structs.Buffer">Buffer</h3>
 <div class="doc">
 <p><span class="c">Generics with a lifetime, a bound, a default, and a const generic.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt; {
-    <span class="k">pub</span> <span class="src">data</span>: &amp;'a [T; N],
-
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">data</span>: [T; N]&amp; 'a,
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">len</span>: usize,
 }</code></pre>
 <h3 id="type.structs.Empty">Empty</h3>
 <div class="doc">
 <p><span class="c">An empty braced struct.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Empty {}</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Empty
+{
+}</code></pre>
 <h3 id="type.structs.Index">Index</h3>
 <div class="doc">
 <p><span class="c">A tuple struct with methods.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Index(usize);
-
-<span class="k">impl</span> Index {
-    <span class="c">///</span><span class="c"> Returns the index.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">get</span>(&amp;<span class="k">self</span>) -&gt; usize;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Index(usize)
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the index.</span></div>    <span class="src" id="fn.structs.Index.get">get</span>() -&gt; usize
 }</code></pre>
 <h3 id="type.structs.Marker">Marker</h3>
 <div class="doc">
 <p><span class="c">A unit struct.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker</code></pre>
 <h3 id="type.structs.Meters">Meters</h3>
 <div class="doc">
 <p><span class="c">A tuple struct.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Meters(<span class="k">pub</span> f64);</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Meters(<span class="k">pub</span> f64)</code></pre>
 <h3 id="type.structs.Pair">Pair</h3>
 <div class="doc">
 <p><span class="c">A tuple struct with two fields, one private.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Pair(<span class="k">pub</span> u8, u16);</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Pair(<span class="k">pub</span> u8, u16)</code></pre>
 <h3 id="type.structs.Point">Point</h3>
 <div class="doc">
 <p><span class="c">A named struct with public and private fields.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Point {
-    <span class="c">///</span><span class="c"> Horizontal position.</span>
-    <span class="k">pub</span> <span class="src">x</span>: i32,
-
-    <span class="c">///</span><span class="c"> Vertical position.</span>
-    <span class="k">pub</span> <span class="src">y</span>: i32,
-
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Point
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Horizontal position.</span></div>    <span class="src">x</span>: i32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Vertical position.</span></div>    <span class="src">y</span>: i32,
+<span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">label</span>: String,
 }</code></pre>
 <h3 id="type.structs.Span">Span</h3>
@@ -125,19 +132,15 @@
 <p><span class="c">A tuple struct whose fields carry comments.</span></p>
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Span(
-    <span class="c">///</span><span class="c"> The first byte.</span>
-    <span class="k">pub</span> usize,
-
-    <span class="c">///</span><span class="c"> One past the last byte.</span>
-    <span class="k">pub</span> usize);</code></pre>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The first byte.</span></div>    <span class="k">pub</span> usize,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">One past the last byte.</span></div>    <span class="k">pub</span> usize)</code></pre>
 <h3 id="type.structs.Token">Token</h3>
 <div class="doc">
 <p><span class="c">A unit struct with a method.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Token;
-
-<span class="k">impl</span> Token {
-    <span class="c">///</span><span class="c"> Makes a token.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.structs.Token">Token</a>;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Token
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a token.</span></div>    <span class="k">static</span> <span class="src" id="fn.structs.Token.new">new</span>() -&gt; <a href="#type.structs.Token">Token</a>
 }</code></pre>
 </main>

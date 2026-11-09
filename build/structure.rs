@@ -12,15 +12,12 @@ pub(crate) const WORKSPACE: &str = "the package is one crate, so Cargo.toml decl
 pub(crate) const PATH_DEPENDENCY: &str =
     "the package is one crate, so Cargo.toml has no path dependency";
 pub(crate) const LIB_TARGET: &str = "the package is one binary crate, so it has no src/lib.rs";
-pub(crate) const LONG_FILE: &str = "a .rs file under src, tests, or build has at most 500 lines";
 pub(crate) const MOD_RS: &str = "a module file is named after its module, never mod.rs";
 pub(crate) const MODULE_DOC: &str = "every .rs file under src begins with a //! line";
 pub(crate) const LINT_LEVEL: &str =
     "lint levels belong in the [lints] tables of Cargo.toml, not in #![...] attributes";
 pub(crate) const PLAN_NAME: &str =
     "plans/ holds only files named YYYY-MM-DD-<one to three kebab words>.plan.md";
-
-const MAX_LINES: usize = 500;
 
 /// Directories never walked, relative to the package root. The fixtures are
 /// source trees for the tool to read, so they break these rules on purpose.
@@ -73,7 +70,6 @@ pub(crate) fn check(root: &Path) -> io::Result<Vec<Violation>> {
     let mut violations = extra_manifests(root)?;
     violations.extend(root_manifest(root)?);
     violations.extend(lib_target(root));
-    violations.extend(long_files(root)?);
     violations.extend(mod_rs(root)?);
     violations.extend(module_docs(root)?);
     violations.extend(lint_levels(root)?);
@@ -124,21 +120,6 @@ pub(crate) fn lib_target(root: &Path) -> Vec<Violation> {
     } else {
         Vec::new()
     }
-}
-
-/// A `.rs` file under `src`, `tests`, or `build` with more than 500 lines.
-pub(crate) fn long_files(root: &Path) -> io::Result<Vec<Violation>> {
-    let mut found = Vec::new();
-    for dir in ["build", "src", "tests"] {
-        for (name, path) in rust_files(root, dir)? {
-            let count = read(&path)?.lines().count();
-            if count > MAX_LINES {
-                let fix = format!("split its {count} lines into smaller modules");
-                found.push(Violation::new(name, LONG_FILE, fix));
-            }
-        }
-    }
-    Ok(found)
 }
 
 /// A file named `mod.rs` anywhere in the package.

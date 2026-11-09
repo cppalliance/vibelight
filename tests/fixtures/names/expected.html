@@ -57,123 +57,125 @@
 <h2 id="mod.names">names</h2>
 <p class="anatomy">crate root: 5 types, 1 re-export; pub 6</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Catalog {
-    <span class="k">pub</span> <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>, <span class="k">pub</span> <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>, <span class="k">pub</span> <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
-    <span class="k">pub</span> <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>, <span class="k">pub</span> <span class="src">fifth</span>: Shared,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Catalog
+{
+<span class="k">pub:</span>
+    <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>,
+    <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>,
+    <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
+    <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
+    <span class="src">fifth</span>: Shared,
 }
-
-<span class="k">pub</span> <span class="k">type</span> Pairs&lt;'a&gt; = &amp;'a [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)];
-
-<span class="k">pub</span> <span class="k">struct</span> Twin;
-
-<span class="k">pub</span> <span class="k">struct</span> Twin;
-
-<span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;Record&gt; {
-    <span class="k">pub</span> <span class="src">inner</span>: Record,
+<span class="gap"></span><span class="k">pub</span> <span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Twin
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Twin
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;Record&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">inner</span>: Record,
 }
-
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.names.model.Record">model::Record</a> as Entry;</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> Entry = <a href="#type.names.model.Record">model::Record</a></code></pre>
 <p class="view">Documented</p>
 <h3 id="type.names.Catalog">Catalog</h3>
 <div class="doc">
 <p><span class="c">Uses names resolved every way rule 39 allows.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Catalog {
-    <span class="c">///</span><span class="c"> Through a prefix path.</span>
-    <span class="k">pub</span> <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>,
-
-    <span class="c">///</span><span class="c"> Through a pub use rename at the root.</span>
-    <span class="k">pub</span> <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>,
-
-    <span class="c">///</span><span class="c"> Through a glob import.</span>
-    <span class="k">pub</span> <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
-
-    <span class="c">///</span><span class="c"> A unique name across the target.</span>
-    <span class="k">pub</span> <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
-
-    <span class="c">///</span><span class="c"> An ambiguous name stays plain.</span>
-    <span class="k">pub</span> <span class="src">fifth</span>: Shared,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Catalog
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a prefix path.</span></div>    <span class="src">first</span>: <a href="#type.names.model.Record">crate::model::Record</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a pub use rename at the root.</span></div>    <span class="src">second</span>: <a href="#type.names.model.Record">Entry</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a glob import.</span></div>    <span class="src">third</span>: <a href="#type.names.api.inner.Handle">api::Handle</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A unique name across the target.</span></div>    <span class="src">fourth</span>: <a href="#type.names.api.Token">Token</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An ambiguous name stays plain.</span></div>    <span class="src">fifth</span>: Shared,
 }</code></pre>
 <h3 id="type.names.Pairs">Pairs</h3>
 <div class="doc">
 <p><span class="c">Escapes in HTML: &lt;, &gt;, and &amp; in types and comments.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">type</span> Pairs&lt;'a&gt; = &amp;'a [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)];</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">using</span> Pairs&lt;'a&gt; = [(<a href="#type.names.api.Token">Token</a>, Option&lt;Vec&lt;<a href="#type.names.api.Token">Token</a>&gt;&gt;)]&amp; 'a</code></pre>
 <h3 id="type.names.Twin">Twin</h3>
 <div class="doc">
 <p><span class="c">The first of two types named Twin, under different cfgs.</span></p>
 </div>
-<pre><code><span class="dim">#[cfg(unix)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Twin;</code></pre>
+<pre><code> <span class="c">unix</span>
+<span class="k">pub</span> <span class="k">struct</span> Twin</code></pre>
 <h3 id="type.names.Twin-2">Twin</h3>
 <div class="doc">
 <p><span class="c">The second Twin.</span></p>
 </div>
-<pre><code><span class="dim">#[cfg(windows)]</span>
-<span class="k">pub</span> <span class="k">struct</span> Twin;</code></pre>
+<pre><code> <span class="c">windows</span>
+<span class="k">pub</span> <span class="k">struct</span> Twin</code></pre>
 <h3 id="type.names.Wrapper">Wrapper</h3>
 <div class="doc">
 <p><span class="c">A generic parameter that shares a type's name stays plain.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;Record&gt; {
-    <span class="k">pub</span> <span class="src">inner</span>: Record,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;Record&gt;
+{
+<span class="k">pub:</span>
+    <span class="src">inner</span>: Record,
 }</code></pre>
-<pre><code><span class="k">pub</span> <span class="k">use</span> <a href="#type.names.model.Record">model::Record</a> as Entry;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> Entry = <a href="#type.names.model.Record">model::Record</a></code></pre>
 <h2 id="mod.names.api">api</h2>
 <div class="doc">
 <p><span class="c">Re-exports through a glob.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type, 1 re-export; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Token;
-
-<span class="k">pub</span> <span class="k">use</span> self::inner::*;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Token
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> self::inner::*</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.names.api.Token"><span class="dim">api::</span>Token</h3>
 <div class="doc">
 <p><span class="c">A unique token type.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Token;</code></pre>
-<pre><code><span class="k">pub</span> <span class="k">use</span> self::inner::*;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Token</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="k">using</span> self::inner::*</code></pre>
 <h2 id="mod.names.api.inner"><span class="dim">api::</span>inner</h2>
 <p class="anatomy">pub mod: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Handle;
-
-<span class="k">pub</span> <span class="k">struct</span> Shared;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Handle
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.names.api.inner.Handle"><span class="dim">api::inner::</span>Handle</h3>
 <div class="doc">
 <p><span class="c">A handle.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle</code></pre>
 <h3 id="type.names.api.inner.Shared"><span class="dim">api::inner::</span>Shared</h3>
 <div class="doc">
 <p><span class="c">The other type named Shared.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
 <h2 id="mod.names.model">model</h2>
 <div class="doc">
 <p><span class="c">The record types.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Record {
-    <span class="k">pub</span> <span class="src">id</span>: u32,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Record
+{
+<span class="k">pub:</span>
+    <span class="src">id</span>: u32,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Shared;</code></pre>
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.names.model.Record"><span class="dim">model::</span>Record</h3>
 <div class="doc">
 <p><span class="c">A record.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Record {
-    <span class="k">pub</span> <span class="src">id</span>: u32,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Record
+{
+<span class="k">pub:</span>
+    <span class="src">id</span>: u32,
 }</code></pre>
 <h3 id="type.names.model.Shared"><span class="dim">model::</span>Shared</h3>
 <div class="doc">
 <p><span class="c">One of two types named Shared.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Shared</code></pre>
 </main>

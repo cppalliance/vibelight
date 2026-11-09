@@ -42,29 +42,21 @@ fn a_public_block_keeps_only_what_users_can_name_and_says_fields_are_hidden() {
          impl Holder {\n    pub fn get(&self) -> u8 { self.value }\n    fn bump(&mut self) {}\n    \
          #[doc(hidden)]\n    pub fn secret(&self) {}\n}\n",
     );
-    let lines = public(&krate, "Holder", "Holder");
-    assert!(
-        lines.contains(&"pub struct Holder {".to_owned()),
-        "{lines:#?}"
+    assert_eq!(
+        public(&krate, "Holder", "Holder"),
+        [
+            "pub struct Holder",
+            "{",
+            "    /* private fields */",
+            "",
+            "pub:",
+            "    value: u8,",
+            "",
+            "pub:",
+            "    get() -> u8",
+            "}",
+        ]
     );
-    assert!(
-        lines.contains(&"    pub value: u8,".to_owned()),
-        "{lines:#?}"
-    );
-    assert!(
-        lines.contains(&"    /* private fields */".to_owned()),
-        "{lines:#?}"
-    );
-    assert!(
-        lines.contains(&"    pub fn get(&self) -> u8;".to_owned()),
-        "{lines:#?}"
-    );
-    for hidden in ["count", "bump", "secret"] {
-        assert!(
-            !lines.iter().any(|l| l.contains(hidden)),
-            "{hidden} shows: {lines:#?}"
-        );
-    }
 }
 
 #[test]
@@ -79,7 +71,7 @@ fn a_hidden_tuple_field_keeps_its_place() {
     let (_tmp, krate) = krate("pub struct Pair(pub u8, u16);\n");
     assert_eq!(
         public(&krate, "Pair", "Pair"),
-        ["pub struct Pair(pub u8, /* private field */);"]
+        ["pub struct Pair(pub u8, /* private field */)"]
     );
 }
 
@@ -88,20 +80,20 @@ fn a_trait_keeps_its_items_which_have_no_visibility_of_their_own() {
     let (_tmp, krate) = krate("pub trait Speak {\n    fn say(&self);\n}\n");
     assert_eq!(
         public(&krate, "Speak", "Speak"),
-        ["pub trait Speak {", "    fn say(&self);", "}"]
+        ["pub trait Speak", "{", "    say()", "}"]
     );
 }
 
 #[test]
 fn a_renamed_declaration_and_value_show_the_name_users_write() {
     let (_tmp, krate) = krate("pub struct Inner;\npub fn make() -> u8 {\n    0\n}\n");
-    assert_eq!(public(&krate, "Inner", "Outer"), ["pub struct Outer;"]);
+    assert_eq!(public(&krate, "Inner", "Outer"), ["pub struct Outer"]);
     let item = (krate.modules[0].items.iter())
         .position(|item| item.name == "make")
         .expect("the function is collected");
     let at = ValueRef { module: 0, item };
     assert_eq!(
         text(&krate, &item_block(&krate, at, "build")),
-        ["pub fn build() -> u8;"]
+        ["build() -> u8"]
     );
 }

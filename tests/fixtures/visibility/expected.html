@@ -42,89 +42,95 @@
 <h2 id="mod.visibility">visibility</h2>
 <p class="anatomy">crate root: 5 types; pub 3, pub(crate) 1, pub(self) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">type</span> Count = u32;
-
-<span class="k">pub</span> <span class="k">struct</span> Hidden {
+<pre class="glance"><code><span class="k">using</span> Count = u32
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Hidden
+{
+<span class="k">pub(self):</span>
     <span class="src">value</span>: u8,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Inner {
-    <span class="k">pub(crate)</span> <span class="src">id</span>: u32, <span class="src">state</span>: u8,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Inner
+{
+<span class="k">pub(crate):</span>
+    <span class="src">id</span>: u32,
+<span class="k">pub(self):</span>
+    <span class="src">state</span>: u8,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Mixed {
-    <span class="k">pub</span> <span class="src">name</span>: String, <span class="k">pub(crate)</span> <span class="src">size</span>: usize, <span class="src">secret</span>: u8,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Mixed
+{
+<span class="k">pub:</span>
+    <span class="src">name</span>: String,
+<span class="k">pub(crate):</span>
+    <span class="src">size</span>: usize,
+<span class="k">pub(self):</span>
+    <span class="src">secret</span>: u8,
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.visibility.Mixed.new">new</a>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
+    <a class="fn" href="#fn.visibility.Mixed.into_name">into_name</a>(self) -&gt; String
+<span class="k">pub(crate):</span>
+    <a class="fn" href="#fn.visibility.Mixed.grow">grow</a>() <span class="k">mut</span>
+<span class="k">pub(self):</span>
+    <a class="fn" href="#fn.visibility.Mixed.check">check</a>() -&gt; bool
 }
-<span class="k">impl</span> Mixed {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">into_name</span>(self) -&gt; String;
-    <span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">grow</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>) -&gt; bool;
-}
-
-<span class="k">pub(crate)</span> <span class="k">enum</span> Mode {
-    <span class="src">Fast</span>, <span class="src">Slow</span>,
+<span class="gap"></span><span class="k">pub(crate)</span> <span class="k">enum</span> Mode
+{
+    <span class="src">Fast</span>,
+    <span class="src">Slow</span>,
 }</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.visibility.Count">Count</h3>
 <div class="doc">
 <p><span class="c">A type alias seen only here.</span></p>
 </div>
-<pre><code><span class="k">type</span> Count = u32;</code></pre>
+<pre><code><span class="k">using</span> Count = u32</code></pre>
 <h3 id="type.visibility.Hidden">Hidden</h3>
 <div class="doc">
 <p><span class="c">A class with private members only.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Hidden {
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Hidden
+{
+<span class="k">pub(self):</span>
     <span class="src">value</span>: u8,
 }</code></pre>
 <h3 id="type.visibility.Inner">Inner</h3>
 <div class="doc">
 <p><span class="c">A class with internal and private members.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Inner {
-    <span class="c">///</span><span class="c"> Seen in the crate.</span>
-    <span class="k">pub(crate)</span> <span class="src">id</span>: u32,
-
-    <span class="c">///</span><span class="c"> Seen only here.</span>
-    <span class="src">state</span>: u8,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Inner
+{
+<span class="k">pub(crate):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>    <span class="src">id</span>: u32,
+<span class="gap"></span><span class="k">pub(self):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen only here.</span></div>    <span class="src">state</span>: u8,
 }</code></pre>
 <h3 id="type.visibility.Mixed">Mixed</h3>
 <div class="doc">
 <p><span class="c">A struct with every section.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Mixed {
-    <span class="c">///</span><span class="c"> A public field.</span>
-    <span class="k">pub</span> <span class="src">name</span>: String,
-
-    <span class="c">///</span><span class="c"> An internal field.</span>
-    <span class="k">pub(crate)</span> <span class="src">size</span>: usize,
-
-    <span class="c">///</span><span class="c"> A private field.</span>
-    <span class="src">secret</span>: u8,
-}
-
-<span class="k">impl</span> Mixed {
-    <span class="c">///</span><span class="c"> Makes one.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>;
-
-    <span class="c">///</span><span class="c"> Takes the name out.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">into_name</span>(self) -&gt; String;
-
-    <span class="c">///</span><span class="c"> Grows it.</span>
-    <span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">grow</span>(&amp;mut <span class="k">self</span>);
-
-    <span class="c">///</span><span class="c"> Checks it.</span>
-    <span class="k">fn</span> <span class="src">check</span>(&amp;<span class="k">self</span>) -&gt; bool;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Mixed
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>    <span class="src">name</span>: String,
+<span class="gap"></span><span class="k">pub(crate):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>    <span class="src">size</span>: usize,
+<span class="gap"></span><span class="k">pub(self):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A private field.</span></div>    <span class="src">secret</span>: u8,
+<span class="gap"></span><span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src" id="fn.visibility.Mixed.new">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes the name out.</span></div>    <span class="src" id="fn.visibility.Mixed.into_name">into_name</span>(self) -&gt; String
+<span class="gap"></span><span class="k">pub(crate):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Grows it.</span></div>    <span class="src" id="fn.visibility.Mixed.grow">grow</span>() <span class="k">mut</span>
+<span class="gap"></span><span class="k">pub(self):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>    <span class="src" id="fn.visibility.Mixed.check">check</span>() -&gt; bool
 }</code></pre>
 <h3 id="type.visibility.Mode">Mode</h3>
 <div class="doc">
 <p><span class="c">An enum seen only in the crate.</span></p>
 </div>
-<pre><code><span class="dim">#[non_exhaustive]</span>
-<span class="k">pub(crate)</span> <span class="k">enum</span> Mode {
+<pre><code><span class="dim">[[non_exhaustive]]</span>
+<span class="k">pub(crate)</span> <span class="k">enum</span> Mode
+{
     <span class="src">Fast</span>,
-    <span class="src">Slow</span>,
+<span class="gap"></span>    <span class="src">Slow</span>,
 }</code></pre>
 <h2 id="mod.visibility.outer">outer</h2>
 <div class="doc">
@@ -132,44 +138,48 @@
 </div>
 <p class="anatomy">pub mod: 7 functions, 2 values; pub 2, pub(crate) 4, pub(self) 2, pub(super) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">extern</span> "C" {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">ext_open</span>() -&gt; i32;
-    <span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">ext_share</span>() -&gt; i32;
+<pre class="glance"><code><span class="k">extern</span> "C"
+{
+<span class="k">pub:</span>
+    <span class="src">ext_open</span>() -&gt; i32
+<span class="k">pub(crate):</span>
+    <span class="src">ext_share</span>() -&gt; i32
 }
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">open</span>();
-<span class="k">pub(crate)</span> <span class="k">const</span> <span class="src">LIMIT</span>: u8 = 4;
-<span class="k">pub(crate)</span> <span class="k">static</span> <span class="src">COUNT</span>: u8 = 0;
-<span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">shared</span>();
-<span class="k">pub(super)</span> <span class="k">fn</span> <span class="src">parent</span>();
-<span class="k">fn</span> <span class="src">hidden</span>();
-<span class="k">pub(self)</span> <span class="k">fn</span> <span class="src">own</span>();</code></pre>
+<span class="k">pub:</span>
+<a class="fn" href="#fn.visibility.outer.open">open</a>()
+<span class="k">pub(crate):</span>
+<span class="k">constexpr</span> <span class="src">LIMIT</span>: u8 = 4
+<span class="k">static</span> <span class="src">COUNT</span>: u8 = 0
+<a class="fn" href="#fn.visibility.outer.shared">shared</a>()
+<span class="k">pub(super):</span>
+<a class="fn" href="#fn.visibility.outer.parent">parent</a>()
+<span class="k">pub(self):</span>
+<a class="fn" href="#fn.visibility.outer.hidden">hidden</a>()
+<a class="fn" href="#fn.visibility.outer.own">own</a>()</code></pre>
 <p class="view">Documented</p>
-<pre><code><span class="k">extern</span> "C" {
-    <span class="c">///</span><span class="c"> Opens a stream.</span>
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">ext_open</span>() -&gt; i32;
-
-    <span class="c">///</span><span class="c"> Shares a stream.</span>
-    <span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src">ext_share</span>() -&gt; i32;
+<pre><code><span class="k">extern</span> "C"
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a stream.</span></div>    <span class="src">ext_open</span>() -&gt; i32
+<span class="gap"></span><span class="k">pub(crate):</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Shares a stream.</span></div>    <span class="src">ext_share</span>() -&gt; i32
 }
-
-<span class="c">///</span><span class="c"> Visible everywhere.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.visibility.outer.open">open</span>();
-
-<span class="c">///</span><span class="c"> Visible in the crate, through a path.</span>
-<span class="k">pub(crate)</span> <span class="k">const</span> <span class="src" id="const.visibility.outer.LIMIT">LIMIT</span>: u8 = 4;
-
-<span class="c">///</span><span class="c"> A shared counter.</span>
-<span class="k">pub(crate)</span> <span class="k">static</span> <span class="src" id="static.visibility.outer.COUNT">COUNT</span>: u8 = 0;
-
-<span class="c">///</span><span class="c"> Visible in the crate.</span>
-<span class="k">pub(crate)</span> <span class="k">fn</span> <span class="src" id="fn.visibility.outer.shared">shared</span>();
-
-<span class="c">///</span><span class="c"> Visible in the parent module.</span>
-<span class="k">pub(super)</span> <span class="k">fn</span> <span class="src" id="fn.visibility.outer.parent">parent</span>();
-
-<span class="c">///</span><span class="c"> Visible only here.</span>
-<span class="k">fn</span> <span class="src" id="fn.visibility.outer.hidden">hidden</span>();
-
-<span class="c">///</span><span class="c"> Also visible only here.</span>
-<span class="k">pub(self)</span> <span class="k">fn</span> <span class="src" id="fn.visibility.outer.own">own</span>();</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="c"> Visible everywhere.</span>
+<span class="src" id="fn.visibility.outer.open">open</span>()
+<span class="gap"></span><span class="k">pub(crate):</span>
+<span class="c"> Visible in the crate, through a path.</span>
+<span class="k">constexpr</span> <span class="src" id="const.visibility.outer.LIMIT">LIMIT</span>: u8 = 4
+<span class="gap"></span><span class="c"> A shared counter.</span>
+<span class="k">static</span> <span class="src" id="static.visibility.outer.COUNT">COUNT</span>: u8 = 0
+<span class="gap"></span><span class="c"> Visible in the crate.</span>
+<span class="src" id="fn.visibility.outer.shared">shared</span>()
+<span class="gap"></span><span class="k">pub(super):</span>
+<span class="c"> Visible in the parent module.</span>
+<span class="src" id="fn.visibility.outer.parent">parent</span>()
+<span class="gap"></span><span class="k">pub(self):</span>
+<span class="c"> Visible only here.</span>
+<span class="src" id="fn.visibility.outer.hidden">hidden</span>()
+<span class="gap"></span><span class="c"> Also visible only here.</span>
+<span class="src" id="fn.visibility.outer.own">own</span>()</code></pre>
 </main>

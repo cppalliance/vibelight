@@ -41,81 +41,80 @@
 <h2 id="mod.test_support">test_support</h2>
 <p class="anatomy">crate root: 5 types, 1 function; pub 6</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Engine {
-    <span class="k">pub</span> <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Engine
+{
+<span class="k">pub:</span>
+    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
 }
-
-<span class="k">pub</span> <span class="k">struct</span> Model;
-
-<span class="k">pub</span> <span class="k">struct</span> Recording;
-
-<span class="k">pub</span> <span class="k">struct</span> Live;
-
-<span class="k">pub</span> <span class="k">struct</span> ScriptedChat {
-    <span class="k">pub</span> <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>, <span class="k">pub</span> <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Model
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Recording
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Live
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> ScriptedChat
+{
+<span class="k">pub:</span>
+    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+    <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
 }
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">record</span>(into: &amp;mut <a href="#type.test_support.Recording">Recording</a>);</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.test_support.record">record</a>(into: <a href="#type.test_support.Recording">Recording</a> mut&amp;)</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.test_support.Engine">Engine</h3>
 <div class="doc">
 <p><span class="c">A production engine.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Engine {
-    <span class="c">///</span><span class="c"> The model it talks to.</span>
-    <span class="k">pub</span> <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Engine
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model it talks to.</span></div>    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
 }</code></pre>
 <h3 id="type.test_support.Model">Model</h3>
 <div class="doc">
 <p><span class="c">A production model.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Model;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Model</code></pre>
 <h3 id="type.test_support.Recording">Recording</h3>
 <div class="doc">
 <p><span class="c">Used only by test support.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Recording;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Recording</code></pre>
 <h3 id="type.test_support.Live">Live</h3>
 <div class="doc">
 <p><span class="c">Production only.</span></p>
 </div>
-<pre><code><span class="dim">#[cfg(not(test))]</span>
-<span class="k">pub</span> <span class="k">struct</span> Live;</code></pre>
+<pre><code> <span class="c">not(test)</span>
+<span class="k">pub</span> <span class="k">struct</span> Live</code></pre>
 <h3 id="type.test_support.ScriptedChat">ScriptedChat</h3>
 <div class="doc">
 <p><span class="c">A chat that plays back a script, for tests and benches.</span></p>
 </div>
-<pre><code><span class="dim">#[cfg(any(test, feature = "test-support"))]</span>
-<span class="k">pub</span> <span class="k">struct</span> ScriptedChat {
-    <span class="c">///</span><span class="c"> The model the script stands in for.</span>
-    <span class="k">pub</span> <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
-
-    <span class="c">///</span><span class="c"> Where it records.</span>
-    <span class="k">pub</span> <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
+<pre><code> <span class="c">any(test, feature = "test-support")</span>
+<span class="k">pub</span> <span class="k">struct</span> ScriptedChat
+{
+<span class="k">pub:</span>
+<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The model the script stands in for.</span></div>    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Where it records.</span></div>    <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
 }</code></pre>
-<div class="doc">
-<p><span class="c">Records into the recording.</span></p>
-</div>
-<pre><code><span class="dim">#[cfg(any(test, feature = "test-support"))]</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.test_support.record">record</span>(into: &amp;mut <a href="#type.test_support.Recording">Recording</a>);</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Records into the recording.</span>
+ <span class="c">any(test, feature = "test-support")</span>
+<span class="src" id="fn.test_support.record">record</span>(into: <a href="#type.test_support.Recording">Recording</a> mut&amp;)</code></pre>
 <h2 id="mod.test_support.fakes">fakes</h2>
 <div class="doc">
 <p><span class="c">Fakes for tests and benches.</span></p>
 </div>
-<pre><code><span class="c">// cfg: </span><span class="c">any(test, feature = "test-support")</span></code></pre>
+<pre><code> <span class="c">any(test, feature = "test-support")</span></code></pre>
 <p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> FakeClock;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">clock</span>() -&gt; <a href="#type.test_support.fakes.FakeClock">FakeClock</a>;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> FakeClock
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.test_support.fakes.clock">clock</a>() -&gt; <a href="#type.test_support.fakes.FakeClock">FakeClock</a></code></pre>
 <p class="view">Documented</p>
 <h3 id="type.test_support.fakes.FakeClock"><span class="dim">fakes::</span>FakeClock</h3>
 <div class="doc">
 <p><span class="c">A fake clock.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> FakeClock;</code></pre>
-<div class="doc">
-<p><span class="c">Makes a fake clock.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.test_support.fakes.clock">clock</span>() -&gt; <a href="#type.test_support.fakes.FakeClock">FakeClock</a>;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> FakeClock</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Makes a fake clock.</span>
+<span class="src" id="fn.test_support.fakes.clock">clock</span>() -&gt; <a href="#type.test_support.fakes.FakeClock">FakeClock</a></code></pre>
 </main>

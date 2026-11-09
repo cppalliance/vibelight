@@ -86,51 +86,48 @@
 <h2 id="mod.surface">surface</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 value, 8 re-exports; pub 11, pub(crate) 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub(crate)</span> <span class="k">struct</span> Internal;
-
-<span class="k">pub</span> <span class="k">struct</span> Fake;
-
-<span class="k">pub</span> <span class="k">use</span> prelude::*;
-<span class="k">pub</span> <span class="k">use</span> std::collections::BTreeMap;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.build">values::build</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#static.surface.values.CURRENT">values::CURRENT</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.inner.deep">values::deep</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.surface.detail.Handle">detail::Handle</a>;
-<span class="k">pub</span> <span class="k">use</span> detail::tools as kit;
-<span class="k">pub</span> <span class="k">use</span> <a href="#const.surface.values.MAX">values::MAX</a>;
-<span class="k">pub</span> <span class="k">static</span> <span class="src">CALLS</span>: u8 = 0;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">start</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub(crate)</span> <span class="k">struct</span> Internal
+<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Fake
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> prelude::*
+<span class="k">using</span> std::collections::BTreeMap
+<span class="k">using</span> <a href="#fn.surface.values.build">values::build</a>
+<span class="k">using</span> <a href="#static.surface.values.CURRENT">values::CURRENT</a>
+<span class="k">using</span> <a href="#fn.surface.values.inner.deep">values::deep</a>
+<span class="k">using</span> <a href="#type.surface.detail.Handle">detail::Handle</a>
+<span class="k">using</span> kit = detail::tools
+<span class="k">using</span> <a href="#const.surface.values.MAX">values::MAX</a>
+<span class="k">static</span> <span class="src">CALLS</span>: u8 = 0
+<a class="fn" href="#fn.surface.start">start</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.surface.Internal">Internal</h3>
 <div class="doc">
 <p><span class="c">A crate-only type.</span></p>
 </div>
-<pre><code><span class="k">pub(crate)</span> <span class="k">struct</span> Internal;</code></pre>
+<pre><code><span class="k">pub(crate)</span> <span class="k">struct</span> Internal</code></pre>
 <h3 id="type.surface.Fake">Fake</h3>
 <div class="doc">
 <p><span class="c">A fake for tests and benches.</span></p>
 </div>
-<pre><code><span class="dim">#[cfg(any(test, feature = "test-support"))]</span>
-<span class="k">pub</span> <span class="k">struct</span> Fake;</code></pre>
+<pre><code> <span class="c">any(test, feature = "test-support")</span>
+<span class="k">pub</span> <span class="k">struct</span> Fake</code></pre>
 <div class="doc">
 <p><span class="c">Says hello.</span></p>
 </div>
-<pre><code><span class="c">// </span><span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! hello</span>
-
-<span class="k">pub</span> <span class="k">use</span> prelude::*;
-<span class="k">pub</span> <span class="k">use</span> std::collections::BTreeMap;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.build">values::build</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#static.surface.values.CURRENT">values::CURRENT</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.inner.deep">values::deep</a>;
-<span class="k">pub</span> <span class="k">use</span> <a href="#type.surface.detail.Handle">detail::Handle</a>;
-<span class="k">pub</span> <span class="k">use</span> detail::tools as kit;
-<span class="k">pub</span> <span class="k">use</span> <a href="#const.surface.values.MAX">values::MAX</a>;
-
-<span class="c">///</span><span class="c"> The number of calls so far.</span>
-<span class="k">pub</span> <span class="k">static</span> <span class="src" id="static.surface.CALLS">CALLS</span>: u8 = 0;
-
-<span class="c">///</span><span class="c"> Starts the library.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.start">start</span>();</code></pre>
+<pre><code> <span class="c"><b class="m">MACRO</b></span><span class="c"> macro_rules! hello</span>
+<span class="gap"></span><span class="k">pub:</span>
+<span class="k">using</span> prelude::*
+<span class="k">using</span> std::collections::BTreeMap
+<span class="k">using</span> <a href="#fn.surface.values.build">values::build</a>
+<span class="k">using</span> <a href="#static.surface.values.CURRENT">values::CURRENT</a>
+<span class="k">using</span> <a href="#fn.surface.values.inner.deep">values::deep</a>
+<span class="k">using</span> <a href="#type.surface.detail.Handle">detail::Handle</a>
+<span class="k">using</span> kit = detail::tools
+<span class="k">using</span> <a href="#const.surface.values.MAX">values::MAX</a>
+<span class="gap"></span><span class="c"> The number of calls so far.</span>
+<span class="k">static</span> <span class="src" id="static.surface.CALLS">CALLS</span>: u8 = 0
+<span class="gap"></span><span class="c"> Starts the library.</span>
+<span class="src" id="fn.surface.start">start</span>()</code></pre>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> macro_rules! hello</p>
 <h2 id="mod.surface.api">api</h2>
 <div class="doc">
@@ -138,112 +135,108 @@
 </div>
 <p class="anatomy">pub mod: 1 value; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">const</span> <span class="src">VERSION</span>: u8 = 1;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<span class="k">constexpr</span> <span class="src">VERSION</span>: u8 = 1</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">The version in use.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.surface.api.VERSION">VERSION</span>: u8 = 1;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> The version in use.</span>
+<span class="k">constexpr</span> <span class="src" id="const.surface.api.VERSION">VERSION</span>: u8 = 1</code></pre>
 <h2 id="mod.surface.api.v1"><span class="dim">api::</span>v1</h2>
 <div class="doc">
 <p><span class="c">The first version.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Request;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">send</span>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Request
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.surface.api.v1.send">send</a>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.surface.api.v1.Request"><span class="dim">api::v1::</span>Request</h3>
 <div class="doc">
 <p><span class="c">A request.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Request;</code></pre>
-<div class="doc">
-<p><span class="c">Sends a request.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.api.v1.send">send</span>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Request</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> Sends a request.</span>
+<span class="src" id="fn.surface.api.v1.send">send</span>(request: <a href="#type.surface.api.v1.Request">Request</a>) -&gt; u8</code></pre>
 <h2 id="mod.surface.detail">detail</h2>
 <div class="doc">
 <p><span class="c">Hidden helpers.</span></p>
 </div>
 <p class="anatomy">mod: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Handle;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">helper</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Handle
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.surface.detail.helper">helper</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.surface.detail.Handle"><span class="dim">detail::</span>Handle</h3>
 <div class="doc">
 <p><span class="c">A handle made public through a re-export.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle;</code></pre>
-<div class="doc">
-<p><span class="c">A helper that stays hidden.</span></p>
-</div>
-<pre><code><span class="dim">reaches pub(crate)</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.detail.helper">helper</span>();</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A helper that stays hidden.</span>
+<span class="dim">reaches pub(crate)</span>
+<span class="src" id="fn.surface.detail.helper">helper</span>()</code></pre>
 <h2 id="mod.surface.detail.tools"><span class="dim">detail::</span>tools</h2>
 <div class="doc">
 <p><span class="c">Tools reached only through a re-export.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Tool;</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Tool</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.surface.detail.tools.Tool"><span class="dim">detail::tools::</span>Tool</h3>
 <div class="doc">
 <p><span class="c">A tool.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Tool;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Tool</code></pre>
 <h2 id="mod.surface.prelude">prelude</h2>
 <div class="doc">
 <p><span class="c">Names a glob brings in.</span></p>
 </div>
 <p class="anatomy">mod: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Marker;
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">mark</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Marker
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.surface.prelude.mark">mark</a>()</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.surface.prelude.Marker"><span class="dim">prelude::</span>Marker</h3>
 <div class="doc">
 <p><span class="c">A marker a glob re-exports.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker;</code></pre>
-<div class="doc">
-<p><span class="c">A function a glob re-exports.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.prelude.mark">mark</span>();</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Marker</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A function a glob re-exports.</span>
+<span class="src" id="fn.surface.prelude.mark">mark</span>()</code></pre>
 <h2 id="mod.surface.values">values</h2>
 <div class="doc">
 <p><span class="c">Values made public through re-exports.</span></p>
 </div>
 <p class="anatomy">mod: 1 function, 2 values, 1 re-export; pub 4</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>;
-<span class="k">pub</span> <span class="k">const</span> <span class="src">MAX</span>: u8 = 9;
-<span class="k">pub</span> <span class="k">static</span> <span class="src">CURRENT</span>: u8 = 0;
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">build</span>() -&gt; u8;</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<span class="k">using</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>
+<span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
+<span class="k">static</span> <span class="src">CURRENT</span>: u8 = 0
+<a class="fn" href="#fn.surface.values.build">build</a>() -&gt; u8</code></pre>
 <p class="view">Documented</p>
-<pre><code><span class="dim">reaches pub(crate)</span>
-<span class="k">pub</span> <span class="k">use</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>;
-
-<span class="c">///</span><span class="c"> The largest value.</span>
-<span class="k">pub</span> <span class="k">const</span> <span class="src" id="const.surface.values.MAX">MAX</span>: u8 = 9;
-
-<span class="c">///</span><span class="c"> The current value.</span>
-<span class="k">pub</span> <span class="k">static</span> <span class="src" id="static.surface.values.CURRENT">CURRENT</span>: u8 = 0;
-
-<span class="c">///</span><span class="c"> Builds a value.</span>
-<span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.values.build">build</span>() -&gt; u8;</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="dim">reaches pub(crate)</span>
+<span class="k">using</span> <a href="#fn.surface.values.inner.deep">self::inner::deep</a>
+<span class="gap"></span><span class="c"> The largest value.</span>
+<span class="k">constexpr</span> <span class="src" id="const.surface.values.MAX">MAX</span>: u8 = 9
+<span class="gap"></span><span class="c"> The current value.</span>
+<span class="k">static</span> <span class="src" id="static.surface.values.CURRENT">CURRENT</span>: u8 = 0
+<span class="gap"></span><span class="c"> Builds a value.</span>
+<span class="src" id="fn.surface.values.build">build</span>() -&gt; u8</code></pre>
 <h2 id="mod.surface.values.inner"><span class="dim">values::</span>inner</h2>
 <p class="anatomy">mod: 1 function; pub 1</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">fn</span> <span class="src">deep</span>();</code></pre>
+<pre class="glance"><code><span class="k">pub:</span>
+<a class="fn" href="#fn.surface.values.inner.deep">deep</a>()</code></pre>
 <p class="view">Documented</p>
-<div class="doc">
-<p><span class="c">A function two re-exports away.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.surface.values.inner.deep">deep</span>();</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A function two re-exports away.</span>
+<span class="src" id="fn.surface.values.inner.deep">deep</span>()</code></pre>
 </main>

@@ -2,8 +2,8 @@
 //! the crates fit together. The facades come first, each the API of a
 //! crate family, then the implementation crates, grouped by the facade that
 //! re-exports most of their items, then every other crate by folder, then
-//! the uses between outlines. The legend sits above the tables, once for
-//! every page.
+//! the uses between outlines. The legend closes the page, once for every
+//! page.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -70,12 +70,12 @@ pub(crate) fn fragment(overview: &Overview<'_>, stamp: &str) -> String {
         stat(count(Role::Library) + count(Role::Binary), "other", "other"),
         stat(overview.declarations, "declaration", "declarations"),
     );
-    out.push_str("<h2 id=\"legend\">Legend</h2>\n");
-    out.push_str(&crate::legend::html());
     facades(&mut out, overview);
     implementations(&mut out, overview);
     others(&mut out, overview);
     out.push_str(overview.uses);
+    out.push_str("<h2 id=\"legend\">Legend</h2>\n");
+    out.push_str(&crate::legend::html());
     out.push_str("</main>\n");
     out
 }

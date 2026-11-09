@@ -24,45 +24,44 @@
 <h2 id="mod.receivers">receivers</h2>
 <p class="anatomy">crate root: 1 type, 1 function; pub 2</p>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Node;
-<span class="k">impl</span> Node {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">none</span>();
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">boxed</span>(self: Box&lt;Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">consume</span>(self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">consume_mut</span>(mut self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">counted</span>(self: Rc&lt;Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">exclusive</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">explicit</span>(self: &amp;Self) -&gt; u8;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">explicit_mut</span>(self: &amp;mut Self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">lifetime</span>&lt;'a&gt;(&amp;'a <span class="k">self</span>) -&gt; &amp;'a str;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">pinned</span>(self: Pin&lt;&amp;mut Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">shared</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Node
+{
+<span class="k">pub:</span>
+    <span class="k">static</span> <a class="fn" href="#fn.receivers.Node.none">none</a>()
+    <a class="fn" href="#fn.receivers.Node.boxed">boxed</a>(self: Box&lt;Self&gt;)
+    <a class="fn" href="#fn.receivers.Node.consume">consume</a>(self)
+    <a class="fn" href="#fn.receivers.Node.consume_mut">consume_mut</a>(mut self)
+    <a class="fn" href="#fn.receivers.Node.counted">counted</a>(self: Rc&lt;Self&gt;)
+    <a class="fn" href="#fn.receivers.Node.exclusive">exclusive</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.receivers.Node.explicit">explicit</a>() -&gt; u8
+    <a class="fn" href="#fn.receivers.Node.explicit_mut">explicit_mut</a>() <span class="k">mut</span>
+    <a class="fn" href="#fn.receivers.Node.lifetime">lifetime</a>&lt;'a&gt;() -&gt; str&amp; 'a
+    <a class="fn" href="#fn.receivers.Node.pinned">pinned</a>(self: Pin&lt;Self mut&amp;&gt;)
+    <a class="fn" href="#fn.receivers.Node.shared">shared</a>() -&gt; u8
 }
-
-<span class="k">pub</span> <span class="k">fn</span> <span class="src">free</span>(node: &amp;<a href="#type.receivers.Node">Node</a>);</code></pre>
+<span class="gap"></span><span class="k">pub:</span>
+<a class="fn" href="#fn.receivers.free">free</a>(node: <a href="#type.receivers.Node">Node</a>&amp;)</code></pre>
 <p class="view">Documented</p>
 <h3 id="type.receivers.Node">Node</h3>
 <div class="doc">
 <p><span class="c">Every receiver form.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Node;
-
-<span class="k">impl</span> Node {
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">none</span>();
-
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">boxed</span>(self: Box&lt;Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">consume</span>(self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">consume_mut</span>(mut self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">counted</span>(self: Rc&lt;Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">exclusive</span>(&amp;mut <span class="k">self</span>);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">explicit</span>(self: &amp;Self) -&gt; u8;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">explicit_mut</span>(self: &amp;mut Self);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">lifetime</span>&lt;'a&gt;(&amp;'a <span class="k">self</span>) -&gt; &amp;'a str;
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">pinned</span>(self: Pin&lt;&amp;mut Self&gt;);
-    <span class="k">pub</span> <span class="k">fn</span> <span class="src">shared</span>(&amp;<span class="k">self</span>) -&gt; u8;
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Node
+{
+<span class="k">pub:</span>
+    <span class="k">static</span> <span class="src" id="fn.receivers.Node.none">none</span>()
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.boxed">boxed</span>(self: Box&lt;Self&gt;)
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.consume">consume</span>(self)
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.consume_mut">consume_mut</span>(mut self)
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.counted">counted</span>(self: Rc&lt;Self&gt;)
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.exclusive">exclusive</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.explicit">explicit</span>() -&gt; u8
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.explicit_mut">explicit_mut</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.lifetime">lifetime</span>&lt;'a&gt;() -&gt; str&amp; 'a
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.pinned">pinned</span>(self: Pin&lt;Self mut&amp;&gt;)
+<span class="gap"></span>    <span class="src" id="fn.receivers.Node.shared">shared</span>() -&gt; u8
 }</code></pre>
-<div class="doc">
-<p><span class="c">A free function never gets static.</span></p>
-</div>
-<pre><code><span class="k">pub</span> <span class="k">fn</span> <span class="src" id="fn.receivers.free">free</span>(node: &amp;<a href="#type.receivers.Node">Node</a>);</code></pre>
+<pre><code><span class="k">pub:</span>
+<span class="c"> A free function never gets static.</span>
+<span class="src" id="fn.receivers.free">free</span>(node: <a href="#type.receivers.Node">Node</a>&amp;)</code></pre>
 </main>
