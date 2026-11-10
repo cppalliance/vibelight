@@ -5,6 +5,7 @@ pub(crate) const STYLE: &str = "\
 :root{color-scheme:light dark;--bg:#fff;--fg:#1f2328;--muted:#59636e;--side:#f6f8fa;--rule:#d1d9e0;--key:#8250df;--com:#59636e;--link:#0969da;--cross:#8a5c00;--mark:#953800;--mark-bg:#fff1e5;--target:#fff8c5;--bar:#eef1f4;--bar-h:44px;--box:transparent}
 @media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--muted:#9198a1;--side:#151b23;--rule:#3d444d;--key:#d2a8ff;--com:#9198a1;--link:#4493f8;--cross:#e3b341;--mark:#ffa657;--mark-bg:#3d2611;--target:#3a3000;--bar:#010409;--box:transparent}}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+[hidden]{display:none!important}
 .vl-bar{position:sticky;top:0;z-index:10;display:flex;align-items:flex-end;gap:1rem;box-sizing:border-box;height:var(--bar-h);padding:0 1rem;background:var(--bar);border-bottom:1px solid var(--rule)}
 .vl-home{align-self:center;font-weight:650;font-size:14px;color:var(--fg)}
 .vl-tabs{display:flex;gap:3px;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
@@ -121,5 +122,14 @@ mod tests {
             "a cross-crate link stays yellow inside a comment"
         );
         assert!(!STYLE.contains("url(") && !STYLE.contains("@import"));
+    }
+
+    /// The app hides a tab's view with the `hidden` attribute, and the view's
+    /// own `display` would win over the browser's rule for that attribute, so
+    /// every tab's page would show at once, the first on top.
+    #[test]
+    fn a_hidden_element_does_not_show_whatever_its_display() {
+        assert!(STYLE.contains("\n.vl-view{display:flex}\n"));
+        assert!(STYLE.contains("\n[hidden]{display:none!important}\n"));
     }
 }
