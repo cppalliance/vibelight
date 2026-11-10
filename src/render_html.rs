@@ -12,9 +12,9 @@ use crate::layout::{Block, Line, Span, span_text};
 use crate::layout_marker::Marker;
 use crate::model::{Loc, TypeRef, ValueRef};
 
-/// The least indentation a comment line needs to be a member's comment and so
-/// go in a box: a comment at indent 0 states the type's own contract, such as
-/// `// internal` or `// impl Trait`, and stays visible.
+/// The least indentation a comment line needs to be the comment of a member,
+/// or of a base's impl, and so go in a box: a comment at indent 0 states the
+/// type's own contract, such as `// internal`, and stays visible.
 const MEMBER_COMMENT_INDENT: usize = 4;
 
 /// The box's left and right padding, which its margin subtracts so the

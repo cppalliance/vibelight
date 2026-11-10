@@ -12,6 +12,7 @@ use crate::anatomy::{self, Anatomy};
 use crate::document::{Builder, Inline, Item, Node, anchor, crumb, plain_links, strong_anchor};
 use crate::glance;
 use crate::layout::{Block, Line};
+use crate::layout_decl::compact_block;
 use crate::layout_items::{docs_block, module_block};
 use crate::model::{Crate, DeclId, ItemKind, Loc, ModId, ValueRef, path_order};
 use crate::order::Order;
@@ -107,7 +108,9 @@ impl Builder<'_> {
         let mut views: Vec<Vec<Line>> = (types.iter())
             .map(|&d| {
                 let prefix = glance::fn_prefix(&self.decl_ids[d]);
-                glance::anchored(&self.blocks[d].lines, &prefix, true)
+                let compact = compact_block(krate, d);
+                let block = compact.as_ref().unwrap_or(&self.blocks[d]);
+                glance::anchored(&block.lines, &prefix, true)
             })
             .collect();
         if let Some(block) = &items {

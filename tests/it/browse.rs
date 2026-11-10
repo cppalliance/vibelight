@@ -123,6 +123,114 @@ fn a_facades_key_that_is_no_list_of_strings_is_an_error() {
     );
 }
 
+/// Returns the sidebar's line for one symbol of a facade's page.
+fn symbol(page: &str, name: &str) -> String {
+    let nav = &page[..page.find("</nav>").expect("a page has a sidebar")];
+    let list = &nav[nav.find("<ul class=\"symbols\">").expect("a symbol list")..];
+    list.lines()
+        .find(|line| line.contains(&format!(">{name}<")))
+        .unwrap_or_else(|| panic!("{name} is no symbol of the page"))
+        .to_owned()
+}
+
+#[test]
+fn a_facade_s_symbol_list_prints_bold_each_type_no_other_item_of_its_api_names() {
+    let (_tmp, repo) = garden(MEMBERS);
+    assert!(vibelight_in(&repo, &[]).status.success());
+    let page = page(&repo.join(".vibelight").join("html"), "facade");
+    // `Panel` holds a `Meter` and implements `Reads`, `show` takes a
+    // `Reads`, and `Meter` holds a `Gauge`. Nothing names `Panel`. Nothing
+    // names `show` either, but no declaration can name a function, so the
+    // rule tells nothing of one.
+    assert_eq!(
+        symbol(&page, "Panel"),
+        "<li><a href=\"#type.facade.Panel\"><b>Panel</b></a></li>"
+    );
+    for (name, id) in [
+        ("Gauge", "api.Gauge"),
+        ("Meter", "api.Meter"),
+        ("Reads", "api.Reads"),
+        ("show()", "fn.facade.show"),
+    ] {
+        assert_eq!(
+            symbol(&page, name),
+            format!("<li><a href=\"#{id}\">{name}</a></li>")
+        );
+    }
+}
+
+#[test]
+fn a_facade_lists_what_its_code_names_and_does_not_re_export() {
+    let (_tmp, repo) = garden(MEMBERS);
+    assert!(vibelight_in(&repo, &[]).status.success());
+    let page = page(&repo.join(".vibelight").join("html"), "facade");
+    // `Meter` holds a `Valve` of beta, which the facade does not re-export.
+    // The stray and vendored types are of crates outside the run.
+    assert!(page.contains(
+        "<li><a href=\"#named\">Named, not re-exported</a> <span class=\"dim\">1</span></li>"
+    ));
+    assert!(page.contains(
+        " Their code names <a href=\"#named\">1 item that facade does not re-export</a>.</p>"
+    ));
+    assert!(
+        page.ends_with(
+            "<h2 id=\"named\">Named, not re-exported <span class=\"count\">1</span></h2>\n\
+             <p class=\"hint\">What the code above names that facade does not re-export, under \
+             the crate a user of facade names it through.</p>\n\
+             <p class=\"via\"><a class=\"crate\" href=\"beta.html\">beta</a> \
+             <span class=\"num\">1 item, which no facade re-exports</span></p>\n\
+             <p class=\"chips\"><a class=\"chip\" href=\"beta.html#type.beta.parts.Valve\">\
+             Valve</a></p>\n</main>\n"
+        ),
+        "{}",
+        &page[page.len().saturating_sub(700)..]
+    );
+}
+
+#[test]
+fn what_a_facade_names_is_listed_under_the_facade_that_re_exports_it() {
+    let (_tmp, repo) = garden(&format!(
+        "{MEMBERS}facades = [\"crates/facade\", \"crates/front\"]\n"
+    ));
+    let front = repo.join("crates").join("front");
+    fs::create_dir_all(front.join("src")).unwrap();
+    fs::write(
+        front.join("Cargo.toml"),
+        "[package]\nname = \"front\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
+         [dependencies]\nbeta = { workspace = true }\n",
+    )
+    .unwrap();
+    fs::write(
+        front.join("src").join("lib.rs"),
+        "//! Front: re-exports a part.\n\npub use beta::parts::Valve;\n",
+    )
+    .unwrap();
+    let result = vibelight_in(&repo, &[]);
+    assert!(result.status.success(), "{:?}", lines(&result.stderr));
+    let html = repo.join(".vibelight").join("html");
+    let facade = page(&html, "facade");
+    assert!(
+        facade.ends_with(
+            "<p class=\"via\"><a class=\"crate facade\" href=\"front.html\">front</a> \
+             <span class=\"num\">1 item</span></p>\n\
+             <p class=\"chips\"><a class=\"chip\" href=\"front.html#api.Valve\">Valve</a></p>\n\
+             </main>\n"
+        ),
+        "{}",
+        &facade[facade.len().saturating_sub(500)..]
+    );
+    let front = page(&html, "front");
+    assert!(front.contains("<h3 id=\"api.Valve\">"), "the link lands");
+    assert!(
+        !front.contains("id=\"named\""),
+        "front's one item names nothing"
+    );
+    assert_eq!(
+        symbol(&front, "Valve"),
+        "<li><a href=\"#api.Valve\"><b>Valve</b></a></li>"
+    );
+}
+
 #[test]
 fn the_search_index_lists_every_id_that_a_page_declares() {
     let (_tmp, repo) = garden(MEMBERS);

@@ -5,12 +5,13 @@
 <li><a href="#api.mod">facade</a> <span class="dim">5</span></li>
 </ul>
 </li>
+<li><a href="#named">Named, not re-exported</a> <span class="dim">1</span></li>
 </ul>
 <hr>
 <ul class="symbols">
 <li><a href="#api.Gauge">Gauge</a></li>
 <li><a href="#api.Meter">Meter</a></li>
-<li><a href="#type.facade.Panel">Panel</a></li>
+<li><a href="#type.facade.Panel"><b>Panel</b></a></li>
 <li><a href="#api.Reads">Reads</a></li>
 <li><a href="#fn.facade.show">show()</a></li>
 </ul>
@@ -21,7 +22,7 @@
 <div class="doc">
 <p><span class="c">Facade: re-exports the workspace's public types.</span></p>
 </div>
-<p class="note" id="api">The public API of facade: 5 items, from 2 other crates. Each shows only what a user of facade can name.</p>
+<p class="note" id="api">The public API of facade: 5 items, from 2 other crates. Each shows only what a user of facade can name. Their code names <a href="#named">1 item that facade does not re-export</a>.</p>
 <h2 id="api.mod">facade</h2>
 <p class="view">At a glance</p>
 <pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge
@@ -94,4 +95,8 @@
 <p><span class="c">Shows any reader.</span></p>
 </div>
 <pre><code><span class="src">show</span>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: T&amp;) -&gt; u32</code></pre>
+<h2 id="named">Named, not re-exported <span class="count">1</span></h2>
+<p class="hint">What the code above names that facade does not re-export, under the crate a user of facade names it through.</p>
+<p class="via"><a class="crate" href="beta.html">beta</a> <span class="num">1 item, which no facade re-exports</span></p>
+<p class="chips"><a class="chip" href="beta.html#type.beta.parts.Valve">Valve</a></p>
 </main>

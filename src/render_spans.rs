@@ -249,9 +249,9 @@ impl Page<'_> {
     }
 }
 
-/// Returns the word a comment marker carries, which the page prints: `impl `
-/// for `// impl `, `cfg: ` for `// cfg: `, and nothing for the bare `//`,
-/// `///`, and `//!`, whose slashes the page leaves out.
+/// Returns the word a comment marker carries, which the page prints:
+/// `cfg: ` for `// cfg: `, and nothing for the bare `//`, `///`, and `//!`,
+/// whose slashes the page leaves out.
 fn marker_word(marker: &str) -> &str {
     marker.trim_start_matches(['/', '!']).trim_start()
 }

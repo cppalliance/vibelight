@@ -517,12 +517,12 @@ pub(crate) struct ImplLoc {
 }
 
 /// The comments above one attached impl line, kept together so the outline
-/// can print an `// impl` header above them.
+/// can print them with what the impl adds to the type.
 #[derive(Clone, Debug)]
 pub(crate) struct ImplNotes {
-    /// The index of the impl's entry in the type's base list, or `None` for
-    /// an inherent impl. The header reads the entry after routing, so it
-    /// names the trait the way the base list prints it.
+    /// The index of the impl's entry in the type's base list, which the
+    /// comments print above, or `None` for an inherent impl, whose comments
+    /// open the type's body.
     pub(crate) base: Option<usize>,
     pub(crate) notes: Vec<Note>,
 }

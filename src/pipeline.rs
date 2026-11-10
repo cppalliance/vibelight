@@ -112,6 +112,8 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     let run = anchors(&targets, &docs);
     let links = member_links(&krates, &docs);
     let owners = owners(&targets, &krates, &docs, &links);
+    let facades = facades(&owners, &roles, &analyzed.surfaces, &run);
+    let exports = facade_page::exports(&facades);
     let mut entries = Vec::new();
     let mut rows = Vec::new();
     let mut api = Vec::new();
@@ -134,7 +136,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
-        let (content, headings) = page_content(t, &owners, &roles, &analyzed.surfaces, &run, stamp);
+        let (content, headings) = page_content(t, &owners, (&facades, &exports), &run, stamp);
         api.push(headings);
         pages.push((target.stem.clone(), page.doc.title.clone(), content));
         outcome.warnings.extend(prefixed(chosen, p, krate));
@@ -448,25 +450,38 @@ fn keep_public(docs: &mut [Built], roles: &roles::Roles, surfaces: &[Vec<crate::
     }
 }
 
-/// Renders target `t`'s page content, a facade's public API or a page of
-/// everything its crate declares, with the ids of the headings a facade's
-/// page adds for the search index.
-fn page_content(
-    t: usize,
-    owners: &[facade_page::Owner<'_>],
+/// Returns the facades of the run, in target order, each as its page is
+/// made.
+fn facades<'a>(
+    owners: &'a [facade_page::Owner<'a>],
     roles: &roles::Roles,
-    surfaces: &[Vec<crate::surface::Entry>],
-    run: &[Anchors],
-    stamp: &str,
-) -> (String, Vec<String>) {
-    if roles.each[t] == roles::Role::Facade {
-        let facade = facade_page::Facade {
+    surfaces: &'a [Vec<crate::surface::Entry>],
+    run: &'a [Anchors],
+) -> Vec<facade_page::Facade<'a>> {
+    (0..owners.len())
+        .filter(|&t| roles.each[t] == roles::Role::Facade)
+        .map(|t| facade_page::Facade {
             index: t,
             owners,
             surface: &surfaces[t],
             run,
-        };
-        return facade_page::fragment(&facade, stamp);
+        })
+        .collect()
+}
+
+/// Renders target `t`'s page content, a facade's public API or a page of
+/// everything its crate declares, with the ids of the headings a facade's
+/// page adds for the search index. A facade's page also says where a user
+/// names what its code names, which `exports` holds for every facade.
+fn page_content(
+    t: usize,
+    owners: &[facade_page::Owner<'_>],
+    (facades, exports): (&[facade_page::Facade<'_>], &facade_page::Exports),
+    run: &[Anchors],
+    stamp: &str,
+) -> (String, Vec<String>) {
+    if let Some(facade) = facades.iter().find(|facade| facade.index == t) {
+        return facade_page::fragment(facade, exports, stamp);
     }
     let own = &owners[t];
     let content = render_html::fragment(own.doc, own.links, run, stamp);

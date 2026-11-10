@@ -38,12 +38,6 @@ impl Marker {
         bare: "// cfg:",
     };
 
-    /// The `// impl <trait>` line above an impl's comments.
-    pub(crate) const IMPL: Marker = Marker {
-        spaced: "// impl ",
-        bare: "// impl",
-    };
-
     /// Returns the text to print: `spaced` when the line's own text starts a
     /// word, `bare` when it already starts with whitespace.
     pub(crate) fn text(self, already_indented: bool) -> &'static str {

@@ -6,7 +6,7 @@ use crate::layout::{
     Block, Line, Span, above, code, key, mark_line, note_lines, plain, vis_spans, where_parts,
 };
 use crate::layout_groups::{
-    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries,
+    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries, spaced,
 };
 use crate::layout_head::header_lines;
 use crate::layout_marker::Marker;
@@ -22,11 +22,45 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block_of(krate, &krate.decls[id])
 }
 
+/// Builds the block the compact view reads for a declaration that has a
+/// comment on a trait impl: the same block laid out without those comments,
+/// so its base list keeps its shortest form. A declaration with no such
+/// comment has one block for both views, and this returns `None`.
+pub(crate) fn compact_block(krate: &Crate, id: DeclId) -> Option<Block> {
+    Some(block_of(krate, &uncommented(&krate.decls[id])?))
+}
+
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its `pub` members, none hidden from
 /// the docs, and no word of how far anything reaches. A hidden tuple field
 /// reads `/* private field */`, so the tuple keeps its shape.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
+    block_of(krate, &public_decl(krate, id, name))
+}
+
+/// Like `compact_block`, for the block `public_block` builds.
+pub(crate) fn compact_public_block(krate: &Crate, id: DeclId, name: &str) -> Option<Block> {
+    Some(block_of(
+        krate,
+        &uncommented(&public_decl(krate, id, name))?,
+    ))
+}
+
+/// Returns a declaration without the comments of its trait impls, or `None`
+/// when it has none. The comments of its inherent impls stay: they are
+/// comment lines of the body, which the compact view leaves out itself.
+fn uncommented(decl: &Decl) -> Option<Decl> {
+    if decl.impl_notes.iter().all(|group| group.base.is_none()) {
+        return None;
+    }
+    let mut decl = decl.clone();
+    decl.impl_notes.retain(|group| group.base.is_none());
+    Some(decl)
+}
+
+/// Returns a declaration as a user of a public surface sees it, under the
+/// name that user writes.
+fn public_decl(krate: &Crate, id: DeclId, name: &str) -> Decl {
     let shown = |meta: &Meta| meta.vis == "pub" && !meta.attrs.iter().any(|a| a == "doc(hidden)");
     let mut decl = krate.decls[id].clone();
     name.clone_into(&mut decl.name);
@@ -45,20 +79,23 @@ pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     }
     decl.end_marks.clear();
     decl.dangling.clear();
-    block_of(krate, &decl)
+    decl
 }
 
-/// Builds a declaration's block.
+/// Builds a declaration's block. A comment above one of its impls goes with
+/// what the impl adds: above the trait in the base list, or, for an inherent
+/// impl, at the top of the body.
 fn block_of(krate: &Crate, decl: &Decl) -> Block {
     let refs = &krate.refs;
     let mut block = Block::default();
     block
         .lines
         .extend(note_lines(&decl.meta.notes, 0, Marker::DOC));
-    for group in &decl.impl_notes {
-        block.lines.push(impl_header(decl, group.base));
-        block.lines.extend(note_lines(&group.notes, 0, Marker::DOC));
-    }
+    let inherent = spaced(
+        (decl.impl_notes.iter())
+            .filter(|group| group.base.is_none())
+            .map(|group| note_lines(&group.notes, 4, Marker::DOC)),
+    );
     let cfgs = Meta {
         cfgs: decl.meta.cfgs.clone(),
         attrs: decl.meta.attrs.clone(),
@@ -74,7 +111,8 @@ fn block_of(krate: &Crate, decl: &Decl) -> Block {
         || !decl.members.is_empty()
         || !decl.special.is_empty()
         || !decl.end_marks.is_empty()
-        || !decl.dangling.is_empty();
+        || !decl.dangling.is_empty()
+        || !inherent.is_empty();
     block
         .lines
         .extend(header_lines(decl, head_spans(decl), has_body, refs));
@@ -100,7 +138,10 @@ fn block_of(krate: &Crate, decl: &Decl) -> Block {
         },
     );
     block.lines.push(brace("{"));
-    block.lines.extend(body.lines);
+    let parts = [inherent, body.lines];
+    block
+        .lines
+        .extend(spaced(parts.into_iter().filter(|lines| !lines.is_empty())));
     block.repeats.extend(body.repeats);
     block.lines.push(brace("}"));
     block
@@ -110,26 +151,6 @@ fn brace(text: &str) -> Line {
     Line {
         indent: 0,
         spans: vec![plain(text)],
-        trailing: None,
-    }
-}
-
-/// Returns the `// impl` line above one impl's comments: the trait as the
-/// base list prints it, or the type's own name for an inherent impl. The
-/// trait is a comment reference, so it links in HTML and names nothing.
-fn impl_header(decl: &Decl, base: Option<usize>) -> Line {
-    let mut spans = vec![Span::Marker(Marker::IMPL.spaced)];
-    match base.and_then(|index| decl.bases.get(index)) {
-        Some(base) => spans.extend(code(&base.text).into_iter().map(|span| match span {
-            Span::Ref(id) => Span::DocRef(id),
-            Span::Code(text) => Span::Comment(text),
-            other => other,
-        })),
-        None => spans.push(Span::Comment(decl.name.clone())),
-    }
-    Line {
-        indent: 0,
-        spans,
         trailing: None,
     }
 }

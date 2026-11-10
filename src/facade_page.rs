@@ -4,6 +4,11 @@
 //! those users see it, with its `pub` members alone. Each module shows its
 //! items twice, at a glance and documented, and each item says where the
 //! crate that defines it writes it.
+//!
+//! The page also reads what the code of those items names. A type that no
+//! other item of the API names is where a reader starts, so the sidebar
+//! prints it bold. An item of the run that the code names and the API does
+//! not hold is listed last, under the crate a user names it through.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -11,7 +16,7 @@ use std::fmt::Write as _;
 use crate::document::Document;
 use crate::glance;
 use crate::layout::{Block, Line, Span, key, plain};
-use crate::layout_decl::public_block;
+use crate::layout_decl::{compact_public_block, public_block};
 use crate::layout_items::{docs_block, item_block};
 use crate::model::{Crate, ItemKind, Loc, ModId, Reach, name_order, path_order};
 use crate::render_html::{Anchors, ApiIds, Page, attr, escape};
@@ -34,6 +39,36 @@ pub(crate) struct Facade<'a> {
     pub(crate) owners: &'a [Owner<'a>],
     pub(crate) surface: &'a [Entry],
     pub(crate) run: &'a [Anchors],
+}
+
+/// Where a user names an item of the run that a facade's page shows: the
+/// facade, the item's heading on its page, and the name it has there.
+pub(crate) struct Export {
+    facade: usize,
+    id: String,
+    name: String,
+}
+
+/// Where a user names each item of the run that some facade's page shows,
+/// by the target that defines it and the item: the first facade, in the
+/// order given, that shows it.
+pub(crate) type Exports = BTreeMap<(usize, Reach), Export>;
+
+/// Returns where a user names each item that the pages of `facades` show.
+pub(crate) fn exports(facades: &[Facade<'_>]) -> Exports {
+    let mut out = Exports::new();
+    for facade in facades {
+        for named in groups(facade).values().flat_map(|(_, items)| items) {
+            if let Some(reach) = named.item {
+                out.entry((named.owner, reach)).or_insert_with(|| Export {
+                    facade: facade.index,
+                    id: named.id.clone(),
+                    name: format!("{}{}", named.name, named.suffix),
+                });
+            }
+        }
+    }
+    out
 }
 
 /// One path of the API: its name, the block of what it names, the target
@@ -60,12 +95,28 @@ struct Named {
 /// the surface names it, and the module's items.
 type Groups = BTreeMap<Vec<String>, (Option<ModId>, Vec<Named>)>;
 
-/// A facade's page as it renders: the facade, and the heading of each item
-/// of the run that the page shows, which every link to that item goes to.
+/// A facade's page as it renders: the facade, the heading of each item of
+/// the run that the page shows, which every link to that item goes to, and
+/// where a user names what the other facades show.
 struct View<'a> {
     facade: &'a Facade<'a>,
     api: ApiIds,
+    exports: &'a Exports,
 }
+
+/// What the code of the API's items names.
+#[derive(Default)]
+struct Names {
+    /// The items of the API that another item of the API names.
+    used: BTreeSet<(usize, Reach)>,
+    /// The items of the run that the API names and does not hold.
+    outside: BTreeSet<(usize, Reach)>,
+}
+
+/// The items the API names and does not hold, by the crate a user names
+/// them through: a facade that shows them, first, or else the crate that
+/// defines them. Each item has its name and the link to it, if it has one.
+type Via = BTreeMap<(bool, usize), Vec<(String, Option<String>)>>;
 
 /// Where the target that defines an item writes it.
 struct Defined {
@@ -101,8 +152,13 @@ pub(crate) fn keep_public(doc: &mut Document, surface: &[Entry]) {
 
 /// Renders the facade's page content, with `stamp` at the top of `<main>`,
 /// and returns it with the ids of the headings that no other page of the
-/// run has, for the search index.
-pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>) {
+/// run has, for the search index. `exports` says where a user names what
+/// the facades of the run show.
+pub(crate) fn fragment(
+    facade: &Facade<'_>,
+    exports: &Exports,
+    stamp: &str,
+) -> (String, Vec<String>) {
     let own = &facade.owners[facade.index];
     let title = &own.doc.title;
     let groups = groups(facade);
@@ -112,7 +168,14 @@ pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>
             (api.entry((named.owner, reach))).or_insert_with(|| named.id.clone());
         }
     }
-    let view = View { facade, api };
+    let names = names(facade, &groups, &api);
+    let view = View {
+        facade,
+        api,
+        exports,
+    };
+    let via = view.via(&names.outside);
+    let outside: usize = via.values().map(Vec::len).sum();
     let mut out = String::from("<nav>\n<ul>\n<li><a href=\"#api\">API</a>\n<ul>\n");
     for (path, (_, items)) in &groups {
         let _ = writeln!(
@@ -123,8 +186,16 @@ pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>
             items.len()
         );
     }
-    out.push_str("</ul>\n</li>\n</ul>\n");
-    symbols(&mut out, &groups);
+    out.push_str("</ul>\n</li>\n");
+    if outside > 0 {
+        let _ = writeln!(
+            out,
+            "<li><a href=\"#named\">Named, not re-exported</a> \
+             <span class=\"dim\">{outside}</span></li>"
+        );
+    }
+    out.push_str("</ul>\n");
+    symbols(&mut out, &groups, &names.used);
     out.push_str("</nav>\n<main>\n");
     let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
     let _ = writeln!(
@@ -147,10 +218,18 @@ pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>
         0 => String::new(),
         n => format!(", from {}", counted(n, "other crate")),
     };
+    let also = match outside {
+        0 => String::new(),
+        n => format!(
+            " Their code names <a href=\"#named\">{} that {} does not re-export</a>.",
+            counted(n, "item"),
+            escape(title)
+        ),
+    };
     let _ = writeln!(
         out,
         "<p class=\"note\" id=\"api\">The public API of {}: {}{from}. Each shows only what a \
-         user of {} can name.</p>",
+         user of {} can name.{also}</p>",
         escape(title),
         counted(items, "item"),
         escape(title)
@@ -158,6 +237,7 @@ pub(crate) fn fragment(facade: &Facade<'_>, stamp: &str) -> (String, Vec<String>
     for (path, (module, items)) in &groups {
         view.module_section(&mut out, (path, *module), items);
     }
+    view.named_section(&mut out, via);
     out.push_str("</main>\n");
     let headings = (groups.into_values())
         .flat_map(|(_, items)| items.into_iter().map(|named| named.id))
@@ -195,6 +275,39 @@ fn groups(facade: &Facade<'_>) -> Groups {
         }
     }
     groups
+}
+
+/// Returns what the code of the API's items names: for each item, every
+/// item of the run that a name in its block reaches, other than itself. A
+/// name in a comment counts for nothing.
+fn names(facade: &Facade<'_>, groups: &Groups, api: &ApiIds) -> Names {
+    let mut names = Names::default();
+    for named in groups.values().flat_map(|(_, items)| items) {
+        let own = named.item.map(|reach| (named.owner, reach));
+        let refs = &facade.owners[named.owner].doc.refs;
+        let spans = named.block.lines.iter().flat_map(|line| &line.spans);
+        for span in spans {
+            let Span::Ref(id) = span else {
+                continue;
+            };
+            let reference = &refs[*id];
+            let key = match (reference.decl(), reference.value(), reference.foreign) {
+                (Some(decl), ..) => (named.owner, Reach::Decl(decl)),
+                (None, Some(value), _) => (named.owner, Reach::Value(value)),
+                (None, None, Some(to)) => (to.krate, to.reach),
+                (None, None, None) => continue,
+            };
+            if Some(key) == own {
+                continue;
+            }
+            if api.contains_key(&key) {
+                names.used.insert(key);
+            } else {
+                names.outside.insert(key);
+            }
+        }
+    }
+    names
 }
 
 /// Returns a module path and a name joined by dots.
@@ -309,10 +422,21 @@ fn plain_named(name: &str, suffix: &'static str, owner: usize, line: Line) -> Na
     }
 }
 
+impl Named {
+    /// Whether this is a type that no other item of the API names in its
+    /// code, which makes it a place to start reading. Only a type can be
+    /// one: no declaration names a function or a macro, and hardly one a
+    /// constant, so the rule would pick every one of them and tell nothing.
+    fn is_root(&self, used: &BTreeSet<(usize, Reach)>) -> bool {
+        matches!(self.item, Some(reach @ Reach::Decl(_)) if !used.contains(&(self.owner, reach)))
+    }
+}
+
 /// Writes the sidebar's list of every symbol of the API by name, under a
 /// rule, each linking to its heading. A name that more than one module
-/// holds shows its module, dim.
-fn symbols(out: &mut String, groups: &Groups) {
+/// holds shows its module, dim, and a type that no other item of the API
+/// names in its code, none of `used`, is bold.
+fn symbols(out: &mut String, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
     let mut all: Vec<(&[String], &Named)> = (groups.iter())
         .flat_map(|(path, (_, items))| items.iter().map(move |named| (path.as_slice(), named)))
         .collect();
@@ -331,15 +455,36 @@ fn symbols(out: &mut String, groups: &Groups) {
         } else {
             String::new()
         };
+        let (open, close) = if named.is_root(used) {
+            ("<b>", "</b>")
+        } else {
+            ("", "")
+        };
         let _ = writeln!(
             out,
-            "<li><a href=\"#{}\">{}{}</a>{module}</li>",
+            "<li><a href=\"#{}\">{open}{}{}{close}</a>{module}</li>",
             attr(&named.id),
             escape(&named.name),
             named.suffix
         );
     }
     out.push_str("</ul>\n");
+}
+
+/// Returns the name of an item of a crate, a function's with `()`.
+fn item_name(krate: &Crate, reach: Reach) -> Option<String> {
+    match reach {
+        Reach::Decl(decl) => krate.decls.get(decl).map(|decl| decl.name.clone()),
+        Reach::Value(at) => {
+            let item = krate.modules.get(at.module)?.items.get(at.item)?;
+            let suffix = if matches!(item.kind, ItemKind::Fn(_)) {
+                "()"
+            } else {
+                ""
+            };
+            Some(format!("{}{suffix}", item.name))
+        }
+    }
 }
 
 /// Returns a count with its noun, `1 item` or `2 items`.
@@ -419,7 +564,14 @@ impl View<'_> {
             .iter()
             .map(|named| {
                 let prefix = glance::fn_prefix(&named.id);
-                let lines = glance::anchored(&named.block.lines, &prefix, true);
+                let compact = match named.item {
+                    Some(Reach::Decl(d)) => {
+                        compact_public_block(facade.owners[named.owner].krate, d, &named.name)
+                    }
+                    _ => None,
+                };
+                let block = compact.as_ref().unwrap_or(&named.block);
+                let lines = glance::anchored(&block.lines, &prefix, true);
                 let lines = glance::linked(&lines, |_| self.is_fn(named).then(|| named.id.clone()));
                 (named.owner, glance::compact(&lines))
             })
@@ -489,6 +641,84 @@ impl View<'_> {
             repeats: named.block.repeats.clone(),
         };
         self.page(named.owner).pre(out, &block);
+    }
+
+    /// Sorts the items the API names and does not hold by the crate a user
+    /// names each through: the first facade whose page shows it, where the
+    /// link goes to its heading, or else the crate that defines it, where
+    /// the link goes to it on that crate's page, if the page has it.
+    fn via(&self, outside: &BTreeSet<(usize, Reach)>) -> Via {
+        let facade = self.facade;
+        let mut via = Via::new();
+        for &(owner, reach) in outside {
+            if let Some(export) = self.exports.get(&(owner, reach)) {
+                let file = &facade.owners[export.facade].file;
+                let item = (export.name.clone(), Some(format!("{file}#{}", export.id)));
+                via.entry((false, export.facade)).or_default().push(item);
+                continue;
+            }
+            let Some(name) = item_name(facade.owners[owner].krate, reach) else {
+                continue;
+            };
+            let link = facade.run.get(owner).and_then(|page| {
+                let anchor = match reach {
+                    Reach::Decl(decl) => page.ids.get(decl)?,
+                    Reach::Value(value) => page.values.get(&value)?,
+                };
+                (!anchor.is_empty()).then(|| format!("{}#{anchor}", page.file))
+            });
+            via.entry((true, owner)).or_default().push((name, link));
+        }
+        for items in via.values_mut() {
+            items.sort_by(|a, b| name_order(&a.0, &b.0).then_with(|| a.1.cmp(&b.1)));
+        }
+        via
+    }
+
+    /// Writes the last section: what the code of the API names and the API
+    /// does not hold, under each crate a user names it through.
+    fn named_section(&self, out: &mut String, via: Via) {
+        if via.is_empty() {
+            return;
+        }
+        let facade = self.facade;
+        let title = escape(&facade.owners[facade.index].doc.title);
+        let total: usize = via.values().map(Vec::len).sum();
+        let _ = writeln!(
+            out,
+            "<h2 id=\"named\">Named, not re-exported <span class=\"count\">{total}</span></h2>\n\
+             <p class=\"hint\">What the code above names that {title} does not re-export, \
+             under the crate a user of {title} names it through.</p>"
+        );
+        for ((unexported, krate), items) in via {
+            let target = &facade.owners[krate];
+            let (class, note) = if unexported {
+                ("crate", ", which no facade re-exports")
+            } else {
+                ("crate facade", "")
+            };
+            let _ = writeln!(
+                out,
+                "<p class=\"via\"><a class=\"{class}\" href=\"{}\">{}</a> \
+                 <span class=\"num\">{}{note}</span></p>",
+                attr(&target.file),
+                escape(&target.doc.title),
+                counted(items.len(), "item")
+            );
+            out.push_str("<p class=\"chips\">");
+            for (name, link) in items {
+                let _ = match link {
+                    Some(link) => write!(
+                        out,
+                        "<a class=\"chip\" href=\"{}\">{}</a>",
+                        attr(&link),
+                        escape(&name)
+                    ),
+                    None => write!(out, "<span class=\"chip\">{}</span>", escape(&name)),
+                };
+            }
+            out.push_str("</p>\n");
+        }
     }
 
     /// Whether an item of the API is a module-level function, whose name the

@@ -1,10 +1,15 @@
 //! Lays out a declaration's head: the keyword line with any tuple fields,
 //! the base list, and the `where` clause.
 
-use crate::layout::{Line, Span, code, plain, vis_spans, where_parts, width};
+use crate::layout::{Line, Span, code, note_lines, plain, vis_spans, where_parts, width};
+use crate::layout_marker::Marker;
 use crate::layout_members::param_lines;
 use crate::model::{Base, Decl, Shape, TypeRef, name_order};
 use crate::wrap::{self, MAX_WIDTH};
+
+/// The column a base's name starts on, after the `: ` or `, ` that opens
+/// its line, which the comment of its impl starts on too.
+const BASE_NAME_INDENT: usize = 6;
 
 fn line(indent: usize, spans: Vec<Span>) -> Line {
     Line {
@@ -14,11 +19,20 @@ fn line(indent: usize, spans: Vec<Span>) -> Line {
     }
 }
 
+/// A base that takes a line of its own: its entry, and the comment lines of
+/// its impl, which go above it.
+struct Own {
+    spans: Vec<Span>,
+    notes: Vec<Line>,
+}
+
 /// Finishes a header with any tuple fields, the base list, and the `where`
 /// clause; a type with no body ends in `;`. The base list stays on the head
-/// line while it holds only short entries and the line fits. Otherwise each
-/// base line starts with `: ` or `, `: the short names first, wrapping to
-/// fit, then one long path per line, then the `where` clause on its own line.
+/// line while it holds only short entries, no impl of theirs has a comment,
+/// and the line fits. Otherwise each base line starts with `: ` or `, `:
+/// the short names first, wrapping to fit, then each base whose impl has a
+/// comment, under that comment, then one long path per line, then the
+/// `where` clause on its own line.
 pub(crate) fn header_lines(
     decl: &Decl,
     header: Vec<Span>,
@@ -26,11 +40,7 @@ pub(crate) fn header_lines(
     refs: &[TypeRef],
 ) -> Vec<Line> {
     let mut lines = head_lines(decl, header);
-    let bases = match &decl.shape {
-        Shape::Trait { supertraits, .. } => supertraits.as_slice(),
-        _ => decl.bases.as_slice(),
-    };
-    let (short, long) = lists(bases, refs);
+    let (short, own) = lists(decl, refs);
     let where_clause = decl.where_clause.as_ref().map(where_parts);
     let last = lines.pop().unwrap_or_default();
     let mut one = last.spans.clone();
@@ -43,7 +53,7 @@ pub(crate) fn header_lines(
             one.extend(entry.iter().cloned());
         }
     }
-    if long.is_empty() && width(last.indent, &one, refs) <= MAX_WIDTH {
+    if own.is_empty() && width(last.indent, &one, refs) <= MAX_WIDTH {
         match &where_clause {
             Some(clause) if has_body && last.indent == 0 => {
                 lines.extend(wrap::header(one, Some(clause), refs));
@@ -61,7 +71,7 @@ pub(crate) fn header_lines(
         }
     } else {
         lines.push(last);
-        lines.extend(comma_lines(&short, &long, refs));
+        lines.extend(comma_lines(&short, own, refs));
         if let Some(clause) = &where_clause {
             lines.extend(wrap::where_lines(clause, &[], 4, refs));
         }
@@ -102,21 +112,51 @@ fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
     vec![line(0, header)]
 }
 
-/// Returns the short entries, sorted by name, and the long entries, sorted
-/// by path.
-fn lists(bases: &[Base], refs: &[TypeRef]) -> (Vec<Vec<Span>>, Vec<Vec<Span>>) {
-    let mut short: Vec<&Base> = bases.iter().filter(|b| !b.long).collect();
-    short.sort_by(|a, b| {
+/// Returns the bases in print order: the short entries that share lines,
+/// sorted by name, and then the entries that each take a line, the short
+/// ones whose impl has a comment, sorted by name, before the long ones,
+/// sorted by path. A trait's bases are its supertraits, which no impl
+/// writes, so none has a comment.
+fn lists(decl: &Decl, refs: &[TypeRef]) -> (Vec<Vec<Span>>, Vec<Own>) {
+    let (bases, of_impls) = match &decl.shape {
+        Shape::Trait { supertraits, .. } => (supertraits.as_slice(), false),
+        _ => (decl.bases.as_slice(), true),
+    };
+    let comment = |index: usize| -> Vec<Line> {
+        (decl.impl_notes.iter())
+            .filter(|group| of_impls && group.base == Some(index))
+            .flat_map(|group| note_lines(&group.notes, BASE_NAME_INDENT, Marker::DOC))
+            .collect()
+    };
+    let by_name = |a: &&Base, b: &&Base| {
         name_order(&a.name, &b.name).then_with(|| a.text.visible(refs).cmp(&b.text.visible(refs)))
-    });
-    let mut long: Vec<&Base> = bases.iter().filter(|b| b.long).collect();
-    long.sort_by(|a, b| name_order(&a.text.visible(refs), &b.text.visible(refs)));
-    let spans = |list: Vec<&Base>| list.into_iter().map(|b| code(&b.text)).collect();
-    (spans(short), spans(long))
+    };
+    let by_path = |a: &&Base, b: &&Base| name_order(&a.text.visible(refs), &b.text.visible(refs));
+    let mut short = Vec::new();
+    let mut marked = Vec::new();
+    let mut long = Vec::new();
+    for (index, base) in bases.iter().enumerate() {
+        let lines = comment(index);
+        match (base.long, lines.is_empty()) {
+            (false, true) => short.push(base),
+            (false, false) => marked.push((base, lines)),
+            (true, _) => long.push((base, lines)),
+        }
+    }
+    short.sort_by(by_name);
+    marked.sort_by(|a, b| by_name(&a.0, &b.0));
+    long.sort_by(|a, b| by_path(&a.0, &b.0));
+    let own = (marked.into_iter().chain(long))
+        .map(|(base, notes)| Own {
+            spans: code(&base.text),
+            notes,
+        })
+        .collect();
+    (short.into_iter().map(|b| code(&b.text)).collect(), own)
 }
 
 /// Returns the base lines of the leading-comma form.
-fn comma_lines(short: &[Vec<Span>], long: &[Vec<Span>], refs: &[TypeRef]) -> Vec<Line> {
+fn comma_lines(short: &[Vec<Span>], own: Vec<Own>, refs: &[TypeRef]) -> Vec<Line> {
     let mut lines = Vec::new();
     let mut current: Vec<Span> = Vec::new();
     for entry in short {
@@ -138,10 +178,13 @@ fn comma_lines(short: &[Vec<Span>], long: &[Vec<Span>], refs: &[TypeRef]) -> Vec
     if !current.is_empty() {
         lines.push(line(4, current));
     }
-    for entry in long {
-        let mut spans = vec![plain(if lines.is_empty() { ": " } else { ", " })];
-        spans.extend(entry.iter().cloned());
+    let mut first = lines.is_empty();
+    for entry in own {
+        lines.extend(entry.notes);
+        let mut spans = vec![plain(if first { ": " } else { ", " })];
+        spans.extend(entry.spans);
         lines.push(line(4, spans));
+        first = false;
     }
     lines
 }
@@ -153,9 +196,9 @@ mod tests {
     use super::*;
     use crate::layout::line_text;
 
-    /// Returns the head of the declaration `name` in a one-file crate: its
-    /// lines before the opening brace.
-    fn head(source: &str, name: &str) -> Vec<String> {
+    /// Returns the lines of the declaration `name` in a one-file crate, and
+    /// the lines the compact view reads when they are not the same.
+    fn blocks(source: &str, name: &str) -> (Vec<String>, Option<Vec<String>>) {
         let tmp = tempfile::tempdir().unwrap();
         let src = tmp.path().join("src");
         fs::create_dir_all(&src).unwrap();
@@ -165,12 +208,22 @@ mod tests {
         crate::resolve::resolve(&mut krate);
         crate::attach::attach(&mut krate);
         let id = krate.decls.iter().position(|d| d.name == name).unwrap();
-        crate::layout_decl::decl_block(&krate, id)
-            .lines
-            .iter()
-            .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))
-            .take_while(|l| l != "{")
-            .collect()
+        let text = |block: crate::layout::Block| -> Vec<String> {
+            (block.lines.iter())
+                .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))
+                .collect()
+        };
+        (
+            text(crate::layout_decl::decl_block(&krate, id)),
+            crate::layout_decl::compact_block(&krate, id).map(text),
+        )
+    }
+
+    /// Returns the head of the declaration `name` in a one-file crate: its
+    /// lines before the opening brace.
+    fn head(source: &str, name: &str) -> Vec<String> {
+        let (lines, _) = blocks(source, name);
+        lines.into_iter().take_while(|l| l != "{").collect()
     }
 
     #[test]
@@ -196,6 +249,85 @@ mod tests {
                 "    where T: Copy"
             ]
         );
+    }
+
+    #[test]
+    fn a_base_whose_impl_has_a_comment_takes_its_own_line_under_the_comment() {
+        let source = "pub struct Run;\n\
+                      impl std::fmt::Display for Run {}\n\
+                      /// Shows the run\n/// for a log.\n\
+                      impl std::fmt::Debug for Run {}\n\
+                      impl std::fmt::Binary for Run {}\n";
+        let (lines, compact) = blocks(source, "Run");
+        assert_eq!(
+            lines,
+            [
+                "pub struct Run",
+                "    : Binary, Display",
+                "      /// Shows the run",
+                "      /// for a log.",
+                "    , Debug",
+            ]
+        );
+        assert_eq!(
+            compact.expect("the compact view has its own block"),
+            ["pub struct Run : Binary, Debug, Display"],
+            "without the comment the base list is as short as it gets"
+        );
+    }
+
+    #[test]
+    fn the_first_base_opens_the_list_whether_or_not_it_has_a_comment() {
+        let source = "pub trait Named {}\n\
+                      pub struct Run;\n\
+                      // Shows the run.\n\
+                      impl std::fmt::Debug for Run {}\n\
+                      // Names the run.\n\
+                      impl Named for Run {}\n";
+        assert_eq!(
+            head(source, "Run"),
+            [
+                "pub struct Run",
+                "      // Shows the run.",
+                "    : Debug",
+                "      // Names the run.",
+                "    , Named",
+            ]
+        );
+    }
+
+    #[test]
+    fn the_comment_of_an_inherent_impl_opens_the_body() {
+        let source = "pub struct Run;\n\
+                      // Starting.\n\
+                      impl Run {\n    pub fn start(&self) {}\n}\n\
+                      // Stopping.\n\
+                      impl Run {\n    pub fn halt(&self) {}\n}\n";
+        let (lines, compact) = blocks(source, "Run");
+        assert_eq!(
+            lines,
+            [
+                "pub struct Run",
+                "{",
+                "    // Stopping.",
+                "",
+                "    // Starting.",
+                "",
+                "pub:",
+                "    halt()",
+                "",
+                "    start()",
+                "}",
+            ]
+        );
+        assert!(compact.is_none(), "one block serves both views");
+    }
+
+    #[test]
+    fn a_type_whose_only_body_is_the_comment_of_an_inherent_impl_has_a_body() {
+        let source = "pub struct Run;\n// Nothing yet.\nimpl Run {}\n";
+        let (lines, _) = blocks(source, "Run");
+        assert_eq!(lines, ["pub struct Run", "{", "    // Nothing yet.", "}"]);
     }
 
     #[test]

@@ -82,9 +82,13 @@ a.implementation{color:var(--cross)}
 .desc code{font-size:12.5px;background:var(--side);border-radius:3px;padding:0 .25rem}
 .num{white-space:nowrap;color:var(--muted);font-size:13px}
 .num b{color:var(--fg)}
-a.chip{display:inline-block;margin:0 .3rem .3rem 0;padding:.05rem .5rem;border:1px solid var(--rule);border-radius:999px;background:var(--side);color:var(--cross);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+.chip{display:inline-block;margin:0 .3rem .3rem 0;padding:.05rem .5rem;border:1px solid var(--rule);border-radius:999px;background:var(--side);color:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+a.chip{color:var(--cross)}
 a.chip.facade{color:var(--link)}
 a.chip b{color:var(--muted);font-weight:400}
+.via{margin:1.1rem 0 .45rem}
+.via .num{margin-left:.35rem}
+.chips{margin:0}
 .warn{display:block;margin-top:.3rem;color:var(--mark);font-size:12.5px}
 .badge{font:600 10.5px system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--rule);border-radius:4px;padding:0 .35rem;color:var(--muted)}
 .badge.facade{color:var(--link);border-color:var(--link);vertical-align:4px}
