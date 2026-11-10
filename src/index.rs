@@ -43,7 +43,7 @@ pub(crate) fn uses_html(entries: &[Entry]) -> String {
     out.push_str("dependencies in the list that re-exports the item by name, ");
     out.push_str("else for the crate that declares it.</p>\n<ul>\n");
     let link = |stem: &str| {
-        let stem = crate::render_html::escape(stem);
+        let stem = crate::html::render_html::escape(stem);
         format!("<a href=\"{stem}.html\">{stem}</a>")
     };
     for line in entries.iter().filter_map(|entry| uses_line(entry, &link)) {
@@ -121,7 +121,8 @@ fn uses_line(entry: &Entry, name: &dyn Fn(&str) -> String) -> Option<String> {
             .collect();
         let _ = write!(out, " {label} {};", listed.join(", "));
     }
-    let instability = crate::document_body::instability(entry.used_by.len(), entry.uses.len());
+    let instability =
+        crate::html::document::body::instability(entry.used_by.len(), entry.uses.len());
     let _ = write!(out, " instability {instability}");
     Some(out)
 }

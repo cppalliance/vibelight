@@ -14,7 +14,6 @@ mod analysis_uses;
 mod anatomy;
 mod attach;
 mod attrs;
-mod browse;
 mod census;
 mod census_check;
 mod census_docs;
@@ -42,94 +41,13 @@ mod collect_use;
 mod collect_use_group;
 mod comments;
 mod config;
-mod document;
-mod document_body;
-mod document_kill;
-mod document_modules;
-mod document_spellings;
-mod document_surface;
-mod document_values;
 mod exclude;
-mod facade_page;
-#[cfg(test)]
-mod facade_page_tests;
 mod flatten;
 mod folders;
-mod glance;
 mod glob;
+mod html;
 mod index;
 mod inputs;
-mod layout;
-mod layout_decl;
-mod layout_groups;
-mod layout_head;
-mod layout_items;
-mod layout_marker;
-mod layout_members;
-mod layout_special;
-mod leads;
-mod leads_body;
-mod leads_body_clone;
-mod leads_body_literals;
-#[cfg(test)]
-mod leads_body_tests;
-mod leads_census;
-#[cfg(test)]
-mod leads_census_crates_tests;
-mod leads_census_deps;
-mod leads_census_paths;
-mod leads_census_place;
-mod leads_census_reach;
-mod leads_census_scope;
-#[cfg(test)]
-mod leads_census_tests;
-mod leads_census_variants;
-mod leads_check;
-mod leads_comments;
-mod leads_comments_docs;
-#[cfg(test)]
-mod leads_comments_tests;
-mod leads_comments_words;
-mod leads_containers;
-mod leads_containers_ops;
-mod leads_containers_owners;
-#[cfg(test)]
-mod leads_containers_tests;
-mod leads_docs;
-mod leads_docs_claims;
-mod leads_docs_lists;
-mod leads_docs_phrases;
-mod leads_docs_refs;
-mod leads_docs_repeat;
-mod leads_docs_scan;
-mod leads_docs_std;
-#[cfg(test)]
-mod leads_docs_tests;
-mod leads_docs_text;
-mod leads_docs_words;
-#[cfg(test)]
-mod leads_impls_tests;
-mod leads_items;
-mod leads_names;
-mod leads_names_modules;
-mod leads_names_roles;
-#[cfg(test)]
-mod leads_names_tests;
-mod leads_quiet;
-mod leads_shapes;
-mod leads_shapes_enums;
-mod leads_shapes_impls;
-mod leads_shapes_params;
-#[cfg(test)]
-mod leads_shapes_tests;
-mod leads_shapes_traits;
-mod leads_shapes_twins;
-#[cfg(test)]
-mod leads_tests;
-mod leads_types;
-mod leads_types_shape;
-mod leads_words;
-mod legend;
 mod macro_expand;
 #[cfg(test)]
 mod macro_expand_tests;
@@ -145,43 +63,21 @@ mod macros;
 mod manifest;
 mod manifest_facts;
 mod manifest_roots;
+mod md;
 mod model;
 mod model_body;
 mod modtree;
 mod module_graph;
 #[cfg(test)]
 mod module_graph_tests;
-mod order;
 mod order_graph;
 mod pipeline;
 mod prelude;
-mod render_html;
-mod render_prose;
-mod render_slop;
-mod render_slop_catalog;
-#[cfg(test)]
-mod render_slop_check;
-mod render_slop_decl;
-mod render_slop_facts;
-mod render_slop_items;
-mod render_slop_lists;
-mod render_slop_schema;
-mod render_slop_split;
-#[cfg(test)]
-mod render_slop_split_tests;
-#[cfg(test)]
-mod render_slop_tests;
-mod render_slop_text;
-mod render_slop_wire;
-mod render_spans;
-mod render_style;
-mod render_values;
 mod resolve;
 mod resolve_run;
 mod resolve_values;
 mod roles;
 mod root;
-mod root_page;
 mod route;
 mod scaffold;
 mod settings;
@@ -194,7 +90,6 @@ mod test_support;
 mod text;
 mod typerefs;
 mod typerefs_edits;
-mod wrap;
 
 use std::env;
 use std::path::{Path, PathBuf};

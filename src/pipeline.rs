@@ -10,21 +10,22 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 
-use crate::document::Document;
+use crate::html::document::Document;
+use crate::html::layout::Block;
+use crate::html::render_html::Anchors;
+use crate::html::{browse, document, facade_page, layout, order, render_html, root_page};
 use crate::inputs::{self, Chosen};
-use crate::layout::Block;
+use crate::md::slop::{AnalysisTarget, RenderInput};
+use crate::md::{leads, slop};
 use crate::model::{Crate, Loc, ModId, Warning};
 use crate::module_graph::ModEdge;
-use crate::render_html::Anchors;
-use crate::render_slop::{AnalysisTarget, RenderInput};
 use crate::root::{Target, TargetKind};
 use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    access_stamp, analysis, attach, browse, collect, collect_check, document, facade_page, index,
-    layout_decl, leads, manifest, modtree, module_graph, order, render_html, render_slop,
-    render_slop_lists, resolve, resolve_run, roles, root_page, spellings, test_support,
+    access_stamp, analysis, attach, collect, collect_check, index, manifest, modtree, module_graph,
+    resolve, resolve_run, roles, spellings, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -250,12 +251,11 @@ fn analyze(
             root: link_base.root(),
         };
         texts.push(
-            render_slop::render(&input)
-                .context("internal error: a markdown record cannot be written")?,
+            slop::render(&input).context("internal error: a markdown record cannot be written")?,
         );
     }
     let spelled = (0..targets.len())
-        .map(|t| render_slop_lists::spelled(&run, t).len())
+        .map(|t| slop::lists::spelled(&run, t).len())
         .sum();
     Ok(Analyzed {
         texts,
@@ -288,7 +288,7 @@ impl Parts<'_> {
         let decls = 0..self.krate.decls.len();
         let blocks: Vec<Block> = decls
             .clone()
-            .map(|d| layout_decl::decl_block(self.krate, d))
+            .map(|d| layout::decl::decl_block(self.krate, d))
             .collect();
         let order = order::order(self.krate, &blocks);
         let link_base = LinkBase::new(self.crate_dir, &output.dir)

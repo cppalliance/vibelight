@@ -1,0 +1,457 @@
+//! What a detector group reads from a run, gathered once: every field of
+//! every struct, union, and enum variant, and every function, each with
+//! its compared types, and the impl facts that several detectors share.
+
+use crate::analysis::AnalysisRun;
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
+use crate::analysis_paths::PathKind;
+use crate::md::leads::Lead;
+use crate::md::leads::types::{Tok, Ty, identity, item_name};
+use crate::md::leads::words::{bound_name, split_param};
+use crate::model::{
+    Crate, DeclId, DeclKind, ItemKind, Loc, MemberKind, Meta, ModId, Receiver, Shape, Sig,
+    ValueRef, VariantFields, Vis,
+};
+use crate::model_body::{BodyFacts, Role, Root, Single};
+use crate::typerefs::strip_raw;
+
+/// One field: of a struct or union, or of an enum's variant.
+pub(crate) struct Field<'a> {
+    /// The declaration that holds it.
+    pub(crate) decl: ItemId,
+    /// The index of the variant that holds it, for an enum.
+    pub(crate) variant: Option<usize>,
+    /// Its name without `r#`, or a tuple field's position.
+    pub(crate) name: String,
+    /// Whether it has a name rather than a position.
+    pub(crate) named: bool,
+    pub(crate) ty: Ty,
+    pub(crate) vis: Vis,
+    pub(crate) loc: Loc,
+    pub(crate) meta: &'a Meta,
+}
+
+impl Field<'_> {
+    /// Returns what the field's subject path adds to its declaration's:
+    /// its variant's name, then its own.
+    pub(crate) fn part(&self, run: &AnalysisRun<'_>) -> Vec<String> {
+        let mut part = Vec::new();
+        if let (Some(v), ItemRef::Decl(d)) = (self.variant, self.decl.item) {
+            if let Shape::Enum(variants) = &run.krates[self.decl.target].decls[d].shape {
+                part.push(variants[v].name.clone());
+            }
+        }
+        part.push(self.name.clone());
+        part
+    }
+
+    /// Adds the field to a lead as a subject, located where it is written.
+    pub(crate) fn add(&self, run: &AnalysisRun<'_>, lead: Lead) -> Lead {
+        lead.part(run, self.decl, &self.part(run))
+            .at(self.decl.target, self.loc)
+    }
+}
+
+/// Where a function is, which decides how free its signature is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FnKind {
+    /// A module's function.
+    Free,
+    /// A member of an inherent impl.
+    Inherent,
+    /// A member of a trait impl, whose signature its trait sets.
+    TraitImpl,
+    /// A trait's own function.
+    Trait,
+}
+
+/// One parameter other than the receiver.
+pub(crate) struct Arg {
+    /// The one name its pattern binds, without `r#`.
+    pub(crate) name: Option<String>,
+    pub(crate) ty: Ty,
+}
+
+/// One function of the run.
+pub(crate) struct Func<'a> {
+    pub(crate) item: ItemId,
+    pub(crate) kind: FnKind,
+    /// The name without `r#`.
+    pub(crate) name: String,
+    pub(crate) sig: &'a Sig,
+    /// The module that declares it; a member's is its declaration's.
+    pub(crate) module: ModId,
+    /// The declaration it is a member of: its impl's type, or its trait.
+    pub(crate) decl: Option<DeclId>,
+    pub(crate) args: Vec<Arg>,
+    /// The return type, with its declaration's own name as `Self`.
+    pub(crate) ret: Option<Ty>,
+    /// The fields its body reaches through `self`, sorted, each once.
+    pub(crate) self_fields: &'a [String],
+    pub(crate) vis: Vis,
+}
+
+impl Func<'_> {
+    /// Tells whether the function takes `self` in any form.
+    pub(crate) fn has_receiver(&self) -> bool {
+        self.sig.receiver != Receiver::None
+    }
+
+    /// Tells whether no trait sets the function's signature: it is free,
+    /// or a member of an inherent impl.
+    pub(crate) fn is_own(&self) -> bool {
+        matches!(self.kind, FnKind::Free | FnKind::Inherent)
+    }
+
+    /// Returns the signature as one compared type, without names: the
+    /// receiver, the parameters' types, the return type, the generics, and
+    /// the `where` clause.
+    pub(crate) fn signature(&self, run: &AnalysisRun<'_>) -> Ty {
+        let t = self.item.target;
+        let impl_member = matches!(self.kind, FnKind::Inherent | FnKind::TraitImpl);
+        let own = (self.decl.filter(|_| impl_member)).map(|d| ItemId::decl(t, d));
+        let receiver = match self.sig.receiver {
+            Receiver::None => "fn",
+            Receiver::Shared(_) => "&self",
+            Receiver::Mutable(_) => "&mut self",
+            Receiver::Value => "self",
+        };
+        let code = |text: &str| Tok::Code(text.to_owned());
+        let mut toks = vec![code(receiver), code("(")];
+        for (i, arg) in self.args.iter().enumerate() {
+            if i > 0 {
+                toks.push(code(","));
+            }
+            toks.extend(arg.ty.0.iter().cloned());
+        }
+        toks.extend([code(")"), code("->")]);
+        toks.extend(self.ret.iter().flat_map(|ret| ret.0.iter().cloned()));
+        toks.push(code("<"));
+        toks.extend(Ty::of(run, t, &self.sig.generics, own).0);
+        toks.extend([code(">"), code("where")]);
+        if let Some(clause) = &self.sig.where_clause {
+            toks.extend(Ty::of(run, t, &clause.joined(), own).0);
+        }
+        Ty(toks)
+    }
+
+    /// Returns the parameters' and the return type as a reader sees them,
+    /// such as `(&str, u32) -> bool`.
+    pub(crate) fn shown(&self) -> String {
+        let args: Vec<String> = self.args.iter().map(|arg| arg.ty.shown()).collect();
+        let ret = self.ret.as_ref().map(|ret| format!(" -> {}", ret.shown()));
+        format!("({}){}", args.join(", "), ret.unwrap_or_default())
+    }
+}
+
+/// Every field and function of a run.
+pub(crate) struct Catalog<'a> {
+    /// In order of declaration, then variant: `fields_of` searches it by
+    /// that order, and `derived_field` and `contained_shape` read it in
+    /// runs of one owner.
+    pub(crate) fields: Vec<Field<'a>>,
+    pub(crate) funcs: Vec<Func<'a>>,
+}
+
+impl<'a> Catalog<'a> {
+    pub(crate) fn new(run: &AnalysisRun<'a>) -> Catalog<'a> {
+        let mut catalog = Catalog {
+            fields: Vec::new(),
+            funcs: Vec::new(),
+        };
+        let krates: &'a [Crate] = run.krates;
+        for (t, krate) in krates.iter().enumerate() {
+            catalog.add_fields(run, t, krate);
+            catalog.add_funcs(run, t, krate);
+        }
+        catalog
+    }
+
+    /// Returns the fields of declaration `decl`, of its struct or union
+    /// shape or of its variant `variant`.
+    pub(crate) fn fields_of(
+        &self,
+        decl: ItemId,
+        variant: Option<usize>,
+    ) -> impl Iterator<Item = &Field<'a>> {
+        let start = self
+            .fields
+            .partition_point(|f| (f.decl, f.variant) < (decl, variant));
+        self.fields[start..]
+            .iter()
+            .take_while(move |f| f.decl == decl && f.variant == variant)
+    }
+
+    fn add_fields(&mut self, run: &AnalysisRun<'a>, t: usize, krate: &'a Crate) {
+        for (d, decl) in krate.decls.iter().enumerate() {
+            let at = ItemId::decl(t, d);
+            let mut field = |variant, name: String, named, ty, vis, loc, meta| {
+                self.fields.push(Field {
+                    decl: at,
+                    variant,
+                    name,
+                    named,
+                    ty,
+                    vis,
+                    loc,
+                    meta,
+                });
+            };
+            match &decl.shape {
+                Shape::Named => {
+                    for member in &decl.members {
+                        if let MemberKind::Field(ty) = &member.kind {
+                            let ty = Ty::of(run, t, ty, Some(at));
+                            let name = strip_raw(&member.name);
+                            field(None, name, true, ty, member.vis, member.loc, &member.meta);
+                        }
+                    }
+                }
+                Shape::Tuple(params) => {
+                    for (k, param) in params.iter().enumerate() {
+                        let ty = Ty::of(run, t, &param.text, Some(at));
+                        field(
+                            None,
+                            k.to_string(),
+                            false,
+                            ty,
+                            param.vis,
+                            decl.loc,
+                            &param.meta,
+                        );
+                    }
+                }
+                Shape::Enum(variants) => {
+                    for (v, variant) in variants.iter().enumerate() {
+                        let (named, params) = match &variant.fields {
+                            VariantFields::Named(params) => (true, params),
+                            VariantFields::Tuple(params) => (false, params),
+                            VariantFields::Unit => continue,
+                        };
+                        for (k, param) in params.iter().enumerate() {
+                            let (name, ty) = match split_param(&param.text).filter(|_| named) {
+                                Some((name, segs)) => {
+                                    (strip_raw(&name), Ty::segs(run, t, &segs, Some(at)))
+                                }
+                                None => (k.to_string(), Ty::of(run, t, &param.text, Some(at))),
+                            };
+                            let (loc, meta) = (variant.loc, &param.meta);
+                            field(Some(v), name, named, ty, decl.vis, loc, meta);
+                        }
+                    }
+                }
+                Shape::Trait { .. } | Shape::Unit | Shape::Alias(_) => {}
+            }
+        }
+    }
+
+    fn add_funcs(&mut self, run: &AnalysisRun<'a>, t: usize, krate: &'a Crate) {
+        let at = |item| ItemId { target: t, item };
+        for (m, module) in krate.modules.iter().enumerate() {
+            for (k, item) in module.items.iter().enumerate() {
+                if let ItemKind::Fn(sig) = &item.kind {
+                    let place = Place {
+                        item: at(ItemRef::Value(ValueRef { module: m, item: k })),
+                        module: m,
+                        decl: None,
+                        kind: FnKind::Free,
+                        own: None,
+                        vis: item.vis,
+                    };
+                    self.add_func(run, place, sig, &[]);
+                }
+            }
+        }
+        for (i, imp) in krate.impls.iter().enumerate() {
+            let decl = run.attached[t][i];
+            let module = impl_home(run, t, i);
+            let members = imp.members.iter().map(|m| (m, FnKind::Inherent));
+            let traits = imp.trait_members.iter().map(|m| (m, FnKind::TraitImpl));
+            let inherent = (0..imp.members.len()).map(|k| ItemRef::Inherent(i, k));
+            let traited = (0..imp.trait_members.len()).map(|k| ItemRef::TraitImpl(i, k));
+            for ((member, kind), item) in members.chain(traits).zip(inherent.chain(traited)) {
+                if let MemberKind::Fn(sig) = &member.kind {
+                    let place = Place {
+                        item: at(item),
+                        module,
+                        decl,
+                        kind,
+                        own: decl.map(|d| at(ItemRef::Decl(d))),
+                        vis: member.vis,
+                    };
+                    self.add_func(run, place, sig, &member.self_fields);
+                }
+            }
+        }
+        for (d, decl) in krate.decls.iter().enumerate() {
+            if decl.kind != DeclKind::Trait {
+                continue;
+            }
+            for (k, member) in decl.members.iter().enumerate() {
+                if let MemberKind::Fn(sig) = &member.kind {
+                    let place = Place {
+                        item: at(ItemRef::Own(d, k)),
+                        module: decl.module,
+                        decl: Some(d),
+                        kind: FnKind::Trait,
+                        own: None,
+                        vis: member.vis,
+                    };
+                    self.add_func(run, place, sig, &member.self_fields);
+                }
+            }
+        }
+    }
+
+    fn add_func(
+        &mut self,
+        run: &AnalysisRun<'a>,
+        place: Place,
+        sig: &'a Sig,
+        self_fields: &'a [String],
+    ) {
+        let t = place.item.target;
+        self.funcs.push(Func {
+            item: place.item,
+            kind: place.kind,
+            name: strip_raw(&sig.name),
+            sig,
+            module: place.module,
+            decl: place.decl,
+            args: args(run, t, sig, place.own),
+            ret: sig.ret.as_ref().map(|ret| Ty::of(run, t, ret, place.own)),
+            self_fields,
+            vis: place.vis,
+        });
+    }
+}
+
+/// Where a function is declared, and how far it is visible.
+#[derive(Clone, Copy)]
+struct Place {
+    item: ItemId,
+    module: ModId,
+    decl: Option<DeclId>,
+    kind: FnKind,
+    /// The declaration whose own name compares as `Self`: an impl's type.
+    own: Option<ItemId>,
+    vis: Vis,
+}
+
+/// Returns a signature's parameters after its receiver.
+fn args(run: &AnalysisRun<'_>, t: usize, sig: &Sig, own: Option<ItemId>) -> Vec<Arg> {
+    let skip = usize::from(sig.receiver == Receiver::Value);
+    sig.params
+        .iter()
+        .skip(skip)
+        .map(|param| match split_param(&param.text) {
+            Some((pattern, segs)) => Arg {
+                name: bound_name(&pattern),
+                ty: Ty::segs(run, t, &segs, own),
+            },
+            None => Arg {
+                name: None,
+                ty: Ty::of(run, t, &param.text, own),
+            },
+        })
+        .collect()
+}
+
+/// Returns what impl `i` of target `t` implements, as a compared name such
+/// as `std::fmt::Display`; `None` for an inherent impl.
+pub(crate) fn trait_of(run: &AnalysisRun<'_>, t: usize, i: usize) -> Option<String> {
+    let base = run.krates[t].impls[i].trait_.as_ref()?;
+    match base.path_ref {
+        Some(r) => Some(identity(run, t, r, None)),
+        None => Some(base.name.clone()),
+    }
+}
+
+/// Returns the impls of declaration `d` of target `t` that implement the
+/// trait `name` names.
+pub(crate) fn impls_of_trait<'r>(
+    run: &'r AnalysisRun<'_>,
+    t: usize,
+    d: DeclId,
+    name: &'r str,
+) -> impl Iterator<Item = usize> + 'r {
+    run.impls_of[t][d]
+        .iter()
+        .copied()
+        .filter(move |&i| trait_of(run, t, i).as_deref() == Some(name))
+}
+
+/// Tells whether a trait's compared name is serde's `Deserialize`.
+pub(crate) fn is_deserialize(name: &str) -> bool {
+    name.starts_with("serde::") && name.ends_with("::Deserialize")
+}
+
+/// Tells whether a body of the run reads a function as a value that may
+/// leave it, such as a handler passed to a router, so that a callback's
+/// signature may bind the function's.
+pub(crate) fn escapes(run: &AnalysisRun<'_>, item: ItemId) -> bool {
+    run.edges_to(item)
+        .any(|edge| edge.kind == PathKind::Call(Role::ValueEscape))
+}
+
+/// Tells whether a function is an access seam: its body is one call to a
+/// function of the run, or one method call on a parameter whose type's
+/// inherent method of that name the catalog holds, and the function can
+/// be named from strictly more places than that callee, which opens the
+/// callee to wider callers.
+pub(crate) fn is_seam(run: &AnalysisRun<'_>, catalog: &Catalog<'_>, func: &Func<'_>) -> bool {
+    let t = func.item.target;
+    let Some(b) = run.body_of(func.item) else {
+        return false;
+    };
+    let facts = &run.krates[t].bodies[b].facts;
+    let callee: Option<&Func<'_>> = match &facts.single {
+        Some(Single::Call(path)) => {
+            let fact = (facts.calls.iter()).position(|c| c.role == Role::Call && c.path == *path);
+            let edge = (run.edges_from(t, b).iter())
+                .find(|e| e.kind == PathKind::Call(Role::Call) && Some(e.fact) == fact);
+            let item = edge.and_then(|edge| edge.item);
+            item.and_then(|item| catalog.funcs.iter().find(|f| f.item == item))
+        }
+        Some(Single::Method(method)) => {
+            let root = (facts.chains.iter()).find_map(|chain| match &chain.root {
+                Root::Param(name) if chain.methods.first() == Some(method) => Some(name),
+                _ => None,
+            });
+            let arg =
+                root.and_then(|name| func.args.iter().find(|a| a.name.as_ref() == Some(name)));
+            let held = arg.and_then(|arg| match arg.ty.deref().0.as_slice() {
+                [Tok::Name(name)] => Some(name.clone()),
+                _ => None,
+            });
+            held.and_then(|held| {
+                catalog.funcs.iter().find(|f| {
+                    let own = f.decl.map(|d| {
+                        let decl = ItemId::decl(f.item.target, d);
+                        item_name(run, decl)
+                    });
+                    f.kind == FnKind::Inherent
+                        && f.name == *method
+                        && own.as_deref() == Some(held.as_str())
+                })
+            })
+        }
+        Some(Single::Field(_)) | None => None,
+    };
+    callee.is_some_and(|callee| run.strictly_wider(func.item, callee.item))
+}
+
+/// Tells whether a body builds an `Err` or matches an `Err` arm.
+pub(crate) fn handles_err(facts: &BodyFacts) -> bool {
+    facts.counts.errs > 0
+        || (facts.patterns.iter()).any(|p| p.path.last().is_some_and(|last| last == "Err"))
+}
+
+/// Tells whether an item is a declaration that is a wire type, as
+/// `Decl::is_wire` says.
+pub(crate) fn is_wire(run: &AnalysisRun<'_>, decl: ItemId) -> bool {
+    let ItemRef::Decl(d) = decl.item else {
+        return false;
+    };
+    run.krates[decl.target].decls[d].is_wire()
+}

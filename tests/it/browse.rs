@@ -28,6 +28,7 @@ fn the_folder_is_one_file_that_holds_the_app_and_every_page() {
     let app = fs::read_to_string(
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("src")
+            .join("html")
             .join("browse.js"),
     )
     .unwrap();

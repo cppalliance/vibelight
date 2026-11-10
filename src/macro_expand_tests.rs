@@ -4,7 +4,7 @@
 
 use crate::analysis_tests::{MANIFEST, fixture, run};
 use crate::collect_body_facts::tests::collected;
-use crate::leads;
+use crate::md::leads;
 use crate::model::Crate;
 
 /// A macro that writes one unit struct of the name it is given.

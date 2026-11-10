@@ -1,0 +1,426 @@
+//! The leads of a run: what the detector groups find in the analysis view,
+//! for an analyst to confirm or extinguish in the source. A lead is never a
+//! finding. It says how its evidence was found and, when it rests on
+//! something the run does not observe, what the run cannot see. A location
+//! that an expansion wrote moves to its invocation, and the evidence names
+//! the macro. A twin or repeat lead inside one expansion is dropped, the
+//! config's `quiet` entries drop leads, and then more than
+//! [`SUMMARY_ABOVE`] leads of one id in one module become one summary lead.
+
+mod body;
+mod census;
+mod check;
+mod comments;
+mod containers;
+mod docs;
+mod items;
+mod names;
+mod quiet;
+mod shapes;
+mod types;
+mod types_shape;
+pub(super) mod words;
+
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet};
+
+use crate::analysis::AnalysisRun;
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
+use crate::model::{FileId, Loc, ModId, path_order};
+
+pub(crate) use crate::md::leads::check::validate;
+
+/// How a lead's evidence was found.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Mode {
+    /// Through observed uses, call edges, or a library's public surface.
+    Resolved,
+    /// From the syntax of declarations, signatures, and bodies, with the
+    /// names in them resolved.
+    DirectSyntax,
+    /// From name hits in the lexical census.
+    Lexical,
+}
+
+/// The blind spots a lead may name, sorted.
+pub(crate) const LIMITS: [&str; 7] = [
+    "cfg-selection",
+    "dynamic-dispatch",
+    "external-consumers",
+    "external-impls",
+    "generated-code",
+    "macros",
+    "method-calls",
+];
+
+/// The most leads of one id in one module that print one by one.
+pub(crate) const SUMMARY_ABOVE: usize = 5;
+
+/// One thing a lead names: an item of the run, or a part of one such as a
+/// parameter or a variant's field, by its path below its crate's root.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Subject {
+    pub(crate) target: usize,
+    /// The module that declares it: a member's or a part's is its
+    /// declaration's, and a module's is its parent's.
+    pub(crate) module: ModId,
+    pub(crate) path: Vec<String>,
+}
+
+/// A line of a target's source file.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct SourceLoc {
+    pub(crate) target: usize,
+    pub(crate) file: FileId,
+    pub(crate) line: u32,
+}
+
+/// What a summary lead stands for: the leads of its id in one module.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Summary {
+    pub(crate) target: usize,
+    pub(crate) module: ModId,
+    /// How many leads it stands for.
+    pub(crate) count: usize,
+}
+
+/// One lead.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Lead {
+    pub(crate) id: &'static str,
+    pub(crate) mode: Mode,
+    /// Sorted by package, target, and path, each once.
+    pub(crate) subjects: Vec<Subject>,
+    /// What the detector saw, on one line.
+    pub(crate) evidence: String,
+    /// Where the subjects are written, sorted, each once.
+    pub(crate) locs: Vec<SourceLoc>,
+    /// The blind spots of a lead that rests on absence, sorted, each once.
+    pub(crate) limits: Vec<&'static str>,
+    /// The targets whose outlines print it, ascending: every target its
+    /// subjects and locations are in.
+    pub(crate) target_files: Vec<usize>,
+    pub(crate) summary: Option<Summary>,
+    /// The one expansion, by target and virtual file, that wrote every
+    /// location of the lead; `None` when a real file holds one, or when
+    /// the locations come from more than one expansion.
+    expansion: Option<(usize, FileId)>,
+}
+
+/// The leads that find twins or repeats, which one expansion's uniform
+/// output makes by design, so a lead of them whose every location one
+/// expansion wrote is dropped.
+const TWINS: [&str; 11] = [
+    "same-shape",
+    "contained-shape",
+    "generic-twin",
+    "mirror-enum",
+    "contained-enum",
+    "near-mirror-enum",
+    "spelling-table",
+    "param-clump",
+    "body-clone",
+    "repeated-literal",
+    "repeated-number",
+];
+
+impl Lead {
+    /// Starts a lead with no subject.
+    pub(crate) fn new(id: &'static str, mode: Mode, evidence: impl Into<String>) -> Lead {
+        Lead {
+            id,
+            mode,
+            subjects: Vec::new(),
+            evidence: evidence.into(),
+            locs: Vec::new(),
+            limits: Vec::new(),
+            target_files: Vec::new(),
+            summary: None,
+            expansion: None,
+        }
+    }
+
+    /// Adds an item as a subject, located where it is written.
+    pub(crate) fn item(self, run: &AnalysisRun<'_>, item: ItemId) -> Lead {
+        let loc = run.loc(item);
+        let lead = self.part(run, item, &[]);
+        match loc {
+            Some(loc) => lead.at(item.target, loc),
+            None => lead,
+        }
+    }
+
+    /// Adds a part of an item as a subject, such as a parameter or a
+    /// variant's field: its path is the item's, then `part`.
+    pub(crate) fn part(mut self, run: &AnalysisRun<'_>, item: ItemId, part: &[String]) -> Lead {
+        let mut path = run.path(item);
+        path.extend(part.iter().cloned());
+        self.subjects.push(Subject {
+            target: item.target,
+            module: module_of(run, item),
+            path,
+        });
+        self
+    }
+
+    /// Adds a location in target `t`.
+    pub(crate) fn at(mut self, t: usize, loc: Loc) -> Lead {
+        self.locs.push(SourceLoc {
+            target: t,
+            file: loc.file,
+            line: loc.line,
+        });
+        self
+    }
+
+    /// Names the blind spots of a lead that rests on absence.
+    pub(crate) fn limits(mut self, limits: &[&'static str]) -> Lead {
+        self.limits.extend_from_slice(limits);
+        self
+    }
+
+    /// Returns the one module that holds every subject, with its target,
+    /// when the lead prints in that target alone.
+    pub(crate) fn home(&self) -> Option<(usize, ModId)> {
+        let first = self.subjects.first()?;
+        let alone = self.target_files == [first.target];
+        let shared =
+            (self.subjects.iter()).all(|s| (s.target, s.module) == (first.target, first.module));
+        (alone && shared).then_some((first.target, first.module))
+    }
+
+    /// Moves each location an expansion wrote to its invocation, naming the
+    /// macro once in the evidence, sorts the lead's lists, drops repeats,
+    /// and names the targets it prints in.
+    fn settle(&mut self, run: &AnalysisRun<'_>) {
+        let mut expanded = BTreeSet::new();
+        let mut vias = BTreeSet::new();
+        let mut real = false;
+        for loc in &mut self.locs {
+            match &run.krates[loc.target].files[loc.file].origin {
+                Some(origin) => {
+                    expanded.insert((loc.target, loc.file));
+                    vias.insert(origin.via.clone());
+                    loc.file = origin.loc.file;
+                    loc.line = origin.loc.line;
+                }
+                None => real = true,
+            }
+        }
+        if !real && expanded.len() == 1 {
+            self.expansion = expanded.first().copied();
+        }
+        for via in vias {
+            self.evidence += "; written by `";
+            self.evidence += &via;
+            self.evidence.push('`');
+        }
+        self.subjects.sort_by(|a, b| subject_order(run, a, b));
+        self.subjects
+            .dedup_by(|a, b| (a.target, &a.path) == (b.target, &b.path));
+        self.locs.sort();
+        self.locs.dedup();
+        self.limits.sort_unstable();
+        self.limits.dedup();
+        let targets: BTreeSet<usize> = (self.subjects.iter().map(|s| s.target))
+            .chain(self.locs.iter().map(|l| l.target))
+            .collect();
+        self.target_files = targets.into_iter().collect();
+    }
+}
+
+/// Returns the module that declares an item, as [`Subject::module`] holds
+/// it.
+pub(crate) fn module_of(run: &AnalysisRun<'_>, item: ItemId) -> ModId {
+    let krate = &run.krates[item.target];
+    match item.item {
+        ItemRef::Module(m) => krate.parent_module(m).unwrap_or(m),
+        ItemRef::Decl(d) | ItemRef::Own(d, _) | ItemRef::Variant(d, _) => krate.decls[d].module,
+        ItemRef::Value(at) => at.module,
+        ItemRef::Inherent(i, _) | ItemRef::TraitImpl(i, _) => impl_home(run, item.target, i),
+    }
+}
+
+/// A detector group: its lead ids in glossary order, those among them that
+/// rest on absence, and what finds them.
+struct Group {
+    ids: &'static [&'static str],
+    absent: &'static [&'static str],
+    find: fn(&AnalysisRun<'_>, &mut Vec<Lead>),
+}
+
+const GROUPS: [Group; 7] = [
+    Group {
+        ids: shapes::IDS,
+        absent: shapes::ABSENT,
+        find: shapes::find,
+    },
+    Group {
+        ids: names::IDS,
+        absent: names::ABSENT,
+        find: names::find,
+    },
+    Group {
+        ids: docs::IDS,
+        absent: docs::ABSENT,
+        find: docs::find,
+    },
+    Group {
+        ids: census::IDS,
+        absent: census::ABSENT,
+        find: census::find,
+    },
+    Group {
+        ids: body::IDS,
+        absent: body::ABSENT,
+        find: body::find,
+    },
+    Group {
+        ids: containers::IDS,
+        absent: containers::ABSENT,
+        find: containers::find,
+    },
+    Group {
+        ids: comments::IDS,
+        absent: comments::ABSENT,
+        find: comments::find,
+    },
+];
+
+/// Returns every registered lead id, group by group, in glossary order.
+pub(crate) fn ids() -> impl Iterator<Item = &'static str> {
+    GROUPS.iter().flat_map(|group| group.ids.iter().copied())
+}
+
+/// Tells whether the leads of an id rest on absence, so that each names
+/// its limits.
+pub(crate) fn rests_on_absence(id: &str) -> bool {
+    GROUPS.iter().any(|group| group.absent.contains(&id))
+}
+
+/// The leads of a run, and what the config's `quiet` entries dropped.
+#[derive(Debug)]
+pub(crate) struct Found {
+    /// In lead order.
+    pub(crate) leads: Vec<Lead>,
+    /// For each target of the run, how many dropped leads its outline
+    /// would print.
+    pub(crate) quieted: Vec<usize>,
+    /// A note for each `quiet` entry that drops no lead, in config order.
+    pub(crate) notes: Vec<String>,
+}
+
+/// Runs every detector group and returns the run's leads, each with its
+/// lists sorted, those that a `quiet` entry names dropped, more than
+/// [`SUMMARY_ABOVE`] leads of one id in one module summarized, in lead
+/// order.
+pub(crate) fn find(run: &AnalysisRun<'_>, quiet: &[String]) -> Found {
+    let mut found = Vec::new();
+    for group in &GROUPS {
+        (group.find)(run, &mut found);
+    }
+    for lead in &mut found {
+        lead.settle(run);
+    }
+    found.retain(|lead| lead.expansion.is_none() || !TWINS.contains(&lead.id));
+    fold(&mut found);
+    let (quieted, notes) = quiet::apply(&mut found, quiet, run.krates.len());
+    let mut leads = summarize(run, found);
+    leads.sort_by(|a, b| lead_order(run, a, b));
+    Found {
+        leads,
+        quieted,
+        notes,
+    }
+}
+
+/// Drops each `repeated-literal` lead whose every subject is a subject of
+/// one `spelling-table` lead: the literals that a spelling table's
+/// functions share are its spellings, which that lead already names.
+fn fold(found: &mut Vec<Lead>) {
+    let tables: Vec<Vec<Subject>> = (found.iter())
+        .filter(|lead| lead.id == "spelling-table")
+        .map(|lead| lead.subjects.clone())
+        .collect();
+    let spelled = |lead: &Lead| {
+        tables.iter().any(|table| {
+            (lead.subjects.iter())
+                .all(|s| (table.iter()).any(|t| (t.target, &t.path) == (s.target, &s.path)))
+        })
+    };
+    found.retain(|lead| lead.id != "repeated-literal" || !spelled(lead));
+}
+
+/// Collapses each set of more than [`SUMMARY_ABOVE`] leads that share an id
+/// and a home module into one summary lead: their subjects, locations, and
+/// limits, their evidence in lead order, and their weakest mode.
+fn summarize(run: &AnalysisRun<'_>, leads: Vec<Lead>) -> Vec<Lead> {
+    let mut homes: BTreeMap<(&'static str, usize, ModId), Vec<Lead>> = BTreeMap::new();
+    let mut out = Vec::new();
+    for lead in leads {
+        match lead.home() {
+            Some((t, m)) => homes.entry((lead.id, t, m)).or_default().push(lead),
+            None => out.push(lead),
+        }
+    }
+    for ((id, target, module), mut group) in homes {
+        if group.len() <= SUMMARY_ABOVE {
+            out.extend(group);
+            continue;
+        }
+        group.sort_by(|a, b| lead_order(run, a, b));
+        let mut summary = Lead::new(id, Mode::Resolved, String::new());
+        let mut seen = BTreeSet::new();
+        let mut evidence = Vec::new();
+        for lead in &group {
+            summary.mode = summary.mode.max(lead.mode);
+            if seen.insert(lead.evidence.as_str()) {
+                evidence.push(lead.evidence.as_str());
+            }
+            summary.subjects.extend(lead.subjects.iter().cloned());
+            summary.locs.extend(lead.locs.iter().copied());
+            summary.limits.extend(lead.limits.iter().copied());
+        }
+        summary.evidence = evidence.join("; ");
+        summary.settle(run);
+        summary.summary = Some(Summary {
+            target,
+            module,
+            count: group.len(),
+        });
+        out.push(summary);
+    }
+    out
+}
+
+/// Orders subjects by package, target, and path.
+pub(crate) fn subject_order(run: &AnalysisRun<'_>, a: &Subject, b: &Subject) -> Ordering {
+    let package = |s: &Subject| run.targets[s.target].package;
+    (package(a).cmp(&package(b)))
+        .then(a.target.cmp(&b.target))
+        .then_with(|| path_order(&a.path, &b.path))
+}
+
+/// Orders leads by id in registry order, then by subjects, evidence, and
+/// locations; a summary follows the lead with the same lists.
+pub(crate) fn lead_order(run: &AnalysisRun<'_>, a: &Lead, b: &Lead) -> Ordering {
+    let rank = |id: &str| ids().position(|known| known == id).unwrap_or(usize::MAX);
+    let subjects = || {
+        for (x, y) in a.subjects.iter().zip(&b.subjects) {
+            let order = subject_order(run, x, y);
+            if order != Ordering::Equal {
+                return order;
+            }
+        }
+        a.subjects.len().cmp(&b.subjects.len())
+    };
+    (rank(a.id).cmp(&rank(b.id)))
+        .then_with(subjects)
+        .then_with(|| a.evidence.cmp(&b.evidence))
+        .then_with(|| a.locs.cmp(&b.locs))
+        .then_with(|| a.summary.is_some().cmp(&b.summary.is_some()))
+}
+
+#[cfg(test)]
+#[path = "leads-tests.rs"]
+mod tests;
