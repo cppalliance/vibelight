@@ -170,14 +170,13 @@ fn a_run_lists_the_folder_s_one_file_on_stdout() {
     let (_tmp, repo) = garden(MEMBERS);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success());
-    let html = repo.join(".vibelight").join("html");
     let listed: Vec<String> = lines(&result.stdout)
         .into_iter()
-        .filter(|path| Path::new(path).starts_with(&html))
+        .filter(|path| (Path::new(path).parent()).is_some_and(|dir| dir.ends_with("html")))
         .collect();
     assert_eq!(listed.len(), 1, "{listed:?}");
     assert!(
-        Path::new(&listed[0]).ends_with("html/index.html"),
+        Path::new(&listed[0]).ends_with(".vibelight/html/index.html"),
         "{listed:?}"
     );
 }
