@@ -131,7 +131,7 @@ impl<'a> Facts<'a> {
         for (m, module) in krate.modules.iter().enumerate() {
             let user = module_path(krate, m);
             for item in module.items.iter().filter(|i| !is_reexport(&i.kind)) {
-                for text in crate::order::item_texts(&item.kind) {
+                for text in crate::model::item_texts(&item.kind) {
                     text.refs().for_each(|r| note(r, &user, None));
                 }
             }

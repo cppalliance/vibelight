@@ -5,11 +5,10 @@
 use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::analysis_uses::{Use, UseKind};
 use crate::leads::{Lead, Mode};
 use crate::leads_census_scope::{Candidate, Kind, consumers, elsewhere, in_macro, module_name};
-use crate::leads_items::impl_home;
 use crate::leads_words::words;
 use crate::model::{ItemKind, MemberKind, ModId, Shape, Text, ValueRef, VariantFields};
 use crate::model_body::BodyId;

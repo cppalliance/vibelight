@@ -25,6 +25,9 @@ pub(crate) struct Fixture {
     packages: Vec<PackageInfo>,
 }
 
+/// The manifest of a package named `t`.
+pub(crate) const MANIFEST: (&str, &str) = ("Cargo.toml", "[package]\nname = \"t\"\n");
+
 /// Writes a package and reads, resolves, and links it as a run does.
 pub(crate) fn fixture(files: &[(&str, &str)]) -> Fixture {
     packages(files, &[])

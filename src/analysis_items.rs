@@ -213,6 +213,13 @@ pub(crate) fn summaries(krate: &Crate) -> BTreeMap<ItemRef, String> {
         .collect()
 }
 
+/// Returns the module of impl `i` of target `t`: its declaration's, or the
+/// one it is written in for an impl of no declaration of the run.
+pub(crate) fn impl_home(run: &AnalysisRun<'_>, t: usize, i: usize) -> ModId {
+    let krate = &run.krates[t];
+    run.attached[t][i].map_or(krate.impls[i].module, |d| krate.decls[d].module)
+}
+
 impl<'a> AnalysisRun<'a> {
     /// Returns the logical members of declaration `d` of target `t`: its
     /// own fields or trait items, then the members of each impl that

@@ -8,10 +8,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::analysis_paths::PathKind;
 use crate::leads::{Lead, Mode, module_of};
-use crate::leads_items::{Catalog, FnKind, Func, impl_home};
+use crate::leads_items::{Catalog, FnKind, Func};
 use crate::leads_types::Ty;
 use crate::leads_words::words;
 use crate::model::{DeclKind, ItemKind, Meta, ModId, Receiver, Shape, ValueRef};

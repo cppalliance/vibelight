@@ -9,10 +9,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::access::encloses;
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::analysis_uses::UseKind;
 use crate::census::Context;
-use crate::leads_items::impl_home;
 use crate::model::{ItemKind, ModId};
 
 /// The items one module uses from another.

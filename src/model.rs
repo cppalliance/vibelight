@@ -366,6 +366,26 @@ pub(crate) enum Foreign {
     Type,
 }
 
+/// Returns the texts of a module item that can name types: a function's
+/// signature, a constant's or static's type, and a re-export's path.
+pub(crate) fn item_texts(kind: &ItemKind) -> Vec<&Text> {
+    match kind {
+        ItemKind::Fn(sig)
+        | ItemKind::Foreign {
+            item: Foreign::Fn(sig),
+            ..
+        } => sig.texts(),
+        ItemKind::Const { ty, .. }
+        | ItemKind::Static { ty, .. }
+        | ItemKind::Foreign {
+            item: Foreign::Static { ty, .. },
+            ..
+        } => vec![ty],
+        ItemKind::Reexport { text, .. } => vec![text],
+        ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => Vec::new(),
+    }
+}
+
 /// A name a `use` item binds, for name resolution.
 #[derive(Clone, Debug)]
 pub(crate) struct Use {

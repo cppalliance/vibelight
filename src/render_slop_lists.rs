@@ -178,7 +178,7 @@ pub(crate) fn external(outline: &Outline<'_>) -> Vec<Record> {
         for text in module
             .items
             .iter()
-            .flat_map(|item| crate::order::item_texts(&item.kind))
+            .flat_map(|item| crate::model::item_texts(&item.kind))
         {
             for r in text.refs() {
                 if seen.insert(r) {

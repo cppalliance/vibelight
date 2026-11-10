@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 
 use crate::layout::{Block, Span};
 use crate::model::{
-    BodyOwner, Crate, DeclId, Foreign, ItemKind, MemberKind, ModId, Seg, Shape, Text,
-    VariantFields, path_order,
+    BodyOwner, Crate, DeclId, MemberKind, ModId, Seg, Shape, Text, VariantFields, item_texts,
+    path_order,
 };
 use crate::order_graph::{Graph, first_by_path, place, reach, strongly_connected};
 
@@ -252,24 +252,4 @@ fn module_mentions(krate: &Crate) -> Vec<Vec<ModId>> {
         }
     }
     out
-}
-
-/// Returns the texts of a module item that can name types: a function's
-/// signature, a constant's or static's type, and a re-export's path.
-pub(crate) fn item_texts(kind: &ItemKind) -> Vec<&Text> {
-    match kind {
-        ItemKind::Fn(sig)
-        | ItemKind::Foreign {
-            item: Foreign::Fn(sig),
-            ..
-        } => sig.texts(),
-        ItemKind::Const { ty, .. }
-        | ItemKind::Static { ty, .. }
-        | ItemKind::Foreign {
-            item: Foreign::Static { ty, .. },
-            ..
-        } => vec![ty],
-        ItemKind::Reexport { text, .. } => vec![text],
-        ItemKind::Foreign { .. } | ItemKind::Mark(_) | ItemKind::Unsupported(_) => Vec::new(),
-    }
 }

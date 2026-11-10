@@ -8,11 +8,8 @@ use std::fs;
 use std::path::Path;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_tests::{fixture, run, run_with};
+use crate::analysis_tests::{MANIFEST, fixture, run, run_with};
 use crate::leads::{self, Lead, Mode, SUMMARY_ABOVE, Summary};
-
-/// The manifest of a package named `t`.
-pub(crate) const MANIFEST: (&str, &str) = ("Cargo.toml", "[package]\nname = \"t\"\n");
 
 /// Shows a lead's subjects joined by `, `, each as its path below its
 /// crate's root, after its target's index when the run has several.

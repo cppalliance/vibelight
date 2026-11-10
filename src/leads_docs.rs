@@ -7,10 +7,10 @@
 use std::collections::BTreeMap;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::leads::Lead;
 use crate::leads_docs_text::{Prose, boilerplate, read_except};
-use crate::leads_items::{Catalog, impl_home};
+use crate::leads_items::Catalog;
 use crate::leads_types::{Ty, item_name, leaf};
 use crate::model::{
     Crate, DeclId, DeclKind, Foreign, ItemKind, Loc, MemberKind, Meta, ModId, Note, RefId, Shape,

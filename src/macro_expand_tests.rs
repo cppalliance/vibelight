@@ -2,10 +2,9 @@
 //! which invocations stay marks and why, and where the items an expansion
 //! writes land.
 
-use crate::analysis_tests::{fixture, run};
+use crate::analysis_tests::{MANIFEST, fixture, run};
 use crate::collect_body_facts::tests::collected;
 use crate::leads;
-use crate::leads_tests::MANIFEST;
 use crate::model::Crate;
 
 /// A macro that writes one unit struct of the name it is given.

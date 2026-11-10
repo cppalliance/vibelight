@@ -2,9 +2,10 @@
 //! where it finds its lead, and on a close one where it finds none, and
 //! the scope that keeps the census to what the compilers leave quiet.
 
+use crate::analysis_tests::MANIFEST;
 use crate::leads::Mode;
 use crate::leads_census_scope::keeps_dead;
-use crate::leads_tests::{MANIFEST, found, lib, with_leads};
+use crate::leads_tests::{found, lib, with_leads};
 
 /// The manifest of a package named `t` that does not allow publishing.
 const UNPUBLISHED: (&str, &str) = ("Cargo.toml", "[package]\nname = \"t\"\npublish = false\n");

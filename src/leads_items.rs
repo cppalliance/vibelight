@@ -3,7 +3,7 @@
 //! its compared types, and the impl facts that several detectors share.
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::analysis_paths::PathKind;
 use crate::leads::Lead;
 use crate::leads_types::{Tok, Ty, identity, item_name};
@@ -355,13 +355,6 @@ fn args(run: &AnalysisRun<'_>, t: usize, sig: &Sig, own: Option<ItemId>) -> Vec<
             },
         })
         .collect()
-}
-
-/// Returns the module of impl `i` of target `t`: its declaration's, or the
-/// one it is written in for an impl of no declaration of the run.
-pub(crate) fn impl_home(run: &AnalysisRun<'_>, t: usize, i: usize) -> ModId {
-    let krate = &run.krates[t];
-    run.attached[t][i].map_or(krate.impls[i].module, |d| krate.decls[d].module)
 }
 
 /// Returns what impl `i` of target `t` implements, as a compared name such

@@ -5,8 +5,7 @@
 use crate::access::{Access, covers, join, written};
 use crate::analysis::AnalysisRun;
 use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_tests::{fixture, run};
-use crate::leads_tests::MANIFEST;
+use crate::analysis_tests::{MANIFEST, fixture, run};
 use crate::model::{Crate, DeclId, ModId, ValueRef, Vis};
 
 fn module(krate: &Crate, path: &str) -> ModId {

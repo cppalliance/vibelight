@@ -2,8 +2,9 @@
 //! enum payloads on a small library where it finds its lead, and on a
 //! close one where it finds none.
 
+use crate::analysis_tests::MANIFEST;
 use crate::leads::Mode;
-use crate::leads_tests::{MANIFEST, found, lib, with_leads};
+use crate::leads_tests::{found, lib, with_leads};
 
 /// Asserts what `id` finds in a library and that it finds nothing in a
 /// close one.

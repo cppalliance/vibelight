@@ -11,8 +11,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::leads_items::impl_home;
+use crate::analysis_items::{ItemId, ItemRef, impl_home};
 use crate::model::{FileId, Loc, ModId, path_order};
 use crate::{
     leads_body, leads_census, leads_comments, leads_containers, leads_docs, leads_names,
