@@ -6,8 +6,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 
 use super::{
-    Groups, Links, Named, module_symbols, plain_named, public_refs, symbol_link, symbols, unused,
-    usage, used_by,
+    Groups, Links, Named, module_symbols, plain_named, public_refs, symbol_link, symbols, usage,
+    used_by, using,
 };
 use crate::html::document::Document;
 use crate::html::layout::decl::public_block;
@@ -395,51 +395,56 @@ fn a_crate_uses_what_it_names_and_what_the_code_of_those_items_names() {
          what crate 3 names counts for nothing"
     );
     let of =
-        |decl: Option<usize>, total| unused(&named("Round", "", "api.Round", decl), &users, total);
-    assert_eq!(of(Some(2), 2), Some((1, 2)), "crate 2 does not use it");
-    assert_eq!(of(Some(4), 2), Some((2, 2)), "neither user reaches it");
+        |decl: Option<usize>, total| using(&named("Round", "", "api.Round", decl), &users, total);
+    assert_eq!(of(Some(2), 2), Some((1, 2)), "crate 1 uses it, crate 2 not");
+    assert_eq!(of(Some(4), 2), Some((0, 2)), "neither user reaches it");
     assert_eq!(of(None, 2), None, "the item is not of the run");
     assert_eq!(of(Some(2), 0), None, "no crate uses the facade");
 }
 
 #[test]
-fn an_item_ends_its_line_with_the_users_that_do_not_use_it() {
-    let with = |unused: Option<(usize, usize)>| {
+fn an_item_ends_its_line_with_unused_or_with_how_many_users_use_it() {
+    let with = |using: Option<(usize, usize)>| {
         let mut item = named("Round", "", "api.Round", Some(1));
-        item.unused = unused;
+        item.using = using;
         item
     };
-    assert_eq!(with(Some((0, 4))).unused_note(), "", "each user uses it");
+    assert_eq!(with(Some((4, 4))).use_note(), "", "each user uses it");
+    assert_eq!(with(Some((2, 4))).use_note(), " &middot; 2 of 4 use it");
+    assert_eq!(with(Some((1, 4))).use_note(), " &middot; 1 of 4 uses it");
     assert_eq!(
-        with(Some((3, 4))).unused_note(),
-        " &middot; not used by 3 of 4"
+        with(Some((0, 4))).use_note(),
+        " &middot; unused",
+        "no user uses it, so the line has the word and no count"
     );
-    assert_eq!(with(None).unused_note(), "", "the facade has no user");
+    assert_eq!(with(Some((0, 1))).use_note(), " &middot; unused");
+    assert_eq!(with(Some((1, 1))).use_note(), "", "its one user uses it");
+    assert_eq!(with(None).use_note(), "", "the facade has no user");
 }
 
 #[test]
 fn only_the_list_by_module_prints_an_unused_item_dim() {
-    let with = |unused: Option<(usize, usize)>| {
+    let with = |using: Option<(usize, usize)>| {
         let mut item = named("Round", "", "api.Round", Some(1));
-        item.unused = unused;
+        item.using = using;
         item
     };
     let used = BTreeSet::new();
     let plain = "<a href=\"#api.Round\"><b>Round</b></a>";
     assert_eq!(
-        symbol_link(&with(Some((4, 4))), &used, true),
+        symbol_link(&with(Some((0, 4))), &used, true),
         "<a class=\"dim\" href=\"#api.Round\"><b>Round</b></a>",
         "dim, since none of the four uses it, and bold, since no item names it"
     );
-    assert_eq!(symbol_link(&with(Some((3, 4))), &used, true), plain);
+    assert_eq!(symbol_link(&with(Some((1, 4))), &used, true), plain);
     assert_eq!(symbol_link(&with(None), &used, true), plain);
     assert_eq!(
-        symbol_link(&with(Some((4, 4))), &used, false),
+        symbol_link(&with(Some((0, 4))), &used, false),
         plain,
         "the list of every symbol by name has no dim name"
     );
     let groups: Groups = [
-        (Vec::new(), (None, vec![with(Some((4, 4)))])),
+        (Vec::new(), (None, vec![with(Some((0, 4)))])),
         (
             vec!["effect".to_owned()],
             (None, vec![named("Other", "", "api.effect.Other", Some(2))]),

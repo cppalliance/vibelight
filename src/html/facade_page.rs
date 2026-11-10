@@ -14,10 +14,11 @@
 //! not hold is listed last, under the crate a user names it through.
 //!
 //! And the page says who uses the API. When other crates of the run use the
-//! facade, each item's line of where it is defined ends with how many of
-//! them do not use the item, and the sidebar's list by module prints dim an
-//! item that none of them uses. A crate uses an item that its code names,
-//! and each item that the code of an item it uses names.
+//! facade, each item's line of where it is defined ends with `unused` when
+//! none of them uses the item, and with how many of them use it when only
+//! some do. The sidebar's list by module prints an unused item dim. A crate
+//! uses an item that its code names, and each item that the code of an item
+//! it uses names.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -113,9 +114,9 @@ struct Named {
     /// The id of its heading.
     id: String,
     defined: Option<Defined>,
-    /// How many of the facade's users do not use the item, and how many
-    /// users the facade has, when it has one and the item is of the run.
-    unused: Option<(usize, usize)>,
+    /// How many of the facade's users use the item, and how many users the
+    /// facade has, when it has one and the item is of the run.
+    using: Option<(usize, usize)>,
 }
 
 /// The paths of a surface by module: each module's id in the facade when
@@ -201,7 +202,7 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
     let names = names(facade, &groups, &api);
     let users = used_by(&facade.used_by, facade.users, &names.links);
     for named in groups.values_mut().flat_map(|(_, items)| items) {
-        named.unused = unused(named, &users, facade.used_by.len());
+        named.using = using(named, &users, facade.used_by.len());
     }
     let view = View {
         facade,
@@ -257,7 +258,7 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
     };
     let unused = (groups.values())
         .flat_map(|(_, items)| items)
-        .filter(|named| named.unused_by_all())
+        .filter(|named| named.is_unused())
         .count();
     let _ = writeln!(
         out,
@@ -329,13 +330,13 @@ fn used_by(users: &[usize], named_by: &Users, links: &Links) -> Users {
     out
 }
 
-/// Returns how many of a facade's `total` users do not use an item, with
-/// that total: none when no crate of the run uses the facade, and none for
-/// an item that is not of the run. `users` holds the users of each item.
-fn unused(named: &Named, users: &Users, total: usize) -> Option<(usize, usize)> {
+/// Returns how many of a facade's `total` users use an item, with that
+/// total: none when no crate of the run uses the facade, and none for an
+/// item that is not of the run. `users` holds the users of each item.
+fn using(named: &Named, users: &Users, total: usize) -> Option<(usize, usize)> {
     let reach = named.item?;
-    let using = users.get(&(named.owner, reach)).map_or(0, BTreeSet::len);
-    (total > 0).then(|| (total.saturating_sub(using), total))
+    let count = users.get(&(named.owner, reach)).map_or(0, BTreeSet::len);
+    (total > 0).then_some((count, total))
 }
 
 /// The paths of the surface by module, crate root first, each module's
@@ -505,7 +506,7 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
         anchor,
         id: String::new(),
         defined: Some(defined),
-        unused: None,
+        using: None,
     })
 }
 
@@ -528,7 +529,7 @@ fn plain_named(name: &str, suffix: &'static str, owner: usize, line: Line) -> Na
         anchor: None,
         id: String::new(),
         defined: None,
-        unused: None,
+        using: None,
     }
 }
 
@@ -542,16 +543,19 @@ impl Named {
     }
 
     /// Whether the facade has users and none of them uses the item.
-    fn unused_by_all(&self) -> bool {
-        matches!(self.unused, Some((unused, users)) if unused == users)
+    fn is_unused(&self) -> bool {
+        matches!(self.using, Some((0, _)))
     }
 
-    /// Returns what ends the item's `Defined in` line: how many of the
-    /// facade's users do not use the item, when some do not.
-    fn unused_note(&self) -> String {
-        match self.unused {
-            Some((unused, users)) if unused > 0 => {
-                format!(" &middot; not used by {unused} of {users}")
+    /// Returns what ends the item's `Defined in` line: `unused` when none
+    /// of the facade's users uses the item, how many of them use it when
+    /// only some do, and nothing when each of them does.
+    fn use_note(&self) -> String {
+        match self.using {
+            Some((0, _)) => " &middot; unused".to_owned(),
+            Some((1, users)) if users > 1 => format!(" &middot; 1 of {users} uses it"),
+            Some((using, users)) if using < users => {
+                format!(" &middot; {using} of {users} use it")
             }
             _ => String::new(),
         }
@@ -633,7 +637,7 @@ fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>, dims: bool) -> St
     } else {
         ("", "")
     };
-    let class = if dims && named.unused_by_all() {
+    let class = if dims && named.is_unused() {
         " class=\"dim\""
     } else {
         ""
@@ -813,7 +817,7 @@ impl View<'_> {
             let _ = writeln!(
                 out,
                 "<p class=\"defined\">{at}{file}{}</p>",
-                named.unused_note()
+                named.use_note()
             );
         }
         let block = Block {
