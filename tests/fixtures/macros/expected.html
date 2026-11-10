@@ -44,10 +44,8 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Event : Clone, Debug, PartialEq
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span></div><span class="gap"></span><span class="k">pub:</span>
-    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
-<span class="gap"></span><span class="k">pub:</span>
-<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> forward_methods!</span></div><span class="gap"></span>    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "n")]]</span>
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Has an attribute macro.</span>
 <span class="c"><b class="m">MACRO</b></span><span class="c"> attribute: tracing::instrument</span></div>    <span class="src" id="fn.macros.Event.emit">emit</span>()
 }</code></pre>
 <p class="mark" id="macro.2"><b class="m">MACRO</b> forward_methods!</p>
@@ -58,7 +56,7 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Started
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c"><b class="m">MACRO</b></span><span class="c"> events!</span>
 <span class="c"><b class="m">MACRO</b></span><span class="c"> lifecycle_constants!</span></div>}</code></pre>
 <p class="mark" id="macro.4"><b class="m">MACRO</b> events!</p>
 <p class="mark" id="macro.5"><b class="m">MACRO</b> lifecycle_constants!</p>

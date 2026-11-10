@@ -12,7 +12,7 @@ vibelight reads the Rust crates of a repository and writes an outline of each: e
 - **One outline per target.** The library, each binary, or a single `.rs` file gets `<target>.md` and a page of the HTML, which `html/index.html` holds.
 - **Facts for analysis.** The markdown gives each declaration the facts vibelight observes across the run: what names and re-exports it, which other crates and which kinds of test code use it, which bodies call a function, and for each body, counts of its statements, loops, and error paths, the fields and parameters it touches, and its comments. Before the declarations come the leads: places that look like slop, each with an id, its evidence, the kind of evidence it rests on, and its known blind spots.
 - **One HTML file that works from disk, in Cursor's browser too.** `html/index.html` is the whole HTML, and it needs no server and no other file. Cursor's browser drops every click on a link to a `file:` URL, so the file is a small app that never leaves it. Every crate's page and the search index sit inside it compressed, so the file stays small, and the app unpacks a page only when you open it and shows it in a tab of its own. The address names what is shown, as `index.html#<target>/<id>`, so Back, Forward, and a reload work, and the tabs come back after a reload. `Ctrl K` or `/` searches every declaration of the run; a click with `Ctrl`, or a middle click, opens a link in a new tab; and a click on a source link copies its file and line, such as `crates/engine/src/run.rs:42`, since a browser inside an editor opens no source file. The file has inline CSS and makes no network requests. Its one link to another site, the page that defines instability, is followed only on a click, and Back returns to the outline. Every type name that refers to a declaration of the run links to it, and so does a re-exported function, constant, or static. The colors follow your system's light or dark setting.
-- **Module by module, with visibility.** A crate's page has one section per module in path order: its path, a line of what it declares and at which visibility, then its types and items, each with its docs. Inside a module, types are ordered by how they name each other: a type follows the type that owns it, so every type comes after the types that use it. Each type prints as one C++-style block with its data members first and the members of all its impls merged in, every member under a label for its visibility as written, such as `pub:` and `pub(crate):`, and a dim `reaches pub(crate)` line marks a node that reaches less far than its visibility says. The markdown also goes module by module in path order, with each module's records in source order.
+- **Module by module, with visibility.** A crate's page has one section per module in path order: its path, a line of what it declares and at which visibility, then its types and items, each with its docs. Inside a module, types are ordered by how they name each other: a type follows the type that owns it, so every type comes after the types that use it. Each type prints as one C++-style block with its data members first and the members of all its impls merged in, grouped by visibility as written under labels such as `pub:` and `pub(crate):`, and a dim `reaches pub(crate)` line marks a node that reaches less far than its visibility says. The markdown also goes module by module in path order, with each module's records in source order.
 - **Facades and their families.** A facade is a crate whose public surface is mostly re-exports of other crates of the run: the API a family of crates offers its users. vibelight finds the facades from their re-exports, or takes them from the config's `facades` key, and puts each other library behind the facade whose code reaches it. A facade's page shows only what its users can name: each item under the path they write, pulled from the crate that defines it, with its `pub` members alone, so the whole API reads in one place. The overview warns when a crate outside a family uses one of the family's implementation crates directly, past its facade.
 - **Comments kept.** Doc comments and ordinary comments stay with the item they belong to. In the HTML a doc comment prints as prose, and a member's comment reflows above it as one paragraph. The markdown also keeps the comments inside each function body, with their lines.
 - **Every macro marked.** In the HTML, macro definitions, invocations, derives from other crates, and attribute macros each get a bold **MACRO** label, and the page lists them all at the top, each with a link to where it sits. The markdown has a `macro` record for each definition and invocation, and lists derives and attribute macros on the record they apply to.
@@ -238,18 +238,16 @@ The `modules` record says lines 16 to 33 hold the root module and lines 34 to 39
 
 ### The HTML notation
 
-Every type prints as one C++-style block that uses Rust's item keyword and its visibility as written, with the members of all its inherent impls merged in, wherever they are written. Here is a public type whose fields and methods are all private:
+Every type prints as one C++-style block with its visibility as written and the members of all its inherent impls merged in, wherever they are written. Here is a public type whose fields and methods are all private:
 
 ```
 /// Holds the text the lexer is still reading.
-pub struct Cursor
+pub class Cursor
 {
-pub(self):
     text: String,
 
     pos: usize,
 
-pub(self):
     static new(text: String) -> Cursor
 
     bump() mut
@@ -260,10 +258,14 @@ pub(self):
 }
 ```
 
-The header names the type with `struct`, `enum`, `union`, or `trait` after its visibility, such as `pub(crate) enum Mode`, and a type with no visibility keyword shows none. The body lists first what has no visibility of its own: an enum's variants, a trait's items, and the type's macro marks. The data comes next, a struct's fields, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into sections by visibility, each opened by its label as written, such as `pub:`, `pub(crate):`, `pub(super):`, or `pub(in crate::engine):`, and `pub(self):` for no keyword. The widest comes first: `pub`, then what reaches the whole crate, then what reaches a deeper module, so a `pub(super)` in a module just under the root sits beside `pub(crate)`, which it means. A visibility that holds both fields and methods prints its label twice, once for each part:
+The header names the type after its visibility, such as `pub(crate) enum Mode`, and a type with no visibility keyword shows none. An enum, a union, and a trait keep Rust's keyword. A struct takes the C++ keyword that fits the first member its block shows: `struct` when that member is `pub`, and `class` when it is not, whatever order the source writes the members in. A tuple struct goes by its first field, and a struct that shows no member is a `struct`.
+
+The body lists first what has no visibility of its own: an enum's variants, a trait's items, and the type's macro marks. The data comes next, a struct's fields, and the other members follow, because the data is what a reviewer weighs first: should these fields be here, and are these the right types? Each of the two parts sorts its members into sections by visibility, the widest first: `pub`, then what reaches the whole crate, then what reaches a deeper module, so a `pub(super)` in a module just under the root sits beside `pub(crate)`, which it means.
+
+A section opens with its label as written, such as `pub:`, `pub(crate):`, `pub(super):`, or `pub(in crate::engine):`, and `pub(self):` for no keyword, but only where the visibility changes, as in C++. `pub` is in force at the brace of a `struct` and `pub(self)` at the brace of a `class`, so neither prints that label first, and fields and methods of one visibility that follow each other share one label. An enum, a union, and a trait start with no visibility in force, so their first label prints. No C++ keyword starts at `pub(crate)`, so a struct whose first member shown is `pub(crate)` is a `class` that keeps its first label:
 
 ```
-pub struct Run
+pub class Run
 {
 pub(crate):
     id: RunId,
@@ -281,7 +283,7 @@ pub(crate):
 }
 ```
 
-A module's block of items uses the same labels. Its macro marks and its extern blocks come first, one extern block per ABI with its items labeled inside its braces, and then its re-exports, constants, statics, and functions, each under its label.
+A module's block of items uses the same labels, and prints each one. Its macro marks and its extern blocks come first, one extern block per ABI with its items labeled inside its braces, and then its re-exports, constants, statics, and functions, each under its label.
 
 A node that reaches less far than its visibility says, because a module around it is narrower, gets a dim line above it, such as `reaches pub(crate)` above a `pub struct` in a private module: that is the widest place its path can be named from. A member or an item that reaches exactly as far as its type or module leaves the line out, since the type or the module already says it.
 
@@ -295,7 +297,7 @@ Each module shows its types and items once, with every comment. A link to a func
 
 A facade's page prints each item of its API the same way, but only as the facade's users see it: its `pub` members alone, none marked `#[doc(hidden)]`, and no `reaches` lines. A type's header leaves out `pub`, as in `struct Run`, since every item of the page is public; a crate's own page keeps the word, which there tells a public type from a private one. A tuple struct whose fields are all private shows no fields, as in `struct RunId`. When only some are private, each of those reads `_` in its place, so a public field keeps its number. An item re-exported under another name prints under that name, and its `Defined in` line names it as its crate does.
 
-The overview ends with the Legend of this notation, so a reader of the HTML alone can follow it: facades and their families, the bold types, the counts of users, and the last section of a facade's page, the two views of each module, the module sections and the sidebar, the coupling line, which crate a use counts for, the item keywords and visibility, `static` and the `() mut` marker, the base list, the labels and the order of a type's body and a module's items, the `reaches` line, `[[...]]`, `implements:`, `MACRO`, how comments print, and the links, search, and tabs.
+The overview ends with the Legend of this notation, so a reader of the HTML alone can follow it: facades and their families, the bold types, the counts of users, and the last section of a facade's page, the two views of each module, the module sections and the sidebar, the coupling line, which crate a use counts for, the keywords and visibility, `static` and the `() mut` marker, the base list, the labels and the order of a type's body and a module's items, the `reaches` line, `[[...]]`, `implements:`, `MACRO`, how comments print, and the links, search, and tabs.
 
 Traits a type implements or derives print the C++ way. Only the C++ special member functions become members: `Default` is the default constructor, `From<T>` a converting constructor, and `Drop` the destructor, packed together under the type's own label, with `= default` when derived. Every other standard trait, `Clone` and the comparison traits included, goes in the base list by its short name, as in `struct Seed : Clone, Debug, Display`, and every other trait follows on its own line by its full path. A comment written above an impl goes with what the impl adds: above a trait impl, it prints over that trait in the base list, which then takes a line of its own, and above an inherent impl, it opens the type's body. A name counts as standard only when it really resolves to `std`, `core`, or `alloc`, so another crate's `Display`, the crate's own `Display`, or a `Display` that only comes through a glob import gets its own line. A derive from another crate keeps its bold **MACRO** line above the block.
 

@@ -50,16 +50,15 @@
 <div class="doc">
 <p><span class="c">A class with private members only.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Hidden
+<pre><code><span class="k">pub</span> <span class="k">class</span> Hidden
 {
-<span class="k">pub(self):</span>
     <span class="src">value</span>: u8,
 }</code></pre>
 <h3 id="type.visibility.Inner">Inner</h3>
 <div class="doc">
 <p><span class="c">A class with internal and private members.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Inner
+<pre><code><span class="k">pub</span> <span class="k">class</span> Inner
 {
 <span class="k">pub(crate):</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>    <span class="src">id</span>: u32,
@@ -72,7 +71,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Mixed
 {
-<span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>    <span class="src">name</span>: String,
 <span class="gap"></span><span class="k">pub(crate):</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>    <span class="src">size</span>: usize,

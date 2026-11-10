@@ -33,7 +33,7 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">trait</span> Convert&lt;T&gt; <span class="k">where</span> T: Clone
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts a value.</span></div>    <span class="src" id="fn.traits.Convert.convert">convert</span>(value: T) -&gt; T
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts a value.</span></div>    <span class="src" id="fn.traits.Convert.convert">convert</span>(value: T) -&gt; T
 }</code></pre>
 <h3 id="type.traits.Lender">Lender</h3>
 <div class="doc">
@@ -41,7 +41,7 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">trait</span> Lender
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The borrowed item.</span></div>    <span class="k">using</span> <span class="src">Loan</span>&lt;'a&gt; where Self: 'a
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The borrowed item.</span></div>    <span class="k">using</span> <span class="src">Loan</span>&lt;'a&gt; where Self: 'a
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Lends an item.</span></div>    <span class="src" id="fn.traits.Lender.lend">lend</span>() <span class="k">mut</span> -&gt; Self::Loan&lt;'_&gt;
 }</code></pre>
 <h3 id="type.traits.Observer">Observer</h3>
@@ -50,7 +50,7 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">trait</span> Observer : Send, Sync
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The item type.</span></div>    <span class="k">using</span> <span class="src">Item</span>: Clone
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The item type.</span></div>    <span class="k">using</span> <span class="src">Item</span>: Clone
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The most items kept.</span></div>    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: usize = 64
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a default observer.</span></div>    <span class="k">static</span> <span class="src" id="fn.traits.Observer.make">make</span>() -&gt; Self <span class="k">where</span> Self: Sized
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Ends the run.</span></div>    <span class="src" id="fn.traits.Observer.finish">finish</span>(self) -&gt; u32 <span class="k">where</span> Self: Sized

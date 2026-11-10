@@ -300,12 +300,153 @@ mod tests {
                 "",
                 "    // Starting.",
                 "",
-                "pub:",
                 "    halt()",
                 "",
                 "    start()",
                 "}",
             ]
+        );
+    }
+
+    #[test]
+    fn a_struct_whose_first_member_shown_is_pub_stays_a_struct_and_drops_that_label() {
+        let source = "pub struct Point {\n    hidden: u8,\n    pub x: i32,\n}\n\
+                      impl Point {\n    fn check(&self) {}\n    pub fn new() -> Self { todo!() }\n}\n";
+        assert_eq!(
+            block(source, "Point"),
+            [
+                "pub struct Point",
+                "{",
+                "    x: i32,",
+                "",
+                "pub(self):",
+                "    hidden: u8,",
+                "",
+                "pub:",
+                "    static new() -> Self",
+                "",
+                "pub(self):",
+                "    check()",
+                "}",
+            ],
+            "the first member shown is the public field, which the source writes second; a \
+             label prints where the visibility changes"
+        );
+        let plain = "pub struct Plain {\n    pub x: i32,\n}\n\
+                     impl Plain {\n    pub fn get(&self) -> i32 { self.x }\n}\n";
+        assert_eq!(
+            block(plain, "Plain"),
+            [
+                "pub struct Plain",
+                "{",
+                "    x: i32,",
+                "",
+                "    get() -> i32",
+                "}"
+            ],
+            "public data and public members: no label at all"
+        );
+        assert_eq!(block("pub struct Unit;\n", "Unit"), ["pub struct Unit"]);
+    }
+
+    #[test]
+    fn a_struct_whose_first_member_shown_is_not_pub_is_a_class() {
+        let source = "pub struct Counter {\n    count: u32,\n}\n\
+                      impl Counter {\n    pub fn count(&self) -> u32 { self.count }\n}\n\
+                      pub struct Gauge;\n\
+                      impl Gauge {\n    pub(crate) fn level(&self) -> u8 { 0 }\n    \
+                      fn private_level(&self) -> u8 { 0 }\n}\n";
+        assert_eq!(
+            block(source, "Counter"),
+            [
+                "pub class Counter",
+                "{",
+                "    count: u32,",
+                "",
+                "pub:",
+                "    count() -> u32",
+                "}",
+            ],
+            "a class starts private, so the private data has no label"
+        );
+        assert_eq!(
+            block(source, "Gauge"),
+            [
+                "pub class Gauge",
+                "{",
+                "pub(crate):",
+                "    level() -> u8",
+                "",
+                "pub(self):",
+                "    private_level() -> u8",
+                "}",
+            ],
+            "no C++ keyword starts at `pub(crate)`, so the label stays"
+        );
+    }
+
+    #[test]
+    fn the_first_field_of_a_tuple_struct_decides_its_keyword() {
+        let source = "pub struct Id(i64);\n\
+                      impl Id {\n    pub fn get(self) -> i64 { self.0 }\n}\n\
+                      pub struct Pair(pub u8, u16);\n\
+                      impl Pair {\n    pub fn first(&self) -> u8 { self.0 }\n}\n";
+        assert_eq!(
+            block(source, "Id"),
+            [
+                "pub class Id(i64)",
+                "{",
+                "pub:",
+                "    get(self) -> i64",
+                "}"
+            ]
+        );
+        assert_eq!(
+            block(source, "Pair"),
+            [
+                "pub struct Pair(pub u8, u16)",
+                "{",
+                "    first() -> u8",
+                "}"
+            ]
+        );
+    }
+
+    #[test]
+    fn an_enum_a_union_and_a_trait_keep_their_keyword_and_their_first_label() {
+        let source = "pub enum Mode {\n    On,\n}\n\
+                      impl Mode {\n    pub fn is_on(&self) -> bool { true }\n}\n\
+                      pub union Bits {\n    pub word: u32,\n}\n\
+                      impl Bits {\n    pub fn zero() -> Self { Bits { word: 0 } }\n}\n\
+                      pub trait Speak {\n    fn say(&self);\n}\n";
+        assert_eq!(
+            block(source, "Mode"),
+            [
+                "pub enum Mode",
+                "{",
+                "    On,",
+                "",
+                "pub:",
+                "    is_on() -> bool",
+                "}",
+            ]
+        );
+        assert_eq!(
+            block(source, "Bits"),
+            [
+                "pub union Bits",
+                "{",
+                "pub:",
+                "    word: u32,",
+                "",
+                "    static zero() -> Self",
+                "}",
+            ],
+            "the label prints once for the data and the members that share it"
+        );
+        assert_eq!(
+            block(source, "Speak"),
+            ["pub trait Speak", "{", "    say()", "}"]
         );
     }
 

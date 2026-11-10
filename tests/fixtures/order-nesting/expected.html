@@ -59,7 +59,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Run
 {
-<span class="k">pub:</span>
     <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
 <span class="gap"></span>    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
 }</code></pre>
@@ -69,7 +68,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Step
 {
-<span class="k">pub:</span>
     <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
 <span class="gap"></span>    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
 <span class="gap"></span>    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
@@ -90,7 +88,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Config
 {
-<span class="k">pub:</span>
     <span class="src">limit</span>: u32,
 }</code></pre>
 <h3 id="type.order_nesting.Fork">Fork</h3>
@@ -99,7 +96,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Fork
 {
-<span class="k">pub:</span>
     <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
 <span class="gap"></span>    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
 }</code></pre>
@@ -109,7 +105,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Left
 {
-<span class="k">pub:</span>
     <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Right">Right</h3>
@@ -118,7 +113,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Right
 {
-<span class="k">pub:</span>
     <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Base">Base</h3>
@@ -130,9 +124,8 @@
 <div class="doc">
 <p><span class="c">A root whose public method prints before its private field, so its</span> <span class="c">block names Job first, yet its field type, Store, still comes first.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Host
+<pre><code><span class="k">pub</span> <span class="k">class</span> Host
 {
-<span class="k">pub(self):</span>
     <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
 <span class="gap"></span><span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Runs a job.</span></div>    <span class="src" id="fn.order_nesting.Host.run">run</span>(job: <a href="#type.order_nesting.Job">Job</a>)
@@ -153,7 +146,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Able
 {
-<span class="k">pub:</span>
     <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Leaf">Leaf</h3>
@@ -167,7 +159,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Report
 {
-<span class="k">pub:</span>
     <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
 }</code></pre>
 <h3 id="type.order_nesting.Summary">Summary</h3>

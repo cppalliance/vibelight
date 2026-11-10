@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::html::document::{Document, Inline, Item, Link, Node};
-use crate::html::layout::groups::is_label;
+use crate::html::layout::groups::{is_label, is_open};
 use crate::html::layout::marker::Marker;
 use crate::html::layout::{Block, Line, Span, span_text};
 use crate::model::{Loc, TypeRef, ValueRef};
@@ -292,10 +292,11 @@ impl Page<'_> {
     /// box's own margin already spaces it. A newline is written before a box
     /// and never after it, because a box is a block and ends its own line.
     ///
-    /// A box right under a section's label, such as `pub:`, is the comment
-    /// of the section's first member. The layout puts no blank line there,
-    /// so that box has the class that takes the space above it away, and
-    /// the comment sits on the line after the label.
+    /// A box right under a section's label, such as `pub:`, or right under
+    /// the brace that opens a body, is the comment of the first member
+    /// there. The layout puts no blank line there, so that box has the
+    /// class that takes the space above it away, and the comment sits on
+    /// the line after the label or the brace.
     fn code_lines(&self, out: &mut String, lines: &[Line]) {
         let mut first = true;
         let mut open_box = false;
@@ -304,7 +305,8 @@ impl Page<'_> {
         let mut after_box = false;
         // Blank lines seen since the last line written.
         let mut blanks = 0usize;
-        // True while the last line written is a section's label.
+        // True while the last line written is a section's label or the
+        // brace that opens a body.
         let mut under_label = false;
         for line in lines {
             let blank = line.spans.is_empty() && line.trailing.is_none();
@@ -364,7 +366,7 @@ impl Page<'_> {
             gaps(out, blanks, "gap");
             blanks = 0;
             after_box = false;
-            under_label = is_label(line);
+            under_label = is_label(line) || is_open(line);
             self.line(out, line);
             first = false;
         }
@@ -498,7 +500,7 @@ fn leading_doc(lines: &[Line]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::html::layout::groups::{Entry, Sections, add, join_sections};
+    use crate::html::layout::groups::{Entry, Labels, Sections, add, join_sections};
     use crate::html::layout::plain;
     use crate::html::render_style::STYLE;
 
@@ -540,6 +542,14 @@ mod tests {
         out
     }
 
+    /// Returns a member's comment box as the page writes it.
+    fn boxed(class: &str, doc: &str) -> String {
+        format!(
+            "<div class=\"{class}\" style=\"margin-left:calc(4ch - {BOX_PADDING})\">\
+             <span class=\"c\">{doc}</span></div>"
+        )
+    }
+
     #[test]
     fn a_comment_box_right_under_a_label_takes_no_space_above_it() {
         let member = |doc: &str, text: &str| Entry {
@@ -578,13 +588,8 @@ mod tests {
             member("The second.", "second()"),
         );
         let mut block = Block::default();
-        join_sections(Vec::new(), [sections, Sections::new()], &mut block);
-        let boxed = |class: &str, doc: &str| {
-            format!(
-                "<div class=\"{class}\" style=\"margin-left:calc(4ch - {BOX_PADDING})\">\
-                 <span class=\"c\">{doc}</span></div>"
-            )
-        };
+        let sets = [sections, Sections::new()];
+        join_sections(Vec::new(), sets, Labels::Every, &mut block);
         assert_eq!(
             code(&block.lines),
             format!(
@@ -598,6 +603,38 @@ mod tests {
         assert!(
             STYLE.contains("\n.mc.first{margin-top:0;padding-top:0}\n"),
             "the class has the rule that removes the space"
+        );
+    }
+
+    #[test]
+    fn a_comment_box_right_under_the_brace_that_opens_a_body_takes_no_space_above_it() {
+        let line = |indent: usize, spans: Vec<Span>| Line {
+            indent,
+            spans,
+            trailing: None,
+        };
+        let comment = |doc: &str| {
+            vec![
+                Span::Marker(Marker::DOC.spaced),
+                Span::Comment(doc.to_owned()),
+            ]
+        };
+        let lines = [
+            line(0, vec![plain("{")]),
+            line(4, comment("The first.")),
+            line(4, vec![plain("first: u8,")]),
+            Line::default(),
+            line(4, comment("The second.")),
+            line(4, vec![plain("second: u8,")]),
+        ];
+        assert_eq!(
+            code(&lines),
+            format!(
+                "{{\n{}    first: u8,\n<span class=\"gap gap-box\"></span>{}    second: u8,",
+                boxed("mc first", "The first."),
+                boxed("mc", "The second."),
+            ),
+            "a struct's first member has no label above it, so its comment sits under the brace"
         );
     }
 }

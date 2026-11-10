@@ -50,13 +50,12 @@ fn a_public_block_keeps_only_what_users_can_name() {
         [
             "struct Holder",
             "{",
-            "pub:",
             "    value: u8,",
             "",
-            "pub:",
             "    get() -> u8",
             "}",
-        ]
+        ],
+        "a struct starts public, and every member here is public, so no label prints"
     );
 }
 
@@ -72,7 +71,11 @@ fn a_struct_with_no_public_member_shows_an_empty_body() {
 #[test]
 fn a_private_tuple_field_beside_a_public_one_keeps_its_place() {
     let (_tmp, krate) = krate("pub struct Pair(u16, pub u8);\n");
-    assert_eq!(public(&krate, "Pair", "Pair"), ["struct Pair(_, pub u8)"]);
+    assert_eq!(
+        public(&krate, "Pair", "Pair"),
+        ["class Pair(_, pub u8)"],
+        "the first field is private, so the tuple is a class"
+    );
 }
 
 #[test]
@@ -85,7 +88,7 @@ fn a_tuple_struct_with_only_private_fields_shows_no_fields() {
     );
     assert_eq!(
         public(&krate, "Id", "Id"),
-        ["struct Id", "{", "pub:", "    get(self) -> i64", "}"]
+        ["struct Id", "{", "    get(self) -> i64", "}"]
     );
     assert_eq!(public(&krate, "Span", "Span"), ["struct Span"]);
     assert_eq!(public(&krate, "Empty", "Empty"), ["struct Empty()"]);

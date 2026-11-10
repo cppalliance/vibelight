@@ -85,18 +85,39 @@ pub(crate) fn reaches_line(meta: &Meta, indent: usize, shown: Option<Access>) ->
     })
 }
 
+/// Which of its sections' labels a block prints.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Labels<'a> {
+    /// Every section opens with its label, as in a module's block.
+    Every,
+    /// A section opens with its label only where its visibility differs
+    /// from the one in force, as in the body of a C++ class. The value is
+    /// the visibility in force at the opening brace: `pub` in a `struct`,
+    /// `pub(self)` in a `class`, and none in any other body, whose first
+    /// label then prints.
+    Changes(Option<&'a str>),
+}
+
 /// Joins a type body's or a module block's groups: the unlabeled groups
 /// `first`, then each set of labeled sections, data first and then
-/// members, every section opened by its label, such as `pub(crate):`, with
-/// a blank line before it. A visibility that holds both data and members
-/// prints its label twice.
-pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sets: [Sections; 2], block: &mut Block) {
+/// members, with a blank line before each section. `labels` says which
+/// sections open with their label, such as `pub(crate):`.
+pub(crate) fn join_sections(
+    first: Vec<Vec<Entry>>,
+    sets: [Sections; 2],
+    labels: Labels<'_>,
+    block: &mut Block,
+) {
     if first.iter().any(|group| !group.is_empty()) {
         if !block.lines.is_empty() {
             block.lines.push(Line::default());
         }
         join_groups(first, block);
     }
+    let mut in_force = match labels {
+        Labels::Every => None,
+        Labels::Changes(start) => start.map(str::to_owned),
+    };
     for set in sets {
         for ((_, spelling), groups) in set {
             if groups.iter().all(Vec::is_empty) {
@@ -105,7 +126,11 @@ pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sets: [Sections; 2], block: 
             if !block.lines.is_empty() {
                 block.lines.push(Line::default());
             }
-            block.lines.push(label_line(&spelling));
+            let changes = in_force.as_deref() != Some(spelling.as_str());
+            if labels == Labels::Every || changes {
+                block.lines.push(label_line(&spelling));
+            }
+            in_force = Some(spelling);
             join_groups(groups, block);
         }
     }
@@ -123,6 +148,13 @@ fn label_line(spelling: &str) -> Line {
 /// keyword that ends in a colon. No other line of a block is that.
 pub(crate) fn is_label(line: &Line) -> bool {
     matches!(line.spans.as_slice(), [Span::Key(text)] if text.ends_with(':'))
+}
+
+/// Whether a line is the brace that opens a block's body: `{` alone, at no
+/// indent. The first member of a `struct` or a `class` follows it with no
+/// label between.
+pub(crate) fn is_open(line: &Line) -> bool {
+    line.indent == 0 && matches!(line.spans.as_slice(), [Span::Code(text)] if text == "{")
 }
 
 /// Joins the lines of each member of a list, one blank line between every
@@ -190,7 +222,8 @@ mod tests {
         let mut sections = Sections::new();
         add(&mut sections, (1, "pub(crate)".to_owned()), 1, 0, entry);
         let mut block = Block::default();
-        join_sections(Vec::new(), [sections, Sections::new()], &mut block);
+        let sets = [sections, Sections::new()];
+        join_sections(Vec::new(), sets, Labels::Every, &mut block);
         assert_eq!(text(&block.lines), ["pub(crate):", "x: u8,"]);
         assert!(is_label(&block.lines[0]));
         assert!(!is_label(&block.lines[1]));
@@ -205,6 +238,87 @@ mod tests {
         };
         assert!(!is_label(&keyword_alone));
         assert!(!is_label(&Line::default()), "a blank line is no label");
+    }
+
+    /// Joins a body's data, `pub` and then any `rest`, and its members,
+    /// `pub` and then private, as `labels` says.
+    fn joined(rest: &[&str], labels: Labels<'_>) -> Vec<String> {
+        let entry = |text: &str| Entry {
+            name: String::new(),
+            lines: lines(&[text]),
+            repeats: Vec::new(),
+        };
+        let private = || (usize::MAX, "pub(self)".to_owned());
+        let public = || (0, "pub".to_owned());
+        let mut data = Sections::new();
+        add(&mut data, public(), 1, 0, entry("x: u8,"));
+        for field in rest {
+            add(&mut data, private(), 1, 0, entry(field));
+        }
+        let mut members = Sections::new();
+        add(&mut members, public(), 1, 0, entry("get()"));
+        add(&mut members, private(), 1, 0, entry("check()"));
+        let mut block = Block::default();
+        join_sections(Vec::new(), [data, members], labels, &mut block);
+        text(&block.lines)
+    }
+
+    #[test]
+    fn a_label_prints_only_where_the_visibility_changes() {
+        let with = |head: &[&'static str]| [head, &["get()", "", "pub(self):", "check()"]].concat();
+        assert_eq!(
+            joined(&[], Labels::Changes(Some("pub"))),
+            with(&["x: u8,", ""]),
+            "`pub` is in force at the brace and still in force at the first member"
+        );
+        assert_eq!(
+            joined(&[], Labels::Changes(None)),
+            with(&["pub:", "x: u8,", ""]),
+            "with nothing in force the first label prints"
+        );
+        assert_eq!(
+            joined(&[], Labels::Changes(Some("pub(self)"))),
+            with(&["pub:", "x: u8,", ""])
+        );
+        assert_eq!(
+            joined(&["y: u8,"], Labels::Changes(Some("pub"))),
+            with(&["x: u8,", "", "pub(self):", "y: u8,", "", "pub:"]),
+            "the members' `pub` follows private data, so its label prints"
+        );
+    }
+
+    #[test]
+    fn a_block_that_prints_every_label_repeats_one() {
+        assert_eq!(
+            joined(&[], Labels::Every),
+            [
+                "pub:",
+                "x: u8,",
+                "",
+                "pub:",
+                "get()",
+                "",
+                "pub(self):",
+                "check()"
+            ]
+        );
+    }
+
+    #[test]
+    fn only_a_brace_alone_at_no_indent_opens_a_body() {
+        let brace = |indent| Line {
+            indent,
+            spans: vec![plain("{")],
+            trailing: None,
+        };
+        assert!(is_open(&brace(0)));
+        assert!(!is_open(&brace(4)), "a struct-like variant's brace");
+        let closing = Line {
+            spans: vec![plain("}")],
+            ..Line::default()
+        };
+        assert!(!is_open(&closing));
+        assert!(!is_open(&Line::default()));
     }
 
     #[test]

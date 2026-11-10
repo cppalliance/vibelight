@@ -43,7 +43,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt;
 {
-<span class="k">pub:</span>
     <span class="src">data</span>: [T; N]&amp; 'a,
 <span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">len</span>: usize,
@@ -59,7 +58,7 @@
 <div class="doc">
 <p><span class="c">A tuple struct with methods.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Index(usize)
+<pre><code><span class="k">pub</span> <span class="k">class</span> Index(usize)
 {
 <span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Returns the index.</span></div>    <span class="src" id="fn.structs.Index.get">get</span>() -&gt; usize
@@ -85,7 +84,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Point
 {
-<span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Horizontal position.</span></div>    <span class="src">x</span>: i32,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Vertical position.</span></div>    <span class="src">y</span>: i32,
 <span class="gap"></span><span class="k">pub(self):</span>
@@ -104,7 +102,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Token
 {
-<span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes a token.</span></div>    <span class="k">static</span> <span class="src" id="fn.structs.Token.new">new</span>() -&gt; <a href="#type.structs.Token">Token</a>
 }</code></pre>
 </main>

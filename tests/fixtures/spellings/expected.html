@@ -66,12 +66,10 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Timer : Display
 {
-<span class="k">pub:</span>
     <span class="src">laps</span>: Map&lt;u32, String&gt;,
 <span class="gap"></span>    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
 <span class="gap"></span>    <span class="src">period</span>: ::std::time::Duration,
-<span class="gap"></span><span class="k">pub:</span>
-    <span class="src" id="fn.spellings.Timer.next">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
+<span class="gap"></span>    <span class="src" id="fn.spellings.Timer.next">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
 <span class="gap"></span>    <span class="src" id="fn.spellings.Timer.wait">wait</span>(extra: std::time::Duration) -&gt; Vec&lt;String&gt;
 }</code></pre>
 <h3 id="type.spellings.Clock">Clock</h3>
@@ -81,7 +79,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Clock : Display
 {
-<span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">When the alarm rings; see </span><code><span class="c">core::option::Option</span></code><span class="c">.</span></div>    <span class="src">alarm</span>: Option&lt;u8&gt;,
 <span class="gap"></span>    <span class="src">label</span>: String,
 <span class="gap"></span>    <span class="src">snooze</span>: Option&lt;u8&gt;,
@@ -98,10 +95,8 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapper&lt;T&gt;
 {
-<span class="k">pub:</span>
     <span class="src">inner</span>: T,
-<span class="gap"></span><span class="k">pub:</span>
-    <span class="src" id="fn.spellings.Wrapper.is_empty">is_empty</span>() -&gt; bool
+<span class="gap"></span>    <span class="src" id="fn.spellings.Wrapper.is_empty">is_empty</span>() -&gt; bool
 <span class="gap"></span>    <span class="src" id="fn.spellings.Wrapper.len">len</span>() -&gt; usize
 }</code></pre>
 <h2 id="mod.spellings.bare">bare</h2>

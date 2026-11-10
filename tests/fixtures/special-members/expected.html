@@ -40,9 +40,8 @@
 <div class="doc">
 <p><span class="c">A struct with a private section.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Counter
+<pre><code><span class="k">pub</span> <span class="k">class</span> Counter
 {
-<span class="k">pub(self):</span>
     <span class="src">count</span>: u32,
 <span class="gap"></span><span class="k">pub:</span>
     <span class="src">Counter</span>() = <span class="k">default</span>
@@ -55,16 +54,14 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Derived
 {
-<span class="k">pub:</span>
     <span class="src">value</span>: u8,
-<span class="gap"></span><span class="k">pub:</span>
-    <span class="src">Derived</span>() = <span class="k">default</span>
+<span class="gap"></span>    <span class="src">Derived</span>() = <span class="k">default</span>
 }</code></pre>
 <h3 id="type.special_members.Handle">Handle</h3>
 <div class="doc">
 <p><span class="c">A tuple struct with a derived and a hand-written member.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Handle(u32)
+<pre><code><span class="k">pub</span> <span class="k">class</span> Handle(u32)
 {
 <span class="k">pub:</span>
     <span class="src">Handle</span>() = <span class="k">default</span>
@@ -85,14 +82,13 @@
 <div class="doc">
 <p><span class="c">A name from anything that converts into a String.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Name(String) : From&lt;T&gt;</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">class</span> Name(String) : From&lt;T&gt;</code></pre>
 <h3 id="type.special_members.Scheduler">Scheduler</h3>
 <div class="doc">
 <p><span class="c">A class with a hand-written destructor.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Scheduler
+<pre><code><span class="k">pub</span> <span class="k">class</span> Scheduler
 {
-<span class="k">pub(self):</span>
     <span class="src">jobs</span>: Vec&lt;u32&gt;,
 <span class="gap"></span><span class="k">pub:</span>
     <span class="src">~Scheduler</span>()
@@ -103,10 +99,8 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Written
 {
-<span class="k">pub:</span>
     <span class="src">value</span>: u8,
-<span class="gap"></span><span class="k">pub:</span>
-    <span class="src">Written</span>()
+<span class="gap"></span>    <span class="src">Written</span>()
     <span class="src">Written</span>(str&amp;)
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Converts from a byte.</span></div>    <span class="src">Written</span>(u8&amp;)
 <span class="gap"></span>    <span class="src">~Written</span>()

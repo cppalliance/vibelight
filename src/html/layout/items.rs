@@ -6,7 +6,7 @@ use crate::access::Access;
 use crate::access_stamp::Stamp;
 use crate::html::layout::decl::{BodyParts, body};
 use crate::html::layout::groups::{
-    Entry, Label, Sections, add, join_sections, label, reaches_line, sort_entries,
+    Entry, Label, Labels, Sections, add, join_sections, label, reaches_line, sort_entries,
 };
 use crate::html::layout::marker::Marker;
 use crate::html::layout::{
@@ -97,7 +97,8 @@ pub(crate) fn module_block(krate: &Crate, id: ModId) -> Option<Block> {
         unsupported.into_iter().collect(),
     ];
     let mut block = Block::default();
-    join_sections(first, [sections, Sections::new()], &mut block);
+    let sets = [sections, Sections::new()];
+    join_sections(first, sets, Labels::Every, &mut block);
     let dangling = note_lines(&module.dangling, 0, Marker::DOC);
     if !dangling.is_empty() {
         if !block.lines.is_empty() {
@@ -296,7 +297,8 @@ fn extern_blocks(krate: &Crate, items: &[&Item], shown: Option<Access>) -> Vec<E
             sort_entries(group, &krate.refs);
         }
         let mut inner = Block::default();
-        join_sections(Vec::new(), [sections, Sections::new()], &mut inner);
+        let sets = [sections, Sections::new()];
+        join_sections(Vec::new(), sets, Labels::Every, &mut inner);
         let mut lines = vec![
             Line {
                 indent: 0,

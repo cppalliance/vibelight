@@ -40,7 +40,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Root
 {
-<span class="k">pub:</span>
     <span class="src">ping</span>: <a href="#type.order_cycles.net.Ping">net::Ping</a>,
 }</code></pre>
 <h3 id="type.order_cycles.Left">Left</h3>
@@ -49,7 +48,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Left
 {
-<span class="k">pub:</span>
     <span class="src">right</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Right">Right</a>&gt;&gt;,
 }</code></pre>
 <h3 id="type.order_cycles.Right">Right</h3>
@@ -58,7 +56,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Right
 {
-<span class="k">pub:</span>
     <span class="src">left</span>: Option&lt;Box&lt;<a href="#type.order_cycles.Left">Left</a>&gt;&gt;,
 }</code></pre>
 <h2 id="mod.order_cycles.net">net</h2>
@@ -72,7 +69,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Ping
 {
-<span class="k">pub:</span>
     <span class="src">pong</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Pong">Pong</a>&gt;&gt;,
 }</code></pre>
 <h3 id="type.order_cycles.net.Pong"><span class="dim">net::</span>Pong</h3>
@@ -81,7 +77,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Pong
 {
-<span class="k">pub:</span>
     <span class="src">ping</span>: Option&lt;Box&lt;<a href="#type.order_cycles.net.Ping">Ping</a>&gt;&gt;,
 }</code></pre>
 </main>

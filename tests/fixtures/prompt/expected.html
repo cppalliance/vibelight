@@ -91,7 +91,7 @@
 <p><span class="c">A fully parsed prompt file.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">pub</span> <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
+<span class="k">pub</span> <span class="k">class</span> Prompt : Clone, Debug, Eq, PartialEq
 {
 <span class="k">pub(crate):</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The parsed YAML frontmatter.</span></div>    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
@@ -165,7 +165,7 @@
 <p><span class="c">One section of a prompt: a heading, ordered blocks, and children.</span></p>
 </div>
 <pre><code><span class="dim">[[non_exhaustive]]</span>
-<span class="k">pub</span> <span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
+<span class="k">pub</span> <span class="k">class</span> Section : Clone, Debug, Eq, PartialEq
 {
 <span class="k">pub(crate):</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The heading text (the section's address).</span></div>    <span class="src">name</span>: String,
@@ -196,7 +196,7 @@
 <pre><code><span class="dim">[[non_exhaustive]]</span>
 <span class="k">pub</span> <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>    <span class="src">Lua</span>(LuaProgram),
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">An exact </span><code><span class="c">lua</span></code><span class="c"> fence compiled at parse time.</span></div>    <span class="src">Lua</span>(LuaProgram),
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Author prose: the pending Markdown accumulated since the nearest</span>
 <span class="c">preceding heading, </span><code><span class="c">lua</span></code><span class="c"> fence, or thematic break.</span>
 

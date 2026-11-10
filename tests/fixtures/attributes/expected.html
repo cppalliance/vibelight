@@ -37,7 +37,6 @@
 <pre><code><span class="dim">[[serde(rename_all = "camelCase")]]</span>
 <span class="k">pub</span> <span class="k">struct</span> Record
 {
-<span class="k">pub:</span>
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The record's name.</span></div>    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Kept out of the docs.</span></div>    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
 <span class="gap"></span><span class="k">pub(self):</span>
@@ -55,7 +54,7 @@
 <span class="dim">[[repr(u8)]]</span>
 <span class="k">pub</span> <span class="k">enum</span> Level : Clone, Copy
 {
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The top.</span></div>    <span class="dim">[[deprecated(since = "1.2", note = "use High")]]</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The top.</span></div>    <span class="dim">[[deprecated(since = "1.2", note = "use High")]]</span>
     <span class="src">Top</span> = 2,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The bottom.</span></div>    <span class="src">Low</span> = 0,
 }</code></pre>

@@ -110,7 +110,6 @@
     , <a href="#type.base_lists.Named">Named</a>
     <span class="k">where</span> T: Copy
 {
-<span class="k">pub:</span>
     <span class="src">value</span>: T,
 }</code></pre>
 <h3 id="type.base_lists.Labeled">Labeled</h3>
@@ -172,7 +171,7 @@
 <div class="doc">
 <p><span class="c">Standard derives that are not special members, and comparisons with</span> <span class="c">another type written by hand. The crate's own Clone trait never sits on</span> <span class="c">the shared line, so the standard Clone keeps its short name.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Ordered(u8)
+<pre><code><span class="k">pub</span> <span class="k">class</span> Ordered(u8)
     : Clone, Eq, Ord, PartialEq, PartialEq&lt;u8&gt;, PartialOrd, PartialOrd&lt;u8&gt;</code></pre>
 <h3 id="type.base_lists.Plain">Plain</h3>
 <div class="doc">
@@ -192,7 +191,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Run : Debug, Display
 {
-<span class="k">pub:</span>
     <span class="src">id</span>: u32,
 }</code></pre>
 <h3 id="type.base_lists.RunError">RunError</h3>
@@ -201,16 +199,14 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> RunError : Debug, Display, std::error::Error
 {
-<span class="k">pub:</span>
     <span class="src">reason</span>: String,
 }</code></pre>
 <h3 id="type.base_lists.Secret">Secret</h3>
 <div class="doc">
 <p><span class="c">A class with a standard trait.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Secret : Display
+<pre><code><span class="k">pub</span> <span class="k">class</span> Secret : Display
 {
-<span class="k">pub(self):</span>
     <span class="src">value</span>: u8,
 }</code></pre>
 <h3 id="type.base_lists.Sink">Sink</h3>
@@ -227,7 +223,7 @@
 <div class="doc">
 <p><span class="c">So many standard traits that the list wraps.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Wide(u64)
+<pre><code><span class="k">pub</span> <span class="k">class</span> Wide(u64)
     : Binary, Copy, Debug, Display, Eq, Hash, LowerExp, LowerHex, Octal, Ord
     , Pointer, UpperExp, UpperHex</code></pre>
 <h3 id="type.base_lists.Wrapped">Wrapped</h3>
@@ -235,7 +231,7 @@
 <div class="doc">
 <p><span class="c">A bare derive of From comes from another crate, so it stays on the mark.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Wrapped(u8) : Debug</code></pre>
+<pre><code><span class="k">pub</span> <span class="k">class</span> Wrapped(u8) : Debug</code></pre>
 <h2 id="mod.base_lists.bare">bare</h2>
 <div class="doc">
 <p><span class="c">The standard Display after a use of the trait itself.</span></p>

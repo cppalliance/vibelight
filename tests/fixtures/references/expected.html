@@ -65,7 +65,6 @@
 </div>
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Views&lt;'a, T&gt;
 {
-<span class="k">pub:</span>
     <span class="src">shared</span>: T&amp; 'a,
 <span class="gap"></span>    <span class="src">unique</span>: T mut&amp; 'a,
 <span class="gap"></span>    <span class="src">name</span>: str&amp; 'static,
@@ -79,8 +78,7 @@
 <span class="gap"></span>    <span class="src">wrapped</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
 <span class="gap"></span>    <span class="src">raw_call</span>: (dyn Fn() -&gt; bool)*,
 <span class="gap"></span>    <span class="src">step</span>: (fn(u8) -&gt; u8)&amp; 'a,
-<span class="gap"></span><span class="k">pub:</span>
-    <span class="src" id="fn.references.Views.clear">clear</span>() <span class="k">mut</span>
+<span class="gap"></span>    <span class="src" id="fn.references.Views.clear">clear</span>() <span class="k">mut</span>
 <span class="gap"></span>    <span class="src" id="fn.references.Views.get">get</span>() -&gt; T&amp;
 <span class="gap"></span>    <span class="src" id="fn.references.Views.into_name">into_name</span>(self) -&gt; str&amp; 'static
 <span class="gap"></span>    <span class="src" id="fn.references.Views.lookup">lookup</span>(
