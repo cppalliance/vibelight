@@ -69,12 +69,25 @@ fn a_struct_with_no_public_member_shows_an_empty_body() {
 }
 
 #[test]
-fn a_hidden_tuple_field_keeps_its_place() {
-    let (_tmp, krate) = krate("pub struct Pair(pub u8, u16);\n");
-    assert_eq!(
-        public(&krate, "Pair", "Pair"),
-        ["struct Pair(pub u8, /* private field */)"]
+fn a_private_tuple_field_beside_a_public_one_keeps_its_place() {
+    let (_tmp, krate) = krate("pub struct Pair(u16, pub u8);\n");
+    assert_eq!(public(&krate, "Pair", "Pair"), ["struct Pair(_, pub u8)"]);
+}
+
+#[test]
+fn a_tuple_struct_with_only_private_fields_shows_no_fields() {
+    let (_tmp, krate) = krate(
+        "pub struct Id(i64);\n\
+         impl Id {\n    pub fn get(self) -> i64 { self.0 }\n}\n\
+         pub struct Span(u32, u32);\n\
+         pub struct Empty();\n",
     );
+    assert_eq!(
+        public(&krate, "Id", "Id"),
+        ["struct Id", "{", "pub:", "    get(self) -> i64", "}"]
+    );
+    assert_eq!(public(&krate, "Span", "Span"), ["struct Span"]);
+    assert_eq!(public(&krate, "Empty", "Empty"), ["struct Empty()"]);
 }
 
 #[test]

@@ -36,8 +36,9 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its header without `pub`, its `pub`
 /// members, none hidden from the docs, and no word of how far anything
-/// reaches. A hidden tuple field reads `/* private field */`, so the tuple
-/// keeps its shape.
+/// reaches. A tuple struct whose fields are all private shows no fields,
+/// which tell that user nothing. When only some are, a private one reads
+/// `_`, so each public field keeps its number.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     block_of(krate, &public_decl(krate, id, name), Head::Surface)
 }
@@ -56,9 +57,13 @@ fn public_decl(krate: &Crate, id: DeclId, name: &str) -> Decl {
         member.meta.access = None;
     }
     if let Shape::Tuple(fields) = &mut decl.shape {
-        for field in fields.iter_mut().filter(|f| f.meta.vis != "pub") {
-            field.text = Text::plain("/* private field */");
-            field.meta = Meta::default();
+        if !fields.is_empty() && fields.iter().all(|f| f.meta.vis != "pub") {
+            decl.shape = Shape::Unit;
+        } else {
+            for field in fields.iter_mut().filter(|f| f.meta.vis != "pub") {
+                field.text = Text::plain("_");
+                field.meta = Meta::default();
+            }
         }
     }
     decl.end_marks.clear();
