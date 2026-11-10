@@ -151,7 +151,7 @@ The second bullet of [vibelight/AGENTS.md](vibelight/AGENTS.md), which starts "T
 Everything in the plan is built, one commit for each step, and `cargo fmt`, `cargo clippy --all-targets`, and `cargo test` pass: 475 unit tests and 169 integration tests. With each build, runvil was outlined into a scratch folder and checked in a headless browser over a temporary localhost server. On runvil:
 
 - **Layers:** 30 crates in 12 layers.
-- **Unused counts:** 4 crates use the `runvil` facade. None of them uses 57 of its 122 items, and 120 items carry a count.
+- **Unused counts:** 4 crates use the `runvil` facade. 57 of its 122 items are used by none of them, and 120 items show a count.
 - **Keyword and labels:** 44 golden pages changed. A scratch script applied the rule to the text of each old block and compared the result with the new block: 98 labels went, 26 headers read `class`, and nothing else changed in the text. No markdown golden changed.
 
 Where the build differs from the plan:
