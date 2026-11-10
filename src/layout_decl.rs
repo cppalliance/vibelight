@@ -17,9 +17,20 @@ use crate::model::{
     name_order,
 };
 
+/// How a declaration's header opens.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Head {
+    /// With the type's visibility as written.
+    Written,
+    /// Without `pub`, as a public surface shows a type: every type there is
+    /// `pub`, so the word tells its reader nothing. Any other visibility
+    /// stays as written.
+    Surface,
+}
+
 /// Builds the block of one declaration, its functions ordered by name.
 pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
-    block_of(krate, &krate.decls[id])
+    block_of(krate, &krate.decls[id], Head::Written)
 }
 
 /// Builds the block the compact view reads for a declaration that has a
@@ -27,15 +38,20 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
 /// so its base list keeps its shortest form. A declaration with no such
 /// comment has one block for both views, and this returns `None`.
 pub(crate) fn compact_block(krate: &Crate, id: DeclId) -> Option<Block> {
-    Some(block_of(krate, &uncommented(&krate.decls[id])?))
+    Some(block_of(
+        krate,
+        &uncommented(&krate.decls[id])?,
+        Head::Written,
+    ))
 }
 
 /// Builds the block of one declaration as a user of a public surface sees
-/// it, under the name that user writes: its `pub` members, none hidden from
-/// the docs, and no word of how far anything reaches. A hidden tuple field
-/// reads `/* private field */`, so the tuple keeps its shape.
+/// it, under the name that user writes: its header without `pub`, its `pub`
+/// members, none hidden from the docs, and no word of how far anything
+/// reaches. A hidden tuple field reads `/* private field */`, so the tuple
+/// keeps its shape.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
-    block_of(krate, &public_decl(krate, id, name))
+    block_of(krate, &public_decl(krate, id, name), Head::Surface)
 }
 
 /// Like `compact_block`, for the block `public_block` builds.
@@ -43,6 +59,7 @@ pub(crate) fn compact_public_block(krate: &Crate, id: DeclId, name: &str) -> Opt
     Some(block_of(
         krate,
         &uncommented(&public_decl(krate, id, name))?,
+        Head::Surface,
     ))
 }
 
@@ -82,10 +99,10 @@ fn public_decl(krate: &Crate, id: DeclId, name: &str) -> Decl {
     decl
 }
 
-/// Builds a declaration's block. A comment above one of its impls goes with
-/// what the impl adds: above the trait in the base list, or, for an inherent
-/// impl, at the top of the body.
-fn block_of(krate: &Crate, decl: &Decl) -> Block {
+/// Builds a declaration's block, its header opened as `head` says. A comment
+/// above one of its impls goes with what the impl adds: above the trait in
+/// the base list, or, for an inherent impl, at the top of the body.
+fn block_of(krate: &Crate, decl: &Decl, head: Head) -> Block {
     let refs = &krate.refs;
     let mut block = Block::default();
     block
@@ -104,7 +121,7 @@ fn block_of(krate: &Crate, decl: &Decl) -> Block {
     block.lines.extend(above(&cfgs, 0, decl.loc, true).0);
     block.lines.extend(reaches_line(&decl.meta, 0, None));
     if let Shape::Alias(target) = &decl.shape {
-        block.lines.push(alias_line(decl, target));
+        block.lines.push(alias_line(decl, target, head));
         return block;
     }
     let has_body = !matches!(decl.shape, Shape::Unit | Shape::Tuple(_))
@@ -115,7 +132,7 @@ fn block_of(krate: &Crate, decl: &Decl) -> Block {
         || !inherent.is_empty();
     block
         .lines
-        .extend(header_lines(decl, head_spans(decl), has_body, refs));
+        .extend(header_lines(decl, head_spans(decl, head), has_body, refs));
     if !has_body {
         return block;
     }
@@ -155,14 +172,23 @@ fn brace(text: &str) -> Line {
     }
 }
 
+/// Returns the visibility a header opens with, and the space after it.
+fn head_vis(decl: &Decl, head: Head) -> Vec<Span> {
+    if head == Head::Surface && decl.meta.vis == "pub" {
+        Vec::new()
+    } else {
+        vis_spans(&decl.meta.vis)
+    }
+}
+
 /// Returns a type alias or trait alias as one line, after its visibility.
-fn alias_line(decl: &Decl, target: &Text) -> Line {
+fn alias_line(decl: &Decl, target: &Text, head: Head) -> Line {
     let keyword = if decl.kind == DeclKind::TraitAlias {
         "trait"
     } else {
         "using"
     };
-    let mut spans = vis_spans(&decl.meta.vis);
+    let mut spans = head_vis(decl, head);
     spans.extend([key(keyword), plain(&format!(" {}", decl.name))]);
     spans.extend(code(&decl.generics));
     spans.push(plain(" = "));
@@ -178,10 +204,10 @@ fn alias_line(decl: &Decl, target: &Text) -> Line {
     }
 }
 
-/// Returns the start of a header: the visibility as written, the Rust
+/// Returns the start of a header: the visibility `head` asks for, the Rust
 /// keyword with any trait prefix, the name, and the generics.
-fn head_spans(decl: &Decl) -> Vec<Span> {
-    let mut spans = vis_spans(&decl.meta.vis);
+fn head_spans(decl: &Decl, head: Head) -> Vec<Span> {
+    let mut spans = head_vis(decl, head);
     let keyword = match (&decl.shape, decl.kind) {
         (Shape::Trait { prefix, .. }, _) => {
             if !prefix.is_empty() {

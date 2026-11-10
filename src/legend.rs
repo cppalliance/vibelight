@@ -6,7 +6,7 @@ use crate::render_html::escape;
 /// The lines of the legend, in order; backticks mark code.
 const LINES: &[&str] = &[
     "A facade is a crate whose public surface is mostly re-exports of other crates here: the API that users of a crate family write against. Its implementation crates are its family: the crates its code reaches, short of other facades. A warning marks a crate outside a family that uses one of its implementation crates directly, past the facade.",
-    "A facade's page shows only what its users can name: each item under the path they write, with its `pub` members alone, pulled from the crate that defines it, under a dim line that says where that crate writes it.",
+    "A facade's page shows only what its users can name: each item under the path they write, with its `pub` members alone, pulled from the crate that defines it, under a dim line that says where that crate writes it. A type's header there leaves out `pub`, as in `struct Run`, since every item of the page is public.",
     "In a facade's list of symbols, a bold type is one that no other item of its API names in its code: usually where reading starts. `Named, not re-exported`, at the end of its page, lists what that code names and the facade does not re-export, under the crate a user names each through.",
     "Each module's section opens with its items `At a glance`, the same declarations without comments, then shows them again `Documented`, each with its docs. A function's name in the first view goes to it in the second.",
     "Each module has a section: its path, its anatomy line of what it declares and by which visibility, its types, then its items. The sidebar is the module tree, and a bold name is on the public surface.",

@@ -25,9 +25,9 @@
 <p class="note" id="api">The public API of facade: 5 items, from 2 other crates. Each shows only what a user of facade can name. Their code names <a href="#named">1 item that facade does not re-export</a>.</p>
 <h2 id="api.mod">facade</h2>
 <p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Gauge
+<pre class="glance"><code><span class="k">struct</span> Gauge
 
-<span class="k">pub</span> <span class="k">struct</span> Meter
+<span class="k">struct</span> Meter
 {
 <span class="k">pub:</span>
     <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
@@ -36,14 +36,14 @@
     <span class="src">vendored</span>: gamma::Vendored,
 }
 
-<span class="k">pub</span> <span class="k">struct</span> Panel
+<span class="k">struct</span> Panel
     : <a href="#api.Reads">alpha::Reads</a>
 {
 <span class="k">pub:</span>
     <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
 }
 
-<span class="k">pub</span> <span class="k">trait</span> Reads
+<span class="k">trait</span> Reads
 {
     <a class="fn" href="#api.Reads.read">read</a>() -&gt; u32
 }
@@ -55,13 +55,13 @@
 <div class="doc">
 <p><span class="c">A gauge.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Gauge</code></pre>
+<pre><code><span class="k">struct</span> Gauge</code></pre>
 <h3 id="api.Meter"><span class="dim">facade::</span>Meter</h3>
 <p class="defined">Defined in <a class="cross" href="alpha.html#type.alpha.Meter">alpha::Meter</a>, <span class="src">src/lib.rs:6</span></p>
 <div class="doc">
 <p><span class="c">A meter that reads a gauge of beta.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Meter
+<pre><code><span class="k">struct</span> Meter
 {
 <span class="k">pub:</span>
 <div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Through a use of the re-export at beta's root.</span></div>    <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
@@ -74,7 +74,7 @@
 <div class="doc">
 <p><span class="c">A panel that reads through alpha's trait.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">struct</span> Panel
+<pre><code><span class="k">struct</span> Panel
     : <a href="#api.Reads">alpha::Reads</a>
 {
 <span class="k">pub:</span>
@@ -85,7 +85,7 @@
 <div class="doc">
 <p><span class="c">A trait other crates implement.</span></p>
 </div>
-<pre><code><span class="k">pub</span> <span class="k">trait</span> Reads
+<pre><code><span class="k">trait</span> Reads
 {
     <span class="src" id="api.Reads.read">read</span>() -&gt; u32
 }</code></pre>

@@ -45,7 +45,7 @@ fn a_public_block_keeps_only_what_users_can_name() {
     assert_eq!(
         public(&krate, "Holder", "Holder"),
         [
-            "pub struct Holder",
+            "struct Holder",
             "{",
             "pub:",
             "    value: u8,",
@@ -62,7 +62,7 @@ fn a_struct_with_no_public_member_shows_an_empty_body() {
     let (_tmp, krate) = krate("pub struct Secret {\n    a: u8,\n}\n");
     assert_eq!(
         public(&krate, "Secret", "Secret"),
-        ["pub struct Secret", "{", "}"]
+        ["struct Secret", "{", "}"]
     );
 }
 
@@ -71,7 +71,7 @@ fn a_hidden_tuple_field_keeps_its_place() {
     let (_tmp, krate) = krate("pub struct Pair(pub u8, u16);\n");
     assert_eq!(
         public(&krate, "Pair", "Pair"),
-        ["pub struct Pair(pub u8, /* private field */)"]
+        ["struct Pair(pub u8, /* private field */)"]
     );
 }
 
@@ -80,14 +80,40 @@ fn a_trait_keeps_its_items_which_have_no_visibility_of_their_own() {
     let (_tmp, krate) = krate("pub trait Speak {\n    fn say(&self);\n}\n");
     assert_eq!(
         public(&krate, "Speak", "Speak"),
-        ["pub trait Speak", "{", "    say()", "}"]
+        ["trait Speak", "{", "    say()", "}"]
+    );
+}
+
+#[test]
+fn a_header_leaves_out_pub_and_keeps_any_other_visibility() {
+    let (_tmp, krate) = krate(
+        "pub enum Mode {\n    On,\n}\n\
+         pub union Bits {\n    pub word: u32,\n}\n\
+         pub unsafe trait Raw {}\n\
+         pub type Id = u32;\n\
+         pub(crate) struct Inner;\n",
+    );
+    assert_eq!(
+        public(&krate, "Mode", "Mode"),
+        ["enum Mode", "{", "    On,", "}"]
+    );
+    assert_eq!(
+        public(&krate, "Bits", "Bits"),
+        ["union Bits", "{", "pub:", "    word: u32,", "}"]
+    );
+    assert_eq!(public(&krate, "Raw", "Raw"), ["unsafe trait Raw", "{", "}"]);
+    assert_eq!(public(&krate, "Id", "Id"), ["using Id = u32"]);
+    assert_eq!(
+        public(&krate, "Inner", "Inner"),
+        ["pub(crate) struct Inner"],
+        "only `pub` goes: a narrower visibility says something"
     );
 }
 
 #[test]
 fn a_renamed_declaration_and_value_show_the_name_users_write() {
     let (_tmp, krate) = krate("pub struct Inner;\npub fn make() -> u8 {\n    0\n}\n");
-    assert_eq!(public(&krate, "Inner", "Outer"), ["pub struct Outer"]);
+    assert_eq!(public(&krate, "Inner", "Outer"), ["struct Outer"]);
     let item = (krate.modules[0].items.iter())
         .position(|item| item.name == "make")
         .expect("the function is collected");

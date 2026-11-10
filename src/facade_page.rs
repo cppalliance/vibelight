@@ -1,7 +1,8 @@
 //! The page of a facade: its public API and nothing else. Every path its
 //! users can name, grouped by the module they name it in, each with the
 //! declaration it names, pulled from the crate that defines it and shown as
-//! those users see it, with its `pub` members alone. Each module shows its
+//! those users see it, with its `pub` members alone and no `pub` in a type's
+//! header, which every item of the page is. Each module shows its
 //! items twice, at a glance and documented, and each item says where the
 //! crate that defines it writes it.
 //!
