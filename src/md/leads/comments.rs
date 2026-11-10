@@ -14,7 +14,7 @@ pub(super) mod words;
 use proc_macro2::LineColumn;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::md::leads::comments::words::{
     Written, content, holds, looks_like_code, named, prose_line, prose_words, without_code,
 };

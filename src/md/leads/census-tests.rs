@@ -2,7 +2,7 @@
 //! where it finds its lead, and on a close one where it finds none, and
 //! the scope that keeps the census to what the compilers leave quiet.
 
-use crate::analysis_tests::MANIFEST;
+use crate::analysis::tests::MANIFEST;
 use crate::md::leads::Mode;
 use crate::md::leads::census::scope::keeps_dead;
 use crate::md::leads::tests::{found, lib, with_leads};

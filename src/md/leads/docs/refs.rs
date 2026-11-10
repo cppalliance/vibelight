@@ -6,8 +6,8 @@
 use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::census_lex::{PATH_KEYWORDS, is_keyword};
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::census::lex::{PATH_KEYWORDS, is_keyword};
 use crate::md::leads::docs::std_names::is_std_name;
 use crate::md::leads::docs::text::{Kind, identifiers, quote};
 use crate::md::leads::docs::{Doc, Docs, Node};

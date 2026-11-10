@@ -11,8 +11,8 @@ mod roles;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
-use crate::analysis_paths::PathKind;
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
+use crate::analysis::paths::PathKind;
 use crate::md::leads::items::{Catalog, FnKind, Func};
 use crate::md::leads::types::Ty;
 use crate::md::leads::words::words;
@@ -129,7 +129,7 @@ fn named_nodes<'a>(run: &AnalysisRun<'a>) -> Vec<Named<'a>> {
             }
             for (k, item) in module.items.iter().enumerate() {
                 let value = ItemRef::Value(ValueRef { module: m, item: k });
-                if crate::analysis_items::is_value(&item.kind) {
+                if crate::analysis::items::is_value(&item.kind) {
                     let flags = (module.test_support, false);
                     out.push(node(value, &item.name, m, &item.meta, flags));
                 }

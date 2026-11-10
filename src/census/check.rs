@@ -3,8 +3,8 @@
 //! paths and their indexes, and the declarations.
 
 use crate::analysis::AnalysisRun;
+use crate::census::lex::is_keyword;
 use crate::census::{Context, Scan, Source};
-use crate::census_lex::is_keyword;
 
 /// Tells whether a hit in `context` may be in `source`: a lexed source of
 /// that context, or a test-only node of a module tree's file.

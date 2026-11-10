@@ -9,7 +9,7 @@ use syn::{Attribute, ItemMacro};
 
 use crate::collect::{Collector, Here, loc};
 use crate::comments::{Placed, place_comments};
-use crate::macro_expand::{self, Expansion};
+use crate::macro_rules::expand::{self, Expansion};
 use crate::model::{Holder, Item as ModItem, ItemKind, Loc, MacroKind, MacroUse, Meta, Vis};
 use crate::typerefs::{range_of, strip_raw};
 use crate::{attrs, macros};
@@ -75,7 +75,7 @@ impl Collector<'_> {
             loc,
         });
         let expansions = self.expansions;
-        let key = (here.file, macro_expand::key(&self.files[here.file], m));
+        let key = (here.file, expand::key(&self.files[here.file], m));
         if let Some(expansion) = expansions.get(&key) {
             self.expanded(here, expansion);
         }

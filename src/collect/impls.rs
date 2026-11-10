@@ -6,10 +6,10 @@ use syn::visit::Visit;
 use syn::{Attribute, ImplItem, ItemImpl, Type, Visibility};
 
 use crate::attrs;
+use crate::collect::bases::single_arg;
+use crate::collect::body::code::Code;
+use crate::collect::body::self_fields;
 use crate::collect::{Collector, Here, loc};
-use crate::collect_bases::single_arg;
-use crate::collect_body::self_fields;
-use crate::collect_body_code::Code;
 use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{

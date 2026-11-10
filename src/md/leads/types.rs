@@ -4,7 +4,7 @@
 //! type is made of is read in `types_shape.rs`.
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemId;
+use crate::analysis::items::ItemId;
 use crate::model::{RefId, Seg, Text};
 use crate::prelude::item_path;
 

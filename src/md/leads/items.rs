@@ -3,8 +3,8 @@
 //! its compared types, and the impl facts that several detectors share.
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
-use crate::analysis_paths::PathKind;
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
+use crate::analysis::paths::PathKind;
 use crate::md::leads::Lead;
 use crate::md::leads::types::{Tok, Ty, identity, item_name};
 use crate::md::leads::words::{bound_name, split_param};

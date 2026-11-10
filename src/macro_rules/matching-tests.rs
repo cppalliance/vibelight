@@ -5,7 +5,7 @@
 //! end of a matcher, `expr_2021`, and the budget on long lists.
 
 use crate::macro_rules::Failure;
-use crate::macro_tests::{apply, expands, rules};
+use crate::macro_rules::tests::{apply, expands, rules};
 
 #[test]
 fn a_stmt_ends_before_a_semicolon_it_does_not_own() {

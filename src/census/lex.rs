@@ -1,10 +1,10 @@
 //! Lexes one source text for the census: each name it writes, with how it
 //! writes the name, whether it is inside macro arguments, and whether it
 //! is inside a test-only span, and each qualified path, which
-//! `census_paths` reads from the same flat tokens. Doc attributes,
+//! `census::paths` reads from the same flat tokens. Doc attributes,
 //! keywords, and lifetimes give no names. This scan keeps doc-attribute
 //! tokens and flags them, and flags `macro_rules!` bodies as macro tokens;
-//! it shares only the keyword table with `collect_body_tokens`.
+//! it shares only the keyword table with `collect::body::tokens`.
 
 use std::fmt::Write as _;
 use std::ops::Range;
@@ -12,7 +12,7 @@ use std::ops::Range;
 use proc_macro2::{Delimiter, LineColumn, Spacing, Span, TokenStream, TokenTree};
 
 use crate::census::Form;
-use crate::census_paths::Path;
+use crate::census::paths::Path;
 
 /// Rust's strict and reserved keywords, sorted for a binary search. A
 /// keyword never names an item, but a raw identifier such as `r#type` does.

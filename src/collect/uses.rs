@@ -9,9 +9,9 @@ use syn::{
 };
 
 use crate::attrs;
+use crate::collect::body::code::Code;
+use crate::collect::use_group::{Binding, expand};
 use crate::collect::{Collector, Here, loc};
-use crate::collect_body_code::Code;
-use crate::collect_use_group::{Binding, expand};
 use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{

@@ -9,9 +9,9 @@ use std::fmt::Write as _;
 
 use crate::access::{narrowed, spell};
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_paths::PathKind;
-use crate::analysis_uses::UseKind;
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::analysis::paths::PathKind;
+use crate::analysis::uses::UseKind;
 use crate::census::Context;
 use crate::md::slop::AnalysisTarget;
 use crate::md::slop::catalog::{BodyComment, BodyRecord};

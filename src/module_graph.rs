@@ -9,8 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::access::encloses;
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
-use crate::analysis_uses::UseKind;
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
+use crate::analysis::uses::UseKind;
 use crate::census::Context;
 use crate::model::{ItemKind, ModId};
 

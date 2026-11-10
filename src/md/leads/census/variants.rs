@@ -7,8 +7,8 @@
 use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemId;
-use crate::analysis_paths::PathKind;
+use crate::analysis::items::ItemId;
+use crate::analysis::paths::PathKind;
 use crate::census::Form;
 use crate::md::leads::census::scope::{
     Candidate, Kind, Scope, edge_path, elsewhere, in_macro, limits, plain,

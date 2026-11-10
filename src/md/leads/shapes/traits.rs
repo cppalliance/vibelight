@@ -6,9 +6,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_paths::PathKind;
-use crate::analysis_uses::{Use, UseKind};
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::analysis::paths::PathKind;
+use crate::analysis::uses::{Use, UseKind};
 use crate::census::Context;
 use crate::md::leads::items::{Catalog, impls_of_trait, is_deserialize, is_wire, trait_of};
 use crate::md::leads::words::words;

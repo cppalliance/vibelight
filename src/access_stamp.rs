@@ -6,7 +6,7 @@
 
 use crate::access::{Access, spell, written};
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::model::{Crate, ModId, Vis};
 
 /// How far one node reaches.

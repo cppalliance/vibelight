@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::md::leads::items::{Catalog, FnKind, Func, impls_of_trait, is_seam, trait_of};
 use crate::md::leads::types::{Tok, Ty, item_name, leaf};
 use crate::md::leads::{Lead, Mode};

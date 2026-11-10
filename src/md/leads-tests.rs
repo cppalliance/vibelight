@@ -8,7 +8,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_tests::{MANIFEST, fixture, run, run_with};
+use crate::analysis::tests::{MANIFEST, fixture, run, run_with};
 use crate::md::leads::{self, Lead, Mode, SUMMARY_ABOVE, Summary};
 
 /// Shows a lead's subjects joined by `, `, each as its path below its

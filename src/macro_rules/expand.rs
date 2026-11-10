@@ -228,3 +228,7 @@ fn warning(file: &SourceFile, mac: &ItemMacro, reason: &str) -> Warning {
         message: format!("macro `{name}!` not expanded: {reason}"),
     }
 }
+
+#[cfg(test)]
+#[path = "expand-tests.rs"]
+mod tests;

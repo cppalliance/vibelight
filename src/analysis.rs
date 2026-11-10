@@ -6,13 +6,18 @@
 //! spellings, for the detectors to read. Nothing in it depends on where the
 //! run's files are: it holds no directory, link base, or stamp.
 
+mod check;
+pub(crate) mod items;
+pub(crate) mod paths;
+pub(crate) mod uses;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-use crate::analysis_items::{ItemId, ItemRef, Scopes};
-use crate::analysis_paths::Edge;
-use crate::analysis_uses::Use;
+use crate::analysis::items::{ItemId, ItemRef, Scopes};
+use crate::analysis::paths::Edge;
+use crate::analysis::uses::Use;
 use crate::census::{Census, Context};
 use crate::inputs::Chosen;
 use crate::manifest_facts::ManifestFacts;
@@ -20,10 +25,7 @@ use crate::model::{Crate, CrossRef, DeclId, RefId};
 use crate::model_body::BodyId;
 use crate::root::{Target, TargetKind};
 use crate::source::SourceFile;
-use crate::{
-    access, analysis_items, analysis_paths, attach, census_sources, modtree, module_graph,
-    spellings, surface,
-};
+use crate::{access, attach, census, modtree, module_graph, spellings, surface};
 
 /// What analysis knows of one target of the run.
 #[derive(Debug)]
@@ -243,21 +245,20 @@ impl<'a> AnalysisRun<'a> {
         packages: &'a [PackageInfo],
         boilerplate: &[String],
     ) -> AnalysisRun<'a> {
-        let analysis_deps = analysis_paths::augmented(targets);
-        let cross = analysis_paths::cross(krates, &analysis_deps);
+        let analysis_deps = paths::augmented(targets);
+        let cross = paths::cross(krates, &analysis_deps);
         let attached: Vec<Vec<Option<DeclId>>> = krates.iter().map(attach::owners).collect();
         let impls_of = krates
             .iter()
             .zip(&attached)
-            .map(|(krate, attached)| analysis_items::impls_by_decl(krate, attached))
+            .map(|(krate, attached)| items::impls_by_decl(krate, attached))
             .collect();
-        let body_items: Vec<Vec<Option<ItemRef>>> =
-            krates.iter().map(analysis_items::body_items).collect();
+        let body_items: Vec<Vec<Option<ItemRef>>> = krates.iter().map(items::body_items).collect();
         let item_bodies = body_items
             .iter()
-            .map(|items| analysis_items::bodies_by_item(items))
+            .map(|owners| items::bodies_by_item(owners))
             .collect();
-        let scopes: Vec<Scopes> = krates.iter().map(analysis_items::scopes).collect();
+        let scopes: Vec<Scopes> = krates.iter().map(items::scopes).collect();
         let lib = |t: usize| targets[t].kind == TargetKind::Lib;
         let surfaces: Vec<Vec<surface::Entry>> = (0..krates.len())
             .map(|t| {
@@ -274,7 +275,7 @@ impl<'a> AnalysisRun<'a> {
             .zip(&attached)
             .map(|(krate, attached)| spellings::find_hiding(krate, |i| attached[i].is_some()))
             .collect();
-        let census = census_sources::build(krates, targets, packages, &scopes);
+        let census = census::sources::build(krates, targets, packages, &scopes);
         let mut run = AnalysisRun {
             krates,
             targets,
@@ -290,7 +291,7 @@ impl<'a> AnalysisRun<'a> {
             edges_in: BTreeMap::new(),
             uses: Vec::new(),
             census,
-            summaries: krates.iter().map(analysis_items::summaries).collect(),
+            summaries: krates.iter().map(items::summaries).collect(),
             surfaces,
             accesses,
             graph: Vec::new(),
@@ -310,3 +311,7 @@ impl<'a> AnalysisRun<'a> {
         run
     }
 }
+
+#[cfg(test)]
+#[path = "analysis-tests.rs"]
+pub(crate) mod tests;

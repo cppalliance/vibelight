@@ -5,11 +5,11 @@
 
 use syn::{FnArg, Pat, Signature};
 
+use crate::collect::body::code::{Called, Code};
+use crate::collect::body::comments::{comment_facts, last_line};
+use crate::collect::body::read::read;
+use crate::collect::body::tokens::scan;
 use crate::collect::{Collector, Here};
-use crate::collect_body_code::{Called, Code};
-use crate::collect_body_comments::{comment_facts, last_line};
-use crate::collect_body_read::read;
-use crate::collect_body_tokens::scan;
 use crate::model::{Loc, RefId, TypeRef};
 use crate::model_body::{Body, BodyFacts, BodyKind, CallFact, Owner, ParamUse, PathFact};
 use crate::typerefs::strip_raw;

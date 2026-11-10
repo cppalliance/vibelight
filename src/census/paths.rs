@@ -6,7 +6,7 @@
 
 use proc_macro2::{Delimiter, LineColumn};
 
-use crate::census_lex::{PATH_KEYWORDS, Tok, Toks};
+use crate::census::lex::{PATH_KEYWORDS, Tok, Toks};
 
 /// One qualified path a text writes.
 pub(crate) struct Path {
@@ -194,7 +194,7 @@ fn path(segments: Vec<String>, start: Start, at: LineColumn) -> Path {
 
 #[cfg(test)]
 mod tests {
-    use crate::census_lex::lex;
+    use crate::census::lex::lex;
 
     fn paths_of(text: &str) -> Vec<(String, bool, bool)> {
         let lexed = lex(text, &[]).expect("it lexes");

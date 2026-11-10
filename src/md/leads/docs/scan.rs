@@ -5,7 +5,7 @@
 
 use std::ops::Range;
 
-use crate::census_docs::fence;
+use crate::census::docs::fence;
 use crate::md::leads::docs::text::{Kind, Link, Prose, Tok};
 
 /// The words after which a dot ends no sentence.

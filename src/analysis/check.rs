@@ -8,9 +8,9 @@ use std::collections::BTreeSet;
 
 use crate::access::Access;
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, is_value};
-use crate::analysis_paths::{Edge, PathKind};
-use crate::analysis_uses::UseKind;
+use crate::analysis::items::{ItemId, ItemRef, is_value};
+use crate::analysis::paths::{Edge, PathKind};
+use crate::analysis::uses::UseKind;
 use crate::census::Context;
 use crate::model::{DeclKind, Module, Reach, ValueRef};
 use crate::model_body::{BodyKind, Owner};

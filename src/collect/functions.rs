@@ -6,8 +6,8 @@ use syn::visit::Visit;
 use syn::{Attribute, FnArg, ItemFn, ReceiverKind, ReturnType, Safety, Signature, Type};
 
 use crate::attrs;
+use crate::collect::body::code::Code;
 use crate::collect::{Collector, Here, loc};
-use crate::collect_body_code::Code;
 use crate::comments::{Placed, place_comments};
 use crate::model::{BodyOwner, Holder, Item, ItemKind, Meta, Param, Receiver, Sig, Text, Vis};
 use crate::model_body::BodyKind;

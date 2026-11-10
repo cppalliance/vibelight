@@ -9,8 +9,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemRef;
-use crate::census_lex::is_keyword;
+use crate::analysis::items::ItemRef;
+use crate::census::lex::is_keyword;
 use crate::md::leads::items::{Catalog, FnKind, is_wire};
 use crate::md::leads::types::{Ty, leaf};
 use crate::md::leads::words::words;

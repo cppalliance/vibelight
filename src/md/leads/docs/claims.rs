@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::md::leads::docs::refs::intra_path;
 use crate::md::leads::docs::text::{Kind, Prose, identifiers};
 use crate::md::leads::docs::{Doc, Docs, Node};

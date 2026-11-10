@@ -3,8 +3,8 @@
 
 use std::cmp::Reverse;
 
-use crate::collect_body_code::Statement;
-use crate::collect_body_tokens::words;
+use crate::collect::body::code::Statement;
+use crate::collect::body::tokens::words;
 use crate::comments::comment_lines;
 use crate::model_body::{BodyCommentFact, Placement};
 use crate::source::{Comment, SourceFile};
@@ -98,7 +98,7 @@ fn place(
 
 #[cfg(test)]
 mod tests {
-    use crate::collect_body_facts::tests::collected;
+    use crate::collect::body::facts::tests::collected;
     use crate::model_body::{BodyCommentFact, Placement};
 
     /// The comments of the first body, as (text, placement, the statement's

@@ -3,6 +3,12 @@
 //! name nothing else, and the fields a method reaches through `self`, which
 //! the detectors group.
 
+pub(super) mod code;
+mod comments;
+pub(crate) mod facts;
+mod read;
+pub(super) mod tokens;
+
 use std::collections::BTreeSet;
 
 use syn::visit::{self, Visit};

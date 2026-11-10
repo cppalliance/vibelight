@@ -8,9 +8,9 @@ use std::ops::RangeInclusive;
 
 use anyhow::{Context, Result, anyhow, bail};
 
-use crate::collect_attrs::SERDE_PATH_KEYS;
-use crate::collect_body_tokens::{MIN_TOKENS, SHINGLE};
-use crate::collect_check_nodes::check_nodes;
+use crate::collect::attr_facts::SERDE_PATH_KEYS;
+use crate::collect::body::tokens::{MIN_TOKENS, SHINGLE};
+use crate::collect::check_nodes::check_nodes;
 use crate::inputs::Package;
 use crate::model::{Crate, DeclKind, ItemKind, Member, MemberKind, RefId, Shape};
 use crate::model_body::{Body, BodyFacts, BodyId, BodyKind, Owner, Placement, Role, Root};
@@ -306,7 +306,7 @@ fn check_prefix(krate: &Crate, prefix: Option<RefId>, path: &[String]) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::collect_body_facts::tests::collected;
+    use crate::collect::body::facts::tests::collected;
 
     const LIB: &str = "pub struct Gauge { level: u8 }\n\
                        impl Gauge {\n\

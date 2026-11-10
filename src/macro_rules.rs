@@ -5,13 +5,18 @@
 //! syntax that rule parsing and matching share lives here too: which runs
 //! of punctuation are one token, and repetition operators.
 
+pub(crate) mod expand;
+mod fragment;
+mod matching;
+mod transcribe;
+
 use std::fmt;
 
 use proc_macro2::{Punct, Spacing, TokenStream, TokenTree};
 use syn::{Item, Path};
 
-use crate::macro_match::{self, Matcher};
-use crate::macro_transcribe::{self, Piece};
+use crate::macro_rules::matching::Matcher;
+use crate::macro_rules::transcribe::Piece;
 
 /// rustc's default recursion limit: how deep expansions may nest, with the
 /// top-level expansion at depth 1.
@@ -100,8 +105,8 @@ impl MacroRules {
                 return Err(unsupported("a rule whose sides `=>` does not separate"));
             }
             rules.push(Rule {
-                matcher: macro_match::parse(&matcher.stream()),
-                transcriber: macro_transcribe::parse(&transcriber.stream()),
+                matcher: matching::parse(&matcher.stream()),
+                transcriber: transcribe::parse(&transcriber.stream()),
             });
             rest = match after {
                 [TokenTree::Punct(semi), next @ ..] if semi.as_char() == ';' => next,
@@ -125,12 +130,12 @@ impl MacroRules {
                 .matcher
                 .as_ref()
                 .map_err(|reason| unsupported(reason))?;
-            if let Some(bindings) = macro_match::matches(matcher, &tokens, budget)? {
+            if let Some(bindings) = matching::matches(matcher, &tokens, budget)? {
                 let pieces = rule
                     .transcriber
                     .as_ref()
                     .map_err(|reason| unsupported(reason))?;
-                return macro_transcribe::transcribe(pieces, &bindings, budget);
+                return transcribe::transcribe(pieces, &bindings, budget);
             }
         }
         Err(Failure::NoRuleMatched)
@@ -325,3 +330,7 @@ pub(crate) fn alone(punct: &Punct) -> Punct {
     alone.set_span(punct.span());
     alone
 }
+
+#[cfg(test)]
+#[path = "macro_rules-tests.rs"]
+mod tests;

@@ -6,7 +6,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::analysis_tests::{fixture, run};
+use crate::analysis::tests::{fixture, run};
 use crate::md::slop::check::{Mode, check};
 use crate::md::slop::{AnalysisTarget, RenderInput, render};
 use crate::root::TargetKind;

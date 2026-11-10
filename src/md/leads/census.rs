@@ -15,8 +15,8 @@ pub(super) mod scope;
 mod variants;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_uses::{Use, UseKind};
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::analysis::uses::{Use, UseKind};
 use crate::census::{Context, NameCount};
 use crate::md::leads::census::scope::{
     Candidate, Kind, Scope, candidates, consumers, edge_path, generated_part, hits_in, in_macro,

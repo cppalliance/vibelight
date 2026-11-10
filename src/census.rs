@@ -4,6 +4,12 @@
 //! never that it uses an item: macro expansion, generated files, disabled
 //! `cfg` selection, dynamic dispatch, and code outside the run go unseen.
 
+mod check;
+pub(crate) mod docs;
+pub(crate) mod lex;
+mod paths;
+pub(crate) mod sources;
+
 use std::collections::BTreeMap;
 
 use crate::model::{FileId, ModId};

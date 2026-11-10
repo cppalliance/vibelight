@@ -7,11 +7,11 @@ use syn::visit::Visit;
 use syn::{Attribute, ImplItem, TraitItem};
 
 use crate::attrs;
+use crate::collect::body::code::Code;
+use crate::collect::body::self_fields;
+use crate::collect::impls::Parts;
+use crate::collect::uses::written_value;
 use crate::collect::{Collector, Here, loc};
-use crate::collect_body::self_fields;
-use crate::collect_body_code::Code;
-use crate::collect_impl::Parts;
-use crate::collect_use::written_value;
 use crate::comments::{Placed, place_comments};
 use crate::macros;
 use crate::model::{
@@ -311,7 +311,7 @@ fn trait_item_attrs(item: &TraitItem) -> &[Attribute] {
 }
 #[cfg(test)]
 mod tests {
-    use crate::collect_body_facts::tests::collected;
+    use crate::collect::body::facts::tests::collected;
     use crate::model::MemberKind;
 
     #[test]

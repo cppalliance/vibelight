@@ -17,7 +17,7 @@ mod words;
 use std::collections::BTreeMap;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
 use crate::md::leads::Lead;
 use crate::md::leads::comments;
 use crate::md::leads::docs::text::{Prose, boilerplate, read_except};

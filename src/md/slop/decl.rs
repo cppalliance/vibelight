@@ -6,7 +6,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::analysis_items::ItemRef;
+use crate::analysis::items::ItemRef;
 use crate::md::leads::words::split_param;
 use crate::md::slop::catalog::{
     AliasRecord, FieldRecord, ImplRecord, TraitRecord, TypeRecord, VariantRecord,

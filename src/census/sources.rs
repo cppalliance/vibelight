@@ -9,11 +9,11 @@ use std::ops::Range;
 
 use proc_macro2::LineColumn;
 
+use crate::analysis::items::{Scopes, innermost};
 use crate::analysis::{Extra, PackageInfo, TargetInfo};
-use crate::analysis_items::{Scopes, innermost};
+use crate::census::docs::{doc_texts, doctests};
+use crate::census::lex::lex;
 use crate::census::{Census, Context, Form, QualifiedPathHit, Scan, Source, TokenHit};
-use crate::census_docs::{doc_texts, doctests};
-use crate::census_lex::lex;
 use crate::macros;
 use crate::model::{Crate, FileId, ItemKind, Loc, MemberKind, ModId, Seg, Shape, VariantFields};
 use crate::root::TargetKind;

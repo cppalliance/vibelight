@@ -3,14 +3,14 @@
 //! arguments, and the words of a statement a comment goes with. This scan
 //! drops doc attributes while it flattens, and folds each macro invocation
 //! into one `MACRO` token; it shares only the keyword table with
-//! `census_lex`. The census flags `macro_rules!` bodies as macro tokens,
+//! `census::lex`. The census flags `macro_rules!` bodies as macro tokens,
 //! and this scan folds only invocations.
 
 use std::collections::BTreeSet;
 
 use proc_macro2::{Delimiter, Literal, Spacing, TokenStream, TokenTree};
 
-use crate::census_lex::is_keyword;
+use crate::census::lex::is_keyword;
 use crate::model_body::Fingerprint;
 use crate::typerefs::strip_raw;
 

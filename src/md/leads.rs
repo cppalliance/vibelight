@@ -25,7 +25,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
 use crate::model::{FileId, Loc, ModId, path_order};
 
 pub(crate) use crate::md::leads::check::validate;

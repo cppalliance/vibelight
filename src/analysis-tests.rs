@@ -6,10 +6,10 @@
 use std::fs;
 use std::path::PathBuf;
 
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::analysis::paths::{PathKind, Via};
+use crate::analysis::uses::UseKind;
 use crate::analysis::{AnalysisRun, PackageInfo, TargetInfo, inputs};
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_paths::{PathKind, Via};
-use crate::analysis_uses::UseKind;
 use crate::census::Context;
 use crate::exclude::Exclude;
 use crate::inputs::{Selection, choose};

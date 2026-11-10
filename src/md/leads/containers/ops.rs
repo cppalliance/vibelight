@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::md::leads::containers::head;
 use crate::md::leads::items::{Catalog, Field, Func};
 use crate::md::leads::types::Ty;

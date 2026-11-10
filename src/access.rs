@@ -3,7 +3,7 @@
 //! re-export that names it.
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, is_value};
+use crate::analysis::items::{ItemId, ItemRef, is_value};
 use crate::model::{Crate, DeclId, DeclKind, ItemKind, ModId, Text, ValueRef, Vis};
 use crate::surface::module_at;
 use crate::typerefs::strip_raw;

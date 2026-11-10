@@ -2,7 +2,7 @@
 //! enum payloads on a small library where it finds its lead, and on a
 //! close one where it finds none.
 
-use crate::analysis_tests::MANIFEST;
+use crate::analysis::tests::MANIFEST;
 use crate::md::leads::Mode;
 use crate::md::leads::tests::{found, lib, with_leads};
 

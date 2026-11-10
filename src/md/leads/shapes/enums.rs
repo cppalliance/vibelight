@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemId;
+use crate::analysis::items::ItemId;
 use crate::md::leads::{Lead, Mode};
 use crate::model::Shape;
 use crate::typerefs::strip_raw;

@@ -5,40 +5,11 @@ mod access_stamp;
 #[cfg(test)]
 mod access_tests;
 mod analysis;
-mod analysis_check;
-mod analysis_items;
-mod analysis_paths;
-#[cfg(test)]
-mod analysis_tests;
-mod analysis_uses;
 mod anatomy;
 mod attach;
 mod attrs;
 mod census;
-mod census_check;
-mod census_docs;
-mod census_lex;
-mod census_paths;
-mod census_sources;
 mod collect;
-mod collect_attrs;
-mod collect_bases;
-mod collect_body;
-mod collect_body_code;
-mod collect_body_comments;
-mod collect_body_facts;
-mod collect_body_read;
-mod collect_body_tokens;
-mod collect_check;
-mod collect_check_nodes;
-mod collect_field;
-mod collect_fn;
-mod collect_impl;
-mod collect_macro;
-mod collect_trait;
-mod collect_type;
-mod collect_use;
-mod collect_use_group;
 mod comments;
 mod config;
 mod exclude;
@@ -48,17 +19,7 @@ mod glob;
 mod html;
 mod index;
 mod inputs;
-mod macro_expand;
-#[cfg(test)]
-mod macro_expand_tests;
-mod macro_fragment;
-mod macro_match;
-#[cfg(test)]
-mod macro_match_tests;
 mod macro_rules;
-#[cfg(test)]
-mod macro_tests;
-mod macro_transcribe;
 mod macros;
 mod manifest;
 mod manifest_facts;

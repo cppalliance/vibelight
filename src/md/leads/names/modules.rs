@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::access::spelled;
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::macros;
 use crate::md::leads::census::scope::module_name;
 use crate::md::leads::words::words;
@@ -83,7 +83,7 @@ fn single_item_module(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut 
         for item in &module.items {
             let defines = match &item.kind {
                 ItemKind::Mark(text) => macros::definition_name(text).is_some(),
-                kind => crate::analysis_items::is_value(kind),
+                kind => crate::analysis::items::is_value(kind),
             };
             if defines {
                 held[m].push((item.name.clone(), item.name.clone()));
@@ -141,7 +141,7 @@ fn pub_off_surface(run: &AnalysisRun<'_>, t: usize, krate: &Crate, out: &mut Vec
     for (m, module) in krate.modules.iter().enumerate() {
         for (k, item) in module.items.iter().enumerate() {
             let support = module.test_support || is_test_support(&item.meta.cfgs);
-            if item.vis == Vis::Public && crate::analysis_items::is_value(&item.kind) && !support {
+            if item.vis == Vis::Public && crate::analysis::items::is_value(&item.kind) && !support {
                 items.push(ItemRef::Value(ValueRef { module: m, item: k }));
             }
         }

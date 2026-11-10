@@ -5,9 +5,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef};
-use crate::analysis_paths::PathKind;
-use crate::analysis_uses::{Use, UseKind};
+use crate::analysis::items::{ItemId, ItemRef};
+use crate::analysis::paths::PathKind;
+use crate::analysis::uses::{Use, UseKind};
 use crate::census::{Context, Form, NameCount};
 use crate::md::leads::types::leaf;
 use crate::model::{

@@ -10,8 +10,8 @@
 
 use std::collections::BTreeMap;
 
+use crate::analysis::items::{ItemId, ItemRef};
 use crate::analysis::{AnalysisRun, TargetInfo, library_of};
-use crate::analysis_items::{ItemId, ItemRef};
 use crate::model::{Crate, CrossRef, DeclId, MemberKind, Reach, RefId, Shape};
 use crate::model_body::{Body, BodyId, Owner, Role};
 use crate::resolve_run;

@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 use syn::visit::{self, Visit};
 use syn::{Expr, ExprCall, ExprPath, Macro, Pat, Stmt, UnOp};
 
-use crate::collect_body_code::{
+use crate::collect::body::code::{
     Called, Code, Read, Statement, is_assign, is_self, literal, member_name, passed, segments,
 };
 use crate::macros;

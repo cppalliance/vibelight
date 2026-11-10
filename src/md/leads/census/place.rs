@@ -5,8 +5,8 @@
 use std::collections::BTreeSet;
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::{ItemId, ItemRef, impl_home};
-use crate::analysis_uses::{Use, UseKind};
+use crate::analysis::items::{ItemId, ItemRef, impl_home};
+use crate::analysis::uses::{Use, UseKind};
 use crate::md::leads::census::scope::{
     Candidate, Kind, consumers, elsewhere, in_macro, module_name,
 };
@@ -200,7 +200,7 @@ fn held(run: &AnalysisRun<'_>, t: usize, m: ModId) -> Vec<ItemId> {
         .filter(|(_, decl)| decl.module == m)
         .map(|(d, _)| at(ItemRef::Decl(d)));
     let values = (krate.modules[m].items.iter().enumerate())
-        .filter(|(_, item)| crate::analysis_items::is_value(&item.kind))
+        .filter(|(_, item)| crate::analysis::items::is_value(&item.kind))
         .map(|(k, _)| at(ItemRef::Value(ValueRef { module: m, item: k })));
     decls.chain(values).collect()
 }

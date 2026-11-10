@@ -10,7 +10,7 @@ use std::ops::Range;
 use crate::access::Access;
 use crate::analysis::AnalysisRun;
 use crate::census::NameCount;
-use crate::census_docs::summary;
+use crate::census::docs::summary;
 use crate::model::{
     Crate, Decl, DeclId, DeclKind, FileId, Item, ItemKind, Loc, Member, MemberKind, Meta, ModId,
     Module, Shape, ValueRef, Variant, Vis,

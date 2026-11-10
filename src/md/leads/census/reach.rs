@@ -5,7 +5,7 @@
 
 use crate::access::{Access, covers, encloses, join, reexported, spell, written};
 use crate::analysis::AnalysisRun;
-use crate::analysis_uses::UseKind;
+use crate::analysis::uses::UseKind;
 use crate::census::{Context, SourceId};
 use crate::md::leads::census::place::defined_away;
 use crate::md::leads::census::scope::{Candidate, Kind, Scope, consumers, in_macro};

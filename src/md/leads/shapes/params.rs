@@ -6,8 +6,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::analysis::AnalysisRun;
-use crate::analysis_items::ItemId;
-use crate::analysis_paths::PathKind;
+use crate::analysis::items::ItemId;
+use crate::analysis::paths::PathKind;
 use crate::md::leads::items::{Catalog, FnKind, Func, escapes};
 use crate::md::leads::types::{Tok, Ty, leaf};
 use crate::md::leads::words::words;

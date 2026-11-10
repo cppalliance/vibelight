@@ -2,6 +2,20 @@
 //! with generic parameter lists and `where` clauses sliced into text with
 //! type references.
 
+mod attr_facts;
+mod bases;
+pub(crate) mod body;
+pub(crate) mod check;
+mod check_nodes;
+mod fields;
+mod functions;
+mod impls;
+mod macro_items;
+mod traits;
+mod types;
+mod use_group;
+mod uses;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
 use std::path::Path;
@@ -10,7 +24,7 @@ use proc_macro2::Span;
 use syn::{Attribute, Generics, Item, ItemMod, WhereClause};
 
 use crate::comments::{NoteCx, Placed, Pool, place_comments};
-use crate::macro_expand::Expansions;
+use crate::macro_rules::expand::Expansions;
 use crate::model::{
     BodyName, Crate, Decl, FileId, Item as ModItem, ItemKind, Loc, MacroUse, Meta, ModId, Module,
     Note, Text, TypeRef, Vis, Warning, Where,
@@ -19,7 +33,7 @@ use crate::model_body::{AttrPath, Body};
 use crate::modtree::{ModSource, Tree};
 use crate::source::{Comment, SourceFile, real};
 use crate::typerefs::{Slicer, range_of, strip_raw};
-use crate::{attrs, macro_expand, macros};
+use crate::{attrs, macro_rules, macros};
 
 /// Where the node being collected lives.
 #[derive(Clone)]
@@ -75,7 +89,7 @@ pub(crate) fn collect(tree: Tree, crate_dir: &Path, name: &str, title: &str) -> 
         mut warnings,
         test_files,
     } = tree;
-    let expansions = macro_expand::expand(&mut files, &sources, &mut warnings);
+    let expansions = macro_rules::expand::expand(&mut files, &sources, &mut warnings);
     let mut collector = Collector {
         files: &files,
         crate_dir,

@@ -6,8 +6,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::analysis::items::{ItemId, ItemRef, is_value};
 use crate::analysis::{AnalysisRun, library_of};
-use crate::analysis_items::{ItemId, ItemRef, is_value};
 use crate::census::{Context, QualifiedPathHit, SourceId};
 use crate::model::{DeclKind, ItemKind, Member, MemberKind, ModId, RefId, Shape, ValueRef};
 use crate::typerefs::strip_raw;

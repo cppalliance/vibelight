@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::census_lex::is_keyword;
+use crate::census::lex::is_keyword;
 use crate::md::leads::words::words;
 
 /// The stopwords of version 1, sorted: English words that name nothing a

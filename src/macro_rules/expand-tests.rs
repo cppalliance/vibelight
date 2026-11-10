@@ -2,8 +2,8 @@
 //! which invocations stay marks and why, and where the items an expansion
 //! writes land.
 
-use crate::analysis_tests::{MANIFEST, fixture, run};
-use crate::collect_body_facts::tests::collected;
+use crate::analysis::tests::{MANIFEST, fixture, run};
+use crate::collect::body::facts::tests::collected;
 use crate::md::leads;
 use crate::model::Crate;
 

@@ -24,8 +24,8 @@ use crate::settings::{Output, Plan};
 use crate::source_links::LinkBase;
 use crate::spellings::Entry;
 use crate::{
-    access_stamp, analysis, attach, collect, collect_check, index, manifest, modtree, module_graph,
-    resolve, resolve_run, roles, spellings, test_support,
+    access_stamp, analysis, attach, collect, index, manifest, modtree, module_graph, resolve,
+    resolve_run, roles, spellings, test_support,
 };
 
 /// What a run would write and what it reports.
@@ -214,10 +214,10 @@ fn analyze(
     let markdown = plan.markdown_dir();
     if cfg!(debug_assertions) {
         for krate in krates {
-            collect_check::validate_body_facts(krate)?;
+            collect::check::validate_body_facts(krate)?;
         }
         for package in &chosen.packages {
-            collect_check::validate_package_facts(package)?;
+            collect::check::validate_package_facts(package)?;
         }
     }
     let (infos, packages) = analysis::inputs(chosen, targets, krates, deps);

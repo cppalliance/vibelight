@@ -7,8 +7,8 @@ use std::collections::BTreeSet;
 
 use proc_macro2::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
-use crate::macro_fragment::Kind;
-use crate::macro_match::{Bindings, Capture, Fragment};
+use crate::macro_rules::fragment::Kind;
+use crate::macro_rules::matching::{Bindings, Capture, Fragment};
 use crate::macro_rules::{Budget, Failure, normalized, repetition};
 
 /// One element of a transcriber.

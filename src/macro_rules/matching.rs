@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use proc_macro2::{Delimiter, TokenStream, TokenTree};
 
-use crate::macro_fragment::{Kind, fragment_len};
+use crate::macro_rules::fragment::{Kind, fragment_len};
 use crate::macro_rules::{Budget, Failure, Op, alone, normalized, repetition};
 
 /// One element of a matcher.
@@ -457,3 +457,7 @@ fn scope<'s>(top: &'s mut Bindings, open: &'s mut [Open]) -> &'s mut Bindings {
         None => top,
     }
 }
+
+#[cfg(test)]
+#[path = "matching-tests.rs"]
+mod tests;

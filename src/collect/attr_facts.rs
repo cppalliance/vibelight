@@ -173,7 +173,7 @@ fn serde_paths(attrs: &[Attribute], file: &SourceFile) -> Vec<(String, bool, Vec
 
 #[cfg(test)]
 mod tests {
-    use crate::collect_body_facts::tests::collected;
+    use crate::collect::body::facts::tests::collected;
 
     #[test]
     fn raw_docs_keep_text_before_flattening() {

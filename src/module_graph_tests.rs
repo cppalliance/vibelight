@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use crate::analysis_tests::{fixture, packages, run};
+use crate::analysis::tests::{fixture, packages, run};
 use crate::model::ModId;
 use crate::module_graph::{ModEdge, crates, used_by};
 
