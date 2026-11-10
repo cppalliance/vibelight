@@ -163,3 +163,9 @@ Where the build differs from the plan:
 - **The legend** has a first line that says what the sample is. The sample shows the notation as the pages print it, such as `str&` for `&str` and `Sample(u32&)` for `From<u32>`.
 - **The goldens** were rewritten by a scratch script that reads a run as the tests do. Before each use, a dry run that changed nothing checked the script against every golden, HTML and markdown.
 - **The sample page of step 2** showed counts read from the markdown records. The built counts differ a little, because they count production code only and count a member's use for its type.
+
+Changed after the first review of the built pages:
+
+- **The use rule follows an item's code.** `runvil::RunLimits` read as unused, though `workshop_server` builds a `RunSetup`, which has one in a public field, and never writes the name. A crate now also uses each item of the API that the code of an item it uses names, down that chain. A name in private data does not count. On runvil, 12 of the 122 items are unused, not 57, and `RunLimits` reads `not used by 2 of 4`.
+- **Only the sidebar's list by module prints an unused name dim.** The list of every symbol by name prints none dim. A facade whose API is in one module has only that list, so its sidebar shows no dim name, and its counts are on each item's line.
+- **The `values` fixture** got a second module in `relay` and a public field of a new type, so `relay.html` pins both changes: two dim names in the list by module, none in the list by name.
