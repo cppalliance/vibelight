@@ -60,12 +60,12 @@
 <span class="k">pub</span> <span class="k">struct</span> Record
 {
 <span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The record's name.</span></div>    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The record's name.</span></div>    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Kept out of the docs.</span></div>    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
 <span class="gap"></span><span class="k">pub(self):</span>
     <span class="src">count</span>: u8,
 <span class="gap"></span><span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes an empty record.</span></div>    <span class="k">static</span> <span class="src" id="fn.attributes.Record.empty">empty</span>() -&gt;
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes an empty record.</span></div>    <span class="k">static</span> <span class="src" id="fn.attributes.Record.empty">empty</span>() -&gt;
         <a href="#type.attributes.Record">Record</a> <span class="dim">[[must_use = "a record does nothing until it is stored"]]</span>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Reads the name.</span></div>    <span class="src" id="fn.attributes.Record.name">name</span>() -&gt; str&amp; <span class="dim">[[must_use]]</span> <span class="dim">[[track_caller]]</span>
 }</code></pre>

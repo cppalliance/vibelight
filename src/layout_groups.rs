@@ -105,13 +105,24 @@ pub(crate) fn join_sections(first: Vec<Vec<Entry>>, sets: [Sections; 2], block: 
             if !block.lines.is_empty() {
                 block.lines.push(Line::default());
             }
-            block.lines.push(Line {
-                spans: vec![key(&format!("{spelling}:"))],
-                ..Line::default()
-            });
+            block.lines.push(label_line(&spelling));
             join_groups(groups, block);
         }
     }
+}
+
+/// Returns the line that opens a section: its label, such as `pub(crate):`.
+fn label_line(spelling: &str) -> Line {
+    Line {
+        spans: vec![key(&format!("{spelling}:"))],
+        ..Line::default()
+    }
+}
+
+/// Whether a line is a section's label, as `label_line` writes it: one
+/// keyword that ends in a colon. No other line of a block is that.
+pub(crate) fn is_label(line: &Line) -> bool {
+    matches!(line.spans.as_slice(), [Span::Key(text)] if text.ends_with(':'))
 }
 
 /// Joins the lines of each member of a list, one blank line between every
@@ -167,6 +178,33 @@ mod tests {
             "w: i32,",
         ];
         assert_eq!(text(&spaced(members)), expected);
+    }
+
+    #[test]
+    fn only_the_line_that_opens_a_section_is_a_label() {
+        let entry = Entry {
+            name: String::new(),
+            lines: lines(&["x: u8,"]),
+            repeats: Vec::new(),
+        };
+        let mut sections = Sections::new();
+        add(&mut sections, (1, "pub(crate)".to_owned()), 1, 0, entry);
+        let mut block = Block::default();
+        join_sections(Vec::new(), [sections, Sections::new()], &mut block);
+        assert_eq!(text(&block.lines), ["pub(crate):", "x: u8,"]);
+        assert!(is_label(&block.lines[0]));
+        assert!(!is_label(&block.lines[1]));
+        let keyword_then_text = Line {
+            spans: vec![key("implements:"), plain(" Named for Run")],
+            ..Line::default()
+        };
+        assert!(!is_label(&keyword_then_text));
+        let keyword_alone = Line {
+            spans: vec![key("where")],
+            ..Line::default()
+        };
+        assert!(!is_label(&keyword_alone));
+        assert!(!is_label(&Line::default()), "a blank line is no label");
     }
 
     #[test]

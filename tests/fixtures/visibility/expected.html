@@ -98,9 +98,9 @@
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Inner
 {
 <span class="k">pub(crate):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>    <span class="src">id</span>: u32,
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen in the crate.</span></div>    <span class="src">id</span>: u32,
 <span class="gap"></span><span class="k">pub(self):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen only here.</span></div>    <span class="src">state</span>: u8,
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Seen only here.</span></div>    <span class="src">state</span>: u8,
 }</code></pre>
 <h3 id="type.visibility.Mixed">Mixed</h3>
 <div class="doc">
@@ -109,18 +109,18 @@
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Mixed
 {
 <span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>    <span class="src">name</span>: String,
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">A public field.</span></div>    <span class="src">name</span>: String,
 <span class="gap"></span><span class="k">pub(crate):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>    <span class="src">size</span>: usize,
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">An internal field.</span></div>    <span class="src">size</span>: usize,
 <span class="gap"></span><span class="k">pub(self):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">A private field.</span></div>    <span class="src">secret</span>: u8,
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">A private field.</span></div>    <span class="src">secret</span>: u8,
 <span class="gap"></span><span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src" id="fn.visibility.Mixed.new">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Makes one.</span></div>    <span class="k">static</span> <span class="src" id="fn.visibility.Mixed.new">new</span>() -&gt; <a href="#type.visibility.Mixed">Mixed</a>
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Takes the name out.</span></div>    <span class="src" id="fn.visibility.Mixed.into_name">into_name</span>(self) -&gt; String
 <span class="gap"></span><span class="k">pub(crate):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Grows it.</span></div>    <span class="src" id="fn.visibility.Mixed.grow">grow</span>() <span class="k">mut</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Grows it.</span></div>    <span class="src" id="fn.visibility.Mixed.grow">grow</span>() <span class="k">mut</span>
 <span class="gap"></span><span class="k">pub(self):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>    <span class="src" id="fn.visibility.Mixed.check">check</span>() -&gt; bool
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Checks it.</span></div>    <span class="src" id="fn.visibility.Mixed.check">check</span>() -&gt; bool
 }</code></pre>
 <h3 id="type.visibility.Mode">Mode</h3>
 <div class="doc">
@@ -160,9 +160,9 @@
 <pre><code><span class="k">extern</span> "C"
 {
 <span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a stream.</span></div>    <span class="src">ext_open</span>() -&gt; i32
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Opens a stream.</span></div>    <span class="src">ext_open</span>() -&gt; i32
 <span class="gap"></span><span class="k">pub(crate):</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Shares a stream.</span></div>    <span class="src">ext_share</span>() -&gt; i32
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Shares a stream.</span></div>    <span class="src">ext_share</span>() -&gt; i32
 }
 <span class="gap"></span><span class="k">pub:</span>
 <span class="c"> Visible everywhere.</span>

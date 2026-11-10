@@ -47,12 +47,12 @@
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Settings : Clone, Debug
 {
 <span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Only with a feature.</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Only with a feature.</span>
 <span class="cfg"><span class="c">feature = "extra"</span></span></div>    <span class="src">extra</span>: u32,
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="cfg"><span class="c">feature = "fast"</span></span>
 <span class="cfg"><span class="c">unix</span></span></div>    <span class="src">both</span>: u8,
 <span class="gap"></span><span class="k">pub:</span>
-<div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Also gated, with its own cfg.</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">Also gated, with its own cfg.</span>
 <span class="cfg"><span class="c">feature = "methods"</span></span>
 <span class="cfg"><span class="c">windows</span></span></div>    <span class="src" id="fn.cfg_attr.Settings.doubly">doubly</span>()
 <span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">Gated by the impl's cfg.</span>

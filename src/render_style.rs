@@ -57,6 +57,7 @@ span.src{cursor:default}
 .gap{display:block;height:1.45em}
 .gap-box{height:0}
 .mc{display:block;width:fit-content;white-space:normal;background:var(--box);border-radius:4px;padding:.2rem .9rem 0;margin:.45rem 0 0;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-width:min(80ch,calc(100% - 1rem))}
+.mc.first{margin-top:0;padding-top:0}
 .cfg,.sec{display:block}
 .view{margin:1.1rem 0 .3rem;color:var(--muted);font:600 11px system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 pre.glance{background:var(--side);border:1px solid var(--rule);border-radius:8px;padding:.8rem 1rem}

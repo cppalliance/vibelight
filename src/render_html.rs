@@ -9,6 +9,7 @@ use std::fmt::Write as _;
 
 use crate::document::{Document, Inline, Item, Link, Node};
 use crate::layout::{Block, Line, Span, span_text};
+use crate::layout_groups::is_label;
 use crate::layout_marker::Marker;
 use crate::model::{Loc, TypeRef, ValueRef};
 
@@ -295,6 +296,11 @@ impl Page<'_> {
     /// as the blank line. A gap before a comment box is empty, since the
     /// box's own margin already spaces it. A newline is written before a box
     /// and never after it, because a box is a block and ends its own line.
+    ///
+    /// A box right under a section's label, such as `pub:`, is the comment
+    /// of the section's first member. The layout puts no blank line there,
+    /// so that box has the class that takes the space above it away, and
+    /// the comment sits on the line after the label.
     pub(crate) fn code_lines(&self, out: &mut String, lines: &[Line]) {
         let mut first = true;
         let mut open_box = false;
@@ -303,6 +309,8 @@ impl Page<'_> {
         let mut after_box = false;
         // Blank lines seen since the last line written.
         let mut blanks = 0usize;
+        // True while the last line written is a section's label.
+        let mut under_label = false;
         for line in lines {
             let blank = line.spans.is_empty() && line.trailing.is_none();
             let boxed = !blank
@@ -327,9 +335,14 @@ impl Page<'_> {
                     // font's own character width, which is the unit the
                     // layout indents in, so the box names the code font and
                     // never the page's proportional one.
+                    let class = if under_label && blanks == 0 {
+                        "mc first"
+                    } else {
+                        "mc"
+                    };
                     let _ = write!(
                         out,
-                        "<div class=\"mc\" style=\"margin-left:calc({}ch - {})\">",
+                        "<div class=\"{class}\" style=\"margin-left:calc({}ch - {})\">",
                         line.indent, BOX_PADDING
                     );
                     open_box = true;
@@ -337,6 +350,7 @@ impl Page<'_> {
                 }
                 blanks = 0;
                 after_box = false;
+                under_label = false;
                 first = false;
                 continue;
             }
@@ -355,6 +369,7 @@ impl Page<'_> {
             gaps(out, blanks, "gap");
             blanks = 0;
             after_box = false;
+            under_label = is_label(line);
             self.line(out, line);
             first = false;
         }
@@ -488,6 +503,8 @@ fn leading_doc(lines: &[Line]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::plain;
+    use crate::layout_groups::{Entry, Sections, add, join_sections};
     use crate::render_style::STYLE;
 
     #[test]
@@ -499,5 +516,93 @@ mod tests {
     #[test]
     fn style_padding_matches_box_padding() {
         assert!(STYLE.contains(&format!("padding:.2rem {BOX_PADDING} 0")));
+    }
+
+    /// Renders code lines on a page that has nothing to link to.
+    fn code(lines: &[Line]) -> String {
+        let doc = Document {
+            title: String::new(),
+            id: String::new(),
+            crate_docs: None,
+            contents: Vec::new(),
+            kill_summary: String::new(),
+            kill: Vec::new(),
+            sections: Vec::new(),
+            refs: Vec::new(),
+            decl_ids: Vec::new(),
+            value_ids: BTreeMap::new(),
+        };
+        let page = Page {
+            doc: &doc,
+            member_links: None,
+            run: &[],
+            foreign: None,
+            ids: true,
+            api: None,
+        };
+        let mut out = String::new();
+        page.code_lines(&mut out, lines);
+        out
+    }
+
+    #[test]
+    fn a_comment_box_right_under_a_label_takes_no_space_above_it() {
+        let member = |doc: &str, text: &str| Entry {
+            name: text.to_owned(),
+            lines: vec![
+                Line {
+                    indent: 4,
+                    spans: vec![
+                        Span::Marker(Marker::DOC.spaced),
+                        Span::Comment(doc.to_owned()),
+                    ],
+                    trailing: None,
+                },
+                Line {
+                    indent: 4,
+                    spans: vec![plain(text)],
+                    trailing: None,
+                },
+            ],
+            repeats: Vec::new(),
+        };
+        let label = (0, "pub".to_owned());
+        let mut sections = Sections::new();
+        add(
+            &mut sections,
+            label.clone(),
+            1,
+            0,
+            member("The first.", "first()"),
+        );
+        add(
+            &mut sections,
+            label,
+            1,
+            0,
+            member("The second.", "second()"),
+        );
+        let mut block = Block::default();
+        join_sections(Vec::new(), [sections, Sections::new()], &mut block);
+        let boxed = |class: &str, doc: &str| {
+            format!(
+                "<div class=\"{class}\" style=\"margin-left:calc(4ch - {BOX_PADDING})\">\
+                 <span class=\"c\">{doc}</span></div>"
+            )
+        };
+        assert_eq!(
+            code(&block.lines),
+            format!(
+                "<span class=\"k\">pub:</span>\n{}    first()\n\
+                 <span class=\"gap gap-box\"></span>{}    second()",
+                boxed("mc first", "The first."),
+                boxed("mc", "The second."),
+            ),
+            "only the box of the section's first member is `first`"
+        );
+        assert!(
+            STYLE.contains("\n.mc.first{margin-top:0;padding-top:0}\n"),
+            "the class has the rule that removes the space"
+        );
     }
 }
