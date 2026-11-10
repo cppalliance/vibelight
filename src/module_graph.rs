@@ -3,7 +3,8 @@
 //! code, and the same graph turned around, which modules use each one.
 //! Beside it, the crate graph of the run: which targets use the items of
 //! which others, each use counted for the item's own target or for a
-//! dependency that re-exports the item by name.
+//! dependency that re-exports the item by name. And for each item, the
+//! other targets that use it.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -12,7 +13,7 @@ use crate::analysis::AnalysisRun;
 use crate::analysis::items::{ItemId, ItemRef, impl_home};
 use crate::analysis::uses::UseKind;
 use crate::census::Context;
-use crate::model::{ItemKind, ModId};
+use crate::model::{ItemKind, ModId, Reach};
 
 /// The items one module uses from another.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -113,6 +114,36 @@ pub(crate) fn crates(run: &AnalysisRun<'_>) -> Vec<BTreeMap<usize, usize>> {
     (used.into_iter())
         .map(|to| to.into_iter().map(|(t, items)| (t, items.len())).collect())
         .collect()
+}
+
+/// For each declaration and module value of the run that another target
+/// uses, by its own target and what a name reaches there, the targets that
+/// use it.
+pub(crate) type Users = BTreeMap<(usize, Reach), BTreeSet<usize>>;
+
+/// Builds, from the run's observed uses, the other targets that use each
+/// declaration and module value: those whose production code names it, or
+/// names a member, a variant, or an impl member of it, doc links left out.
+/// A use counts for the item itself, through whichever crate the using
+/// code names it.
+pub(crate) fn users(run: &AnalysisRun<'_>) -> Users {
+    let mut out = Users::new();
+    for u in &run.uses {
+        let Some(from) = run.census.sources[u.source].target else {
+            continue;
+        };
+        if from == u.item.target || u.kind == UseKind::Doc || u.context != Context::Production {
+            continue;
+        }
+        let item = owner(run, u.item);
+        let reach = match item.item {
+            ItemRef::Decl(d) => Reach::Decl(d),
+            ItemRef::Value(at) => Reach::Value(at),
+            _ => continue,
+        };
+        out.entry((item.target, reach)).or_default().insert(from);
+    }
+    out
 }
 
 /// Returns the target that a use in target `s` of an item of another

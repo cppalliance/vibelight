@@ -44,6 +44,9 @@ pub(crate) struct Overview<'a> {
     pub(crate) roles: &'a Roles,
     pub(crate) declarations: usize,
     pub(crate) entries: &'a [Entry],
+    /// For each crate, how many items of its API none of the crates that
+    /// use it uses: 0 for a crate that is no facade or that none uses.
+    pub(crate) unused: &'a [usize],
 }
 
 /// Renders the overview's content, with `stamp` at its top.
@@ -163,10 +166,14 @@ fn facades(out: &mut String, overview: &Overview<'_>) {
             1 => "<br>1 module".to_owned(),
             n => format!("<br>{n} modules"),
         };
+        let unused = match overview.unused.get(t) {
+            Some(&n) if n > 0 => format!("<br><b>{n}</b> used by none"),
+            _ => String::new(),
+        };
         let _ = writeln!(
             out,
-            "<tr><td>{}{}</td><td class=\"desc\">{}</td><td class=\"num\"><b>{}</b> items{modules}</td>\
-             <td>{}</td></tr>",
+            "<tr><td>{}{}</td><td class=\"desc\">{}</td>\
+             <td class=\"num\"><b>{}</b> items{modules}{unused}</td><td>{}</td></tr>",
             link(overview, t, "crate facade"),
             path(overview, t),
             description(overview, t),
@@ -610,6 +617,7 @@ mod tests {
             roles: &roles,
             declarations: 0,
             entries: &entries,
+            unused: &[],
         };
         let mut out = String::new();
         layers(&mut out, &overview);

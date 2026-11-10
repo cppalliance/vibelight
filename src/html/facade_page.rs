@@ -11,6 +11,11 @@
 //! other item of the API names is where a reader starts, so the sidebar
 //! prints it bold. An item of the run that the code names and the API does
 //! not hold is listed last, under the crate a user names it through.
+//!
+//! And the page says who uses the API. When other crates of the run use the
+//! facade, each item's line of where it is defined ends with how many of
+//! them do not use the item, and the sidebar prints dim an item that none
+//! of them uses.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -22,6 +27,7 @@ use crate::html::layout::items::{docs_block, item_block};
 use crate::html::layout::{Block, Line, Span, key, plain};
 use crate::html::render_html::{Anchors, ApiIds, Page, attr, escape};
 use crate::model::{Crate, ItemKind, Loc, ModId, Reach, name_order, path_order};
+use crate::module_graph::Users;
 use crate::surface::{Entry, Kind};
 
 /// One target of the run, as a facade's page reaches into it.
@@ -34,13 +40,27 @@ pub(crate) struct Owner<'a> {
 }
 
 /// What a facade's page is made of: the facade's index among `owners`,
-/// every target of the run in target order, its public surface, and the
-/// pages of the run.
+/// every target of the run in target order, its public surface, the pages
+/// of the run, the targets that use the facade, and the targets that use
+/// each item of the run.
 pub(crate) struct Facade<'a> {
     pub(crate) index: usize,
     pub(crate) owners: &'a [Owner<'a>],
     pub(crate) surface: &'a [Entry],
     pub(crate) run: &'a [Anchors],
+    /// The other targets whose production code uses items through the
+    /// facade: its users in the overview's layers.
+    pub(crate) used_by: Vec<usize>,
+    pub(crate) users: &'a Users,
+}
+
+/// A page as it is written: its content, the ids of the headings that no
+/// other page of the run has, for the search index, and how many items of
+/// a facade's API none of the facade's users uses.
+pub(crate) struct Rendered {
+    pub(crate) content: String,
+    pub(crate) headings: Vec<String>,
+    pub(crate) unused: usize,
 }
 
 /// Where a user names an item of the run that a facade's page shows: the
@@ -91,6 +111,9 @@ struct Named {
     /// The id of its heading.
     id: String,
     defined: Option<Defined>,
+    /// How many of the facade's users do not use the item, and how many
+    /// users the facade has, when it has one and the item is of the run.
+    unused: Option<(usize, usize)>,
 }
 
 /// The paths of a surface by module: each module's id in the facade when
@@ -154,13 +177,10 @@ pub(crate) fn keep_public(doc: &mut Document, surface: &[Entry]) {
 
 /// Renders the facade's page content, with `stamp` at the top of `<main>`,
 /// and returns it with the ids of the headings that no other page of the
-/// run has, for the search index. `exports` says where a user names what
-/// the facades of the run show.
-pub(crate) fn fragment(
-    facade: &Facade<'_>,
-    exports: &Exports,
-    stamp: &str,
-) -> (String, Vec<String>) {
+/// run has, for the search index, and with how many items of the API none
+/// of the facade's users uses. `exports` says where a user names what the
+/// facades of the run show.
+pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> Rendered {
     let own = &facade.owners[facade.index];
     let title = &own.doc.title;
     let groups = groups(facade);
@@ -223,13 +243,18 @@ pub(crate) fn fragment(
             escape(title)
         ),
     };
+    let unused = (groups.values())
+        .flat_map(|(_, items)| items)
+        .filter(|named| named.unused_by_all())
+        .count();
     let _ = writeln!(
         out,
         "<p class=\"note\" id=\"api\">The public API of {}: {}{from}. Each shows only what a \
-         user of {} can name.{also}</p>",
+         user of {} can name.{also}{}</p>",
         escape(title),
         counted(items, "item"),
-        escape(title)
+        escape(title),
+        escape(&usage(title, facade.used_by.len(), unused))
     );
     for (path, (module, items)) in &groups {
         view.module_section(&mut out, (path, *module), items);
@@ -240,7 +265,39 @@ pub(crate) fn fragment(
         .flat_map(|(_, items)| items.into_iter().map(|named| named.id))
         .filter(|id| id.starts_with("api."))
         .collect();
-    (out, headings)
+    Rendered {
+        content: out,
+        headings,
+        unused,
+    }
+}
+
+/// Returns the sentence on who uses a facade named `title`: how many
+/// crates of the run use it, and how many items of its API none of them
+/// uses. A facade that no crate of the run uses gets no sentence.
+fn usage(title: &str, users: usize, unused: usize) -> String {
+    let crates = match users {
+        0 => return String::new(),
+        1 => format!("1 crate here uses {title}"),
+        n => format!("{n} crates here use {title}"),
+    };
+    match (unused, users) {
+        (0, _) => format!(" {crates}."),
+        (_, 1) => format!(" {crates}, and it does not use {unused} of the items."),
+        _ => format!(" {crates}, and none of them uses {unused} of the items."),
+    }
+}
+
+/// Returns how many of the crates that use the facade do not use an item
+/// of the run, with how many such crates there are, or none when no crate
+/// of the run uses the facade.
+fn unused_by(facade: &Facade<'_>, owner: usize, reach: Reach) -> Option<(usize, usize)> {
+    let total = facade.used_by.len();
+    let users = facade.users.get(&(owner, reach));
+    let using = (facade.used_by.iter())
+        .filter(|user| users.is_some_and(|users| users.contains(user)))
+        .count();
+    (total > 0).then_some((total - using, total))
 }
 
 /// The paths of the surface by module, crate root first, each module's
@@ -394,6 +451,7 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
         anchor,
         id: String::new(),
         defined: Some(defined),
+        unused: unused_by(facade, owner, reach),
     })
 }
 
@@ -416,6 +474,7 @@ fn plain_named(name: &str, suffix: &'static str, owner: usize, line: Line) -> Na
         anchor: None,
         id: String::new(),
         defined: None,
+        unused: None,
     }
 }
 
@@ -426,6 +485,22 @@ impl Named {
     /// constant, so the rule would pick every one of them and tell nothing.
     fn is_root(&self, used: &BTreeSet<(usize, Reach)>) -> bool {
         matches!(self.item, Some(reach @ Reach::Decl(_)) if !used.contains(&(self.owner, reach)))
+    }
+
+    /// Whether the facade has users and none of them uses the item.
+    fn unused_by_all(&self) -> bool {
+        matches!(self.unused, Some((unused, users)) if unused == users)
+    }
+
+    /// Returns what ends the item's `Defined in` line: how many of the
+    /// facade's users do not use the item, when some do not.
+    fn unused_note(&self) -> String {
+        match self.unused {
+            Some((unused, users)) if unused > 0 => {
+                format!(" &middot; not used by {unused} of {users}")
+            }
+            _ => String::new(),
+        }
     }
 }
 
@@ -495,15 +570,21 @@ fn module_symbols(out: &mut String, title: &str, groups: &Groups, used: &BTreeSe
 
 /// Returns the link to a symbol's heading: its name, a function's ending
 /// in `()` and a macro's in `!`, bold for a type that no other item of the
-/// API names in its code, none of `used`.
+/// API names in its code, none of `used`, and dim for an item that none of
+/// the facade's users uses.
 fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>) -> String {
     let (open, close) = if named.is_root(used) {
         ("<b>", "</b>")
     } else {
         ("", "")
     };
+    let class = if named.unused_by_all() {
+        " class=\"dim\""
+    } else {
+        ""
+    };
     format!(
-        "<a href=\"#{}\">{open}{}{}{close}</a>",
+        "<a{class} href=\"#{}\">{open}{}{}{close}</a>",
         attr(&named.id),
         escape(&named.name),
         named.suffix
@@ -673,7 +754,11 @@ impl View<'_> {
                 }
                 None => String::new(),
             };
-            let _ = writeln!(out, "<p class=\"defined\">{at}{file}</p>");
+            let _ = writeln!(
+                out,
+                "<p class=\"defined\">{at}{file}{}</p>",
+                named.unused_note()
+            );
         }
         let block = Block {
             lines: fn_ids::anchored(&named.block.lines, &fn_ids::fn_prefix(&named.id)),

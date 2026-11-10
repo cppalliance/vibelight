@@ -1,14 +1,14 @@
 //! Tests the module graph turned around: each module's users, each with
 //! the edge from it, so its item count and its resolved flag stay; and the
 //! crate graph: a binary that uses its library, and uses of items that
-//! come through re-exports.
+//! come through re-exports; and the crates that use each item.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::analysis::tests::{fixture, packages, run};
-use crate::model::ModId;
-use crate::module_graph::{ModEdge, crates, used_by};
+use crate::model::{ModId, Reach};
+use crate::module_graph::{ModEdge, crates, used_by, users};
 
 /// Returns the maps of `n` modules, where each `(m, other, items,
 /// resolved)` puts an edge under `other` in module `m`'s map.
@@ -79,10 +79,9 @@ const BASE: Package<'static> = (
     "pub struct Dial;\nimpl Dial { pub fn new() -> Dial { Dial } }\npub fn measure() -> u8 { 1 }\n",
 );
 
-/// Reads library packages, each with path dependencies on the packages it
-/// names, as one run, and returns each edge of its crate graph as `user
-/// uses other (items)`, in target order.
-fn edges(members: &[Package<'_>]) -> Vec<String> {
+/// Returns the files of library packages, each with path dependencies on
+/// the packages it names.
+fn sources(members: &[Package<'_>]) -> Vec<(String, String)> {
     let mut files = Vec::new();
     for &(name, deps, lib) in members {
         let mut manifest = format!("[package]\nname = \"{name}\"\n[dependencies]\n");
@@ -92,6 +91,13 @@ fn edges(members: &[Package<'_>]) -> Vec<String> {
         files.push((format!("{name}/Cargo.toml"), manifest));
         files.push((format!("{name}/src/lib.rs"), lib.to_owned()));
     }
+    files
+}
+
+/// Reads library packages as one run, and returns each edge of its crate
+/// graph as `user uses other (items)`, in target order.
+fn edges(members: &[Package<'_>]) -> Vec<String> {
+    let files = sources(members);
     let files: Vec<(&str, &str)> = (files.iter())
         .map(|(rel, text)| (rel.as_str(), text.as_str()))
         .collect();
@@ -106,6 +112,48 @@ fn edges(members: &[Package<'_>]) -> Vec<String> {
         }
     }
     out
+}
+
+/// Reads library packages as one run, and returns each item that another
+/// target uses as `crate::name: users`, in target and item order.
+fn item_users(members: &[Package<'_>]) -> Vec<String> {
+    let files = sources(members);
+    let files: Vec<(&str, &str)> = (files.iter())
+        .map(|(rel, text)| (rel.as_str(), text.as_str()))
+        .collect();
+    let dirs: Vec<&str> = members.iter().map(|&(name, _, _)| name).collect();
+    let fx = packages(&files, &dirs);
+    let run = run(&fx);
+    let stem = |t: usize| run.targets[t].stem.as_str();
+    (users(&run).iter())
+        .map(|(&(t, reach), found)| {
+            let krate = &run.krates[t];
+            let name = match reach {
+                Reach::Decl(d) => &krate.decls[d].name,
+                Reach::Value(at) => &krate.modules[at.module].items[at.item].name,
+            };
+            let found: Vec<&str> = found.iter().map(|&user| stem(user)).collect();
+            format!("{}::{name}: {}", stem(t), found.join(", "))
+        })
+        .collect()
+}
+
+#[test]
+fn an_item_s_users_are_the_crates_whose_production_code_names_it_or_a_member_of_it() {
+    let facade = "pub use base::Dial;\npub use base::measure;\n";
+    let app = "/// Reads with [`facade::measure`].\n\
+               pub fn run() { let _dial = facade::Dial::new(); }\n\
+               #[cfg(test)]\nmod tests { fn probe() -> u8 { facade::measure() } }\n";
+    assert_eq!(
+        item_users(&[
+            BASE,
+            ("facade", &["base"], facade),
+            ("app", &["facade"], app)
+        ]),
+        ["base::Dial: app, facade", "base::measure: facade"],
+        "app names Dial through its method, and names measure only in a doc link and a test; \
+         the re-exports are facade's uses"
+    );
 }
 
 #[test]

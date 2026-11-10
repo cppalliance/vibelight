@@ -4,11 +4,12 @@
 use std::collections::BTreeSet;
 use std::fs;
 
-use super::{Groups, Named, module_symbols, plain_named};
+use super::{Facade, Groups, Named, module_symbols, plain_named, symbol_link, unused_by, usage};
 use crate::html::layout::decl::public_block;
 use crate::html::layout::items::item_block;
 use crate::html::layout::{Block, Line, line_text};
 use crate::model::{Crate, Reach, ValueRef};
+use crate::module_graph::Users;
 
 /// Collects and resolves a one-file crate.
 fn krate(source: &str) -> (tempfile::TempDir, Crate) {
@@ -251,6 +252,84 @@ fn an_api_in_one_module_has_no_list_by_module() {
         "it would repeat the list of every symbol"
     );
     assert_eq!(by_module(Vec::new()), "");
+}
+
+#[test]
+fn a_user_of_the_facade_that_does_not_name_an_item_counts_against_it() {
+    let users = Users::from([
+        ((0, Reach::Decl(0)), BTreeSet::from([1, 3])),
+        ((0, Reach::Decl(1)), BTreeSet::from([3])),
+    ]);
+    let facade = |used_by: Vec<usize>| Facade {
+        index: 9,
+        owners: &[],
+        surface: &[],
+        run: &[],
+        used_by,
+        users: &users,
+    };
+    let both = facade(vec![1, 2]);
+    assert_eq!(
+        unused_by(&both, 0, Reach::Decl(0)),
+        Some((1, 2)),
+        "target 1 names it and target 2 does not"
+    );
+    assert_eq!(
+        unused_by(&both, 0, Reach::Decl(1)),
+        Some((2, 2)),
+        "target 3 names it, and target 3 does not use the facade"
+    );
+    assert_eq!(
+        unused_by(&both, 0, Reach::Decl(2)),
+        Some((2, 2)),
+        "no target names it"
+    );
+    assert_eq!(
+        unused_by(&facade(Vec::new()), 0, Reach::Decl(0)),
+        None,
+        "no target uses the facade, so there is nothing to count"
+    );
+}
+
+#[test]
+fn an_item_ends_its_line_with_the_users_that_do_not_use_it_and_is_dim_when_none_does() {
+    let with = |unused: Option<(usize, usize)>| {
+        let mut item = named("Round", "", "api.Round", Some(1));
+        item.unused = unused;
+        item
+    };
+    let used = BTreeSet::new();
+    let link = |unused| symbol_link(&with(unused), &used);
+    assert_eq!(with(Some((0, 4))).unused_note(), "", "each user uses it");
+    assert_eq!(
+        with(Some((3, 4))).unused_note(),
+        " &middot; not used by 3 of 4"
+    );
+    assert_eq!(with(None).unused_note(), "", "the facade has no user");
+    assert_eq!(
+        link(Some((4, 4))),
+        "<a class=\"dim\" href=\"#api.Round\"><b>Round</b></a>",
+        "dim, since none of the four uses it, and bold, since no item names it"
+    );
+    assert_eq!(
+        link(Some((3, 4))),
+        "<a href=\"#api.Round\"><b>Round</b></a>"
+    );
+    assert_eq!(link(None), "<a href=\"#api.Round\"><b>Round</b></a>");
+}
+
+#[test]
+fn the_opening_sentence_counts_the_users_and_the_items_none_of_them_uses() {
+    assert_eq!(usage("runvil", 0, 0), "", "no crate of the run uses it");
+    assert_eq!(usage("runvil", 4, 0), " 4 crates here use runvil.");
+    assert_eq!(
+        usage("runvil", 4, 56),
+        " 4 crates here use runvil, and none of them uses 56 of the items."
+    );
+    assert_eq!(
+        usage("relay", 1, 1),
+        " 1 crate here uses relay, and it does not use 1 of the items."
+    );
 }
 
 #[test]

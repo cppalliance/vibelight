@@ -113,11 +113,13 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     let run = anchors(&targets, &docs);
     let links = member_links(&krates, &docs);
     let owners = owners(&targets, &krates, &docs, &links);
-    let facades = facades(&owners, &roles, &analyzed.surfaces, &run);
+    let uses = (analyzed.crate_graph.as_slice(), &analyzed.users);
+    let facades = facades(&owners, &roles, &analyzed.surfaces, &run, uses);
     let exports = facade_page::exports(&facades);
     let mut entries = Vec::new();
     let mut rows = Vec::new();
     let mut api = Vec::new();
+    let mut unused = Vec::new();
     let mut pages = Vec::new();
     let per_target = (targets.iter().enumerate())
         .zip(&docs)
@@ -137,9 +139,10 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         });
         let path = markdown.join(format!("{}.md", target.stem));
         outcome.files.push((path, text));
-        let (content, headings) = page_content(t, &owners, (&facades, &exports), &run, stamp);
-        api.push(headings);
-        pages.push((target.stem.clone(), page.doc.title.clone(), content));
+        let made = page_content(t, &owners, (&facades, &exports), &run, stamp);
+        api.push(made.headings);
+        unused.push(made.unused);
+        pages.push((target.stem.clone(), page.doc.title.clone(), made.content));
         outcome.warnings.extend(prefixed(chosen, p, krate));
     }
     outcome
@@ -152,6 +155,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         entries: &entries,
         run: &run,
         api: &api,
+        unused: &unused,
         pages: &pages,
     };
     push_folder(&mut outcome, &html.dir, &folder, stamp);
@@ -190,6 +194,8 @@ struct Analyzed {
     /// For each target, the other targets whose items it uses, each with
     /// how many distinct items, for the index.
     crate_graph: Vec<BTreeMap<usize, usize>>,
+    /// The other targets that use each item, for the facades' pages.
+    users: module_graph::Users,
 }
 
 /// Builds the run's analysis view from its resolved, unattached crates and
@@ -267,6 +273,7 @@ fn analyze(
             .collect(),
         graph: run.graph.clone(),
         crate_graph: run.crate_graph.clone(),
+        users: module_graph::users(&run),
     })
 }
 
@@ -451,12 +458,14 @@ fn keep_public(docs: &mut [Built], roles: &roles::Roles, surfaces: &[Vec<crate::
 }
 
 /// Returns the facades of the run, in target order, each as its page is
-/// made.
+/// made. `uses` is the run's crate graph, which says what targets use each
+/// facade, and the targets that use each item.
 fn facades<'a>(
     owners: &'a [facade_page::Owner<'a>],
     roles: &roles::Roles,
     surfaces: &'a [Vec<crate::surface::Entry>],
     run: &'a [Anchors],
+    (crate_graph, users): (&[BTreeMap<usize, usize>], &'a module_graph::Users),
 ) -> Vec<facade_page::Facade<'a>> {
     (0..owners.len())
         .filter(|&t| roles.each[t] == roles::Role::Facade)
@@ -465,11 +474,15 @@ fn facades<'a>(
             owners,
             surface: &surfaces[t],
             run,
+            used_by: (0..owners.len())
+                .filter(|&user| crate_graph[user].contains_key(&t))
+                .collect(),
+            users,
         })
         .collect()
 }
 
-/// Renders target `t`'s page content, a facade's public API or a page of
+/// Renders target `t`'s page, a facade's public API or a page of
 /// everything its crate declares, with the ids of the headings a facade's
 /// page adds for the search index. A facade's page also says where a user
 /// names what its code names, which `exports` holds for every facade.
@@ -479,13 +492,16 @@ fn page_content(
     (facades, exports): (&[facade_page::Facade<'_>], &facade_page::Exports),
     run: &[Anchors],
     stamp: &str,
-) -> (String, Vec<String>) {
+) -> facade_page::Rendered {
     if let Some(facade) = facades.iter().find(|facade| facade.index == t) {
         return facade_page::fragment(facade, exports, stamp);
     }
     let own = &owners[t];
-    let content = render_html::fragment(own.doc, own.links, run, stamp);
-    (content, Vec::new())
+    facade_page::Rendered {
+        content: render_html::fragment(own.doc, own.links, run, stamp),
+        headings: Vec::new(),
+        unused: 0,
+    }
 }
 
 /// What the HTML folder's one file is made of, beside the overview it
@@ -498,6 +514,8 @@ struct Folder<'a> {
     run: &'a [Anchors],
     /// The headings each facade's page adds, by page.
     api: &'a [Vec<String>],
+    /// How many items of each facade's API none of its users uses, by page.
+    unused: &'a [usize],
     /// Each target's page: its stem, its title, and its content.
     pages: &'a [(String, String, String)],
 }
@@ -553,6 +571,7 @@ fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &s
             .filter(|id| !id.is_empty())
             .count(),
         entries: folder.entries,
+        unused: folder.unused,
     };
     let content = root_page::fragment(&overview, stamp);
     let overview = browse::Page {
