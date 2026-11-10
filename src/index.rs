@@ -27,31 +27,6 @@ pub(crate) struct Entry {
     pub(crate) used_by: Vec<(String, usize)>,
 }
 
-/// Renders the HTML's section on the uses between outlines, each name
-/// linked to its page, or nothing when no outline uses another.
-pub(crate) fn uses_html(entries: &[Entry]) -> String {
-    let mut out = String::new();
-    if !crosses(entries) {
-        return out;
-    }
-    out.push_str("<h2 id=\"uses\">Uses between outlines</h2>\n<div class=\"doc\">\n");
-    out.push_str("<p>Each outline whose production code uses items of another, ");
-    out.push_str("or whose items another uses, with how many distinct items, ");
-    out.push_str("and its instability, <code>fan_out / (fan_in + fan_out)</code>, ");
-    out.push_str("counting outlines. A use counts for the crate that declares the item ");
-    out.push_str("when the using crate depends on it, else for the first of its ");
-    out.push_str("dependencies in the list that re-exports the item by name, ");
-    out.push_str("else for the crate that declares it.</p>\n<ul>\n");
-    let link = |stem: &str| {
-        let stem = crate::html::render_html::escape(stem);
-        format!("<a href=\"{stem}.html\">{stem}</a>")
-    };
-    for line in entries.iter().filter_map(|entry| uses_line(entry, &link)) {
-        let _ = writeln!(out, "<li>{line}</li>");
-    }
-    out.push_str("</ul>\n</div>\n");
-    out
-}
 /// Renders the index, one line per entry in the order given, then the
 /// uses between outlines when some outline uses another.
 pub(crate) fn render(entries: &[Entry]) -> String {
@@ -193,31 +168,7 @@ mod tests {
             ),
             "{text}"
         );
-        let page = uses_html(&entries);
-        assert!(
-            page.starts_with(
-                "<h2 id=\"uses\">Uses between outlines</h2>\n<div class=\"doc\">\n\
-                 <p>Each outline whose production code uses items of another, or whose items \
-                 another uses, with how many distinct items, and its instability, \
-                 <code>fan_out / (fan_in + fan_out)</code>, counting outlines. A use counts for \
-                 the crate that declares the item when the using crate depends on it, else for \
-                 the first of its dependencies in the list that re-exports the item by name, \
-                 else for the crate that declares it.</p>\n<ul>\n"
-            ),
-            "{page}"
-        );
-        assert!(
-            page.contains(
-                "<li><a href=\"engine.html\">engine</a> uses <a href=\"lua.html\">lua</a> \
-                 (50 items), <a href=\"types.html\">types</a> (1 item); used by \
-                 <a href=\"app.html\">app</a> (12 items); instability 0.67</li>\n\
-                 <li><a href=\"lua.html\">lua</a> used by "
-            ),
-            "{page}"
-        );
-        assert!(page.ends_with("instability 0.00</li>\n</ul>\n</div>\n"));
         let apart = [entry("lone", &[], &[]), entry("solo", &[], &[])];
         assert!(!render(&apart).contains("##"), "nothing crosses");
-        assert_eq!(uses_html(&apart), "", "nothing crosses");
     }
 }

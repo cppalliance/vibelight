@@ -166,6 +166,8 @@ struct Links {
     source: usize,
     /// Cross-page links to a function, constant, or static.
     values: usize,
+    /// Links to a page on the web, which no file of the run can answer.
+    outside: usize,
 }
 
 /// Runs a copy of a workspace fixture and checks that every link of every
@@ -190,6 +192,7 @@ fn every_link_lands(name: &str) -> Links {
         cross: 0,
         source: 0,
         values: 0,
+        outside: 0,
     };
     for (file, folder, page) in &pages {
         if has_ext(file, "md") {
@@ -204,6 +207,10 @@ fn every_link_lands(name: &str) -> Links {
             continue;
         }
         for href in hrefs(page) {
+            if href.starts_with("https://") {
+                counts.outside += 1;
+                continue;
+            }
             let (target, fragment) = href.split_once('#').unwrap_or((href.as_str(), ""));
             let value = ["fn.", "const.", "static."]
                 .iter()
@@ -247,6 +254,10 @@ fn every_link_of_a_multi_crate_run_reaches_a_file_and_id_that_exist() {
         found.source
     );
     assert_eq!(found.values, 0, "the garden links no function");
+    assert_eq!(
+        found.outside, 1,
+        "only the overview's link to the page that defines instability leaves the file"
+    );
 }
 
 #[test]
@@ -304,7 +315,11 @@ fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
     assert_eq!(
         found.cross, 21,
         "the six value links, then on the overview the eight links of its tables and the seven \
-         names on its three lines of uses between outlines"
+         names on the three rows of its layers"
+    );
+    assert_eq!(
+        found.outside, 1,
+        "only the overview's link to the page that defines instability leaves the file"
     );
 }
 

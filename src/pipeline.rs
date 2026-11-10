@@ -540,7 +540,6 @@ fn row(target: &Target, dir: String, doc: &Document) -> root_page::Row {
 /// of the run. A page that the file already on disk holds unchanged keeps
 /// that file's stamp for it.
 fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &str) {
-    let uses = index::uses_html(folder.entries);
     let name = folder.base.file_name().map_or_else(
         || "Outlines".to_owned(),
         |name| name.to_string_lossy().into_owned(),
@@ -553,7 +552,7 @@ fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &s
             .flat_map(|page| page.ids.iter().chain(page.values.values()))
             .filter(|id| !id.is_empty())
             .count(),
-        uses: &uses,
+        entries: folder.entries,
     };
     let content = root_page::fragment(&overview, stamp);
     let overview = browse::Page {

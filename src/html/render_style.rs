@@ -84,6 +84,7 @@ a.implementation{color:var(--cross)}
 .chip{display:inline-block;margin:0 .3rem .3rem 0;padding:.05rem .5rem;border:1px solid var(--rule);border-radius:999px;background:var(--side);color:var(--muted);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
 a.chip{color:var(--cross)}
 a.chip.facade{color:var(--link)}
+a.chip.plain{color:var(--fg)}
 a.chip b{color:var(--muted);font-weight:400}
 .via{margin:1.1rem 0 .45rem}
 .via .num{margin-left:.35rem}

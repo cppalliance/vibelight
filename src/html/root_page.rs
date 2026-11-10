@@ -2,16 +2,24 @@
 //! the crates fit together. The facades come first, each the API of a
 //! crate family, then the implementation crates, grouped by the facade that
 //! re-exports most of their items, then every other crate by folder, then
-//! the uses between outlines. The legend closes the page, once for every
-//! page.
+//! the layers of the run: which crates use which, each crate above the
+//! crates it uses. The legend closes the page, once for every page.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
+use crate::html::document::body::instability;
 use crate::html::layout::{Block, Span, span_text};
 use crate::html::render_html::{attr, escape};
+use crate::index::Entry;
 use crate::model::TypeRef;
 use crate::roles::{Role, Roles};
+
+/// The page that defines instability, which the layers' hint links to. It
+/// is the one link of the HTML that leaves the file, and it is a plain
+/// link: Cursor's browser opens no tab for a link with a target, and Back
+/// returns from a page the outline was left for.
+const METRICS: &str = "https://en.wikipedia.org/wiki/Software_package_metrics";
 
 /// One crate of the overview.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -27,14 +35,15 @@ pub(crate) struct Row {
 }
 
 /// What the overview shows: the run's name, its crates in target order
-/// with their roles, how many declarations its pages give an id, and the
-/// section on the uses between outlines.
+/// with their roles, how many declarations its pages give an id, and each
+/// crate's entry of the index, in the same order, which holds the crates
+/// it uses and the crates that use it.
 pub(crate) struct Overview<'a> {
     pub(crate) name: &'a str,
     pub(crate) rows: &'a [Row],
     pub(crate) roles: &'a Roles,
     pub(crate) declarations: usize,
-    pub(crate) uses: &'a str,
+    pub(crate) entries: &'a [Entry],
 }
 
 /// Renders the overview's content, with `stamp` at its top.
@@ -73,7 +82,7 @@ pub(crate) fn fragment(overview: &Overview<'_>, stamp: &str) -> String {
     facades(&mut out, overview);
     implementations(&mut out, overview);
     others(&mut out, overview);
-    out.push_str(overview.uses);
+    layers(&mut out, overview);
     out.push_str("<h2 id=\"legend\">Legend</h2>\n");
     out.push_str(&crate::html::legend::html());
     out.push_str("</main>\n");
@@ -93,6 +102,22 @@ fn link(overview: &Overview<'_>, t: usize, class: &str) -> String {
     let row = &overview.rows[t];
     format!(
         "<a class=\"{class}\" href=\"{}.html\">{}</a>",
+        attr(&row.stem),
+        escape(&row.title)
+    )
+}
+
+/// Returns a chip: a link to crate `t`'s page in the color of its role,
+/// with a count.
+fn chip(overview: &Overview<'_>, t: usize, n: usize) -> String {
+    let class = match overview.roles.each[t] {
+        Role::Facade => "chip facade",
+        Role::Implementation => "chip",
+        Role::Library | Role::Binary => "chip plain",
+    };
+    let row = &overview.rows[t];
+    format!(
+        "<a class=\"{class}\" href=\"{}.html\">{} <b>{n}</b></a>",
         attr(&row.stem),
         escape(&row.title)
     )
@@ -131,19 +156,7 @@ fn facades(out: &mut String, overview: &Overview<'_>) {
         });
         let chips: Vec<String> = from
             .into_iter()
-            .map(|(k, n)| {
-                let class = if overview.roles.each[k] == Role::Facade {
-                    "chip facade"
-                } else {
-                    "chip"
-                };
-                let row = &overview.rows[k];
-                format!(
-                    "<a class=\"{class}\" href=\"{}.html\">{} <b>{n}</b></a>",
-                    attr(&row.stem),
-                    escape(&row.title)
-                )
-            })
+            .map(|(k, n)| chip(overview, k, n))
             .collect();
         let modules = match counts.modules {
             0 => String::new(),
@@ -266,6 +279,114 @@ fn others(out: &mut String, overview: &Overview<'_>) {
         }
     }
     out.push_str("</table>\n");
+}
+
+/// Writes the section on how the crates stack: each crate that uses another
+/// or that another uses, from the highest layer down and by name inside a
+/// layer, with the crates it uses and the crates that use it, each with how
+/// many distinct items, and its instability. The count beside the heading
+/// is the number of layers. Nothing is written when no crate uses another.
+fn layers(out: &mut String, overview: &Overview<'_>) {
+    let entries = overview.entries;
+    if entries.iter().all(|entry| entry.uses.is_empty()) {
+        return;
+    }
+    let levels = levels(entries);
+    let mut shown: Vec<usize> = (0..entries.len())
+        .filter(|&t| !entries[t].uses.is_empty() || !entries[t].used_by.is_empty())
+        .collect();
+    shown.sort_by(|&a, &b| {
+        (levels[b].cmp(&levels[a]))
+            .then_with(|| overview.rows[a].title.cmp(&overview.rows[b].title))
+    });
+    let top = shown.iter().map(|&t| levels[t]).max().unwrap_or(0);
+    heading(
+        out,
+        "layers",
+        "Layers",
+        top + 1,
+        "How the crates stack. Each crate sits above every crate it uses, so every use points \
+         down, and layer 0 uses no other crate here. A chip is a crate with the number of its \
+         distinct items in use.",
+    );
+    let _ = writeln!(
+        out,
+        "<p class=\"hint\">Instability is the number of crates a crate uses, divided by that \
+         plus the number of crates that use it. Near 0.00 a crate is stable: others lean on \
+         it, so a change to it is costly. Near 1.00 it is unstable: it leans on others, so it \
+         is cheap to change and their changes reach it. See <a href=\"{METRICS}\">Software \
+         package metrics</a> on Wikipedia.</p>"
+    );
+    out.push_str(
+        "<table class=\"crates\">\n<tr><th>Layer</th><th>Crate</th><th>Uses</th>\
+         <th>Used by</th><th>Instability</th></tr>\n",
+    );
+    for t in shown {
+        let entry = &entries[t];
+        let class = match overview.roles.each[t] {
+            Role::Facade => "crate facade",
+            Role::Implementation => "crate implementation",
+            Role::Library | Role::Binary => "crate",
+        };
+        let _ = writeln!(
+            out,
+            "<tr><td class=\"num\">{}</td><td>{}</td><td>{}</td><td>{}</td>\
+             <td class=\"num\">{}</td></tr>",
+            levels[t],
+            link(overview, t, class),
+            chips(overview, &entry.uses),
+            chips(overview, &entry.used_by),
+            instability(entry.used_by.len(), entry.uses.len()),
+        );
+    }
+    out.push_str("</table>\n");
+}
+
+/// Returns each entry's layer: 0 for a crate that uses no other, else one
+/// more than the highest layer among the crates it uses. Uses in production
+/// code form no cycle; if they ever did, the passes would still end, at the
+/// number of entries.
+fn levels(entries: &[Entry]) -> Vec<usize> {
+    let at: BTreeMap<&str, usize> = (entries.iter().enumerate())
+        .map(|(t, entry)| (entry.stem.as_str(), t))
+        .collect();
+    let mut levels = vec![0; entries.len()];
+    for _ in 0..entries.len() {
+        let mut settled = true;
+        for (t, entry) in entries.iter().enumerate() {
+            let above = (entry.uses.iter())
+                .filter_map(|(stem, _)| at.get(stem.as_str()))
+                .map(|&used| levels[used] + 1)
+                .max()
+                .unwrap_or(0);
+            if above > levels[t] {
+                levels[t] = above;
+                settled = false;
+            }
+        }
+        if settled {
+            break;
+        }
+    }
+    levels
+}
+
+/// Returns one chip for each crate of `pairs`, a stem with a count, the
+/// highest count first and then by name.
+fn chips(overview: &Overview<'_>, pairs: &[(String, usize)]) -> String {
+    let mut found: Vec<(usize, usize)> = (pairs.iter())
+        .filter_map(|(stem, n)| {
+            let t = overview.rows.iter().position(|row| row.stem == *stem)?;
+            Some((t, *n))
+        })
+        .collect();
+    found.sort_by(|a, b| {
+        (b.1.cmp(&a.1)).then_with(|| overview.rows[a.0].title.cmp(&overview.rows[b.0].title))
+    });
+    found
+        .into_iter()
+        .map(|(t, n)| chip(overview, t, n))
+        .collect()
 }
 
 fn path(overview: &Overview<'_>, t: usize) -> String {
@@ -448,6 +569,117 @@ mod tests {
         assert_eq!(
             code_html("The `Run` & more"),
             "The <code>Run</code> &amp; more"
+        );
+    }
+
+    /// The crates of a test run: each with its role and the crates it uses,
+    /// each of those with a count of items.
+    type Stack<'a> = [(&'a str, Role, &'a [(&'a str, usize)])];
+
+    /// Returns the layers section of a run of crates.
+    fn layers_of(crates: &Stack<'_>) -> String {
+        let rows: Vec<Row> = (crates.iter())
+            .map(|(stem, ..)| Row {
+                stem: (*stem).to_owned(),
+                title: (*stem).to_owned(),
+                ..Row::default()
+            })
+            .collect();
+        let roles = Roles {
+            each: crates.iter().map(|(_, role, _)| *role).collect(),
+            ..Roles::default()
+        };
+        let entries: Vec<Entry> = (crates.iter())
+            .map(|(stem, _, uses)| Entry {
+                stem: (*stem).to_owned(),
+                dir: String::new(),
+                followed: false,
+                bytes: 0,
+                uses: uses.iter().map(|&(used, n)| (used.to_owned(), n)).collect(),
+                used_by: (crates.iter())
+                    .filter_map(|(user, _, theirs)| {
+                        let (_, n) = theirs.iter().find(|(used, _)| used == stem)?;
+                        Some(((*user).to_owned(), *n))
+                    })
+                    .collect(),
+            })
+            .collect();
+        let overview = Overview {
+            name: "run",
+            rows: &rows,
+            roles: &roles,
+            declarations: 0,
+            entries: &entries,
+        };
+        let mut out = String::new();
+        layers(&mut out, &overview);
+        out
+    }
+
+    #[test]
+    fn each_crate_sits_one_layer_above_the_highest_crate_it_uses() {
+        let page = layers_of(&[
+            ("app", Role::Binary, &[("engine", 12)]),
+            ("engine", Role::Facade, &[("lua", 50), ("types", 1)]),
+            ("lone", Role::Library, &[]),
+            ("lua", Role::Implementation, &[("types", 3)]),
+            ("types", Role::Implementation, &[]),
+        ]);
+        assert!(
+            page.starts_with(
+                "<h2 id=\"layers\">Layers <span class=\"count\">4</span></h2>\n\
+                 <p class=\"hint\">How the crates stack. "
+            ),
+            "the count is the number of layers: {page}"
+        );
+        assert!(
+            page.contains(
+                "See <a href=\"https://en.wikipedia.org/wiki/Software_package_metrics\">Software \
+                 package metrics</a> on Wikipedia.</p>\n\
+                 <table class=\"crates\">\n<tr><th>Layer</th><th>Crate</th><th>Uses</th>\
+                 <th>Used by</th><th>Instability</th></tr>\n"
+            ),
+            "{page}"
+        );
+        let rows = "<tr><td class=\"num\">3</td><td><a class=\"crate\" href=\"app.html\">app</a></td>\
+             <td><a class=\"chip facade\" href=\"engine.html\">engine <b>12</b></a></td><td></td>\
+             <td class=\"num\">1.00</td></tr>\n\
+             <tr><td class=\"num\">2</td><td><a class=\"crate facade\" href=\"engine.html\">engine</a></td>\
+             <td><a class=\"chip\" href=\"lua.html\">lua <b>50</b></a>\
+             <a class=\"chip\" href=\"types.html\">types <b>1</b></a></td>\
+             <td><a class=\"chip plain\" href=\"app.html\">app <b>12</b></a></td>\
+             <td class=\"num\">0.67</td></tr>\n\
+             <tr><td class=\"num\">1</td><td><a class=\"crate implementation\" href=\"lua.html\">lua</a></td>\
+             <td><a class=\"chip\" href=\"types.html\">types <b>3</b></a></td>\
+             <td><a class=\"chip facade\" href=\"engine.html\">engine <b>50</b></a></td>\
+             <td class=\"num\">0.50</td></tr>\n\
+             <tr><td class=\"num\">0</td><td><a class=\"crate implementation\" href=\"types.html\">types</a></td>\
+             <td></td><td><a class=\"chip\" href=\"lua.html\">lua <b>3</b></a>\
+             <a class=\"chip facade\" href=\"engine.html\">engine <b>1</b></a></td>\
+             <td class=\"num\">0.00</td></tr>\n</table>\n";
+        assert!(
+            page.ends_with(rows),
+            "the highest layer first, each chip in the color of its crate's role and the most \
+             items first, and no row for a crate that uses none and that none uses: {page}"
+        );
+    }
+
+    #[test]
+    fn a_run_whose_crates_use_no_other_has_no_layers() {
+        let page = layers_of(&[("lone", Role::Library, &[]), ("solo", Role::Library, &[])]);
+        assert_eq!(page, "");
+    }
+
+    #[test]
+    fn crates_that_use_each_other_still_get_a_layer_each() {
+        let page = layers_of(&[
+            ("left", Role::Library, &[("right", 1)]),
+            ("right", Role::Library, &[("left", 1)]),
+        ]);
+        assert!(
+            page.contains("href=\"left.html\">left</a></td>")
+                && page.contains("href=\"right.html\">right</a></td>"),
+            "{page}"
         );
     }
 }
