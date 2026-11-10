@@ -15,9 +15,8 @@ use anyhow::{Context, Result};
 use crate::settings::Plan;
 use crate::stamp;
 
-/// The `.gitignore` of vibelight's own folder: the outlines, the HTML
-/// pages, the index, and the script and data files that let the pages open
-/// each other.
+/// The `.gitignore` of vibelight's own folder: the outlines, the index, the
+/// HTML file, and the script files that earlier releases wrote beside it.
 const GITIGNORE: &str = "*.md\n*.html\n*.js\n";
 
 /// The `.gitignore` that earlier releases wrote. A run replaces a file that
@@ -110,10 +109,10 @@ fn stale(dir: &Path, ext: &str, kept: &BTreeSet<&Path>) -> Vec<PathBuf> {
 
 /// Tells whether a file starts like an outline: a markdown outline with a
 /// stamp line and then the outline header record; an HTML page with its
-/// stamp comment and then the doctype; a page's data file, whose first
-/// line is the call that `browse` writes. A markdown outline of an older
-/// release counts too, so a stale one is still cleaned up: a stamp line, a
-/// blank line, and a crate anchor, or the anchor first.
+/// stamp comment and then the doctype; one of the script files an earlier
+/// release wrote beside its page. A markdown outline of an older release
+/// counts too, so a stale one is still cleaned up: a stamp line, a blank
+/// line, and a crate anchor, or the anchor first.
 fn is_outline(path: &Path) -> bool {
     let Ok(file) = File::open(path) else {
         return false;
@@ -130,13 +129,17 @@ fn is_outline(path: &Path) -> bool {
     let stamped = stamp::is_line(&head[0]);
     (stamped && head[0].starts_with('*') && head[1].starts_with(HEADER))
         || (stamped && head[0].starts_with("<!--") && head[1] == "<!DOCTYPE html>")
-        || head[0].starts_with(crate::browse::DATA_START)
+        || OLD_SCRIPTS.iter().any(|start| head[0].starts_with(start))
         || is_anchor(&head[0])
         || (stamped && head[1].is_empty() && is_anchor(&head[2]))
 }
 
 /// How the header record on a markdown outline's second line starts.
 const HEADER: &str = "{\"k\":\"vibelight-outline\",";
+
+/// How the script files of earlier releases start, which the folder's one
+/// file now holds: a page's data file, the search index, and the app.
+const OLD_SCRIPTS: [&str; 3] = ["vibelightPage(", "vibelightSearch(", "// vibelight: "];
 
 fn is_anchor(line: &str) -> bool {
     line.starts_with("<a id=\"crate.") && line.ends_with("\"></a>")
@@ -190,17 +193,27 @@ mod tests {
     }
 
     #[test]
-    fn a_page_data_file_the_run_no_longer_writes_is_stale_and_other_scripts_are_not() {
+    fn the_script_files_of_an_earlier_release_are_stale_and_other_scripts_are_not() {
         let tmp = tempfile::tempdir().unwrap();
         let dir = tmp.path();
         let data = "vibelightPage(\"old\", \"old\", `\n<main>\n</main>\n`);\n";
         fs::write(dir.join("old.page.js"), data).unwrap();
-        fs::write(dir.join("kept.page.js"), data).unwrap();
-        fs::write(dir.join("vibelight.js"), "(function () {})();\n").unwrap();
+        fs::write(dir.join("search.js"), "vibelightSearch({\"pages\":[]});\n").unwrap();
+        fs::write(
+            dir.join("vibelight.js"),
+            "// vibelight: the outlines as one page that works from file:.\n",
+        )
+        .unwrap();
         fs::write(dir.join("app.js"), "console.log(1);\n").unwrap();
-        let kept_path = dir.join("kept.page.js");
-        let kept: BTreeSet<&Path> = [kept_path.as_path()].into();
-        assert_eq!(stale(dir, "js", &kept), [dir.join("old.page.js")]);
+        let kept = BTreeSet::new();
+        assert_eq!(
+            stale(dir, "js", &kept),
+            [
+                dir.join("old.page.js"),
+                dir.join("search.js"),
+                dir.join("vibelight.js")
+            ]
+        );
     }
 
     #[test]

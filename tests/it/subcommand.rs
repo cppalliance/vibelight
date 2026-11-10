@@ -95,7 +95,8 @@ fn the_shim_passes_a_run_through_to_the_tool() {
         "the run wrote its outline"
     );
     assert!(
-        out_dir.join("html/demo.page.js").is_file(),
+        (crate::support::read_pages(&out_dir.join("html")).iter())
+            .any(|(name, _)| name == "demo.html"),
         "the run wrote its page"
     );
 }

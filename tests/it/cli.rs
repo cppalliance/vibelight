@@ -60,7 +60,10 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
          {\"k\":\"vibelight-outline\",\"schema\":2,\"crate\":\"structs\",\"target\":\"lib\",\
          \"root\":\""
     ));
-    assert!(out.join("html").join("structs.page.js").is_file());
+    assert!(
+        (crate::support::read_pages(&out.join("html")).iter())
+            .any(|(name, _)| name == "structs.html")
+    );
     assert!(
         !out.join(".gitignore").exists(),
         "a folder -o names is not vibelight's own"
@@ -85,11 +88,6 @@ fn stdout_lists_the_written_paths_sorted() {
         names,
         [
             "html/index.html",
-            "html/index.page.js",
-            "html/multi-cli.page.js",
-            "html/multi.page.js",
-            "html/search.js",
-            "html/vibelight.js",
             "out/index.md",
             "out/multi-cli.md",
             "out/multi.md"
@@ -103,8 +101,7 @@ fn the_markdown_index_reports_each_outline_size_and_the_overview_lists_each_page
     let out = tmp.path().join("out");
     assert!(run(&fixtures().join("multi"), &out).status.success());
     let index = fs::read_to_string(out.join("index.md")).expect("the index was written");
-    let data = fs::read_to_string(out.join("html").join("index.page.js")).expect("a page");
-    let page = crate::support::page_content(&data);
+    let page = crate::support::page(&out.join("html"), "index");
     for stem in ["multi", "multi-cli"] {
         let bytes = fs::read(out.join(format!("{stem}.md")))
             .expect("the outline was written")

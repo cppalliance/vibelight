@@ -52,10 +52,9 @@ fn check(name: &str) {
     let mut sorted = stdout.clone();
     sorted.sort();
     assert_eq!(stdout, sorted, "{name}: stdout is not sorted");
-    // Beside the outlines and pages read above, a run lists the two indexes,
-    // the HTML folder's one page, the index's data file, the search index,
-    // and the script.
-    assert_eq!(stdout.len(), written.len() + 5, "{name}: {stdout:?}");
+    // A run lists each outline read above, the markdown index, and the HTML
+    // folder's one file, which holds the pages read above.
+    assert_eq!(stdout.len(), markdown.len() + 2, "{name}: {stdout:?}");
     if !WARNS.contains(&name) {
         let expected = WARNINGS
             .iter()

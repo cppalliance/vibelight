@@ -127,37 +127,97 @@ pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
     files
 }
 
-/// Reads every page of an HTML folder from its data file, `<stem>.page.js`:
-/// the content the folder's script shows for it, named `<stem>.html`,
-/// sorted by name.
+/// How the data block of an HTML folder's one file opens.
+const DATA_OPEN: &str = "<script type=\"application/json\" id=\"vibelight-data\">";
+
+/// What a packed page's stamp line holds in place of its time.
+const PLACEHOLDER: &str = "0000-00-00T00:00:00Z";
+
+/// How a page's stamp line starts, the one line that gets its time back.
+const STAMP_LINE: &str = "<p class=\"stamp\">Updated ";
+
+/// Reads every page that an HTML folder's one file, `index.html`, holds:
+/// the content its app shows for each, with its stamp put back, named
+/// `<stem>.html`, sorted by name. A folder without the file holds no page.
 pub(crate) fn read_pages(html: &Path) -> Vec<(String, String)> {
-    read_outputs(html)
-        .into_iter()
-        .filter_map(|(name, data)| {
-            let stem = name.strip_suffix(".page.js")?;
-            Some((format!("{stem}.html"), page_content(&data)))
+    let Ok(file) = fs::read_to_string(html.join("index.html")) else {
+        return Vec::new();
+    };
+    let mut pages: Vec<(String, String)> = data_block(&file)["pages"]
+        .as_array()
+        .expect("the data block lists the pages")
+        .iter()
+        .map(|record| {
+            let field = |key: &str| record[key].as_str().expect("a page record has its fields");
+            let content: String = unpack(field("data"))
+                .split_inclusive('\n')
+                .map(|line| {
+                    if line.starts_with(STAMP_LINE) {
+                        line.replace(PLACEHOLDER, field("stamp"))
+                    } else {
+                        line.to_owned()
+                    }
+                })
+                .collect();
+            (format!("{}.html", field("stem")), content)
         })
-        .collect()
+        .collect();
+    pages.sort();
+    pages
 }
 
-/// Returns the content a page's data file holds: the text of the template
-/// literal that opens at the end of its first line and closes the file, with
-/// its escapes undone.
-pub(crate) fn page_content(data: &str) -> String {
-    let (_, rest) = data
-        .split_once("`\n")
-        .expect("a data file opens a template");
-    let inner = rest
-        .strip_suffix("`);\n")
-        .expect("a data file closes its template");
-    let mut out = String::with_capacity(inner.len());
-    let mut chars = inner.chars();
-    while let Some(c) = chars.next() {
-        if c == '\\' {
-            out.extend(chars.next());
-        } else {
-            out.push(c);
-        }
+/// Returns the content of the page `stem` that an HTML folder holds.
+pub(crate) fn page(html: &Path, stem: &str) -> String {
+    let name = format!("{stem}.html");
+    read_pages(html)
+        .into_iter()
+        .find_map(|(page, content)| (page == name).then_some(content))
+        .unwrap_or_else(|| panic!("the folder holds no page {stem}"))
+}
+
+/// Returns the search index that an HTML folder's one file holds.
+pub(crate) fn search_index(html: &Path) -> Value {
+    let file = fs::read_to_string(html.join("index.html")).expect("the folder has its file");
+    let search = data_block(&file)["search"]
+        .as_str()
+        .map(unpack)
+        .expect("the data block holds the search index");
+    serde_json::from_str(&search).expect("the search index is JSON")
+}
+
+/// Returns the data block of an HTML folder's one file.
+pub(crate) fn data_block(file: &str) -> Value {
+    let (_, rest) = file
+        .split_once(DATA_OPEN)
+        .expect("the file has a data block");
+    let (json, _) = rest.split_once("</script>").expect("the data block closes");
+    serde_json::from_str(json).expect("the data block is JSON")
+}
+
+/// Undoes the packing of a page or of the search index: base64 of a zlib
+/// stream of UTF-8.
+fn unpack(text: &str) -> String {
+    let raw = miniz_oxide::inflate::decompress_to_vec_zlib(&base64(text))
+        .expect("the data is a zlib stream");
+    String::from_utf8(raw).expect("the data is UTF-8")
+}
+
+/// Decodes base64 of the standard alphabet, padded.
+fn base64(text: &str) -> Vec<u8> {
+    let digit = |byte: u8| match byte {
+        b'A'..=b'Z' => byte - b'A',
+        b'a'..=b'z' => byte - b'a' + 26,
+        b'0'..=b'9' => byte - b'0' + 52,
+        b'+' => 62,
+        b'/' => 63,
+        _ => panic!("{} is no base64 digit", char::from(byte)),
+    };
+    let digits: Vec<u8> = text.bytes().filter(|&b| b != b'=').map(digit).collect();
+    let mut out = Vec::with_capacity(digits.len() * 3 / 4);
+    for chunk in digits.chunks(4) {
+        let group = (chunk.iter().enumerate())
+            .fold(0u32, |group, (i, &d)| group | u32::from(d) << (18 - 6 * i));
+        out.extend_from_slice(&group.to_be_bytes()[1..chunk.len()]);
     }
     out
 }

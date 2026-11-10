@@ -1,18 +1,30 @@
 // vibelight: the outlines as one page that works from file:.
 //
 // Cursor's browser drops every link click that leads to a file: URL, so the
-// HTML folder holds one page, index.html, and this script. Each outline's
-// page lives in a data file, <page>.page.js, that the script loads with a
-// script tag, which is no navigation, and shows in a tab. The address names
-// the shown page as #<page>/<id>, a change of the fragment, which is allowed,
-// so Back, Forward, and a reload work. search.js lists every declaration
-// with an id, for the search box.
+// HTML folder is one file, index.html, which holds this app and, in its data
+// block, every outline's page and the search index, each compressed and
+// written as base64. The app unpacks a page when a tab first shows it, which
+// is no navigation. The address names the shown page as #<page>/<id>, a
+// change of the fragment, which is allowed, so Back, Forward, and a reload
+// work.
 (function () {
   'use strict';
 
   var INDEX = 'index';
   var MARK = 'vibelight-target';
   var TABS_KEY = 'vibelight.tabs';
+  // What a packed page's stamp line holds in place of its time, which the
+  // data block keeps beside it, so a page that did not change keeps its
+  // packed text. Only the stamp line gets the time back: the text can hold
+  // the placeholder elsewhere.
+  var PLACEHOLDER = '0000-00-00T00:00:00Z';
+  var STAMP_LINE = /^<p class="stamp">Updated .*$/gm;
+
+  var data = JSON.parse(document.getElementById('vibelight-data').textContent);
+  var records = Object.create(null);
+  data.pages.forEach(function (record) {
+    records[record.stem] = record;
+  });
 
   var pages = Object.create(null);
   var search = null;
@@ -20,33 +32,13 @@
   var tabs = [];
   var active = -1;
 
-  // Each data file calls this when it loads.
-  window.vibelightPage = function (stem, title, content) {
-    pages[stem] = { title: title, content: content };
-  };
-
-  // search.js calls this when it loads.
-  window.vibelightSearch = function (index) {
-    search = index;
-    var waiting = searchWaiting;
-    searchWaiting = [];
-    waiting.forEach(function (done) {
-      done();
+  // Unpacks text of the data block: base64 of a zlib stream.
+  function unpack(text) {
+    var bytes = Uint8Array.from(atob(text), function (c) {
+      return c.charCodeAt(0);
     });
-  };
-
-  function script(src, done, fail) {
-    var tag = document.createElement('script');
-    tag.src = src;
-    tag.onload = function () {
-      tag.remove();
-      done();
-    };
-    tag.onerror = function () {
-      tag.remove();
-      fail();
-    };
-    document.head.appendChild(tag);
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+    return new Response(stream).text();
   }
 
   function load(stem, done, fail) {
@@ -54,17 +46,20 @@
       done();
       return;
     }
-    script(
-      encodeURIComponent(stem) + '.page.js',
-      function () {
-        if (pages[stem]) {
-          done();
-        } else {
-          fail();
-        }
-      },
-      fail
-    );
+    var record = records[stem];
+    if (!record || typeof DecompressionStream === 'undefined') {
+      fail();
+      return;
+    }
+    unpack(record.data).then(function (content) {
+      pages[stem] = {
+        title: record.title,
+        content: content.replace(STAMP_LINE, function (line) {
+          return line.split(PLACEHOLDER).join(record.stamp);
+        })
+      };
+      done();
+    }, fail);
   }
 
   function loadSearch(done) {
@@ -74,7 +69,14 @@
     }
     searchWaiting.push(done);
     if (searchWaiting.length === 1) {
-      script('search.js', function () {}, function () {
+      unpack(data.search).then(function (text) {
+        search = JSON.parse(text);
+        var waiting = searchWaiting;
+        searchWaiting = [];
+        waiting.forEach(function (next) {
+          next();
+        });
+      }, function () {
         searchWaiting = [];
       });
     }
@@ -170,7 +172,7 @@
       button.setAttribute('role', 'tab');
       button.dataset.index = String(i);
       var label = document.createElement('span');
-      label.textContent = pages[tab.stem] ? pages[tab.stem].title : tab.stem;
+      label.textContent = records[tab.stem] ? records[tab.stem].title : tab.stem;
       button.appendChild(label);
       if (tabs.length > 1) {
         var close = document.createElement('span');
@@ -239,7 +241,7 @@
         tab.view.innerHTML = '';
         var note = document.createElement('p');
         note.className = 'vl-missing';
-        note.textContent = 'vibelight: cannot load ' + tab.stem + '.page.js beside this page.';
+        note.textContent = 'vibelight: this file holds no page ' + tab.stem + ', or this browser cannot unpack it.';
         tab.view.appendChild(note);
       }
     );

@@ -5,6 +5,7 @@
 //! to write, with the files of the HTML folder that no one target writes.
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -30,9 +31,8 @@ use crate::{
 #[derive(Debug, Default)]
 pub(crate) struct Outcome {
     /// Each file the run writes, with its text: for each target in output
-    /// stem order its markdown outline and its page's data file, then the
-    /// markdown index, and the HTML folder's one page, its index's data
-    /// file, its search index, and its script.
+    /// stem order its markdown outline, then the markdown index, and the
+    /// HTML folder's one file, which holds every target's page.
     pub(crate) files: Vec<(PathBuf, String)>,
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
@@ -115,6 +115,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
     let mut entries = Vec::new();
     let mut rows = Vec::new();
     let mut api = Vec::new();
+    let mut pages = Vec::new();
     let per_target = (targets.iter().enumerate())
         .zip(&docs)
         .zip(&krates)
@@ -135,9 +136,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         outcome.files.push((path, text));
         let (content, headings) = page_content(t, &owners, &roles, &analyzed.surfaces, &run, stamp);
         api.push(headings);
-        let data = browse::data(&target.stem, &page.doc.title, &content);
-        let path = html.dir.join(browse::data_file(&target.stem));
-        outcome.files.push((path, data));
+        pages.push((target.stem.clone(), page.doc.title.clone(), content));
         outcome.warnings.extend(prefixed(chosen, p, krate));
     }
     outcome
@@ -150,6 +149,7 @@ pub(crate) fn outline(chosen: &Chosen, plan: &Plan, stamp: &str) -> Result<Outco
         entries: &entries,
         run: &run,
         api: &api,
+        pages: &pages,
     };
     push_folder(&mut outcome, &html.dir, &folder, stamp);
     Ok(outcome)
@@ -473,8 +473,8 @@ fn page_content(
     (content, Vec::new())
 }
 
-/// What the files of the HTML folder that no one target writes are made
-/// of.
+/// What the HTML folder's one file is made of, beside the overview it
+/// builds.
 struct Folder<'a> {
     base: &'a Path,
     rows: &'a [root_page::Row],
@@ -483,6 +483,8 @@ struct Folder<'a> {
     run: &'a [Anchors],
     /// The headings each facade's page adds, by page.
     api: &'a [Vec<String>],
+    /// Each target's page: its stem, its title, and its content.
+    pages: &'a [(String, String, String)],
 }
 
 /// Returns the part each target plays, chosen by the config's `facades`
@@ -518,9 +520,10 @@ fn row(target: &Target, dir: String, doc: &Document) -> root_page::Row {
     }
 }
 
-/// Adds the files of the HTML folder that no one target writes: the one
-/// HTML page, the overview's data file, the search index, and the script.
-/// The overview takes its name from the base folder of the run.
+/// Adds the HTML folder's one file: the overview's page, then each target's,
+/// and the search index. The overview takes its name from the base folder
+/// of the run. A page that the file already on disk holds unchanged keeps
+/// that file's stamp for it.
 fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &str) {
     let uses = index::uses_html(folder.entries);
     let name = folder.base.file_name().map_or_else(
@@ -538,17 +541,23 @@ fn push_folder(outcome: &mut Outcome, dir: &Path, folder: &Folder<'_>, stamp: &s
         uses: &uses,
     };
     let content = root_page::fragment(&overview, stamp);
-    let files = [
-        (dir.join("index.html"), browse::shell(stamp)),
-        (
-            dir.join(browse::data_file(browse::INDEX)),
-            browse::data(browse::INDEX, &name, &content),
-        ),
-        (
-            dir.join(browse::SEARCH_FILE),
-            browse::search(folder.run, folder.api),
-        ),
-        (dir.join(browse::SCRIPT_FILE), browse::SCRIPT.to_owned()),
-    ];
-    outcome.files.extend(files);
+    let overview = browse::Page {
+        stem: browse::INDEX,
+        title: &name,
+        content: &content,
+    };
+    let pages: Vec<browse::Page<'_>> = std::iter::once(overview)
+        .chain(
+            (folder.pages.iter()).map(|(stem, title, content)| browse::Page {
+                stem,
+                title,
+                content,
+            }),
+        )
+        .collect();
+    let path = dir.join(browse::FILE);
+    let old = fs::read_to_string(&path).ok();
+    let search = browse::search(folder.run, folder.api);
+    let text = browse::file(stamp, &pages, &search, old.as_deref());
+    outcome.files.push((path, text));
 }

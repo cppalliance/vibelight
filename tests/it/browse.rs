@@ -1,52 +1,56 @@
-//! The HTML folder is one page that works from `file:`: `index.html` loads
-//! `vibelight.js`, which shows each outline's page from its data file and
-//! finds declarations through `search.js`. Cursor's browser drops a click on
-//! a link to a `file:` URL, so no page is an HTML file of its own.
+//! The HTML folder is one file that works from `file:`: `index.html` holds
+//! the app and, packed in its data block, each outline's page and the
+//! search index. Cursor's browser drops a click on a link to a `file:` URL,
+//! so no page is an HTML file of its own.
 
 use std::fs;
 use std::path::Path;
 
 use crate::config::{MEMBERS, garden, lines, vibelight_in};
-use crate::support::{page_content, read_pages};
+use crate::support::{data_block, page, read_pages, search_index};
 
 fn read(dir: &Path, name: &str) -> String {
     fs::read_to_string(dir.join(name)).unwrap_or_else(|_| panic!("{name} was not written"))
 }
 
 #[test]
-fn the_folder_is_one_page_with_its_script_and_a_data_file_per_page() {
+fn the_folder_is_one_file_that_holds_the_app_and_every_page() {
     let (_tmp, repo) = garden(MEMBERS);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
     let html = repo.join(".vibelight").join("html");
-    let shell = read(&html, "index.html");
-    assert!(shell.contains("</style>\n<script src=\"vibelight.js\" defer></script>\n</head>"));
-    assert!(shell.contains("<noscript>"), "{shell}");
-    assert!(!shell.contains("<main>"), "the shell holds no page");
-    assert_eq!(
-        read(&html, "vibelight.js"),
-        fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("src")
-                .join("browse.js")
-        )
-        .unwrap(),
-        "the script on disk is the one the binary ships"
+    let names: Vec<String> = fs::read_dir(&html)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+    assert_eq!(names, ["index.html"]);
+    let file = read(&html, "index.html");
+    let app = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("browse.js"),
+    )
+    .unwrap();
+    assert!(
+        file.contains(&format!("<script>\n{app}</script>\n</body>")),
+        "the file holds the app the binary ships"
     );
-    for stem in ["alpha", "beta", "facade", "index"] {
-        assert!(
-            !html.join(format!("{stem}.html")).exists() || stem == "index",
-            "{stem} has an HTML file of its own"
-        );
-        let data = read(&html, &format!("{stem}.page.js"));
-        assert!(
-            data.starts_with(&format!("vibelightPage(\"{stem}\", \"")),
-            "{stem}: {}",
-            &data[..data.len().min(80)]
-        );
-        let content = page_content(&data);
-        assert!(content.contains(">\n<p class=\"stamp\">"), "{stem}");
-        assert!(content.ends_with("</main>\n"), "{stem}");
+    assert!(file.contains("<noscript>"), "{file}");
+    assert!(
+        !file.contains("<main>"),
+        "the file holds no page in the clear"
+    );
+    let block = data_block(&file);
+    let stems: Vec<&str> = block["pages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|record| record["stem"].as_str().unwrap())
+        .collect();
+    assert_eq!(stems, ["index", "alpha", "beta", "facade"]);
+    for (name, content) in read_pages(&html) {
+        assert!(content.contains(">\n<p class=\"stamp\">"), "{name}");
+        assert!(content.ends_with("</main>\n"), "{name}");
     }
 }
 
@@ -54,12 +58,7 @@ fn the_folder_is_one_page_with_its_script_and_a_data_file_per_page() {
 fn the_pages_keep_their_links_to_each_other() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let pages = read_pages(&repo.join(".vibelight").join("html"));
-    let index = &pages
-        .iter()
-        .find(|(name, _)| name == "index.html")
-        .expect("the index is a page")
-        .1;
+    let index = page(&repo.join(".vibelight").join("html"), "index");
     for stem in ["alpha", "beta", "facade"] {
         assert!(
             index.contains(&format!("href=\"{stem}.html\">{stem}</a>")),
@@ -73,10 +72,7 @@ fn overview(config: &str) -> String {
     let (_tmp, repo) = garden(config);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
-    page_content(&read(
-        &repo.join(".vibelight").join("html"),
-        "index.page.js",
-    ))
+    page(&repo.join(".vibelight").join("html"), "index")
 }
 
 #[test]
@@ -132,12 +128,7 @@ fn the_search_index_lists_every_id_that_a_page_declares() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
     let html = repo.join(".vibelight").join("html");
-    let search = read(&html, "search.js");
-    let json = search
-        .strip_prefix("vibelightSearch(")
-        .and_then(|rest| rest.strip_suffix(");\n"))
-        .expect("the search index is one call");
-    let index: serde_json::Value = serde_json::from_str(json).expect("its argument is JSON");
+    let index = search_index(&html);
     let pages: Vec<&str> = index["pages"]
         .as_array()
         .unwrap()
@@ -155,15 +146,14 @@ fn the_search_index_lists_every_id_that_a_page_declares() {
         })
         .collect();
     assert!(listed.len() > 3, "{listed:?}");
-    for (page, id) in &listed {
-        let content = page_content(&read(&html, &format!("{}.page.js", pages[*page])));
+    for (at, id) in &listed {
         assert!(
-            content.contains(&format!("id=\"{id}\"")),
+            page(&html, pages[*at]).contains(&format!("id=\"{id}\"")),
             "{id} is not an id of {}",
-            pages[*page]
+            pages[*at]
         );
     }
-    let alpha = page_content(&read(&html, "alpha.page.js"));
+    let alpha = page(&html, "alpha");
     for (at, _) in alpha.match_indices(" id=\"type.") {
         let id = alpha[at + 5..].split('"').next().unwrap();
         assert!(
@@ -176,42 +166,35 @@ fn the_search_index_lists_every_id_that_a_page_declares() {
 }
 
 #[test]
-fn a_run_lists_the_folder_files_on_stdout() {
+fn a_run_lists_the_folder_s_one_file_on_stdout() {
     let (_tmp, repo) = garden(MEMBERS);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success());
-    let out = lines(&result.stdout);
-    for name in [
-        "index.html",
-        "index.page.js",
-        "search.js",
-        "vibelight.js",
-        "alpha.page.js",
-        "beta.page.js",
-        "facade.page.js",
-    ] {
-        assert!(
-            out.iter().any(|path| path.ends_with(name)),
-            "{name} is not listed: {out:?}"
-        );
-    }
+    let html = repo.join(".vibelight").join("html");
+    let listed: Vec<String> = lines(&result.stdout)
+        .into_iter()
+        .filter(|path| Path::new(path).starts_with(&html))
+        .collect();
+    assert_eq!(listed.len(), 1, "{listed:?}");
+    assert!(
+        Path::new(&listed[0]).ends_with("html/index.html"),
+        "{listed:?}"
+    );
 }
 
 #[test]
-fn a_changed_stamp_alone_leaves_the_data_files_alone() {
+fn a_changed_stamp_alone_leaves_the_file_alone() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
     let html = repo.join(".vibelight").join("html");
-    let before = read(&html, "alpha.page.js");
-    let shell = read(&html, "index.html");
+    let before = read(&html, "index.html");
     let result = crate::support::vibelight()
         .env("SOURCE_DATE_EPOCH", "1798761600")
         .current_dir(&repo)
         .output()
         .expect("the vibelight binary runs");
     assert!(result.status.success());
-    assert_eq!(read(&html, "alpha.page.js"), before);
-    assert_eq!(read(&html, "index.html"), shell);
+    assert_eq!(read(&html, "index.html"), before);
 }
 
 #[test]
@@ -266,4 +249,37 @@ fn a_page_of_an_earlier_release_is_removed() {
         "{:?}",
         lines(&result.stderr)
     );
+}
+
+#[test]
+fn the_script_files_of_an_earlier_release_are_removed() {
+    let (_tmp, repo) = garden(MEMBERS);
+    assert!(vibelight_in(&repo, &[]).status.success());
+    let html = repo.join(".vibelight").join("html");
+    let old = [
+        (
+            "alpha.page.js",
+            "vibelightPage(\"alpha\", \"alpha\", `\n<main>\n</main>\n`);\n",
+        ),
+        ("search.js", "vibelightSearch({\"pages\":[],\"ids\":[]});\n"),
+        (
+            "vibelight.js",
+            "// vibelight: the outlines as one page that works from file:.\n",
+        ),
+    ];
+    for (name, text) in old {
+        fs::write(html.join(name), text).unwrap();
+    }
+    let result = vibelight_in(&repo, &[]);
+    assert!(result.status.success());
+    let notes = lines(&result.stderr);
+    for (name, _) in old {
+        assert!(!html.join(name).exists(), "{name} is still there");
+        assert!(
+            notes
+                .iter()
+                .any(|note| note.contains(&format!("{name}: no crate of this run writes it"))),
+            "{name}: {notes:?}"
+        );
+    }
 }

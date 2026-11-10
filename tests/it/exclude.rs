@@ -47,7 +47,7 @@ fn a_workspace_run_without_one_member_changes_no_other_page_and_only_its_leads()
     let result = vibelight_in(&repo, &["-o", "less"]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
     assert_eq!(lines(&result.stderr), [NOTE]);
-    assert_eq!(lines(&result.stdout).len(), 9, "{:?}", result.stdout);
+    assert_eq!(lines(&result.stdout).len(), 4, "{:?}", result.stdout);
     let less = read_plain(&repo.join("less"));
     assert_eq!(
         names(&less),

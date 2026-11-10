@@ -9,7 +9,7 @@ use std::path::Path;
 use std::process::Output;
 
 use crate::config::{MEMBERS, garden, lines};
-use crate::support::{page_content, read_outputs, vibelight};
+use crate::support::{page, read_outputs, vibelight};
 
 const LATER: &str = "1798761600";
 const LATER_STAMP: &str = "*Updated 2027-01-01T00:00:00Z*";
@@ -45,17 +45,15 @@ fn a_second_run_at_another_time_rewrites_nothing_and_still_lists_every_file() {
     let second = run_at(&repo, LATER, &[]);
     assert!(second.status.success(), "{:?}", lines(&second.stderr));
     assert_eq!(lines(&second.stdout), lines(&first.stdout));
-    assert_eq!(lines(&second.stdout).len(), 11);
+    assert_eq!(lines(&second.stdout).len(), 5);
     assert_eq!(read_outputs(&folder), before);
     assert_eq!(read_outputs(&folder.join("html")), html_before);
     assert_eq!(first_line(&folder.join("alpha.md")), FIRST_STAMP);
 }
 
-/// Returns the stamp line of a page, which its data file holds.
+/// Returns the stamp line of a page, which the HTML folder's one file holds.
 fn page_stamp(folder: &Path, stem: &str) -> String {
-    let data = fs::read_to_string(folder.join("html").join(format!("{stem}.page.js")))
-        .expect("the page was written");
-    page_content(&data)
+    page(&folder.join("html"), stem)
         .lines()
         .find(|line| line.starts_with("<p class=\"stamp\">"))
         .expect("a page has a stamp")
@@ -109,9 +107,7 @@ fn a_changed_declaration_restamps_only_the_files_that_show_it() {
         ]),
         "facade's page shows alpha's trait as its own API"
     );
-    let data = fs::read_to_string(folder.join("html").join("alpha.page.js")).unwrap();
-    let page = page_content(&data);
-    assert!(page.contains(
+    assert!(page(&folder.join("html"), "alpha").contains(
         "<main>\n<p class=\"stamp\">Updated \
          <time datetime=\"2027-01-01T00:00:00Z\">2027-01-01T00:00:00Z</time></p>\n<h1 "
     ));

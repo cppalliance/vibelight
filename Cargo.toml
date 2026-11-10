@@ -35,6 +35,7 @@ path = "tests/it/main.rs"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+miniz_oxide = "0.8"
 prettyplease = "0.3"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 serde = { version = "1", features = ["derive"] }

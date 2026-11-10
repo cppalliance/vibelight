@@ -1,6 +1,6 @@
 //! Prints the document as one page of the HTML folder, with every type
-//! linked: the sidebar and the page's content, which the folder's one HTML
-//! page shows from the page's data file (see `browse`). A code block prints
+//! linked: the sidebar and the page's content, which the folder's one file
+//! holds packed (see `browse`). A code block prints
 //! its leading doc lines as prose, then its code lines, each run of member
 //! comment lines in its own box.
 

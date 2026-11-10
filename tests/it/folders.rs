@@ -81,28 +81,12 @@ fn a_crate_the_exclude_now_leaves_out_loses_its_outlines() {
     assert!(result.status.success());
     assert_eq!(
         lines(&result.stderr),
-        [
-            NOTE.to_owned(),
-            removed(&[".vibelight", "facade.md"]),
-            removed(&[".vibelight", "html", "facade.page.js"]),
-        ]
+        [NOTE.to_owned(), removed(&[".vibelight", "facade.md"])]
     );
     assert_eq!(
         names(&read_run(&repo.join(".vibelight"))),
-        ["alpha.html", "alpha.md", "beta.html", "beta.md"]
-    );
-    assert!(
-        !repo
-            .join(".vibelight")
-            .join("html")
-            .join("facade.page.js")
-            .exists()
-    );
-    assert!(
-        repo.join(".vibelight")
-            .join("html")
-            .join("vibelight.js")
-            .is_file()
+        ["alpha.html", "alpha.md", "beta.html", "beta.md"],
+        "the folder's one file holds no page for the crate"
     );
 }
 
@@ -113,10 +97,11 @@ fn a_run_of_one_named_crate_leaves_only_that_crate_in_the_folder() {
     let result = vibelight_in(&repo, &["crates/beta"]);
     assert!(result.status.success());
     assert_eq!(
-        lines(&result.stderr).len(),
-        4,
-        "{:?}",
-        lines(&result.stderr)
+        lines(&result.stderr),
+        [
+            removed(&[".vibelight", "alpha.md"]),
+            removed(&[".vibelight", "facade.md"])
+        ]
     );
     assert_eq!(
         names(&read_run(&repo.join(".vibelight"))),
