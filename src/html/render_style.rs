@@ -64,8 +64,10 @@ main.overview{max-width:78rem;margin:0 auto;padding:1.5rem 2.2rem 4rem}
 .stats{display:flex;flex-wrap:wrap;gap:.5rem}
 .stats span{border:1px solid var(--rule);border-radius:7px;padding:.25rem .65rem;background:var(--side);color:var(--muted);font-size:13px}
 .stats b{color:var(--fg);margin-right:.3rem}
-ul.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(22rem,1fr));gap:.4rem 1.6rem;margin:.4rem 0 0;padding:.9rem 1.1rem;list-style:none;border:1px solid var(--rule);border-radius:10px;background:var(--side);color:var(--muted);font-size:13px}
-ul.legend code{color:var(--fg)}
+div.legend{margin:.4rem 0 0;padding:.9rem 1.1rem;border:1px solid var(--rule);border-radius:10px;background:var(--side);color:var(--muted);font-size:13px}
+div.legend pre{margin:0 0 .9rem;padding:0 0 .9rem;border-bottom:1px solid var(--rule);color:var(--fg)}
+div.legend ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(22rem,1fr));gap:.4rem 1.6rem;margin:0;padding:0;list-style:none}
+div.legend li code{color:var(--fg)}
 h2 .count{font-size:12px;font-weight:400;color:var(--muted);border:1px solid var(--rule);border-radius:10px;padding:0 .5rem;vertical-align:2px}
 .hint{color:var(--muted);margin:.2rem 0 .8rem;font-size:14px;max-width:60rem}
 table.crates{width:100%;border-collapse:collapse;border:1px solid var(--rule);font-size:14px}

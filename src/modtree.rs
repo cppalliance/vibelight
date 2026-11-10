@@ -49,6 +49,15 @@ pub(crate) struct Tree {
 /// # Errors
 /// Returns an error when the root file cannot be read.
 pub(crate) fn walk(crate_dir: &Path, root: &str) -> Result<Tree> {
+    let text = fs::read_to_string(crate_dir.join(root))
+        .with_context(|| format!("cannot read root file {}", crate_dir.join(root).display()))?;
+    Ok(walk_text(crate_dir, root, &text))
+}
+
+/// Walks the module tree from a root whose text is given, so the root is
+/// read from no file. A root that declares its modules inline, or none,
+/// makes a tree of one file and reads nothing at all.
+pub(crate) fn walk_text(crate_dir: &Path, root: &str, text: &str) -> Tree {
     let mut walker = Walker {
         crate_dir,
         tree: Tree {
@@ -59,11 +68,9 @@ pub(crate) fn walk(crate_dir: &Path, root: &str) -> Result<Tree> {
         },
         chain: Vec::new(),
     };
-    let text = fs::read_to_string(crate_dir.join(root))
-        .with_context(|| format!("cannot read root file {}", crate_dir.join(root).display()))?;
-    walker.file_module(Vec::new(), None, root, &text, true);
+    walker.file_module(Vec::new(), None, root, text, true);
     walker.tree.test_files.sort();
-    Ok(walker.tree)
+    walker.tree
 }
 
 struct Walker<'a> {

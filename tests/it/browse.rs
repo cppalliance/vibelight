@@ -94,7 +94,13 @@ fn the_overview_puts_the_facade_first_and_the_crates_behind_it_after() {
         let row = format!("<a class=\"crate implementation\" href=\"{stem}.html\">{stem}</a>");
         assert!(page[behind..].contains(&row), "{stem} is behind the facade");
     }
-    assert!(page.contains("<h2 id=\"legend\">Legend</h2>\n<ul class=\"legend\">"));
+    assert!(
+        page.contains(
+            "<h2 id=\"legend\">Legend</h2>\n<div class=\"legend\">\n\
+             <pre><code><span class=\"k\">pub</span> <span class=\"k\">struct</span> Sample"
+        ),
+        "the legend opens with its sample"
+    );
 }
 
 #[test]
