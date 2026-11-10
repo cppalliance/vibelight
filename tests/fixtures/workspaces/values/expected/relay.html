@@ -1,13 +1,15 @@
 <nav>
 <ul>
 <li><a href="#api">API</a></li>
-<li><a href="#api.mod">relay</a> <span class="dim">4</span></li>
+<li><a href="#api.mod">relay</a> <span class="dim">6</span></li>
 </ul>
 <hr>
 <ul class="symbols">
 <li><a href="#api.LIMIT">LIMIT</a></li>
 <li><a href="#api.measure">measure()</a></li>
 <li><a class="dim" href="#fn.relay.read">read()</a></li>
+<li><a class="dim" href="#api.Reading"><b>Reading</b></a></li>
+<li><a class="dim" href="#api.Tap"><b>Tap</b></a></li>
 <li><a href="#api.TOTAL">TOTAL</a></li>
 </ul>
 </nav>
@@ -17,7 +19,7 @@
 <div class="doc">
 <p><span class="c">Relay: re-exports origin's values and links to one in a comment.</span></p>
 </div>
-<p class="note" id="api">The public API of relay: 4 items, from 1 other crate. Each shows only what a user of relay can name. 1 crate here uses relay, and it does not use 1 of the items.</p>
+<p class="note" id="api">The public API of relay: 6 items, from 1 other crate. Each shows what a user of relay can name, and a type's private data, dim. 1 crate here uses relay, and it does not use 3 of the items.</p>
 <h2 id="api.mod">relay</h2>
 <h3 id="api.LIMIT"><span class="dim">relay::</span>LIMIT</h3>
 <p class="defined">Defined in <a class="cross" href="origin.html#const.origin.gauge.LIMIT">origin::gauge::LIMIT</a>, <span class="src">src/lib.rs:7</span></p>
@@ -32,11 +34,30 @@
 </div>
 <pre><code><span class="src">measure</span>() -&gt; u32</code></pre>
 <h3 id="fn.relay.read"><span class="dim">relay::</span>read</h3>
-<p class="defined"><span class="src">src/lib.rs:6</span> &middot; not used by 1 of 1</p>
+<p class="defined"><span class="src">src/lib.rs:7</span> &middot; not used by 1 of 1</p>
 <div class="doc">
 <p><span class="c">Takes a reading through </span><code><span class="c"><a href="#api.measure">origin::gauge::measure</a></span></code><span class="c">.</span></p>
 </div>
 <pre><code><span class="src">read</span>() -&gt; u32</code></pre>
+<h3 id="api.Reading"><span class="dim">relay::</span>Reading</h3>
+<p class="defined">Defined in <a class="cross" href="origin.html#type.origin.gauge.Reading">origin::gauge::Reading</a>, <span class="src">src/lib.rs:18</span> &middot; not used by 1 of 1</p>
+<div class="doc">
+<p><span class="c">A reading and how it was taken.</span></p>
+</div>
+<pre><code><span class="k">struct</span> Reading
+{
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The level read.</span></div>    <span class="src">level</span>: u32,
+<span class="gap"></span><span class="k">private:</span>
+    <span class="dim"><span class="src">tries</span>: u32,</span>
+    <span class="dim"><span class="src">tap</span>: <a href="#api.Tap">Tap</a>,</span>
+    <span class="dim"><span class="src">marks</span>: Vec&lt;Mark&gt;,</span>
+}</code></pre>
+<h3 id="api.Tap"><span class="dim">relay::</span>Tap</h3>
+<p class="defined">Defined in <a class="cross" href="origin.html#type.origin.gauge.Tap">origin::gauge::Tap</a>, <span class="src">src/lib.rs:30</span> &middot; not used by 1 of 1</p>
+<div class="doc">
+<p><span class="c">Where a reading comes from.</span></p>
+</div>
+<pre><code><span class="k">class</span> Tap(<span class="dim">u32</span>)</code></pre>
 <h3 id="api.TOTAL"><span class="dim">relay::</span>TOTAL</h3>
 <p class="defined">Defined in <a class="cross" href="origin.html#static.origin.gauge.TOTAL">origin::gauge::TOTAL</a>, <span class="src">src/lib.rs:10</span></p>
 <div class="doc">

@@ -2,8 +2,8 @@
 //! the base list, and the `where` clause.
 
 use crate::html::layout::marker::Marker;
-use crate::html::layout::members::param_lines;
-use crate::html::layout::{Line, Span, code, note_lines, plain, vis_spans, where_parts, width};
+use crate::html::layout::members::{field_spans, param_lines};
+use crate::html::layout::{Line, Span, code, note_lines, plain, where_parts, width};
 use crate::html::wrap::{self, MAX_WIDTH};
 use crate::model::{Base, Decl, Shape, TypeRef, name_order};
 
@@ -32,14 +32,15 @@ struct Own {
 /// and the line fits. Otherwise each base line starts with `: ` or `, `:
 /// the short names first, wrapping to fit, then each base whose impl has a
 /// comment, under that comment, then one long path per line, then the
-/// `where` clause on its own line.
+/// `where` clause on its own line. On a public surface, `surface`, a tuple
+/// field that is not `pub` prints dim.
 pub(crate) fn header_lines(
     decl: &Decl,
     header: Vec<Span>,
-    has_body: bool,
+    (has_body, surface): (bool, bool),
     refs: &[TypeRef],
 ) -> Vec<Line> {
-    let mut lines = head_lines(decl, header);
+    let mut lines = head_lines(decl, header, surface);
     let (short, own) = lists(decl, refs);
     let where_clause = decl.where_clause.as_ref().map(where_parts);
     let last = lines.pop().unwrap_or_default();
@@ -86,15 +87,16 @@ pub(crate) fn header_lines(
 
 /// Returns the head without its base list: the header line, with a tuple
 /// struct's fields on it, or one field per line when any field has a
-/// comment.
-fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
+/// comment. On a public surface, `surface`, a field that is not `pub`
+/// prints dim.
+fn head_lines(decl: &Decl, mut header: Vec<Span>, surface: bool) -> Vec<Line> {
     let Shape::Tuple(fields) = &decl.shape else {
         return vec![line(0, header)];
     };
     header.push(plain("("));
     if fields.iter().any(|f| !f.meta.notes.is_empty()) {
         let mut lines = vec![line(0, header)];
-        let mut fields = param_lines(fields, 4);
+        let mut fields = param_lines(fields, 4, surface);
         let mut last = fields.pop().unwrap_or_default();
         last.spans.push(plain(")"));
         lines.extend(fields);
@@ -105,8 +107,7 @@ fn head_lines(decl: &Decl, mut header: Vec<Span>) -> Vec<Line> {
         if i > 0 {
             header.push(plain(", "));
         }
-        header.extend(vis_spans(&field.meta.vis));
-        header.extend(code(&field.text));
+        header.extend(field_spans(field, surface));
     }
     header.push(plain(")"));
     vec![line(0, header)]

@@ -297,10 +297,11 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
     assert!(
         index.ends_with(
             "- `front` uses `relay` (3 items); instability 1.00\n\
-             - `origin` used by `relay` (3 items); instability 0.00\n\
-             - `relay` uses `origin` (3 items); used by `front` (3 items); instability 0.50\n"
+             - `origin` used by `relay` (5 items); instability 0.00\n\
+             - `relay` uses `origin` (5 items); used by `front` (3 items); instability 0.50\n"
         ),
-        "front depends only on relay, so its uses of origin's values count for relay:\n{index}"
+        "front depends only on relay, so its uses of origin's values count for relay, which \
+         also re-exports two of origin's types:\n{index}"
     );
 }
 
@@ -313,9 +314,10 @@ fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
          values; a doc link to `measure` stays on the facade's page"
     );
     assert_eq!(
-        found.cross, 21,
-        "the six value links, then on the overview the eight links of its tables and the seven \
-         names on the three rows of its layers"
+        found.cross, 23,
+        "the six value links, the two links from relay's page to the types that origin \
+         defines, then on the overview the eight links of its tables and the seven names on \
+         the three rows of its layers"
     );
     assert_eq!(
         found.outside, 1,

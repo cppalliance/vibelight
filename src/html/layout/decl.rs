@@ -7,7 +7,7 @@ use crate::html::layout::groups::{
 };
 use crate::html::layout::head::header_lines;
 use crate::html::layout::marker::Marker;
-use crate::html::layout::members::{member_entry, variant_entry};
+use crate::html::layout::members::{member_entry, private_fields, variant_entry};
 use crate::html::layout::special::special_entry;
 use crate::html::layout::{
     Block, Line, Span, above, code, key, mark_line, note_lines, plain, vis_spans, where_parts,
@@ -33,37 +33,41 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block_of(krate, &krate.decls[id], Head::Written)
 }
 
+/// The label of the data that a user of a public surface cannot name. The
+/// surface shows that data dim, whatever visibility the source gives it.
+const PRIVATE: &str = "private";
+
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its header without `pub`, its `pub`
 /// members, none hidden from the docs, and no word of how far anything
-/// reaches. A tuple struct whose fields are all private shows no fields,
-/// which tell that user nothing. When only some are, a private one reads
-/// `_`, so each public field keeps its number.
+/// reaches. Its other fields show too, dim and with no comment, so a
+/// reader can see what a value holds; its other functions do not.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     block_of(krate, &public_decl(krate, id, name), Head::Surface)
 }
 
 /// Returns a declaration as a user of a public surface sees it, under the
-/// name that user writes.
+/// name that user writes. A field that such a user cannot name stays, with
+/// no visibility, comment, or attribute left on it, which marks it as
+/// private data of the surface.
 fn public_decl(krate: &Crate, id: DeclId, name: &str) -> Decl {
     let shown = |meta: &Meta| meta.vis == "pub" && !meta.attrs.iter().any(|a| a == "doc(hidden)");
     let mut decl = krate.decls[id].clone();
     name.clone_into(&mut decl.name);
     if !matches!(decl.shape, Shape::Trait { .. }) {
-        decl.members.retain(|m| shown(&m.meta));
+        decl.members
+            .retain(|m| shown(&m.meta) || matches!(m.kind, MemberKind::Field(_)));
+        for member in decl.members.iter_mut().filter(|m| !shown(&m.meta)) {
+            member.meta = Meta::default();
+        }
     }
     decl.meta.access = None;
     for member in &mut decl.members {
         member.meta.access = None;
     }
     if let Shape::Tuple(fields) = &mut decl.shape {
-        if !fields.is_empty() && fields.iter().all(|f| f.meta.vis != "pub") {
-            decl.shape = Shape::Unit;
-        } else {
-            for field in fields.iter_mut().filter(|f| f.meta.vis != "pub") {
-                field.text = Text::plain("_");
-                field.meta = Meta::default();
-            }
+        for field in fields.iter_mut().filter(|f| !shown(&f.meta)) {
+            field.meta = Meta::default();
         }
     }
     decl.end_marks.clear();
@@ -108,6 +112,7 @@ fn block_of(krate: &Crate, decl: &Decl, head: Head) -> Block {
     };
     // The body's parts are sorted before the header is laid out, because
     // the header's keyword comes from the first member the body shows.
+    let surface = head == Head::Surface;
     let parts = BodyParts {
         members: &decl.members,
         variants,
@@ -118,18 +123,21 @@ fn block_of(krate: &Crate, decl: &Decl, head: Head) -> Block {
         name: &decl.name,
         own: label(&decl.meta),
         shown: decl.meta.access.as_ref().and_then(Stamp::note),
+        surface,
     };
     let sorted = Sorted::of(krate, &parts);
     let keyword = keyword(decl, sorted.first_label());
     let header = head_spans(decl, head, keyword);
     block
         .lines
-        .extend(header_lines(decl, header, has_body, refs));
+        .extend(header_lines(decl, header, (has_body, surface), refs));
     if !has_body {
         return block;
     }
+    // A class starts at what its page calls private.
     let in_force = match keyword {
         "struct" => Some("pub"),
+        "class" if surface => Some(PRIVATE),
         "class" => Some("pub(self)"),
         _ => None,
     };
@@ -237,6 +245,9 @@ pub(crate) struct BodyParts<'b> {
     pub(crate) own: Label,
     /// The access the type's `reaches` note shows, if it shows one.
     pub(crate) shown: Option<Access>,
+    /// Whether the body is on a public surface, where a field with no
+    /// visibility is private data: dim, packed, under `private:`.
+    pub(crate) surface: bool,
 }
 
 /// Builds the lines between the braces of a block that has no keyword of
@@ -263,6 +274,7 @@ impl Sorted {
         let mut first: Vec<Vec<Entry>> = (0..6).map(|_| Vec::new()).collect();
         let mut data = Sections::new();
         let mut members = Sections::new();
+        let mut private = Vec::new();
         let real = parts
             .members
             .iter()
@@ -275,6 +287,10 @@ impl Sorted {
                 MemberKind::Fn(_) if member.kind.is_static_fn() => 4,
                 _ => 5,
             };
+            if parts.surface && group == 2 && member.meta.vis != "pub" {
+                private.push(member);
+                continue;
+            }
             let entry = member_entry(krate, member, parts.shown);
             match (parts.unlabeled, group) {
                 (true, _) => first[group].push(entry),
@@ -290,6 +306,10 @@ impl Sorted {
         }
         if let Some(entry) = special_entry(parts.special, parts.name, refs) {
             add(&mut members, parts.own.clone(), 6, 3, entry);
+        }
+        if !private.is_empty() {
+            let after_pub = (usize::MAX, PRIVATE.to_owned());
+            add(&mut data, after_pub, 6, 2, private_fields(&private));
         }
         first.push(marks(parts));
         Self {

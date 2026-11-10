@@ -1,9 +1,10 @@
 //! The page of a facade: its public API and nothing else. Every path its
 //! users can name, grouped by the module they name it in, each with the
 //! declaration it names, pulled from the crate that defines it and shown as
-//! those users see it, with its `pub` members alone and no `pub` in a type's
-//! header, which every item of the page is. Each item says where the crate
-//! that defines it writes it. The sidebar lists the crate root with the
+//! those users see it, with its `pub` members and no `pub` in a type's
+//! header, which every item of the page is. A type's private data shows
+//! too, dim, so a reader can see what a value holds. Each item says where
+//! the crate that defines it writes it. The sidebar lists the crate root with the
 //! modules of the API indented below it, then the symbols of each module,
 //! then every symbol by name.
 //!
@@ -249,8 +250,8 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
         .count();
     let _ = writeln!(
         out,
-        "<p class=\"note\" id=\"api\">The public API of {}: {}{from}. Each shows only what a \
-         user of {} can name.{also}{}</p>",
+        "<p class=\"note\" id=\"api\">The public API of {}: {}{from}. Each shows what a user \
+         of {} can name, and a type's private data, dim.{also}{}</p>",
         escape(title),
         counted(items, "item"),
         escape(title),
@@ -333,18 +334,15 @@ fn groups(facade: &Facade<'_>) -> Groups {
 
 /// Returns what the code of the API's items names: for each item, every
 /// item of the run that a name in its block reaches, other than itself. A
-/// name in a comment counts for nothing.
+/// name in a comment counts for nothing, and neither does a name in a
+/// type's private data, which no user of the facade writes.
 fn names(facade: &Facade<'_>, groups: &Groups, api: &ApiIds) -> Names {
     let mut names = Names::default();
     for named in groups.values().flat_map(|(_, items)| items) {
         let own = named.item.map(|reach| (named.owner, reach));
         let refs = &facade.owners[named.owner].doc.refs;
-        let spans = named.block.lines.iter().flat_map(|line| &line.spans);
-        for span in spans {
-            let Span::Ref(id) = span else {
-                continue;
-            };
-            let reference = &refs[*id];
+        for id in named.block.lines.iter().flat_map(public_refs) {
+            let reference = &refs[id];
             let key = match (reference.decl(), reference.value(), reference.foreign) {
                 (Some(decl), ..) => (named.owner, Reach::Decl(decl)),
                 (None, Some(value), _) => (named.owner, Reach::Value(value)),
@@ -362,6 +360,22 @@ fn names(facade: &Facade<'_>, groups: &Groups, api: &ApiIds) -> Names {
         }
     }
     names
+}
+
+/// Returns the type names in a line's code that a user of the page can
+/// write: each one outside a dim run, which holds a type's private data.
+fn public_refs(line: &Line) -> Vec<usize> {
+    let mut dim = false;
+    let mut found = Vec::new();
+    for span in &line.spans {
+        match span {
+            Span::DimOpen => dim = true,
+            Span::DimClose => dim = false,
+            Span::Ref(id) if !dim => found.push(*id),
+            _ => {}
+        }
+    }
+    found
 }
 
 /// Returns a module path and a name joined by dots.

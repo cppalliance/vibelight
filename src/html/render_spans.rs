@@ -87,6 +87,9 @@ impl Page<'_> {
     /// the comment color.
     pub(crate) fn spans(&self, out: &mut String, spans: &[Span]) {
         let mut in_comment = false;
+        // True inside a dim run, where a type name links only to a heading
+        // of the page.
+        let mut dim = false;
         for span in spans {
             let comment = matches!(span, Span::Comment(_) | Span::DocRef(_));
             if comment && !in_comment {
@@ -109,6 +112,15 @@ impl Page<'_> {
                     let _ = write!(out, "<span class=\"dim\">{}</span>", escape(text));
                 }
                 Span::Code(text) | Span::Comment(text) => out.push_str(&escape(text)),
+                Span::DimOpen => {
+                    dim = true;
+                    out.push_str("<span class=\"dim\">");
+                }
+                Span::DimClose => {
+                    dim = false;
+                    out.push_str("</span>");
+                }
+                Span::Ref(id) if dim => self.quiet_reference(out, *id),
                 Span::Ref(id) | Span::DocRef(id) => self.reference(out, *id),
                 Span::Label(label) => {
                     let _ = write!(out, "<b class=\"m\">{}</b>", escape(label));
@@ -195,6 +207,27 @@ impl Page<'_> {
             },
             (None, Some(to)) => self.cross(out, &reference.text, to),
             (None, None) => out.push_str(&escape(&reference.text)),
+        }
+    }
+
+    /// Writes a type name of a dim run, as the private data of a facade's
+    /// page holds: a link to the item's heading when the page shows the
+    /// item, and plain text otherwise, since a user of the facade can name
+    /// nothing else.
+    fn quiet_reference(&self, out: &mut String, id: usize) {
+        let reference = &self.doc.refs[id];
+        let own = match (reference.decl(), reference.value()) {
+            (Some(target), _) => Some(Reach::Decl(target)),
+            (None, Some(value)) => Some(Reach::Value(value)),
+            (None, None) => None,
+        };
+        let linked = match (own, self.api, reference.foreign) {
+            (Some(reach), Some((_, krate)), _) => self.api_link(out, &reference.text, krate, reach),
+            (None, _, Some(to)) => self.api_link(out, &reference.text, to.krate, to.reach),
+            _ => false,
+        };
+        if !linked {
+            out.push_str(&escape(&reference.text));
         }
     }
 

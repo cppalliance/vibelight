@@ -114,7 +114,7 @@ pub(crate) fn variant_entry(variant: &Variant, refs: &[TypeRef]) -> Entry {
                 spans: vec![name, plain("(")],
                 trailing: None,
             });
-            let mut fields = param_lines(fields, 8);
+            let mut fields = param_lines(fields, 8, false);
             let mut last = fields.pop().unwrap_or_default();
             last.spans.push(plain(")"));
             last.spans.extend(discriminant);
@@ -214,11 +214,11 @@ fn expanded_variant(
 
 /// Returns one line per parameter, comments above each, every line but
 /// the last ending in a comma; a tuple field starts with its visibility.
-pub(crate) fn param_lines(fields: &[Param], indent: usize) -> Vec<Line> {
+/// On a public surface, `surface`, a field that is not `pub` prints dim.
+pub(crate) fn param_lines(fields: &[Param], indent: usize, surface: bool) -> Vec<Line> {
     spaced(fields.iter().enumerate().map(|(i, field)| {
         let mut lines = note_lines(&field.meta.notes, indent, Marker::DOC);
-        let mut spans = vis_spans(&field.meta.vis);
-        spans.extend(code(&field.text));
+        let mut spans = field_spans(field, surface);
         if i + 1 < fields.len() {
             spans.push(plain(","));
         }
@@ -229,4 +229,48 @@ pub(crate) fn param_lines(fields: &[Param], indent: usize) -> Vec<Line> {
         });
         lines
     }))
+}
+
+/// Returns a tuple field: its visibility and its type. On a public
+/// surface, `surface`, a field that is not `pub` is a dim run, since a
+/// user of the surface cannot name it.
+pub(crate) fn field_spans(field: &Param, surface: bool) -> Vec<Span> {
+    let mut spans = vis_spans(&field.meta.vis);
+    spans.extend(code(&field.text));
+    if surface && field.meta.vis != "pub" {
+        spans.insert(0, Span::DimOpen);
+        spans.push(Span::DimClose);
+    }
+    spans
+}
+
+/// Returns the private fields of a type on a public surface as one entry:
+/// each field's name and type on a line of its own, dim, with no comment,
+/// `cfg` line, or attribute, and no blank line between two fields. They
+/// are there to show what a value holds, not to be read as API.
+pub(crate) fn private_fields(fields: &[&Member]) -> Entry {
+    let lines = (fields.iter())
+        .filter_map(|member| {
+            let MemberKind::Field(ty) = &member.kind else {
+                return None;
+            };
+            let mut spans = vec![
+                Span::DimOpen,
+                Span::Name(member.name.clone(), member.loc),
+                plain(": "),
+            ];
+            spans.extend(code(ty));
+            spans.extend([plain(","), Span::DimClose]);
+            Some(Line {
+                indent: 4,
+                spans,
+                trailing: None,
+            })
+        })
+        .collect();
+    Entry {
+        name: String::new(),
+        lines,
+        repeats: Vec::new(),
+    }
 }

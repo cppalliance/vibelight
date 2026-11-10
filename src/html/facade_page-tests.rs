@@ -1,13 +1,18 @@
-//! Tests how a facade's page shows a declaration: only what a user of the
-//! facade can name, under the name that user writes.
+//! Tests how a facade's page shows a declaration: what a user of the
+//! facade can name, under the name that user writes, and a type's private
+//! data, dim.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 
-use super::{Facade, Groups, Named, module_symbols, plain_named, symbol_link, unused_by, usage};
+use super::{
+    Facade, Groups, Named, module_symbols, plain_named, public_refs, symbol_link, unused_by, usage,
+};
+use crate::html::document::Document;
 use crate::html::layout::decl::public_block;
 use crate::html::layout::items::item_block;
-use crate::html::layout::{Block, Line, line_text};
+use crate::html::layout::{Block, Line, Span, line_text, span_text};
+use crate::html::render_html::{ApiIds, Page};
 use crate::model::{Crate, Reach, ValueRef};
 use crate::module_graph::Users;
 
@@ -30,18 +35,36 @@ fn text(krate: &Crate, block: &Block) -> Vec<String> {
         .collect()
 }
 
-/// Returns the public block of the declaration `name`, shown as `shown`.
-fn public(krate: &Crate, name: &str, shown: &str) -> Vec<String> {
-    let id = (krate.decls.iter())
+/// Returns the id of the declaration `name`.
+fn decl(krate: &Crate, name: &str) -> usize {
+    (krate.decls.iter())
         .position(|d| d.name == name)
-        .expect("the declaration is collected");
-    text(krate, &public_block(krate, id, shown))
+        .expect("the declaration is collected")
+}
+
+/// Returns the public block of the declaration `name`, shown as `shown`,
+/// with each dim run between `<` and `>`.
+fn public(krate: &Crate, name: &str, shown: &str) -> Vec<String> {
+    let block = public_block(krate, decl(krate, name), shown);
+    (block.lines.iter())
+        .map(|line| {
+            let text: String = (line.spans.iter())
+                .map(|span| match span {
+                    Span::DimOpen => "<",
+                    Span::DimClose => ">",
+                    other => span_text(other, &krate.refs),
+                })
+                .collect();
+            format!("{}{text}", " ".repeat(line.indent))
+        })
+        .collect()
 }
 
 #[test]
-fn a_public_block_keeps_only_what_users_can_name() {
+fn a_public_block_keeps_what_users_can_name_and_the_private_data_dim() {
     let (_tmp, krate) = krate(
-        "pub struct Holder {\n    pub value: u8,\n    count: u32,\n}\n\
+        "pub struct Holder {\n    /// Counts the reads.\n    count: u32,\n    pub value: u8,\n    \
+         #[doc(hidden)]\n    pub raw: u8,\n}\n\
          impl Holder {\n    pub fn get(&self) -> u8 { self.value }\n    fn bump(&mut self) {}\n    \
          #[doc(hidden)]\n    pub fn secret(&self) {}\n}\n",
     );
@@ -52,46 +75,129 @@ fn a_public_block_keeps_only_what_users_can_name() {
             "{",
             "    value: u8,",
             "",
+            "private:",
+            "    <count: u32,>",
+            "    <raw: u8,>",
+            "",
+            "pub:",
             "    get() -> u8",
             "}",
         ],
-        "a struct starts public, and every member here is public, so no label prints"
+        "the first member shown is public, so it is a struct; the data its users cannot name \
+         follows under one label, with no comment and no blank line; a private function and \
+         one hidden from the docs stay out"
     );
 }
 
 #[test]
-fn a_struct_with_no_public_member_shows_an_empty_body() {
-    let (_tmp, krate) = krate("pub struct Secret {\n    a: u8,\n}\n");
+fn a_struct_with_only_private_data_is_a_class_that_shows_it_with_no_label() {
+    let (_tmp, krate) = krate(
+        "pub struct Secret {\n    a: u8,\n    pub(crate) b: u16,\n}\n\
+         impl Secret {\n    pub fn open(&self) -> u8 { self.a }\n}\n\
+         pub struct Sealed {\n    a: u8,\n}\n",
+    );
     assert_eq!(
         public(&krate, "Secret", "Secret"),
-        ["struct Secret", "{", "}"]
+        [
+            "class Secret",
+            "{",
+            "    <a: u8,>",
+            "    <b: u16,>",
+            "",
+            "pub:",
+            "    open() -> u8",
+            "}",
+        ],
+        "a class starts private, and on this page `pub(crate)` is private too"
     );
-}
-
-#[test]
-fn a_private_tuple_field_beside_a_public_one_keeps_its_place() {
-    let (_tmp, krate) = krate("pub struct Pair(u16, pub u8);\n");
     assert_eq!(
-        public(&krate, "Pair", "Pair"),
-        ["class Pair(_, pub u8)"],
-        "the first field is private, so the tuple is a class"
+        public(&krate, "Sealed", "Sealed"),
+        ["class Sealed", "{", "    <a: u8,>", "}"]
     );
 }
 
 #[test]
-fn a_tuple_struct_with_only_private_fields_shows_no_fields() {
+fn a_private_tuple_field_is_dim_in_the_header_and_the_first_field_decides_the_keyword() {
     let (_tmp, krate) = krate(
         "pub struct Id(i64);\n\
          impl Id {\n    pub fn get(self) -> i64 { self.0 }\n}\n\
-         pub struct Span(u32, u32);\n\
+         pub struct Pair(u16, pub u8);\n\
+         pub struct Open(pub u8, u16);\n\
          pub struct Empty();\n",
     );
     assert_eq!(
         public(&krate, "Id", "Id"),
-        ["struct Id", "{", "    get(self) -> i64", "}"]
+        ["class Id(<i64>)", "{", "pub:", "    get(self) -> i64", "}"]
     );
-    assert_eq!(public(&krate, "Span", "Span"), ["struct Span"]);
+    assert_eq!(
+        public(&krate, "Pair", "Pair"),
+        ["class Pair(<u16>, pub u8)"]
+    );
+    assert_eq!(
+        public(&krate, "Open", "Open"),
+        ["struct Open(pub u8, <u16>)"]
+    );
     assert_eq!(public(&krate, "Empty", "Empty"), ["struct Empty()"]);
+}
+
+#[test]
+fn a_type_in_private_data_links_only_to_a_heading_of_the_page_and_counts_for_nothing() {
+    let (_tmp, krate) = krate(
+        "pub struct Inner;\npub struct Holder {\n    inner: Inner,\n    pub open: Inner,\n}\n",
+    );
+    let block = public_block(&krate, decl(&krate, "Holder"), "Holder");
+    let line = |text: &str| {
+        (block.lines.iter())
+            .find(|line| line_text(line, &krate.refs) == text)
+            .expect("the block has the line")
+    };
+    let (private, open) = (line("inner: Inner,"), line("open: Inner,"));
+    assert_eq!(private.spans.first(), Some(&Span::DimOpen));
+    assert_eq!(
+        public_refs(private),
+        Vec::<usize>::new(),
+        "no user writes it"
+    );
+    assert_eq!(public_refs(open).len(), 1, "a user writes a public field");
+    let doc = Document {
+        title: String::new(),
+        id: String::new(),
+        crate_docs: None,
+        contents: Vec::new(),
+        kill_summary: String::new(),
+        kill: Vec::new(),
+        sections: Vec::new(),
+        refs: krate.refs.clone(),
+        decl_ids: vec!["type.t.Inner".to_owned(); krate.decls.len()],
+        value_ids: BTreeMap::new(),
+    };
+    let render = |api: &ApiIds| {
+        let page = Page {
+            doc: &doc,
+            member_links: None,
+            run: &[],
+            foreign: None,
+            ids: false,
+            api: Some((api, 0)),
+        };
+        let mut out = String::new();
+        page.line(&mut out, private);
+        out
+    };
+    assert_eq!(
+        render(&ApiIds::new()),
+        "    <span class=\"dim\"><span class=\"src\">inner</span>: Inner,</span>",
+        "the page does not show Inner, so the name is plain text though its crate's page has it"
+    );
+    let shown = ApiIds::from([(
+        (0, Reach::Decl(decl(&krate, "Inner"))),
+        "api.Inner".to_owned(),
+    )]);
+    assert_eq!(
+        render(&shown),
+        "    <span class=\"dim\"><span class=\"src\">inner</span>: \
+         <a href=\"#api.Inner\">Inner</a>,</span>"
+    );
 }
 
 #[test]

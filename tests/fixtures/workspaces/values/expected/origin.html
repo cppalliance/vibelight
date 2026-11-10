@@ -6,7 +6,10 @@
 <li><a href="#mod.origin.gauge"><b>gauge</b></a>
 <ul>
 <li><a href="#const.origin.gauge.LIMIT"><b>LIMIT</b></a></li>
+<li><a href="#type.origin.gauge.Mark"><b>Mark</b></a></li>
 <li><a href="#fn.origin.gauge.measure"><b>measure()</b></a></li>
+<li><a href="#type.origin.gauge.Reading"><b>Reading</b></a></li>
+<li><a href="#type.origin.gauge.Tap"><b>Tap</b></a></li>
 <li><a href="#static.origin.gauge.TOTAL"><b>TOTAL</b></a></li>
 </ul>
 </li>
@@ -25,7 +28,10 @@
 <ul class="surface">
 <li><a href="#mod.origin.gauge">gauge</a></li>
 <li><a href="#const.origin.gauge.LIMIT">gauge::LIMIT</a></li>
+<li><a href="#type.origin.gauge.Mark">gauge::Mark</a></li>
 <li><a href="#fn.origin.gauge.measure">gauge::measure()</a></li>
+<li><a href="#type.origin.gauge.Reading">gauge::Reading</a></li>
+<li><a href="#type.origin.gauge.Tap">gauge::Tap</a></li>
 <li><a href="#static.origin.gauge.TOTAL">gauge::TOTAL</a></li>
 </ul>
 <h2 id="mod.origin">origin</h2>
@@ -34,7 +40,29 @@
 <div class="doc">
 <p><span class="c">Gauge values.</span></p>
 </div>
-<p class="anatomy">pub mod: 1 function, 2 values; pub 3</p>
+<p class="anatomy">pub mod: 3 types, 1 function, 2 values; pub 6</p>
+<h3 id="type.origin.gauge.Reading"><span class="dim">gauge::</span>Reading</h3>
+<div class="doc">
+<p><span class="c">A reading and how it was taken.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Reading
+{
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">The level read.</span></div>    <span class="src">level</span>: u32,
+<span class="gap"></span><span class="k">pub(self):</span>
+<div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">How many tries it took.</span></div>    <span class="src">tries</span>: u32,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The tap it came from.</span></div>    <span class="src">tap</span>: <a href="#type.origin.gauge.Tap">Tap</a>,
+<span class="gap gap-box"></span><div class="mc" style="margin-left:calc(4ch - .9rem)"><span class="c">The marks made on the way.</span></div>    <span class="src">marks</span>: Vec&lt;<a href="#type.origin.gauge.Mark">Mark</a>&gt;,
+}</code></pre>
+<h3 id="type.origin.gauge.Tap"><span class="dim">gauge::</span>Tap</h3>
+<div class="doc">
+<p><span class="c">Where a reading comes from.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">class</span> Tap(u32)</code></pre>
+<h3 id="type.origin.gauge.Mark"><span class="dim">gauge::</span>Mark</h3>
+<div class="doc">
+<p><span class="c">A mark made while reading.</span></p>
+</div>
+<pre><code><span class="k">pub</span> <span class="k">struct</span> Mark</code></pre>
 <pre><code><span class="k">pub:</span>
 <span class="c"> The highest reading.</span>
 <span class="k">constexpr</span> <span class="src" id="const.origin.gauge.LIMIT">LIMIT</span>: u32 = 8

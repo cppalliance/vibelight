@@ -41,6 +41,12 @@ pub(crate) enum Span {
     /// A member function's name, which HTML links to its source line, with
     /// the id the name takes on the page when it has one.
     Fn(String, Loc, Option<String>),
+    /// Opens a run that prints at half the contrast of the code around it,
+    /// as the private data on a facade's page does. The run closes on the
+    /// same line, and a type name in it counts for nothing.
+    DimOpen,
+    /// Closes the run that `DimOpen` opened.
+    DimClose,
 }
 
 /// One line of a block.
@@ -80,6 +86,7 @@ pub(crate) fn span_text<'a>(span: &'a Span, refs: &'a [TypeRef]) -> &'a str {
         Span::Marker(s) => s,
         Span::Ref(id) | Span::DocRef(id) => &refs[*id].text,
         Span::Label(label) => label,
+        Span::DimOpen | Span::DimClose => "",
     }
 }
 
