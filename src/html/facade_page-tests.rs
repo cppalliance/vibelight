@@ -6,7 +6,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 
 use super::{
-    Facade, Groups, Named, module_symbols, plain_named, public_refs, symbol_link, unused_by, usage,
+    Groups, Links, Named, module_symbols, plain_named, public_refs, symbol_link, symbols, unused,
+    usage, used_by,
 };
 use crate::html::document::Document;
 use crate::html::layout::decl::public_block;
@@ -364,67 +365,100 @@ fn an_api_in_one_module_has_no_list_by_module() {
 }
 
 #[test]
-fn a_user_of_the_facade_that_does_not_name_an_item_counts_against_it() {
-    let users = Users::from([
-        ((0, Reach::Decl(0)), BTreeSet::from([1, 3])),
-        ((0, Reach::Decl(1)), BTreeSet::from([3])),
+fn a_crate_uses_what_it_names_and_what_the_code_of_those_items_names() {
+    let item = |d: usize| (0, Reach::Decl(d));
+    // Crate 1 names item 0. Crate 3 names item 3, and does not use the
+    // facade.
+    let named_by = Users::from([
+        (item(0), BTreeSet::from([1])),
+        (item(3), BTreeSet::from([3])),
     ]);
-    let facade = |used_by: Vec<usize>| Facade {
-        index: 9,
-        owners: &[],
-        surface: &[],
-        run: &[],
-        used_by,
-        users: &users,
-    };
-    let both = facade(vec![1, 2]);
+    // The code of item 0 names item 1, whose code names item 2, whose code
+    // names item 0 again. The code of item 3 names item 4.
+    let links = Links::from([
+        (item(0), BTreeSet::from([item(1)])),
+        (item(1), BTreeSet::from([item(2)])),
+        (item(2), BTreeSet::from([item(0)])),
+        (item(3), BTreeSet::from([item(4)])),
+    ]);
+    let users = used_by(&[1, 2], &named_by, &links);
+    let by_one = BTreeSet::from([1]);
     assert_eq!(
-        unused_by(&both, 0, Reach::Decl(0)),
-        Some((1, 2)),
-        "target 1 names it and target 2 does not"
+        users,
+        Users::from([
+            (item(0), by_one.clone()),
+            (item(1), by_one.clone()),
+            (item(2), by_one)
+        ]),
+        "crate 1 uses the item it names and what the chain from that item's code names, as \
+         it uses the type of a field of a value that it builds; crate 2 names nothing; and \
+         what crate 3 names counts for nothing"
     );
-    assert_eq!(
-        unused_by(&both, 0, Reach::Decl(1)),
-        Some((2, 2)),
-        "target 3 names it, and target 3 does not use the facade"
-    );
-    assert_eq!(
-        unused_by(&both, 0, Reach::Decl(2)),
-        Some((2, 2)),
-        "no target names it"
-    );
-    assert_eq!(
-        unused_by(&facade(Vec::new()), 0, Reach::Decl(0)),
-        None,
-        "no target uses the facade, so there is nothing to count"
-    );
+    let of =
+        |decl: Option<usize>, total| unused(&named("Round", "", "api.Round", decl), &users, total);
+    assert_eq!(of(Some(2), 2), Some((1, 2)), "crate 2 does not use it");
+    assert_eq!(of(Some(4), 2), Some((2, 2)), "neither user reaches it");
+    assert_eq!(of(None, 2), None, "the item is not of the run");
+    assert_eq!(of(Some(2), 0), None, "no crate uses the facade");
 }
 
 #[test]
-fn an_item_ends_its_line_with_the_users_that_do_not_use_it_and_is_dim_when_none_does() {
+fn an_item_ends_its_line_with_the_users_that_do_not_use_it() {
     let with = |unused: Option<(usize, usize)>| {
         let mut item = named("Round", "", "api.Round", Some(1));
         item.unused = unused;
         item
     };
-    let used = BTreeSet::new();
-    let link = |unused| symbol_link(&with(unused), &used);
     assert_eq!(with(Some((0, 4))).unused_note(), "", "each user uses it");
     assert_eq!(
         with(Some((3, 4))).unused_note(),
         " &middot; not used by 3 of 4"
     );
     assert_eq!(with(None).unused_note(), "", "the facade has no user");
+}
+
+#[test]
+fn only_the_list_by_module_prints_an_unused_item_dim() {
+    let with = |unused: Option<(usize, usize)>| {
+        let mut item = named("Round", "", "api.Round", Some(1));
+        item.unused = unused;
+        item
+    };
+    let used = BTreeSet::new();
+    let plain = "<a href=\"#api.Round\"><b>Round</b></a>";
     assert_eq!(
-        link(Some((4, 4))),
+        symbol_link(&with(Some((4, 4))), &used, true),
         "<a class=\"dim\" href=\"#api.Round\"><b>Round</b></a>",
         "dim, since none of the four uses it, and bold, since no item names it"
     );
+    assert_eq!(symbol_link(&with(Some((3, 4))), &used, true), plain);
+    assert_eq!(symbol_link(&with(None), &used, true), plain);
     assert_eq!(
-        link(Some((3, 4))),
-        "<a href=\"#api.Round\"><b>Round</b></a>"
+        symbol_link(&with(Some((4, 4))), &used, false),
+        plain,
+        "the list of every symbol by name has no dim name"
     );
-    assert_eq!(link(None), "<a href=\"#api.Round\"><b>Round</b></a>");
+    let groups: Groups = [
+        (Vec::new(), (None, vec![with(Some((4, 4)))])),
+        (
+            vec!["effect".to_owned()],
+            (None, vec![named("Other", "", "api.effect.Other", Some(2))]),
+        ),
+    ]
+    .into_iter()
+    .collect();
+    let mut by_module = String::new();
+    module_symbols(&mut by_module, "runvil", &groups, &used);
+    assert!(
+        by_module.contains("<li><a class=\"dim\" href=\"#api.Round\"><b>Round</b></a></li>"),
+        "{by_module}"
+    );
+    let mut by_name = String::new();
+    symbols(&mut by_name, &groups, &used);
+    assert!(
+        by_name.contains(&format!("<li>{plain}</li>")) && !by_name.contains("class=\"dim\""),
+        "{by_name}"
+    );
 }
 
 #[test]

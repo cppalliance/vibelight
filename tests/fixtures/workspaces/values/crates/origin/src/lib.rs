@@ -18,6 +18,8 @@ pub mod gauge {
     pub struct Reading {
         /// The level read.
         pub level: u32,
+        /// The scale it was read on.
+        pub scale: Scale,
         /// How many tries it took.
         tries: u32,
         /// The tap it came from.
@@ -25,6 +27,9 @@ pub mod gauge {
         /// The marks made on the way.
         marks: Vec<Mark>,
     }
+
+    /// The scale of a reading.
+    pub struct Scale;
 
     /// Where a reading comes from.
     pub struct Tap(u32);

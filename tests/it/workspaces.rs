@@ -296,12 +296,13 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
     let index = fs::read_to_string(repo.join("out").join("index.md")).unwrap();
     assert!(
         index.ends_with(
-            "- `front` uses `relay` (3 items); instability 1.00\n\
-             - `origin` used by `relay` (5 items); instability 0.00\n\
-             - `relay` uses `origin` (5 items); used by `front` (3 items); instability 0.50\n"
+            "- `front` uses `relay` (4 items); instability 1.00\n\
+             - `origin` used by `relay` (6 items); instability 0.00\n\
+             - `relay` uses `origin` (6 items); used by `front` (4 items); instability 0.50\n"
         ),
-        "front depends only on relay, so its uses of origin's values count for relay, which \
-         also re-exports two of origin's types:\n{index}"
+        "front depends only on relay, so its uses of origin's three values and of the type \
+         `Reading` count for relay, which re-exports those and two more of origin's \
+         types:\n{index}"
     );
 }
 
@@ -314,14 +315,63 @@ fn every_value_link_of_the_values_run_lands_on_an_id_of_the_defining_page() {
          values; a doc link to `measure` stays on the facade's page"
     );
     assert_eq!(
-        found.cross, 23,
-        "the six value links, the two links from relay's page to the types that origin \
-         defines, then on the overview the eight links of its tables and the seven names on \
-         the three rows of its layers"
+        found.cross, 27,
+        "the six value links, the three links from relay's page to the types that origin \
+         defines, the three links of front's page for the type it names and does not \
+         re-export, which are one from a signature to origin's page and the crate and the \
+         item on relay's page, then on the overview the eight links of its tables and the \
+         seven names on the three rows of its layers"
     );
     assert_eq!(
         found.outside, 1,
         "only the overview's link to the page that defines instability leaves the file"
+    );
+}
+
+#[test]
+fn a_facade_prints_an_unused_item_dim_in_its_list_by_module_and_in_no_other() {
+    let (_tmp, repo) = copy("values");
+    assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
+    let written = read_plain(&repo.join("out"));
+    let relay = &written
+        .iter()
+        .find(|(name, _)| name == "relay.html")
+        .expect("relay.html is written")
+        .1;
+    // Returns the dim links of one list of the sidebar, which ends at the
+    // next rule or at the end of the sidebar.
+    let dim = |class: &str| -> Vec<&str> {
+        let open = format!("<ul class=\"{class}\">");
+        let from = relay.find(&open).expect("the sidebar has the list");
+        let rest = &relay[from..];
+        let end = ["<hr>", "</nav>"]
+            .iter()
+            .filter_map(|mark| rest.find(mark))
+            .min()
+            .expect("the list ends");
+        rest[..end]
+            .lines()
+            .filter(|line| line.contains("<a class=\"dim\""))
+            .collect()
+    };
+    assert_eq!(
+        dim("modules"),
+        [
+            "<li><a class=\"dim\" href=\"#fn.relay.read\">read()</a></li>",
+            "<li><a class=\"dim\" href=\"#api.taps.Tap\"><b>Tap</b></a></li>"
+        ],
+        "front, the one user of relay, names `Reading`, so it uses `Scale`, the type of a \
+         public field; no code of front leads to `read`, or to `Tap`, which only private \
+         data names"
+    );
+    assert_eq!(
+        dim("symbols"),
+        Vec::<&str>::new(),
+        "the list of every symbol by name is for finding a symbol"
+    );
+    assert!(
+        relay.contains("1 crate here uses relay. 2 of its 7 items are unused."),
+        "the page counts the two"
     );
 }
 

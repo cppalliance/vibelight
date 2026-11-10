@@ -15,8 +15,9 @@
 //!
 //! And the page says who uses the API. When other crates of the run use the
 //! facade, each item's line of where it is defined ends with how many of
-//! them do not use the item, and the sidebar prints dim an item that none
-//! of them uses.
+//! them do not use the item, and the sidebar's list by module prints dim an
+//! item that none of them uses. A crate uses an item that its code names,
+//! and each item that the code of an item it uses names.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -130,6 +131,10 @@ struct View<'a> {
     exports: &'a Exports,
 }
 
+/// For each item of the API, the other items of the API that its code
+/// names.
+type Links = BTreeMap<(usize, Reach), BTreeSet<(usize, Reach)>>;
+
 /// What the code of the API's items names.
 #[derive(Default)]
 struct Names {
@@ -137,6 +142,8 @@ struct Names {
     used: BTreeSet<(usize, Reach)>,
     /// The items of the run that the API names and does not hold.
     outside: BTreeSet<(usize, Reach)>,
+    /// Which items of the API each item of the API names.
+    links: Links,
 }
 
 /// The items the API names and does not hold, by the crate a user names
@@ -184,7 +191,7 @@ pub(crate) fn keep_public(doc: &mut Document, surface: &[Entry]) {
 pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> Rendered {
     let own = &facade.owners[facade.index];
     let title = &own.doc.title;
-    let groups = groups(facade);
+    let mut groups = groups(facade);
     let mut api = ApiIds::new();
     for named in groups.values().flat_map(|(_, items)| items) {
         if let Some(reach) = named.item {
@@ -192,6 +199,10 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
         }
     }
     let names = names(facade, &groups, &api);
+    let users = used_by(&facade.used_by, facade.users, &names.links);
+    for named in groups.values_mut().flat_map(|(_, items)| items) {
+        named.unused = unused(named, &users, facade.used_by.len());
+    }
     let view = View {
         facade,
         api,
@@ -291,16 +302,40 @@ fn usage(title: &str, users: usize, unused: usize, items: usize) -> String {
     }
 }
 
-/// Returns how many of the crates that use the facade do not use an item
-/// of the run, with how many such crates there are, or none when no crate
-/// of the run uses the facade.
-fn unused_by(facade: &Facade<'_>, owner: usize, reach: Reach) -> Option<(usize, usize)> {
-    let total = facade.used_by.len();
-    let users = facade.users.get(&(owner, reach));
-    let using = (facade.used_by.iter())
-        .filter(|user| users.is_some_and(|users| users.contains(user)))
-        .count();
-    (total > 0).then_some((total - using, total))
+/// Returns, for each item that a crate of `users` uses, the crates of
+/// `users` that use it. A crate uses an item that its code names, as
+/// `named_by` says, and each item that the code of an item it uses names,
+/// as `links` says. So a crate that builds a value uses the types of the
+/// value's public fields, though it never writes their names.
+fn used_by(users: &[usize], named_by: &Users, links: &Links) -> Users {
+    let mut out = Users::new();
+    for &user in users {
+        let mut reached: BTreeSet<(usize, Reach)> = (named_by.iter())
+            .filter(|(_, crates)| crates.contains(&user))
+            .map(|(&item, _)| item)
+            .collect();
+        let mut pending: Vec<(usize, Reach)> = reached.iter().copied().collect();
+        while let Some(item) = pending.pop() {
+            for &next in links.get(&item).into_iter().flatten() {
+                if reached.insert(next) {
+                    pending.push(next);
+                }
+            }
+        }
+        for item in reached {
+            out.entry(item).or_default().insert(user);
+        }
+    }
+    out
+}
+
+/// Returns how many of a facade's `total` users do not use an item, with
+/// that total: none when no crate of the run uses the facade, and none for
+/// an item that is not of the run. `users` holds the users of each item.
+fn unused(named: &Named, users: &Users, total: usize) -> Option<(usize, usize)> {
+    let reach = named.item?;
+    let using = users.get(&(named.owner, reach)).map_or(0, BTreeSet::len);
+    (total > 0).then(|| (total.saturating_sub(using), total))
 }
 
 /// The paths of the surface by module, crate root first, each module's
@@ -356,6 +391,9 @@ fn names(facade: &Facade<'_>, groups: &Groups, api: &ApiIds) -> Names {
             }
             if api.contains_key(&key) {
                 names.used.insert(key);
+                if let Some(own) = own {
+                    names.links.entry(own).or_default().insert(key);
+                }
             } else {
                 names.outside.insert(key);
             }
@@ -467,7 +505,7 @@ fn named(facade: &Facade<'_>, name: &str, kind: &Kind) -> Option<Named> {
         anchor,
         id: String::new(),
         defined: Some(defined),
-        unused: unused_by(facade, owner, reach),
+        unused: None,
     })
 }
 
@@ -561,9 +599,10 @@ fn module_entry(title: &str, path: &[String], count: usize) -> String {
 
 /// Writes the sidebar's list of the API's symbols by module, under a rule:
 /// the crate root, then each module of the API by its path, each a link to
-/// its section with its own symbols by name below it. An API that one
-/// module holds has no such list, which would repeat the list of every
-/// symbol that follows it.
+/// its section with its own symbols by name below it. Here, and only here,
+/// the name of an item that none of the facade's users uses is dim. An API
+/// that one module holds has no such list, which would repeat the list of
+/// every symbol that follows it.
 fn module_symbols(out: &mut String, title: &str, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
     if groups.len() < 2 {
         return;
@@ -577,7 +616,7 @@ fn module_symbols(out: &mut String, title: &str, groups: &Groups, used: &BTreeSe
             escape(&module_label(title, path))
         );
         for named in items {
-            let _ = writeln!(out, "<li>{}</li>", symbol_link(named, used));
+            let _ = writeln!(out, "<li>{}</li>", symbol_link(named, used, true));
         }
         out.push_str("</ul>\n</li>\n");
     }
@@ -586,15 +625,15 @@ fn module_symbols(out: &mut String, title: &str, groups: &Groups, used: &BTreeSe
 
 /// Returns the link to a symbol's heading: its name, a function's ending
 /// in `()` and a macro's in `!`, bold for a type that no other item of the
-/// API names in its code, none of `used`, and dim for an item that none of
-/// the facade's users uses.
-fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>) -> String {
+/// API names in its code, none of `used`. With `dims`, the link is dim for
+/// an item that none of the facade's users uses.
+fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>, dims: bool) -> String {
     let (open, close) = if named.is_root(used) {
         ("<b>", "</b>")
     } else {
         ("", "")
     };
-    let class = if named.unused_by_all() {
+    let class = if dims && named.unused_by_all() {
         " class=\"dim\""
     } else {
         ""
@@ -609,7 +648,8 @@ fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>) -> String {
 
 /// Writes the sidebar's list of every symbol of the API by name, under a
 /// rule, each linking to its heading. A name that more than one module
-/// holds shows its module, dim.
+/// holds shows its module, dim. No name is dim here: this list is for
+/// finding a symbol, and the list by module says which ones are unused.
 fn symbols(out: &mut String, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
     let mut all: Vec<(&[String], &Named)> = (groups.iter())
         .flat_map(|(path, (_, items))| items.iter().map(move |named| (path.as_slice(), named)))
@@ -629,7 +669,7 @@ fn symbols(out: &mut String, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
         } else {
             String::new()
         };
-        let _ = writeln!(out, "<li>{}{module}</li>", symbol_link(named, used));
+        let _ = writeln!(out, "<li>{}{module}</li>", symbol_link(named, used, false));
     }
     out.push_str("</ul>\n");
 }

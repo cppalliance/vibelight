@@ -8,3 +8,8 @@ pub use relay::measure;
 pub fn sample() -> u32 {
     measure()
 }
+
+/// Returns the level of a reading, a type that front does not re-export.
+pub fn level_of(reading: &relay::Reading) -> u32 {
+    reading.level
+}
