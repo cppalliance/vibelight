@@ -53,6 +53,10 @@ pub(crate) fn fragment(
     };
     let mut out = String::from("<nav>\n");
     page.list(&mut out, &doc.contents, "");
+    if !doc.symbols.is_empty() {
+        out.push_str("<hr>\n");
+        page.list(&mut out, &doc.symbols, "modules");
+    }
     out.push_str("</nav>\n<main>\n");
     page.head(&mut out, stamp);
     let _ = writeln!(
@@ -225,6 +229,9 @@ impl Page<'_> {
                 Inline::Text(text) => out.push_str(&escape(text)),
                 Inline::Bold(text) => {
                     let _ = write!(out, "<b class=\"m\">{}</b>", escape(text));
+                }
+                Inline::Dim(text) => {
+                    let _ = write!(out, "<span class=\"dim\">{}</span>", escape(text));
                 }
                 Inline::Code(spans) => {
                     out.push_str("<code>");
@@ -522,6 +529,7 @@ mod tests {
             id: String::new(),
             crate_docs: None,
             contents: Vec::new(),
+            symbols: Vec::new(),
             kill_summary: String::new(),
             kill: Vec::new(),
             sections: Vec::new(),

@@ -1,10 +1,15 @@
-//! Builds the HTML's body module by module, and the sidebar's module tree.
-//! Each module's section has its heading, its parent path dim before its
-//! name, its `Source:` line, its docs, a line of its anatomy, and a line of
-//! its coupling when other modules use it or it uses them, then its types
-//! in the declarations' order, then its block of items. The tree holds
-//! every module under its parent, with its types, functions, constants,
-//! and statics, the public surface in bold.
+//! Builds the HTML's body module by module, and the sidebar's two lists of
+//! modules. Each module's section has its heading, its parent path dim
+//! before its name, its `Source:` line, its docs, a line of its anatomy,
+//! and a line of its coupling when other modules use it or it uses them,
+//! then its types in the declarations' order, then its block of items.
+//!
+//! The sidebar's first list is the module tree: every module under its
+//! parent, with the number of symbols it declares, so the whole structure
+//! shows with no symbol between two modules. Its second list has each
+//! module that declares a symbol, by path, with its types, functions,
+//! constants, and statics by name below it. Both print the public surface
+//! in bold.
 
 use std::collections::BTreeSet;
 
@@ -48,21 +53,44 @@ impl Surface {
 
 impl Builder<'_> {
     /// Adds one section per module, in path order, each with its types in
-    /// `order`, and returns the sidebar's module tree.
-    pub(crate) fn modules_body(&mut self, order: &Order, surface: &[Entry]) -> Item {
+    /// `order`, and returns the sidebar's two lists of modules: the module
+    /// tree, then each module that declares a symbol, in the order of the
+    /// sections, with its symbols below it.
+    pub(crate) fn modules_body(&mut self, order: &Order, surface: &[Entry]) -> (Item, Vec<Item>) {
         let krate = self.krate;
         let all: Vec<DeclId> = (order.sequence.iter())
             .chain(&order.unconnected)
             .chain(&order.test_support)
             .copied()
             .collect();
-        for m in self.sorted_modules() {
+        let sorted = self.sorted_modules();
+        for &m in &sorted {
             let types: Vec<DeclId> = (all.iter().copied())
                 .filter(|&d| krate.decls[d].module == m)
                 .collect();
             self.module_section(m, &types);
         }
-        self.tree(0, &Surface::of(surface))
+        let surface = Surface::of(surface);
+        let mut symbols: Vec<Vec<Item>> = (0..krate.modules.len())
+            .map(|m| self.symbols(m, &surface))
+            .collect();
+        let counts: Vec<usize> = symbols.iter().map(Vec::len).collect();
+        let tree = self.tree(0, &surface, &counts);
+        let by_module = (sorted.into_iter())
+            .filter(|&m| counts[m] > 0)
+            .map(|m| {
+                let strong = surface.modules.contains(&m);
+                Item {
+                    inlines: vec![strong_anchor(
+                        &self.mod_heading(m),
+                        &self.mod_ids[m],
+                        strong,
+                    )],
+                    children: std::mem::take(&mut symbols[m]),
+                }
+            })
+            .collect();
+        (tree, by_module)
     }
 
     /// Adds a module's section: its heading, `Source:` line, docs, anatomy,
@@ -148,19 +176,37 @@ impl Builder<'_> {
         Some(out)
     }
 
-    /// Returns module `m`'s entry in the sidebar's tree: its child modules,
-    /// types, functions, constants, and statics, in path order. Extern
-    /// items and macros have no entry.
-    fn tree(&self, m: ModId, surface: &Surface) -> Item {
+    /// Returns module `m`'s entry in the sidebar's tree: its name, the
+    /// number of symbols it declares when it declares one, from `counts`,
+    /// and its child modules in path order.
+    fn tree(&self, m: ModId, surface: &Surface, counts: &[usize]) -> Item {
+        let krate = self.krate;
+        let mut children: Vec<ModId> = (0..krate.modules.len())
+            .filter(|&c| krate.modules[c].parent == Some(m))
+            .collect();
+        children.sort_by(|&x, &y| self.module_order(x, y));
+        let name = (krate.modules[m].path.last()).map_or(krate.title.as_str(), String::as_str);
+        let strong = surface.modules.contains(&m);
+        let mut inlines = vec![strong_anchor(name, &self.mod_ids[m], strong)];
+        if counts[m] > 0 {
+            inlines.push(Inline::Text(" ".to_owned()));
+            inlines.push(Inline::Dim(counts[m].to_string()));
+        }
+        Item {
+            inlines,
+            children: (children.into_iter())
+                .map(|c| self.tree(c, surface, counts))
+                .collect(),
+        }
+    }
+
+    /// Returns the sidebar's entries of the symbols that module `m`
+    /// declares: its types, functions, constants, and statics by name.
+    /// Extern items and macros have no entry.
+    fn symbols(&self, m: ModId, surface: &Surface) -> Vec<Item> {
         let krate = self.krate;
         let module = &krate.modules[m];
         let mut entries: Vec<(Vec<String>, &str, Item)> = Vec::new();
-        for (c, child) in krate.modules.iter().enumerate() {
-            if child.parent == Some(m) {
-                let item = self.tree(c, surface);
-                entries.push((child.path.clone(), &self.mod_ids[c], item));
-            }
-        }
         for (d, decl) in krate.decls.iter().enumerate() {
             if decl.module == m {
                 let item = leaf(&decl.name, &self.decl_ids[d], surface.decls.contains(&d));
@@ -181,16 +227,11 @@ impl Builder<'_> {
             entries.push((path, id, leaf(&text, id, surface.values.contains(&at))));
         }
         entries.sort_by(|a, b| path_order(&a.0, &b.0).then_with(|| a.1.cmp(b.1)));
-        let name = (module.path.last()).map_or(krate.title.as_str(), String::as_str);
-        let strong = surface.modules.contains(&m);
-        Item {
-            inlines: vec![strong_anchor(name, &self.mod_ids[m], strong)],
-            children: entries.into_iter().map(|(_, _, item)| item).collect(),
-        }
+        entries.into_iter().map(|(_, _, item)| item).collect()
     }
 }
 
-/// Returns a tree entry with no children.
+/// Returns a sidebar entry with no children.
 fn leaf(text: &str, id: &str, strong: bool) -> Item {
     Item {
         inlines: vec![strong_anchor(text, id, strong)],
@@ -256,9 +297,8 @@ mod tests {
 
     /// Renders the page of a crate named `t` made of one `lib.rs`, whose
     /// module graph has an edge for each `(from, to, items)`: module `from`
-    /// uses `items` items of module `to`, both by path. Returns each
-    /// coupling line with the id of the section it is in.
-    fn coupling(lib: &str, edges: &[(&str, &str, usize)]) -> Vec<(String, String)> {
+    /// uses `items` items of module `to`, both by path.
+    fn page(lib: &str, edges: &[(&str, &str, usize)]) -> String {
         let tmp = tempfile::tempdir().unwrap();
         let src = tmp.path().join("src");
         fs::create_dir_all(&src).unwrap();
@@ -284,11 +324,17 @@ mod tests {
             order: &Order::default(),
             blocks: &[],
             spellings: &[],
-            surface: &[],
+            surface: &crate::surface::walk(&krate),
             graph: &graph,
         };
         let doc = build(&inputs, None);
-        let page = crate::html::render_html::fragment(&doc, None, &[], crate::stamp::PLACEHOLDER);
+        crate::html::render_html::fragment(&doc, None, &[], crate::stamp::PLACEHOLDER)
+    }
+
+    /// Returns each coupling line of the page that `page` renders, with the
+    /// id of the section it is in.
+    fn coupling(lib: &str, edges: &[(&str, &str, usize)]) -> Vec<(String, String)> {
+        let page = page(lib, edges);
         let mut section = "";
         let mut out = Vec::new();
         for line in page.lines() {
@@ -351,6 +397,62 @@ mod tests {
             coupling(lib, &edges),
             lines,
             "no line for the crate root or e"
+        );
+    }
+
+    #[test]
+    fn the_sidebar_has_the_module_tree_then_each_module_with_its_symbols() {
+        let lib = "pub struct Top;\nfn helper() {}\n\
+                   pub mod b {\n    pub struct Mid;\n    \
+                   pub mod c {\n        pub const N: u8 = 0;\n        struct Leaf;\n    }\n    \
+                   fn run() {}\n}\n\
+                   mod empty {}\n";
+        let page = page(lib, &[]);
+        let sidebar = &page[..page.find("</nav>").expect("a page has a sidebar")];
+        assert_eq!(
+            sidebar,
+            "<nav>\n<ul>\n\
+             <li><a href=\"#surface\">Public surface</a></li>\n\
+             <li><a href=\"#mod.t\">t</a> <span class=\"dim\">2</span>\n<ul>\n\
+             <li><a href=\"#mod.t.b\"><b>b</b></a> <span class=\"dim\">2</span>\n<ul>\n\
+             <li><a href=\"#mod.t.b.c\"><b>c</b></a> <span class=\"dim\">2</span></li>\n\
+             </ul>\n</li>\n\
+             <li><a href=\"#mod.t.empty\">empty</a></li>\n\
+             </ul>\n</li>\n\
+             </ul>\n\
+             <hr>\n<ul class=\"modules\">\n\
+             <li><a href=\"#mod.t\">t</a>\n<ul>\n\
+             <li><a href=\"#fn.t.helper\">helper()</a></li>\n\
+             <li><a href=\"#type.t.Top\"><b>Top</b></a></li>\n\
+             </ul>\n</li>\n\
+             <li><a href=\"#mod.t.b\"><b>b</b></a>\n<ul>\n\
+             <li><a href=\"#type.t.b.Mid\"><b>Mid</b></a></li>\n\
+             <li><a href=\"#fn.t.b.run\">run()</a></li>\n\
+             </ul>\n</li>\n\
+             <li><a href=\"#mod.t.b.c\"><b>b::c</b></a>\n<ul>\n\
+             <li><a href=\"#type.t.b.c.Leaf\">Leaf</a></li>\n\
+             <li><a href=\"#const.t.b.c.N\"><b>N</b></a></li>\n\
+             </ul>\n</li>\n\
+             </ul>\n",
+            "the tree nests the modules and counts each one's symbols, with no number for a \
+             module that declares none; the second list has each module that declares a \
+             symbol under its path, and leaves `empty` out; a name on the public surface is \
+             bold in both"
+        );
+    }
+
+    #[test]
+    fn a_crate_that_declares_no_symbol_has_no_second_list() {
+        let page = page("pub mod a {}\n", &[]);
+        let sidebar = &page[..page.find("</nav>").expect("a page has a sidebar")];
+        assert_eq!(
+            sidebar,
+            "<nav>\n<ul>\n\
+             <li><a href=\"#surface\">Public surface</a></li>\n\
+             <li><a href=\"#mod.t\">t</a>\n<ul>\n\
+             <li><a href=\"#mod.t.a\"><b>a</b></a></li>\n\
+             </ul>\n</li>\n\
+             </ul>\n"
         );
     }
 }

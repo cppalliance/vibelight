@@ -47,6 +47,7 @@ mod tests {
             id: "crate.a".into(),
             crate_docs: None,
             contents: Vec::new(),
+            symbols: Vec::new(),
             kill_summary: "none".into(),
             kill: Vec::new(),
             sections: vec![Node::Code(Block {

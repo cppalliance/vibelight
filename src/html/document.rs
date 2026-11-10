@@ -45,6 +45,8 @@ pub(crate) struct SourceLink {
 pub(crate) enum Inline {
     Text(String),
     Bold(String),
+    /// Dim text, such as the count beside a module's link in the sidebar.
+    Dim(String),
     /// Inline code, styled for HTML.
     Code(Vec<Span>),
     /// A link to a heading, bold for a node on the public surface.
@@ -124,7 +126,11 @@ pub(crate) struct Document {
     pub(crate) title: String,
     pub(crate) id: String,
     pub(crate) crate_docs: Option<Block>,
+    /// The sidebar's first list: the page's sections, with the module tree.
     pub(crate) contents: Vec<Item>,
+    /// The sidebar's second list: each module that declares a symbol, with
+    /// its symbols below it.
+    pub(crate) symbols: Vec<Item>,
     /// The macro counts.
     pub(crate) kill_summary: String,
     /// One entry per macro.
@@ -207,7 +213,8 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         heading_id: String::new(),
     };
     let mut contents: Vec<Item> = b.surface(surface).into_iter().collect();
-    contents.push(b.modules_body(order, surface));
+    let (tree, symbols) = b.modules_body(order, surface);
+    contents.push(tree);
     contents.extend(b.other_impls_section(others));
     if !spellings.is_empty() {
         contents.push(Item {
@@ -227,6 +234,7 @@ pub(crate) fn build(inputs: &Inputs<'_>, links: Option<&LinkBase>) -> Document {
         id: format!("crate.{}", krate.name),
         crate_docs: docs_block(&krate.modules[0].docs, &[]),
         contents,
+        symbols,
         kill_summary,
         kill,
         sections: b.nodes,

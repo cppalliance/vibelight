@@ -165,6 +165,7 @@ fn a_type_in_private_data_links_only_to_a_heading_of_the_page_and_counts_for_not
         id: String::new(),
         crate_docs: None,
         contents: Vec::new(),
+        symbols: Vec::new(),
         kill_summary: String::new(),
         kill: Vec::new(),
         sections: Vec::new(),
