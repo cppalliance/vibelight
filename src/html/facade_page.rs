@@ -4,7 +4,8 @@
 //! those users see it, with its `pub` members alone and no `pub` in a type's
 //! header, which every item of the page is. Each item says where the crate
 //! that defines it writes it. The sidebar lists the crate root with the
-//! modules of the API indented below it.
+//! modules of the API indented below it, then the symbols of each module,
+//! then every symbol by name.
 //!
 //! The page also reads what the code of those items names. A type that no
 //! other item of the API names is where a reader starts, so the sidebar
@@ -190,6 +191,7 @@ pub(crate) fn fragment(
         );
     }
     out.push_str("</ul>\n");
+    module_symbols(&mut out, title, &groups, &names.used);
     symbols(&mut out, &groups, &names.used);
     out.push_str("</nav>\n<main>\n");
     let _ = writeln!(out, "{}", crate::stamp::html_paragraph(stamp));
@@ -466,10 +468,51 @@ fn module_entry(title: &str, path: &[String], count: usize) -> String {
     )
 }
 
+/// Writes the sidebar's list of the API's symbols by module, under a rule:
+/// the crate root, then each module of the API by its path, each a link to
+/// its section with its own symbols by name below it. An API that one
+/// module holds has no such list, which would repeat the list of every
+/// symbol that follows it.
+fn module_symbols(out: &mut String, title: &str, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
+    if groups.len() < 2 {
+        return;
+    }
+    out.push_str("<hr>\n<ul class=\"modules\">\n");
+    for (path, (_, items)) in groups {
+        let _ = writeln!(
+            out,
+            "<li><a href=\"#{}\">{}</a>\n<ul>",
+            attr(&module_id(path)),
+            escape(&module_label(title, path))
+        );
+        for named in items {
+            let _ = writeln!(out, "<li>{}</li>", symbol_link(named, used));
+        }
+        out.push_str("</ul>\n</li>\n");
+    }
+    out.push_str("</ul>\n");
+}
+
+/// Returns the link to a symbol's heading: its name, a function's ending
+/// in `()` and a macro's in `!`, bold for a type that no other item of the
+/// API names in its code, none of `used`.
+fn symbol_link(named: &Named, used: &BTreeSet<(usize, Reach)>) -> String {
+    let (open, close) = if named.is_root(used) {
+        ("<b>", "</b>")
+    } else {
+        ("", "")
+    };
+    format!(
+        "<a href=\"#{}\">{open}{}{}{close}</a>",
+        attr(&named.id),
+        escape(&named.name),
+        named.suffix
+    )
+}
+
 /// Writes the sidebar's list of every symbol of the API by name, under a
 /// rule, each linking to its heading. A name that more than one module
-/// holds shows its module, dim, and a type that no other item of the API
-/// names in its code, none of `used`, is bold.
+/// holds shows its module, dim.
 fn symbols(out: &mut String, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
     let mut all: Vec<(&[String], &Named)> = (groups.iter())
         .flat_map(|(path, (_, items))| items.iter().map(move |named| (path.as_slice(), named)))
@@ -489,18 +532,7 @@ fn symbols(out: &mut String, groups: &Groups, used: &BTreeSet<(usize, Reach)>) {
         } else {
             String::new()
         };
-        let (open, close) = if named.is_root(used) {
-            ("<b>", "</b>")
-        } else {
-            ("", "")
-        };
-        let _ = writeln!(
-            out,
-            "<li><a href=\"#{}\">{open}{}{}{close}</a>{module}</li>",
-            attr(&named.id),
-            escape(&named.name),
-            named.suffix
-        );
+        let _ = writeln!(out, "<li>{}{module}</li>", symbol_link(named, used));
     }
     out.push_str("</ul>\n");
 }

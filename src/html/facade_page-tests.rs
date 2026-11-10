@@ -1,12 +1,14 @@
 //! Tests how a facade's page shows a declaration: only what a user of the
 //! facade can name, under the name that user writes.
 
+use std::collections::BTreeSet;
 use std::fs;
 
+use super::{Groups, Named, module_symbols, plain_named};
 use crate::html::layout::decl::public_block;
 use crate::html::layout::items::item_block;
-use crate::html::layout::{Block, line_text};
-use crate::model::{Crate, ValueRef};
+use crate::html::layout::{Block, Line, line_text};
+use crate::model::{Crate, Reach, ValueRef};
 
 /// Collects and resolves a one-file crate.
 fn krate(source: &str) -> (tempfile::TempDir, Crate) {
@@ -163,6 +165,79 @@ fn a_crate_root_that_holds_no_item_is_a_plain_name_above_its_modules() {
          </ul>\n</li>\n",
         "the page has no section for a root with no item, so there is nothing to link to"
     );
+}
+
+/// Returns an item of the API with the heading id `id`, which declaration
+/// `decl` of target 0 defines when given.
+fn named(name: &str, suffix: &'static str, id: &str, decl: Option<usize>) -> Named {
+    let mut named = plain_named(name, suffix, 0, Line::default());
+    id.clone_into(&mut named.id);
+    named.item = decl.map(Reach::Decl);
+    named
+}
+
+/// Returns the sidebar's list of symbols by module of a crate `runvil`,
+/// when no item names another but declaration 0.
+fn by_module(groups: Vec<(&[&str], Vec<Named>)>) -> String {
+    let groups: Groups = (groups.into_iter())
+        .map(|(path, items)| {
+            let path = path.iter().map(|&name| name.to_owned()).collect();
+            (path, (None, items))
+        })
+        .collect();
+    let used = BTreeSet::from([(0, Reach::Decl(0))]);
+    let mut out = String::new();
+    module_symbols(&mut out, "runvil", &groups, &used);
+    out
+}
+
+#[test]
+fn the_sidebar_lists_the_symbols_of_each_module_under_the_module() {
+    let groups: Vec<(&[&str], Vec<Named>)> = vec![
+        (
+            &[],
+            vec![
+                named("Error", "", "api.Error", Some(0)),
+                named("make", "()", "fn.runvil.make", None),
+            ],
+        ),
+        (
+            &["effect"],
+            vec![named("Round", "", "api.effect.Round", Some(1))],
+        ),
+        (
+            &["vfs", "path"],
+            vec![named("join", "!", "api.vfs.path.join", None)],
+        ),
+    ];
+    assert_eq!(
+        by_module(groups),
+        "<hr>\n<ul class=\"modules\">\n\
+         <li><a href=\"#api.mod\">runvil</a>\n<ul>\n\
+         <li><a href=\"#api.Error\">Error</a></li>\n\
+         <li><a href=\"#fn.runvil.make\">make()</a></li>\n\
+         </ul>\n</li>\n\
+         <li><a href=\"#api.mod.effect\">effect</a>\n<ul>\n\
+         <li><a href=\"#api.effect.Round\"><b>Round</b></a></li>\n\
+         </ul>\n</li>\n\
+         <li><a href=\"#api.mod.vfs.path\">vfs::path</a>\n<ul>\n\
+         <li><a href=\"#api.vfs.path.join\">join!</a></li>\n\
+         </ul>\n</li>\n\
+         </ul>\n",
+        "the crate is a top-level entry like each module, and a type that nothing names is bold"
+    );
+}
+
+#[test]
+fn an_api_in_one_module_has_no_list_by_module() {
+    let root: Vec<(&[&str], Vec<Named>)> =
+        vec![(&[], vec![named("Error", "", "api.Error", Some(0))])];
+    assert_eq!(
+        by_module(root),
+        "",
+        "it would repeat the list of every symbol"
+    );
+    assert_eq!(by_module(Vec::new()), "");
 }
 
 #[test]
