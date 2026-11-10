@@ -276,6 +276,71 @@ fn unused() {}
 }
 
 #[test]
+fn a_side_that_names_the_other_side_is_a_violation() {
+    let dir = package(&[
+        (
+            "src/html.rs",
+            "//! HTML.\nuse crate::{\n    md,\n    model,\n};\n",
+        ),
+        (
+            "src/html/page.rs",
+            "//! Page.\n\nuse crate::md::leads::Lead;\n",
+        ),
+        (
+            "src/md/slop.rs",
+            "//! Records.\nfn f() {\n    crate::html::layout::width();\n}\n",
+        ),
+        (
+            "src/md/leads-tests.rs",
+            "//! Tests.\nuse crate::{model, html::{self, layout}};\n",
+        ),
+    ]);
+    let found = rules::side_imports(dir.path()).unwrap();
+    let expected = [
+        "src/html.rs",
+        "src/html/page.rs",
+        "src/md/leads-tests.rs",
+        "src/md/slop.rs",
+    ];
+    assert_eq!(
+        summary(&found),
+        expected.map(|path| (path, rules::SIDE_IMPORT))
+    );
+    for (violation, wanted) in found.iter().zip([
+        "line 2 takes from crate::md ",
+        "line 3 takes from crate::md ",
+        "line 2 takes from crate::html ",
+        "line 3 takes from crate::html ",
+    ]) {
+        assert!(violation.fix.contains(wanted), "{violation}");
+    }
+}
+
+#[test]
+fn shared_code_and_paths_inside_one_side_pass() {
+    let dir = package(&[
+        (
+            "src/pipeline.rs",
+            "//! Runs both sides.\nuse crate::{html, md};\nuse crate::md::leads;\n",
+        ),
+        (
+            "src/html/page.rs",
+            "//! Page.\nuse crate::html::layout::Block;\nuse crate::{model, html::order};\n\
+             use crate::md_index::Entry;\nuse mycrate::md::Lead;\n",
+        ),
+        (
+            "src/md/slop.rs",
+            "//! Records.\nuse crate::md::leads::Lead;\nuse crate::model::{html, Text};\n",
+        ),
+        (
+            "src/mdx/page.rs",
+            "//! Not a side.\nuse crate::html::Page;\n",
+        ),
+    ]);
+    assert_clean(&rules::side_imports(dir.path()).unwrap());
+}
+
+#[test]
 fn misnamed_plan_is_a_violation() {
     let dir = package(&[
         ("plans/notes.md", ""),

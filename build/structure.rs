@@ -18,6 +18,11 @@ pub(crate) const LINT_LEVEL: &str =
     "lint levels belong in the [lints] tables of Cargo.toml, not in #![...] attributes";
 pub(crate) const PLAN_NAME: &str =
     "plans/ holds only files named YYYY-MM-DD-<one to three kebab words>.plan.md";
+pub(crate) const SIDE_IMPORT: &str =
+    "the HTML code in src/html and the markdown code in src/md never name each other's modules";
+
+/// The output sides of `src`, each a module with a folder of its name.
+const SIDES: [&str; 2] = ["html", "md"];
 
 /// Directories never walked, relative to the package root. The fixtures are
 /// source trees for the tool to read, so they break these rules on purpose.
@@ -73,6 +78,7 @@ pub(crate) fn check(root: &Path) -> io::Result<Vec<Violation>> {
     violations.extend(mod_rs(root)?);
     violations.extend(module_docs(root)?);
     violations.extend(lint_levels(root)?);
+    violations.extend(side_imports(root)?);
     violations.extend(plan_names(root)?);
     violations.sort_by(|a, b| (&a.path, a.rule).cmp(&(&b.path, b.rule)));
     Ok(violations)
@@ -171,6 +177,96 @@ pub(crate) fn lint_levels(root: &Path) -> io::Result<Vec<Violation>> {
         }
     }
     Ok(found)
+}
+
+/// A `.rs` file of one output side, `src/html` or `src/md`, that names a
+/// module of the other side by a `crate::` path. Code that both sides use
+/// is outside the two folders. The check reads text, so a path in a comment
+/// or in a string counts too.
+pub(crate) fn side_imports(root: &Path) -> io::Result<Vec<Violation>> {
+    let mut found = Vec::new();
+    for (name, path) in rust_files(root, "src")? {
+        let Some(side) = SIDES.iter().find(|side| in_side(&name, side)) else {
+            continue;
+        };
+        let text = read(&path)?;
+        for other in SIDES.iter().filter(|other| *other != side) {
+            for line in lines_naming(&text, other) {
+                let fix = format!(
+                    "move what line {line} takes from crate::{other} to a module outside \
+                     src/html and src/md"
+                );
+                found.push(Violation::new(name.clone(), SIDE_IMPORT, fix));
+            }
+        }
+    }
+    Ok(found)
+}
+
+/// Whether the file `name` is the module file of `side`, such as
+/// `src/html.rs`, or a file below its folder.
+fn in_side(name: &str, side: &str) -> bool {
+    name.strip_prefix("src/")
+        .and_then(|rest| rest.strip_prefix(side))
+        .is_some_and(|rest| rest == ".rs" || rest.starts_with('/'))
+}
+
+/// The lines of `text`, counted from 1, that start a `crate::` path whose
+/// first segment is `module`: `crate::module`, or a `crate::{...}` list
+/// with `module` as the first segment of one of its entries.
+fn lines_naming(text: &str, module: &str) -> Vec<usize> {
+    let mut lines = Vec::new();
+    for (start, key) in text.match_indices("crate::") {
+        if text[..start].chars().next_back().is_some_and(is_ident) {
+            continue;
+        }
+        let rest = &text[start + key.len()..];
+        let names = match rest.strip_prefix('{') {
+            Some(list) => first_segments(list),
+            None => vec![leading_ident(rest)],
+        };
+        if names.contains(&module) {
+            lines.push(text[..start].matches('\n').count() + 1);
+        }
+    }
+    lines
+}
+
+/// The first segment of each entry of a `use` list, given the text after
+/// its opening brace. A nested list belongs to the entry it is in.
+fn first_segments(list: &str) -> Vec<&str> {
+    let mut names = Vec::new();
+    let mut depth = 1_usize;
+    let mut entry_starts = true;
+    for (index, c) in list.char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    break;
+                }
+            }
+            ',' if depth == 1 => entry_starts = true,
+            _ if c.is_whitespace() => {}
+            _ if entry_starts && depth == 1 => {
+                names.push(leading_ident(&list[index..]));
+                entry_starts = false;
+            }
+            _ => {}
+        }
+    }
+    names
+}
+
+/// The identifier that `text` starts with, empty when it starts with none.
+fn leading_ident(text: &str) -> &str {
+    let end = text.find(|c| !is_ident(c)).unwrap_or(text.len());
+    &text[..end]
+}
+
+fn is_ident(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
 }
 
 /// A file in `plans/` that `is_plan_name` rejects, or any folder there.
