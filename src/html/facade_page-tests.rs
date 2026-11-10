@@ -110,7 +110,7 @@ fn a_header_leaves_out_pub_and_keeps_any_other_visibility() {
     );
 }
 
-/// Returns the sidebar's API entry of a crate `runvil` for `counts`, each
+/// Returns the sidebar's API entries of a crate `runvil` for `counts`, each
 /// a module path with `.` between its names, empty for the crate root.
 fn tree(counts: &[(&str, usize)]) -> String {
     let paths: Vec<Vec<String>> = (counts.iter())
@@ -133,13 +133,13 @@ fn tree(counts: &[(&str, usize)]) -> String {
 fn the_sidebar_puts_the_modules_of_the_api_below_the_crate_root() {
     assert_eq!(
         tree(&[("", 18), ("effect", 3), ("vfs.path", 2)]),
-        "<li><a href=\"#api\">API</a>\n<ul>\n\
+        "<li><a href=\"#api\">API</a></li>\n\
          <li><a href=\"#api.mod\">runvil</a> <span class=\"dim\">18</span>\n<ul>\n\
          <li><a href=\"#api.mod.effect\">effect</a> <span class=\"dim\">3</span></li>\n\
          <li><a href=\"#api.mod.vfs.path\">vfs::path</a> <span class=\"dim\">2</span></li>\n\
-         </ul>\n</li>\n\
          </ul>\n</li>\n",
-        "a module at the crate's level would read as `runvil::runvil`"
+        "a module at the crate's level would read as `runvil::runvil`, and the crate is at \
+         the level of `API`, which holds nothing else"
     );
 }
 
@@ -147,24 +147,19 @@ fn the_sidebar_puts_the_modules_of_the_api_below_the_crate_root() {
 fn a_crate_root_with_no_module_below_it_is_one_line() {
     assert_eq!(
         tree(&[("", 5)]),
-        "<li><a href=\"#api\">API</a>\n<ul>\n\
-         <li><a href=\"#api.mod\">runvil</a> <span class=\"dim\">5</span></li>\n\
-         </ul>\n</li>\n"
+        "<li><a href=\"#api\">API</a></li>\n\
+         <li><a href=\"#api.mod\">runvil</a> <span class=\"dim\">5</span></li>\n"
     );
-    assert_eq!(
-        tree(&[]),
-        "<li><a href=\"#api\">API</a>\n<ul>\n</ul>\n</li>\n"
-    );
+    assert_eq!(tree(&[]), "<li><a href=\"#api\">API</a></li>\n");
 }
 
 #[test]
 fn a_crate_root_that_holds_no_item_is_a_plain_name_above_its_modules() {
     assert_eq!(
         tree(&[("effect", 3)]),
-        "<li><a href=\"#api\">API</a>\n<ul>\n\
+        "<li><a href=\"#api\">API</a></li>\n\
          <li>runvil\n<ul>\n\
          <li><a href=\"#api.mod.effect\">effect</a> <span class=\"dim\">3</span></li>\n\
-         </ul>\n</li>\n\
          </ul>\n</li>\n",
         "the page has no section for a root with no item, so there is nothing to link to"
     );

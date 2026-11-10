@@ -428,18 +428,16 @@ impl Named {
     }
 }
 
-/// Writes the sidebar's entry of the API as a tree: the crate root, and
-/// indented below it each module of the API by its path, so that no module
-/// reads as a sibling of the crate. Each has the count of its items, and
-/// `counts` gives them in page order, crate root first. A crate root that
-/// holds no item of the API has no section, so its name is plain text.
+/// Writes the sidebar's entries of the API: the link to its summary, and
+/// at the same level the crate root, with each module of the API indented
+/// below it by its path, so that no module reads as a sibling of the
+/// crate. Each has the count of its items, and `counts` gives them in page
+/// order, crate root first. A crate root that holds no item of the API has
+/// no section, so its name is plain text.
 fn api_tree(out: &mut String, title: &str, counts: &[(&[String], usize)]) {
-    out.push_str("<li><a href=\"#api\">API</a>\n<ul>\n");
+    out.push_str("<li><a href=\"#api\">API</a></li>\n");
     let modules = match counts {
-        [] => {
-            out.push_str("</ul>\n</li>\n");
-            return;
-        }
+        [] => return,
         [(path, count), modules @ ..] if path.is_empty() => {
             let _ = write!(out, "<li>{}", module_entry(title, path, *count));
             modules
@@ -458,7 +456,6 @@ fn api_tree(out: &mut String, title: &str, counts: &[(&[String], usize)]) {
         }
         out.push_str("</ul>\n</li>\n");
     }
-    out.push_str("</ul>\n</li>\n");
 }
 
 /// Returns the link to a module's section, with the count of its items.
