@@ -428,16 +428,23 @@ fn an_item_ends_its_line_with_the_users_that_do_not_use_it_and_is_dim_when_none_
 }
 
 #[test]
-fn the_opening_sentence_counts_the_users_and_the_items_none_of_them_uses() {
-    assert_eq!(usage("runvil", 0, 0), "", "no crate of the run uses it");
-    assert_eq!(usage("runvil", 4, 0), " 4 crates here use runvil.");
+fn the_opening_line_counts_the_users_and_the_unused_items() {
     assert_eq!(
-        usage("runvil", 4, 56),
-        " 4 crates here use runvil, and none of them uses 56 of the items."
+        usage("runvil", 0, 0, 122),
+        "",
+        "no crate of the run uses it"
     );
     assert_eq!(
-        usage("relay", 1, 1),
-        " 1 crate here uses relay, and it does not use 1 of the items."
+        usage("runvil", 4, 0, 122),
+        " 4 crates here use runvil. Every item is used."
+    );
+    assert_eq!(
+        usage("runvil", 4, 57, 122),
+        " 4 crates here use runvil. 57 of its 122 items are unused."
+    );
+    assert_eq!(
+        usage("relay", 1, 1, 6),
+        " 1 crate here uses relay. 1 of its 6 items is unused."
     );
 }
 

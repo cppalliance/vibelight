@@ -167,7 +167,7 @@ fn facades(out: &mut String, overview: &Overview<'_>) {
             n => format!("<br>{n} modules"),
         };
         let unused = match overview.unused.get(t) {
-            Some(&n) if n > 0 => format!("<br><b>{n}</b> used by none"),
+            Some(&n) if n > 0 => format!("<br><b>{n}</b> unused"),
             _ => String::new(),
         };
         let _ = writeln!(

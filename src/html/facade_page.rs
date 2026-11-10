@@ -255,7 +255,7 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
         escape(title),
         counted(items, "item"),
         escape(title),
-        escape(&usage(title, facade.used_by.len(), unused))
+        escape(&usage(title, facade.used_by.len(), unused, items))
     );
     for (path, (module, items)) in &groups {
         view.module_section(&mut out, (path, *module), items);
@@ -273,19 +273,21 @@ pub(crate) fn fragment(facade: &Facade<'_>, exports: &Exports, stamp: &str) -> R
     }
 }
 
-/// Returns the sentence on who uses a facade named `title`: how many
-/// crates of the run use it, and how many items of its API none of them
-/// uses. A facade that no crate of the run uses gets no sentence.
-fn usage(title: &str, users: usize, unused: usize) -> String {
+/// Returns the sentences on who uses a facade named `title`: how many
+/// crates of the run use it, and how many of its `items` are unused, which
+/// is to say that none of those crates uses them. A facade that no crate
+/// of the run uses gets no sentence.
+fn usage(title: &str, users: usize, unused: usize, items: usize) -> String {
     let crates = match users {
         0 => return String::new(),
-        1 => format!("1 crate here uses {title}"),
-        n => format!("{n} crates here use {title}"),
+        1 => format!("1 crate here uses {title}."),
+        n => format!("{n} crates here use {title}."),
     };
-    match (unused, users) {
-        (0, _) => format!(" {crates}."),
-        (_, 1) => format!(" {crates}, and it does not use {unused} of the items."),
-        _ => format!(" {crates}, and none of them uses {unused} of the items."),
+    let all = counted(items, "item");
+    match unused {
+        0 => format!(" {crates} Every item is used."),
+        1 => format!(" {crates} 1 of its {all} is unused."),
+        n => format!(" {crates} {n} of its {all} are unused."),
     }
 }
 
