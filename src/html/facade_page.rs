@@ -2,10 +2,9 @@
 //! users can name, grouped by the module they name it in, each with the
 //! declaration it names, pulled from the crate that defines it and shown as
 //! those users see it, with its `pub` members alone and no `pub` in a type's
-//! header, which every item of the page is. Each module shows its
-//! items twice, at a glance and documented, and each item says where the
-//! crate that defines it writes it. The sidebar lists the crate root with
-//! the modules of the API indented below it.
+//! header, which every item of the page is. Each item says where the crate
+//! that defines it writes it. The sidebar lists the crate root with the
+//! modules of the API indented below it.
 //!
 //! The page also reads what the code of those items names. A type that no
 //! other item of the API names is where a reader starts, so the sidebar
@@ -16,8 +15,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use crate::html::document::Document;
-use crate::html::glance;
-use crate::html::layout::decl::{compact_public_block, public_block};
+use crate::html::fn_ids;
+use crate::html::layout::decl::public_block;
 use crate::html::layout::items::{docs_block, item_block};
 use crate::html::layout::{Block, Line, Span, key, plain};
 use crate::html::render_html::{Anchors, ApiIds, Page, attr, escape};
@@ -570,8 +569,8 @@ impl View<'_> {
         }
     }
 
-    /// Writes one module's section: its heading, its docs, its items at a
-    /// glance, then each item documented.
+    /// Writes one module's section: its heading, its docs, then each of
+    /// its items.
     fn module_section(
         &self,
         out: &mut String,
@@ -594,33 +593,6 @@ impl View<'_> {
         );
         if let Some(docs) = module.and_then(|m| docs_block(&own.krate.modules[m].docs, &[])) {
             self.page(facade.index).pre(out, &docs);
-        }
-        let compacts: Vec<(usize, Vec<Line>)> = items
-            .iter()
-            .map(|named| {
-                let prefix = glance::fn_prefix(&named.id);
-                let compact = match named.item {
-                    Some(Reach::Decl(d)) => {
-                        compact_public_block(facade.owners[named.owner].krate, d, &named.name)
-                    }
-                    _ => None,
-                };
-                let block = compact.as_ref().unwrap_or(&named.block);
-                let lines = glance::anchored(&block.lines, &prefix, true);
-                let lines = glance::linked(&lines, |_| self.is_fn(named).then(|| named.id.clone()));
-                (named.owner, glance::compact(&lines))
-            })
-            .filter(|(_, lines)| !lines.is_empty())
-            .collect();
-        if !compacts.is_empty() {
-            out.push_str("<p class=\"view\">At a glance</p>\n<pre class=\"glance\"><code>");
-            for (i, (owner, lines)) in compacts.iter().enumerate() {
-                if i > 0 {
-                    out.push_str("\n\n");
-                }
-                self.page(*owner).code_lines(out, lines);
-            }
-            out.push_str("</code></pre>\n<p class=\"view\">Documented</p>\n");
         }
         for named in items {
             self.item_section(out, path, named);
@@ -672,7 +644,7 @@ impl View<'_> {
             let _ = writeln!(out, "<p class=\"defined\">{at}{file}</p>");
         }
         let block = Block {
-            lines: glance::anchored(&named.block.lines, &glance::fn_prefix(&named.id), false),
+            lines: fn_ids::anchored(&named.block.lines, &fn_ids::fn_prefix(&named.id)),
             repeats: named.block.repeats.clone(),
         };
         self.page(named.owner).pre(out, &block);
@@ -754,19 +726,6 @@ impl View<'_> {
             }
             out.push_str("</p>\n");
         }
-    }
-
-    /// Whether an item of the API is a module-level function, whose name the
-    /// compact view links to the item's heading.
-    fn is_fn(&self, named: &Named) -> bool {
-        let Some(Reach::Value(at)) = named.item else {
-            return false;
-        };
-        let krate = self.facade.owners[named.owner].krate;
-        matches!(
-            krate.modules[at.module].items[at.item].kind,
-            ItemKind::Fn(_)
-        )
     }
 }
 

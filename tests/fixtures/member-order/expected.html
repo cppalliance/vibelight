@@ -29,44 +29,6 @@
 </ul>
 <h2 id="mod.member_order">member_order</h2>
 <p class="anatomy">crate root: 5 types; pub 5</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Based : AsRef&lt;str&gt;, Clone, Debug
-{
-<span class="k">pub:</span>
-    <span class="src">Based</span>()
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Grouped
-{
-    <span class="k">using</span> <span class="src">Out</span>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: u8
-    <span class="k">static</span> <a class="fn" href="#fn.member_order.Grouped.build">build</a>() -&gt; Self
-    <a class="fn" href="#fn.member_order.Grouped.member">member</a>()
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Order
-{
-    <span class="src">Zulu</span>,
-    <span class="src">Alpha</span>,
-    <span class="src">Mike</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Scrambled
-{
-<span class="k">pub:</span>
-    <span class="src">zeta</span>: u8,
-    <span class="src">alpha</span>: u8,
-    <span class="src">Alpha</span>: u8,
-<span class="k">pub(self):</span>
-    <span class="src">beta</span>: u8,
-<span class="k">pub:</span>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u8 = 9
-    <span class="k">static</span> <a class="fn" href="#fn.member_order.Scrambled.make">make</a>() -&gt; <a href="#type.member_order.Scrambled">Scrambled</a>
-    <a class="fn" href="#fn.member_order.Scrambled.Apply">Apply</a>()
-    <a class="fn" href="#fn.member_order.Scrambled.apply">apply</a>()
-    <a class="fn" href="#fn.member_order.Scrambled.zed">zed</a>()
-<span class="k">pub(self):</span>
-    <span class="k">static</span> <a class="fn" href="#fn.member_order.Scrambled.hidden">hidden</a>()
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Triple(<span class="k">pub</span> u8, <span class="k">pub</span> String, <span class="k">pub</span> bool)</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.member_order.Based">Based</h3>
 <div class="doc">
 <p><span class="c">The base list is sorted.</span></p>

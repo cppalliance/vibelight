@@ -38,21 +38,9 @@ pub(crate) enum Span {
     /// The name of a module-level function, constant, or static, which HTML
     /// links to its source line and gives an id.
     Value(String, Loc, ValueRef),
-    /// A member function's name, which HTML links to its source line, or
-    /// to where the page documents it when the anchor says so.
-    Fn(String, Loc, Anchor),
-}
-
-/// What a function's name anchors on a page: the documented view gives the
-/// name an id, and the compact view links the name to that id.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Anchor {
-    /// Neither: the name links to its source line alone.
-    None,
-    /// The id the name takes.
-    Id(String),
-    /// The id the name links to.
-    Link(String),
+    /// A member function's name, which HTML links to its source line, with
+    /// the id the name takes on the page when it has one.
+    Fn(String, Loc, Option<String>),
 }
 
 /// One line of a block.

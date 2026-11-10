@@ -4,7 +4,7 @@ use crate::access::Access;
 use crate::html::layout::groups::{Entry, reaches_line, spaced};
 use crate::html::layout::marker::Marker;
 use crate::html::layout::{
-    Anchor, Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
+    Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
     vis_spans, width,
 };
 use crate::html::wrap::MAX_WIDTH;
@@ -73,7 +73,7 @@ pub(crate) fn member_entry(krate: &Crate, member: &Member, shown: Option<Access>
             lines.extend(fn_lines(
                 krate,
                 sig,
-                Span::Fn(sig.name.clone(), member.loc, Anchor::None),
+                Span::Fn(sig.name.clone(), member.loc, None),
                 trailing,
                 4,
                 member.kind.is_static_fn(),

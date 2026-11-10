@@ -23,25 +23,6 @@
 </ul>
 <h2 id="mod.receivers">receivers</h2>
 <p class="anatomy">crate root: 1 type, 1 function; pub 2</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Node
-{
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.receivers.Node.none">none</a>()
-    <a class="fn" href="#fn.receivers.Node.boxed">boxed</a>(self: Box&lt;Self&gt;)
-    <a class="fn" href="#fn.receivers.Node.consume">consume</a>(self)
-    <a class="fn" href="#fn.receivers.Node.consume_mut">consume_mut</a>(mut self)
-    <a class="fn" href="#fn.receivers.Node.counted">counted</a>(self: Rc&lt;Self&gt;)
-    <a class="fn" href="#fn.receivers.Node.exclusive">exclusive</a>() <span class="k">mut</span>
-    <a class="fn" href="#fn.receivers.Node.explicit">explicit</a>() -&gt; u8
-    <a class="fn" href="#fn.receivers.Node.explicit_mut">explicit_mut</a>() <span class="k">mut</span>
-    <a class="fn" href="#fn.receivers.Node.lifetime">lifetime</a>&lt;'a&gt;() -&gt; str&amp; 'a
-    <a class="fn" href="#fn.receivers.Node.pinned">pinned</a>(self: Pin&lt;Self mut&amp;&gt;)
-    <a class="fn" href="#fn.receivers.Node.shared">shared</a>() -&gt; u8
-}
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.receivers.free">free</a>(node: <a href="#type.receivers.Node">Node</a>&amp;)</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.receivers.Node">Node</h3>
 <div class="doc">
 <p><span class="c">Every receiver form.</span></p>

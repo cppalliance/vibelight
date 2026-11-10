@@ -38,22 +38,6 @@
 </ul>
 <h2 id="mod.functions">functions</h2>
 <p class="anatomy">crate root: 10 functions; pub 9, pub(self) 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub:</span>
-<span class="k">constexpr</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <a class="fn" href="#fn.functions.all_qualifiers">all_qualifiers</a>()
-<a class="fn" href="#fn.functions.apply">apply</a>&lt;F&gt;(f: F) -&gt; usize <span class="k">where</span> F: for&lt;'a&gt; Fn(str&amp; 'a) -&gt; usize
-<span class="k">extern "C"</span> <a class="fn" href="#fn.functions.callback">callback</a>(code: i32) -&gt; i32
-<a class="fn" href="#fn.functions.merge">merge</a>&lt;A, B, C&gt;(a: A, b: B) -&gt;
-    C <span class="k">where</span> A: Into&lt;C&gt;, B: Into&lt;C&gt;, C: std::ops::Add&lt;Output = C&gt;
-<a class="fn" href="#fn.functions.parse">parse</a>(input: str&amp;, execution: str&amp;) -&gt;
-    (std::result::Result&lt;String, String&gt;, Vec&lt;String&gt;)
-<span class="k">unsafe</span> <a class="fn" href="#fn.functions.peek">peek</a>(ptr: u8*) -&gt; u8
-<a class="fn" href="#fn.functions.render">render</a>(out: impl std::io::Write mut&amp;, items: [Box&lt;dyn std::fmt::Display&gt;]&amp;)
-<span class="k">constexpr</span> <a class="fn" href="#fn.functions.square">square</a>(x: u32) -&gt; u32
-<span class="k">async</span> <a class="fn" href="#fn.functions.wait">wait</a>(seconds: u64)
-<span class="k">pub(self):</span>
-<a class="fn" href="#fn.functions.private_helper">private_helper</a>()</code></pre>
-<p class="view">Documented</p>
 <pre><code><span class="k">pub:</span>
 <span class="c"> Every qualifier at once.</span>
 <span class="k">constexpr</span> <span class="k">unsafe</span> <span class="k">extern "C"</span> <span class="src" id="fn.functions.all_qualifiers">all_qualifiers</span>()

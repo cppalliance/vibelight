@@ -12,10 +12,7 @@ use crate::anatomy::{self, Anatomy};
 use crate::html::document::{
     Builder, Inline, Item, Node, anchor, crumb, plain_links, strong_anchor,
 };
-use crate::html::glance;
-use crate::html::layout::decl::compact_block;
 use crate::html::layout::items::{docs_block, module_block};
-use crate::html::layout::{Block, Line};
 use crate::html::order::Order;
 use crate::model::{Crate, DeclId, ItemKind, Loc, ModId, ValueRef, path_order};
 use crate::surface::{Entry, Kind};
@@ -106,40 +103,10 @@ impl Builder<'_> {
                 inlines,
             });
         }
-        let items = module_block(krate, m);
-        let mut views: Vec<Vec<Line>> = (types.iter())
-            .map(|&d| {
-                let prefix = glance::fn_prefix(&self.decl_ids[d]);
-                let compact = compact_block(krate, d);
-                let block = compact.as_ref().unwrap_or(&self.blocks[d]);
-                glance::anchored(&block.lines, &prefix, true)
-            })
-            .collect();
-        if let Some(block) = &items {
-            let is_fn = |at: ValueRef| {
-                at.module == m && matches!(module.items[at.item].kind, ItemKind::Fn(_))
-            };
-            views.push(glance::linked(&block.lines, |at| {
-                (self.value_ids.get(&at))
-                    .filter(|id| is_fn(at) && !id.is_empty())
-                    .cloned()
-            }));
-        }
-        let lines = glance::joined(views.iter().map(Vec::as_slice));
-        if !lines.is_empty() {
-            self.nodes.push(Node::Glance(Block {
-                lines,
-                repeats: Vec::new(),
-            }));
-            self.nodes.push(Node::Note {
-                class: "view",
-                text: "Documented".to_owned(),
-            });
-        }
         for &d in types {
             self.decl(d);
         }
-        if let Some(block) = items {
+        if let Some(block) = module_block(krate, m) {
             self.code(block);
         }
     }

@@ -43,14 +43,6 @@
 </ul>
 <h2 id="mod.value_links">value_links</h2>
 <p class="anatomy">crate root: 5 re-exports; pub 5</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub:</span>
-<span class="k">using</span> <a href="#fn.value_links.tools.backend-2">tools::backend</a>
-<span class="k">using</span> GRAND_TOTAL = <a href="#static.value_links.tools.TOTAL">tools::TOTAL</a>
-<span class="k">using</span> <a href="#const.value_links.tools.LIMIT">tools::LIMIT</a>
-<span class="k">using</span> <a href="#fn.value_links.tools.measure">relay::measure</a>
-<span class="k">using</span> <a href="#type.value_links.tools.Shape">tools::Shape</a></code></pre>
-<p class="view">Documented</p>
 <pre><code><span class="k">pub:</span>
 <span class="k">using</span> <a href="#fn.value_links.tools.backend-2">tools::backend</a>
 <span class="k">using</span> GRAND_TOTAL = <a href="#static.value_links.tools.TOTAL">tools::TOTAL</a>
@@ -63,11 +55,6 @@
 </div>
 <p class="anatomy">mod: 2 re-exports; pub 2</p>
 <p class="coupling">Uses 1 module: <a href="#mod.value_links.tools">tools</a> (2). Instability 1.00.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub:</span>
-<span class="k">using</span> <a href="#fn.value_links.tools.measure">crate::tools::measure</a>
-<span class="k">using</span> <a href="#static.value_links.tools.TOTAL">crate::tools::TOTAL</a></code></pre>
-<p class="view">Documented</p>
 <pre><code><span class="k">pub:</span>
 <span class="dim">reaches pub(crate)</span>
 <span class="k">using</span> <a href="#fn.value_links.tools.measure">crate::tools::measure</a>
@@ -79,20 +66,6 @@
 </div>
 <p class="anatomy">pub mod: 1 type, 4 functions, 2 values; pub 7</p>
 <p class="coupling">Used by 1 module: <a href="#mod.value_links.relay">relay</a> (2). Instability 0.00.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Shape
-{
-<span class="k">pub:</span>
-    <span class="src">sides</span>: u8,
-}
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">constexpr</span> <span class="src">LIMIT</span>: u32 = 8
-<span class="k">static</span> <span class="src">TOTAL</span>: u32 = 0
-<a class="fn" href="#fn.value_links.tools.backend">backend</a>() -&gt; u8
-<a class="fn" href="#fn.value_links.tools.backend-2">backend</a>() -&gt; u8
-<a class="fn" href="#fn.value_links.tools.measure">measure</a>() -&gt; u32
-<a class="fn" href="#fn.value_links.tools.Shape">Shape</a>()</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.value_links.tools.Shape"><span class="dim">tools::</span>Shape</h3>
 <div class="doc">
 <p><span class="c">A shape that </span><code><span class="c"><a href="#fn.value_links.tools.measure">measure</a></span></code><span class="c"> sizes, also reached as </span><code><span class="c"><a href="#fn.value_links.tools.measure">crate::relay::measure</a></span></code><span class="c">.</span></p>

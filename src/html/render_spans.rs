@@ -4,7 +4,7 @@
 
 use std::fmt::Write as _;
 
-use crate::html::layout::{Anchor, Line, Span};
+use crate::html::layout::{Line, Span};
 use crate::model::{CrossRef, Loc, Reach};
 
 use crate::html::render_html::{Page, attr, escape};
@@ -119,18 +119,7 @@ impl Page<'_> {
                         (self.doc.value_ids.get(value).map(String::as_str)).filter(|_| self.ids);
                     self.name(out, text, *loc, id);
                 }
-                Span::Fn(text, loc, anchor) => match anchor {
-                    Anchor::None => self.name(out, text, *loc, None),
-                    Anchor::Id(id) => self.name(out, text, *loc, Some(id)),
-                    Anchor::Link(id) => {
-                        let _ = write!(
-                            out,
-                            "<a class=\"fn\" href=\"#{}\">{}</a>",
-                            attr(id),
-                            escape(text)
-                        );
-                    }
-                },
+                Span::Fn(text, loc, id) => self.name(out, text, *loc, id.as_deref()),
             }
         }
         if in_comment {

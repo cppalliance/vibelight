@@ -39,13 +39,6 @@
 </ul>
 <h2 id="mod.macro_expansion">macro_expansion</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 re-export; pub 4</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Alpha
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Beta
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">using</span> <a href="#type.macro_expansion.events.Event">events::Event</a>
-<a class="fn" href="#fn.macro_expansion.run_of">run_of</a>(event: <a href="#type.macro_expansion.events.Event">Event</a>&amp;) -&gt; str&amp;</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.macro_expansion.Alpha">Alpha</h3>
 <div class="doc">
 <p><span class="c">A marker that the macro writes.</span></p>
@@ -69,28 +62,6 @@
 <p><span class="c">Events whose variants all carry the same stamp field first.</span></p>
 </div>
 <p class="anatomy">mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event : Clone, Debug
-{
-    <span class="src">Started</span>
-    {
-        execution: String,
-    },
-    <span class="src">Stopped</span>
-    {
-        execution: String,
-        code: i32,
-    },
-    <span class="src">Moved</span>
-    {
-        execution: String,
-        from: u32,
-        to: u32,
-    },
-<span class="k">pub:</span>
-    <a class="fn" href="#fn.macro_expansion.events.Event.execution">execution</a>() -&gt; str&amp;
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.macro_expansion.events.Event"><span class="dim">events::</span>Event</h3>
 <div class="doc">
 <p><span class="c">One thing that happened during a run.</span></p>

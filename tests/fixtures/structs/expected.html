@@ -37,42 +37,6 @@
 </ul>
 <h2 id="mod.structs">structs</h2>
 <p class="anatomy">crate root: 9 types; pub 9</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Buffer&lt;'a, T: Clone = u8, const N: usize = 16&gt;
-{
-<span class="k">pub:</span>
-    <span class="src">data</span>: [T; N]&amp; 'a,
-<span class="k">pub(self):</span>
-    <span class="src">len</span>: usize,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Empty
-{
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Index(usize)
-{
-<span class="k">pub:</span>
-    <a class="fn" href="#fn.structs.Index.get">get</a>() -&gt; usize
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Marker
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Meters(<span class="k">pub</span> f64)
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Pair(<span class="k">pub</span> u8, u16)
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Point
-{
-<span class="k">pub:</span>
-    <span class="src">x</span>: i32,
-    <span class="src">y</span>: i32,
-<span class="k">pub(self):</span>
-    <span class="src">label</span>: String,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Span(
-    <span class="k">pub</span> usize,
-    <span class="k">pub</span> usize)
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Token
-{
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.structs.Token.new">new</a>() -&gt; <a href="#type.structs.Token">Token</a>
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.structs.Buffer">Buffer</h3>
 <div class="doc">
 <p><span class="c">Generics with a lifetime, a bound, a default, and a const generic.</span></p>

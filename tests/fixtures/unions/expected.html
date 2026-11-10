@@ -23,22 +23,6 @@
 </ul>
 <h2 id="mod.unions">unions</h2>
 <p class="anatomy">crate root: 2 types; pub 2</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">union</span> Bits
-{
-<span class="k">pub:</span>
-    <span class="src">int</span>: u32,
-    <span class="src">float</span>: f32,
-<span class="k">pub(self):</span>
-    <span class="src">raw</span>: [u8; 4],
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">union</span> Hidden
-{
-<span class="k">pub(self):</span>
-    <span class="src">b</span>: i8,
-    <span class="src">a</span>: u8,
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.unions.Bits">Bits</h3>
 <div class="doc">
 <p><span class="c">Raw bits viewed two ways.</span></p>

@@ -44,9 +44,6 @@
 </ul>
 <h2 id="mod.order_modules">order_modules</h2>
 <p class="anatomy">crate root: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Orphan</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.order_modules.Orphan">Orphan</h3>
 <div class="doc">
 <p><span class="c">A value nothing uses.</span></p>
@@ -58,15 +55,6 @@
 </div>
 <p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
 <p class="coupling">Used by 1 module: <a href="#mod.order_modules.plan">plan</a> (1). Uses 1 module: <a href="#mod.order_modules.plan">plan</a> (1). Instability 0.50.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Runner
-{
-<span class="k">pub:</span>
-    <span class="src">plan</span>: <a href="#type.order_modules.plan.Plan">crate::plan::Plan</a>,
-}
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.order_modules.engine.start">start</a>()</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.order_modules.engine.Runner"><span class="dim">engine::</span>Runner</h3>
 <div class="doc">
 <p><span class="c">A runner.</span></p>
@@ -85,17 +73,6 @@
 </div>
 <p class="anatomy">pub mod: 3 types, 1 function; pub 4</p>
 <p class="coupling">Used by 1 module: <a href="#mod.order_modules.engine">engine</a> (1). Uses 1 module: <a href="#mod.order_modules.engine">engine</a> (1). Instability 0.50.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Plan
-{
-<span class="k">pub:</span>
-    <span class="src">steps</span>: Vec&lt;<a href="#type.order_modules.plan.Step">Step</a>&gt;,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Step
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> FakeStep
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.order_modules.plan.launch">launch</a>()</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.order_modules.plan.Plan"><span class="dim">plan::</span>Plan</h3>
 <div class="doc">
 <p><span class="c">A plan.</span></p>

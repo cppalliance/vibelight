@@ -21,32 +21,6 @@
 </div>
 <p class="note" id="api">The public API of facade: 5 items, from 2 other crates. Each shows only what a user of facade can name. Their code names <a href="#named">1 item that facade does not re-export</a>.</p>
 <h2 id="api.mod">facade</h2>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">struct</span> Gauge
-
-<span class="k">struct</span> Meter
-{
-<span class="k">pub:</span>
-    <span class="src">gauge</span>: <a href="#api.Gauge">Gauge</a>,
-    <span class="src">valve</span>: <a class="cross" href="beta.html#type.beta.parts.Valve">b::parts::Valve</a>,
-    <span class="src">stray</span>: delta::Stray,
-    <span class="src">vendored</span>: gamma::Vendored,
-}
-
-<span class="k">struct</span> Panel
-    : <a href="#api.Reads">alpha::Reads</a>
-{
-<span class="k">pub:</span>
-    <span class="src">meter</span>: <a href="#api.Meter">alpha::Meter</a>,
-}
-
-<span class="k">trait</span> Reads
-{
-    <a class="fn" href="#api.Reads.read">read</a>() -&gt; u32
-}
-
-<a class="fn" href="#fn.facade.show">show</a>&lt;T: <a href="#api.Reads">alpha::Reads</a>&gt;(reader: T&amp;) -&gt; u32</code></pre>
-<p class="view">Documented</p>
 <h3 id="api.Gauge"><span class="dim">facade::</span>Gauge</h3>
 <p class="defined">Defined in <a class="cross" href="beta.html#type.beta.parts.Gauge">beta::parts::Gauge</a>, <span class="src">src/lib.rs:7</span></p>
 <div class="doc">

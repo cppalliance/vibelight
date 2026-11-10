@@ -36,56 +36,6 @@
 </ul>
 <h2 id="mod.special_members">special_members</h2>
 <p class="anatomy">crate root: 7 types; pub 7</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Counter
-{
-<span class="k">pub(self):</span>
-    <span class="src">count</span>: u32,
-<span class="k">pub:</span>
-    <span class="src">Counter</span>() = <span class="k">default</span>
-    <a class="fn" href="#fn.special_members.Counter.count">count</a>() -&gt; u32
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Derived
-{
-<span class="k">pub:</span>
-    <span class="src">value</span>: u8,
-<span class="k">pub:</span>
-    <span class="src">Derived</span>() = <span class="k">default</span>
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Handle(u32)
-{
-<span class="k">pub:</span>
-    <span class="src">Handle</span>() = <span class="k">default</span>
-    <span class="src">~Handle</span>()
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Mode
-{
-    <span class="src">On</span>,
-    <span class="src">Off</span>,
-<span class="k">pub:</span>
-    <span class="src">Mode</span>() = <span class="k">default</span>
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Name(String) : From&lt;T&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Scheduler
-{
-<span class="k">pub(self):</span>
-    <span class="src">jobs</span>: Vec&lt;u32&gt;,
-<span class="k">pub:</span>
-    <span class="src">~Scheduler</span>()
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Written
-{
-<span class="k">pub:</span>
-    <span class="src">value</span>: u8,
-<span class="k">pub:</span>
-    <span class="src">Written</span>()
-    <span class="src">Written</span>(str&amp;)
-    <span class="src">Written</span>(u8&amp;)
-    <span class="src">~Written</span>()
-    <span class="k">static</span> <a class="fn" href="#fn.special_members.Written.new">new</a>() -&gt; Self
-    <a class="fn" href="#fn.special_members.Written.get">get</a>() -&gt; u8
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.special_members.Counter">Counter</h3>
 <div class="doc">
 <p><span class="c">A struct with a private section.</span></p>

@@ -196,9 +196,8 @@ mod tests {
     use super::*;
     use crate::html::layout::line_text;
 
-    /// Returns the lines of the declaration `name` in a one-file crate, and
-    /// the lines the compact view reads when they are not the same.
-    fn blocks(source: &str, name: &str) -> (Vec<String>, Option<Vec<String>>) {
+    /// Returns the lines of the declaration `name` in a one-file crate.
+    fn block(source: &str, name: &str) -> Vec<String> {
         let tmp = tempfile::tempdir().unwrap();
         let src = tmp.path().join("src");
         fs::create_dir_all(&src).unwrap();
@@ -208,21 +207,16 @@ mod tests {
         crate::resolve::resolve(&mut krate);
         crate::attach::attach(&mut krate);
         let id = krate.decls.iter().position(|d| d.name == name).unwrap();
-        let text = |block: crate::html::layout::Block| -> Vec<String> {
-            (block.lines.iter())
-                .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))
-                .collect()
-        };
-        (
-            text(crate::html::layout::decl::decl_block(&krate, id)),
-            crate::html::layout::decl::compact_block(&krate, id).map(text),
-        )
+        let block = crate::html::layout::decl::decl_block(&krate, id);
+        (block.lines.iter())
+            .map(|l| format!("{}{}", " ".repeat(l.indent), line_text(l, &krate.refs)))
+            .collect()
     }
 
     /// Returns the head of the declaration `name` in a one-file crate: its
     /// lines before the opening brace.
     fn head(source: &str, name: &str) -> Vec<String> {
-        let (lines, _) = blocks(source, name);
+        let lines = block(source, name);
         lines.into_iter().take_while(|l| l != "{").collect()
     }
 
@@ -258,9 +252,8 @@ mod tests {
                       /// Shows the run\n/// for a log.\n\
                       impl std::fmt::Debug for Run {}\n\
                       impl std::fmt::Binary for Run {}\n";
-        let (lines, compact) = blocks(source, "Run");
         assert_eq!(
-            lines,
+            block(source, "Run"),
             [
                 "pub struct Run",
                 "    : Binary, Display",
@@ -268,11 +261,6 @@ mod tests {
                 "      /// for a log.",
                 "    , Debug",
             ]
-        );
-        assert_eq!(
-            compact.expect("the compact view has its own block"),
-            ["pub struct Run : Binary, Debug, Display"],
-            "without the comment the base list is as short as it gets"
         );
     }
 
@@ -303,9 +291,8 @@ mod tests {
                       impl Run {\n    pub fn start(&self) {}\n}\n\
                       // Stopping.\n\
                       impl Run {\n    pub fn halt(&self) {}\n}\n";
-        let (lines, compact) = blocks(source, "Run");
         assert_eq!(
-            lines,
+            block(source, "Run"),
             [
                 "pub struct Run",
                 "{",
@@ -320,14 +307,15 @@ mod tests {
                 "}",
             ]
         );
-        assert!(compact.is_none(), "one block serves both views");
     }
 
     #[test]
     fn a_type_whose_only_body_is_the_comment_of_an_inherent_impl_has_a_body() {
         let source = "pub struct Run;\n// Nothing yet.\nimpl Run {}\n";
-        let (lines, _) = blocks(source, "Run");
-        assert_eq!(lines, ["pub struct Run", "{", "    // Nothing yet.", "}"]);
+        assert_eq!(
+            block(source, "Run"),
+            ["pub struct Run", "{", "    // Nothing yet.", "}"]
+        );
     }
 
     #[test]

@@ -25,38 +25,6 @@
 </ul>
 <h2 id="mod.enums">enums</h2>
 <p class="anatomy">crate root: 3 types; pub 3</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Event
-{
-    <span class="src">Started</span>
-    {
-        id: u64,
-        name: String,
-    },
-    <span class="src">Finished</span>
-    {
-        identifier: u64,
-        summary: String,
-        duration_in_milliseconds: u128,
-    },
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Level
-{
-    <span class="src">Low</span>,
-    <span class="src">High</span>,
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.enums.Level.max">max</a>() -&gt; <a href="#type.enums.Level">Level</a>
-<span class="k">pub(self):</span>
-    <a class="fn" href="#fn.enums.Level.rank">rank</a>() -&gt; u8
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Shape
-{
-    <span class="src">Unit</span>,
-    <span class="src">Tuple</span>(u8, String),
-    <span class="src">Named</span> { x: i32, y: i32 },
-    <span class="src">Valued</span> = 4,
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.enums.Event">Event</h3>
 <div class="doc">
 <p><span class="c">Struct-like variants that expand.</span></p>

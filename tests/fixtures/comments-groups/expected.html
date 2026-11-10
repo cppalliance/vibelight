@@ -45,21 +45,6 @@
 </ul>
 <h2 id="mod.comments_groups">comments_groups</h2>
 <p class="anatomy">crate root: 1 type, 4 re-exports; pub 5</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Handle
-    : Display
-    , <a href="#type.comments_groups.traits.Persist">traits::Persist</a>
-{
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.comments_groups.Handle.open">open</a>() -&gt; <a href="#type.comments_groups.Handle">Handle</a>
-    <a class="fn" href="#fn.comments_groups.Handle.get">get</a>() -&gt; u8
-}
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">using</span> <a href="#type.comments_groups.store.Key">store::Key</a>
-<span class="k">using</span> <a href="#fn.comments_groups.store.read">store::read</a>
-<span class="k">using</span> <a href="#fn.comments_groups.store.write">store::write</a>
-<span class="k">using</span> <a href="#type.comments_groups.store.Value">store::Value</a></code></pre>
-<p class="view">Documented</p>
 <h3 id="type.comments_groups.Handle">Handle</h3>
 <div class="doc">
 <p><span class="c">A handle.</span></p>
@@ -85,13 +70,6 @@
 <p><span class="c">Keys and values.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types, 2 functions; pub 4</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Key
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Value
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.comments_groups.store.read">read</a>()
-<a class="fn" href="#fn.comments_groups.store.write">write</a>()</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.comments_groups.store.Key"><span class="dim">store::</span>Key</h3>
 <div class="doc">
 <p><span class="c">A key.</span></p>
@@ -109,12 +87,6 @@
 <span class="src" id="fn.comments_groups.store.write">write</span>()</code></pre>
 <h2 id="mod.comments_groups.traits">traits</h2>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">trait</span> Persist
-{
-    <a class="fn" href="#fn.comments_groups.traits.Persist.save">save</a>()
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.comments_groups.traits.Persist"><span class="dim">traits::</span>Persist</h3>
 <div class="doc">
 <p><span class="c">Something that persists.</span></p>

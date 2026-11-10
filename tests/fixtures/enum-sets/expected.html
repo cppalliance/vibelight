@@ -33,64 +33,6 @@
 </ul>
 <h2 id="mod.enum_sets">enum_sets</h2>
 <p class="anatomy">crate root: 7 types; pub 7</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Answer
-{
-    <span class="src">Open</span>,
-    <span class="src">Fetch</span>,
-    <span class="src">Store</span>,
-    <span class="src">Close</span>,
-    <span class="src">Opened</span>,
-    <span class="src">Fetched</span>,
-    <span class="src">Stored</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Attempt
-{
-    <span class="src">Dial</span>,
-    <span class="src">Handshake</span>,
-    <span class="src">Ready</span>,
-    <span class="src">Refused</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Job
-{
-    <span class="src">Queued</span>,
-    <span class="src">Running</span>,
-    <span class="src">Done</span>,
-    <span class="src">Paused</span>,
-    <span class="src">Resumed</span>,
-    <span class="src">Cancelled</span>,
-    <span class="src">Archived</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Phase
-{
-    <span class="src">Queued</span>,
-    <span class="src">Running</span>,
-    <span class="src">Done</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Probe
-{
-    <span class="src">Dial</span>,
-    <span class="src">Handshake</span>,
-    <span class="src">Ready</span>,
-    <span class="src">Timeout</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Request
-{
-    <span class="src">Open</span>,
-    <span class="src">Fetch</span>,
-    <span class="src">Store</span>,
-    <span class="src">Close</span>,
-    <span class="src">Flush</span>,
-    <span class="src">Stat</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> State
-{
-    <span class="src">Queued</span>,
-    <span class="src">Running</span>,
-    <span class="src">Done</span>,
-    <span class="src">Failed</span>,
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.enum_sets.Answer">Answer</h3>
 <div class="doc">
 <p><span class="c">The answer to a request.</span></p>

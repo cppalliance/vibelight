@@ -38,53 +38,6 @@
 </ul>
 <h2 id="mod.references">references</h2>
 <p class="anatomy">crate root: 4 types, 3 functions, 2 values; pub 9</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">trait</span> Marker
-{
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Source
-{
-    <a class="fn" href="#fn.references.Source.name">name</a>() -&gt; str&amp;
-    <a class="fn" href="#fn.references.Source.read">read</a>(buf: [u8] mut&amp;) <span class="k">mut</span> -&gt; usize
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">using</span> Table&lt;'a&gt; = [(str&amp; 'a, u8*)]&amp; 'a
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Views&lt;'a, T&gt;
-{
-<span class="k">pub:</span>
-    <span class="src">shared</span>: T&amp; 'a,
-    <span class="src">unique</span>: T mut&amp; 'a,
-    <span class="src">name</span>: str&amp; 'static,
-    <span class="src">items</span>: [T&amp; 'a]&amp; 'a,
-    <span class="src">read</span>: T*,
-    <span class="src">write</span>: T mut*,
-    <span class="src">shown</span>: dyn Display&amp; 'a,
-    <span class="src">check</span>: Box&lt;dyn Fn(str&amp;) -&gt; usize&gt;,
-    <span class="src">callback</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
-    <span class="src">both</span>: (dyn Display + Send)&amp; 'a,
-    <span class="src">wrapped</span>: (dyn Fn(str&amp;) -&gt; usize)&amp; 'a,
-    <span class="src">raw_call</span>: (dyn Fn() -&gt; bool)*,
-    <span class="src">step</span>: (fn(u8) -&gt; u8)&amp; 'a,
-<span class="k">pub:</span>
-    <a class="fn" href="#fn.references.Views.clear">clear</a>() <span class="k">mut</span>
-    <a class="fn" href="#fn.references.Views.get">get</a>() -&gt; T&amp;
-    <a class="fn" href="#fn.references.Views.into_name">into_name</a>(self) -&gt; str&amp; 'static
-    <a class="fn" href="#fn.references.Views.lookup">lookup</a>(
-        keys: Vec&lt;str&amp; 'a&gt;&amp;,
-        table: std::collections::BTreeMap&lt;String, T mut&amp; 'a&gt;&amp;) <span class="k">mut</span> -&gt;
-        Option&lt;T mut&amp; 'a&gt;
-    <a class="fn" href="#fn.references.Views.poll">poll</a>(self: Pin&lt;Self mut&amp;&gt;)
-    <a class="fn" href="#fn.references.Views.rename">rename</a>(mut self, name: str&amp; 'static) -&gt; Self
-    <a class="fn" href="#fn.references.Views.render">render</a>(out: impl Write mut&amp;, items: [Box&lt;dyn Display&gt;]&amp;)
-    <a class="fn" href="#fn.references.Views.same">same</a>(other: Self&amp;) -&gt; bool
-    <a class="fn" href="#fn.references.Views.set">set</a>(value: T) <span class="k">mut</span>
-}
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">constexpr</span> <span class="src">NAME</span>: str&amp; = "views"
-<span class="k">static</span> <span class="src">BYTES</span>: [u8]&amp; = &amp;[1, 2]
-<a class="fn" href="#fn.references.apply">apply</a>&lt;F&gt;(text: String mut&amp;, f: F) -&gt; usize <span class="k">where</span> F: Fn(String mut&amp;) -&gt; usize
-<a class="fn" href="#fn.references.first">first</a>&lt;'a&gt;(items: [str&amp; 'a]&amp; 'a) -&gt; Option&lt;str&amp; 'a&gt;
-<a class="fn" href="#fn.references.pick">pick</a>&lt;'a, T&gt;(choose: impl Fn(T&amp;) -&gt; T&amp; 'a, items: [T]&amp; 'a) -&gt; Option&lt;T&amp; 'a&gt;</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.references.Marker">Marker</h3>
 <div class="doc">
 <p><span class="c">Marks a type.</span></p>

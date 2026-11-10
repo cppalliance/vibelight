@@ -66,10 +66,6 @@
 <p><span class="c">The first module with a private Result alias.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 1, pub(self) 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.alpha.AlphaError">AlphaError</a>&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> AlphaError</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.prelude_order.alpha.Result"><span class="dim">alpha::</span>Result</h3>
 <div class="doc">
 <p><span class="c">The results of alpha.</span></p>
@@ -85,10 +81,6 @@
 <p><span class="c">The second module with a private Result alias.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 1, pub(self) 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.beta.BetaError">BetaError</a>&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> BetaError</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.prelude_order.beta.Result"><span class="dim">beta::</span>Result</h3>
 <div class="doc">
 <p><span class="c">The results of beta.</span></p>
@@ -105,15 +97,6 @@
 </div>
 <p class="anatomy">pub mod: 3 types; pub 3</p>
 <p class="coupling">Used by 1 module: <a href="#mod.prelude_order.starred">starred</a> (2). Instability 0.00.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Owned
-{
-<span class="k">pub:</span>
-    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u8&gt;,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.prelude_order.own.OwnError">OwnError</a>&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> OwnError</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.prelude_order.own.Owned"><span class="dim">own::</span>Owned</h3>
 <div class="doc">
 <p><span class="c">A value in this module's Result.</span></p>
@@ -138,13 +121,6 @@
 <p><span class="c">A module that names the prelude Result and imports nothing.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Report
-{
-<span class="k">pub:</span>
-    <span class="src">outcome</span>: Result&lt;u8, String&gt;,
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.prelude_order.plain.Report"><span class="dim">plain::</span>Report</h3>
 <div class="doc">
 <p><span class="c">A report whose outcome is the standard Result.</span></p>
@@ -160,13 +136,6 @@
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
 <p class="coupling">Uses 1 module: <a href="#mod.prelude_order.own">own</a> (2). Instability 1.00.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Starred
-{
-<span class="k">pub:</span>
-    <span class="src">value</span>: <a href="#type.prelude_order.own.Result">Result</a>&lt;u16&gt;,
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.prelude_order.starred.Starred"><span class="dim">starred::</span>Starred</h3>
 <div class="doc">
 <p><span class="c">A value in the Result that the glob brings in.</span></p>

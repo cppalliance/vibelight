@@ -27,29 +27,6 @@
 </ul>
 <h2 id="mod.traits">traits</h2>
 <p class="anatomy">crate root: 4 types; pub 4</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">trait</span> Convert&lt;T&gt; <span class="k">where</span> T: Clone
-{
-    <a class="fn" href="#fn.traits.Convert.convert">convert</a>(value: T) -&gt; T
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Lender
-{
-    <span class="k">using</span> <span class="src">Loan</span>&lt;'a&gt; where Self: 'a
-    <a class="fn" href="#fn.traits.Lender.lend">lend</a>() <span class="k">mut</span> -&gt; Self::Loan&lt;'_&gt;
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Observer : Send, Sync
-{
-    <span class="k">using</span> <span class="src">Item</span>: Clone
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">LIMIT</span>: usize = 64
-    <span class="k">static</span> <a class="fn" href="#fn.traits.Observer.make">make</a>() -&gt; Self <span class="k">where</span> Self: Sized
-    <a class="fn" href="#fn.traits.Observer.finish">finish</a>(self) -&gt; u32 <span class="k">where</span> Self: Sized
-    <a class="fn" href="#fn.traits.Observer.flush">flush</a>() <span class="k">mut</span>
-    <a class="fn" href="#fn.traits.Observer.record">record</a>(event: str&amp;)
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">trait</span> Zeroable
-{
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.traits.Convert">Convert</h3>
 <div class="doc">
 <p><span class="c">A generic trait with a where clause.</span></p>

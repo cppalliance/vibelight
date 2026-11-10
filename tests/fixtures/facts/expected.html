@@ -31,46 +31,6 @@
 </ul>
 <h2 id="mod.facts">facts</h2>
 <p class="anatomy">crate root: 5 types, 1 function; pub 6</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Run
-{
-<span class="k">pub:</span>
-    <span class="src">name</span>: String,
-    <span class="src">limit</span>: Option&lt;u32&gt;,
-    <span class="src">started</span>: chrono::DateTime&lt;chrono::Utc&gt;,
-<span class="k">pub(self):</span>
-    <span class="src">chat</span>: <a href="#type.facts.ChatDispatch">ChatDispatch</a>,
-<span class="k">pub:</span>
-    <span class="k">static</span> <span class="k">constexpr</span> <span class="src">MAX</span>: u32 = 9
-    <span class="src">Run</span>()
-    <span class="k">static</span> <a class="fn" href="#fn.facts.Run.start">start</a>(name: String) -&gt; <a href="#type.facts.Run">Run</a>
-    <a class="fn" href="#fn.facts.Run.stop">stop</a>() <span class="k">mut</span>
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> ChatDispatch
-{
-    <span class="src">Send</span>(String),
-    <span class="src">Stop</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> ToolCallDispatch
-{
-    <span class="src">Send</span>(String),
-    <span class="src">Stop</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Point
-{
-<span class="k">pub:</span>
-    <span class="src">x</span>: i32,
-    <span class="src">y</span>: i32,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Size
-{
-<span class="k">pub:</span>
-    <span class="src">x</span>: i32,
-    <span class="src">y</span>: i32,
-}
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.facts.dispatch">dispatch</a>(call: <a href="#type.facts.ToolCallDispatch">ToolCallDispatch</a>, at: chrono::Utc)</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.facts.Run">Run</h3>
 <div class="doc">
 <p><span class="c">A run of the engine.</span></p>

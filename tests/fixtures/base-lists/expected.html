@@ -91,76 +91,6 @@
 </ul>
 <h2 id="mod.base_lists">base_lists</h2>
 <p class="anatomy">crate root: 19 types; pub 19</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">enum</span> Error
-    : Debug, std::error::Error
-    , <a href="#type.base_lists.Named">Named</a>
-{
-    <span class="src">Failed</span>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Holder&lt;T&gt;
-    : Debug
-    , <a href="#type.base_lists.Named">Named</a>
-    <span class="k">where</span> T: Copy
-{
-<span class="k">pub:</span>
-    <span class="src">value</span>: T,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Labeled
-    : Display
-    , <a href="#type.base_lists.Named">Named</a>
-{
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Local
-    : Debug
-    , <a href="#type.base_lists.Clone">Clone</a>
-    , Unknown
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Clone
-{
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Mixed
-    : Debug
-    , <a href="#type.base_lists.Named">Named</a>
-    , serde::Serialize
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Named
-{
-    <a class="fn" href="#fn.base_lists.Named.name">name</a>() -&gt; String
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">union</span> Bits : Copy, Debug
-{
-<span class="k">pub:</span>
-    <span class="src">int</span>: u32,
-    <span class="src">float</span>: f32,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Marker : Debug, Eq, Hash
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Ordered(u8)
-    : Clone, Eq, Ord, PartialEq, PartialEq&lt;u8&gt;, PartialOrd, PartialOrd&lt;u8&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Plain : 'static, Send, Sync
-{
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Renamed : Display
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Run : Debug, Display
-{
-<span class="k">pub:</span>
-    <span class="src">id</span>: u32,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> RunError : Debug, Display, std::error::Error
-{
-<span class="k">pub:</span>
-    <span class="src">reason</span>: String,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Secret : Display
-{
-<span class="k">pub(self):</span>
-    <span class="src">value</span>: u8,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Sink : std::fmt::Write, std::io::Write
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Spelled : Display
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Wide(u64)
-    : Binary, Copy, Debug, Display, Eq, Hash, LowerExp, LowerHex, Octal, Ord
-    , Pointer, UpperExp, UpperHex
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Wrapped(u8) : Debug</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.base_lists.Error">Error</h3>
 <div class="doc">
 <p><span class="c">The crate's own error, whose name collides with std::error::Error.</span></p>
@@ -311,9 +241,6 @@
 <p><span class="c">The standard Display after a use of the trait itself.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Imported : Display</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.base_lists.bare.Imported"><span class="dim">bare::</span>Imported</h3>
 <div class="doc">
 <p><span class="c">Display through the use, which is the standard one.</span></p>
@@ -324,13 +251,6 @@
 <p><span class="c">A trait of this crate named Display.</span></p>
 </div>
 <p class="anatomy">pub mod: 2 types; pub 2</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Homemade
-    : <a href="#type.base_lists.custom.Display">custom::Display</a>
-<span class="gap"></span><span class="k">pub</span> <span class="k">trait</span> Display
-{
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.base_lists.custom.Homemade"><span class="dim">custom::</span>Homemade</h3>
 <div class="doc">
 <p><span class="c">The crate's Display, which prints its path on its own line.</span></p>
@@ -349,10 +269,6 @@
 <p><span class="c">A Display that can only come from a glob import.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Starred
-    : Display</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.base_lists.globbed.Starred"><span class="dim">globbed::</span>Starred</h3>
 <div class="doc">
 <p><span class="c">A Display from the glob, which prints as written.</span></p>
@@ -364,10 +280,6 @@
 <p><span class="c">Another crate's trait that is also named Display.</span></p>
 </div>
 <p class="anatomy">pub mod: 1 type; pub 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Foreign
-    : other_crate::Display</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.base_lists.other.Foreign"><span class="dim">other::</span>Foreign</h3>
 <div class="doc">
 <p><span class="c">The other crate's Display, which stays apart from the standard one.</span></p>

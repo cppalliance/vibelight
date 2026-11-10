@@ -12,6 +12,7 @@ mod values;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
+use crate::html::fn_ids;
 use crate::html::layout::items::docs_block;
 use crate::html::layout::{self, Block, Span};
 use crate::html::order::Order;
@@ -90,9 +91,6 @@ pub(crate) enum Node {
         text: String,
     },
     Code(Block),
-    /// A module's compact view: every declaration and item without its
-    /// comments, under an `At a glance` label.
-    Glance(Block),
     /// A `Source:` line: the definition, then any impl blocks.
     Source(Vec<SourceLink>),
     /// A line of plain text in a styled paragraph, such as a module's
@@ -435,11 +433,7 @@ impl Builder<'_> {
         }
         let block = &self.blocks[d];
         self.code(Block {
-            lines: crate::html::glance::anchored(
-                &block.lines,
-                &crate::html::glance::fn_prefix(&id),
-                false,
-            ),
+            lines: fn_ids::anchored(&block.lines, &fn_ids::fn_prefix(&id)),
             repeats: block.repeats.clone(),
         });
     }

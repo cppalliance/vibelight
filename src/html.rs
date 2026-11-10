@@ -5,7 +5,7 @@
 pub(crate) mod browse;
 pub(crate) mod document;
 pub(crate) mod facade_page;
-mod glance;
+mod fn_ids;
 pub(crate) mod layout;
 mod legend;
 pub(crate) mod order;

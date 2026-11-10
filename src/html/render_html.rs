@@ -137,11 +137,6 @@ impl Page<'_> {
                 out.push_str("</p>\n");
             }
             Node::Code(block) => self.pre(out, block),
-            Node::Glance(block) => {
-                out.push_str("<p class=\"view\">At a glance</p>\n<pre class=\"glance\"><code>");
-                self.code_lines(out, &block.lines);
-                out.push_str("</code></pre>\n");
-            }
             Node::Source(links) => {
                 out.push_str("<p class=\"source\">Source: ");
                 for (i, source) in links.iter().enumerate() {
@@ -301,7 +296,7 @@ impl Page<'_> {
     /// of the section's first member. The layout puts no blank line there,
     /// so that box has the class that takes the space above it away, and
     /// the comment sits on the line after the label.
-    pub(crate) fn code_lines(&self, out: &mut String, lines: &[Line]) {
+    fn code_lines(&self, out: &mut String, lines: &[Line]) {
         let mut first = true;
         let mut open_box = false;
         // True once a box closed: the block ended that line, so the next line

@@ -42,18 +42,6 @@
 </ul>
 <h2 id="mod.runvil_parser">runvil_parser</h2>
 <p class="anatomy">crate root: 5 types, 4 re-exports; pub 8, pub(crate) 1</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Frontmatter
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> BodyText
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> ParseError
-<span class="gap"></span><span class="k">pub(crate)</span> <span class="k">using</span> Result&lt;T&gt; = std::result::Result&lt;T, <a href="#type.runvil_parser.Error">Error</a>&gt;
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Error
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">using</span> <a href="#type.runvil_parser.prompt.Block">prompt::Block</a>
-<span class="k">using</span> runvil_lua::LuaProgram
-<span class="k">using</span> <a href="#type.runvil_parser.prompt.Prompt">prompt::Prompt</a>
-<span class="k">using</span> <a href="#type.runvil_parser.prompt.Section">prompt::Section</a></code></pre>
-<p class="view">Documented</p>
 <h3 id="type.runvil_parser.Frontmatter">Frontmatter</h3>
 <div class="doc">
 <p><span class="c">The parsed YAML frontmatter.</span></p>
@@ -98,60 +86,6 @@
 </div>
 <p class="anatomy">mod: 3 types; pub 3</p>
 <p class="coupling">Used by 1 module: <a href="#mod.runvil_parser.parse">parse</a> (3). Instability 0.00.</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Prompt : Clone, Debug, Eq, PartialEq
-{
-<span class="k">pub(crate):</span>
-    <span class="src">frontmatter</span>: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
-    <span class="src">title</span>: String,
-    <span class="src">h1_blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
-    <span class="src">sections</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.runvil_parser.prompt.Prompt.parse">parse</a>(input: str&amp;, execution: str&amp;) -&gt;
-        (std::result::Result&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>, <a href="#type.runvil_parser.ParseError">ParseError</a>&gt;, Vec&lt;Event&gt;)
-    <a class="fn" href="#fn.runvil_parser.prompt.Prompt.frontmatter">frontmatter</a>() -&gt; <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Prompt.title">title</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-<span class="k">pub(crate):</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Prompt.entry">entry</a>() -&gt; Option&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&amp;&gt; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Prompt.h1_blocks">h1_blocks</a>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Prompt.sections">sections</a>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
-<span class="k">pub(self):</span>
-    <span class="k">static</span> <a class="fn" href="#fn.runvil_parser.prompt.Prompt.parse_body">parse_body</a>(
-        frontmatter: <a href="#type.runvil_parser.Frontmatter">Frontmatter</a>,
-        shared: Arc&lt;str&gt;&amp;,
-        frontmatter_lines: u32,
-        emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
-    <span class="k">static</span> <a class="fn" href="#fn.runvil_parser.prompt.Prompt.parse_inner">parse_inner</a>(input: str&amp;, emitter: Emitter&amp;) -&gt; <a href="#type.runvil_parser.Result">Result</a>&lt;<a href="#type.runvil_parser.prompt.Prompt">Prompt</a>&gt;
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Section : Clone, Debug, Eq, PartialEq
-{
-<span class="k">pub(crate):</span>
-    <span class="src">name</span>: String,
-    <span class="src">level</span>: u8,
-    <span class="src">blocks</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Block">Block</a>&gt;,
-    <span class="src">children</span>: Vec&lt;<a href="#type.runvil_parser.prompt.Section">Section</a>&gt;,
-    <span class="src">items</span>: Vec&lt;<a href="#type.runvil_parser.BodyText">BodyText</a>&gt;,
-    <span class="src">markdown</span>: <a href="#type.runvil_parser.BodyText">BodyText</a>,
-<span class="k">pub:</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.blocks">blocks</a>() -&gt; [<a href="#type.runvil_parser.prompt.Block">Block</a>]&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.children">children</a>() -&gt; [<a href="#type.runvil_parser.prompt.Section">Section</a>]&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.epilog">epilog</a>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.items">items</a>() -&gt; [<a href="#type.runvil_parser.BodyText">BodyText</a>]&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.level">level</a>() -&gt; u8 <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.markdown">markdown</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.name">name</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.prologue">prologue</a>() -&gt; Option&lt;LuaProgram&amp;&gt; <span class="dim">[[must_use]]</span>
-    <a class="fn" href="#fn.runvil_parser.prompt.Section.prose">prose</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span>
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Block : Clone, Debug, Eq, PartialEq
-{
-    <span class="src">Lua</span>(LuaProgram),
-    <span class="src">Prose</span>
-    {
-        text: <a href="#type.runvil_parser.BodyText">BodyText</a>,
-    },
-}</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.runvil_parser.prompt.Prompt"><span class="dim">prompt::</span>Prompt</h3>
 <div class="doc">
 <p><span class="c">A fully parsed prompt file.</span></p>

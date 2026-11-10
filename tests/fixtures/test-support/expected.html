@@ -40,24 +40,6 @@
 </ul>
 <h2 id="mod.test_support">test_support</h2>
 <p class="anatomy">crate root: 5 types, 1 function; pub 6</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Engine
-{
-<span class="k">pub:</span>
-    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Model
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Recording
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Live
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> ScriptedChat
-{
-<span class="k">pub:</span>
-    <span class="src">model</span>: <a href="#type.test_support.Model">Model</a>,
-    <span class="src">recording</span>: <a href="#type.test_support.Recording">Recording</a>,
-}
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.test_support.record">record</a>(into: <a href="#type.test_support.Recording">Recording</a> mut&amp;)</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.test_support.Engine">Engine</h3>
 <div class="doc">
 <p><span class="c">A production engine.</span></p>
@@ -104,11 +86,6 @@
 </div>
 <pre><code> <span class="c">cfg: </span><span class="c">any(test, feature = "test-support")</span></code></pre>
 <p class="anatomy">pub mod: 1 type, 1 function; pub 2</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> FakeClock
-<span class="gap"></span><span class="k">pub:</span>
-<a class="fn" href="#fn.test_support.fakes.clock">clock</a>() -&gt; <a href="#type.test_support.fakes.FakeClock">FakeClock</a></code></pre>
-<p class="view">Documented</p>
 <h3 id="type.test_support.fakes.FakeClock"><span class="dim">fakes::</span>FakeClock</h3>
 <div class="doc">
 <p><span class="c">A fake clock.</span></p>

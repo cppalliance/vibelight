@@ -53,67 +53,6 @@
 </ul>
 <h2 id="mod.order_nesting">order_nesting</h2>
 <p class="anatomy">crate root: 17 types; pub 17</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Run
-{
-<span class="k">pub:</span>
-    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
-    <span class="src">steps</span>: Vec&lt;<a href="#type.order_nesting.Step">Step</a>&gt;,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Step
-{
-<span class="k">pub:</span>
-    <span class="src">a_trace</span>: <a href="#type.order_nesting.Trace">Trace</a>,
-    <span class="src">b_log</span>: <a href="#type.order_nesting.Log">Log</a>,
-    <span class="src">config</span>: <a href="#type.order_nesting.Config">Config</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Trace
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Log
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Config
-{
-<span class="k">pub:</span>
-    <span class="src">limit</span>: u32,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Fork
-{
-<span class="k">pub:</span>
-    <span class="src">a_left</span>: <a href="#type.order_nesting.Left">Left</a>,
-    <span class="src">b_right</span>: <a href="#type.order_nesting.Right">Right</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Left
-{
-<span class="k">pub:</span>
-    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Right
-{
-<span class="k">pub:</span>
-    <span class="src">base</span>: <a href="#type.order_nesting.Base">Base</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Base
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Host
-{
-<span class="k">pub(self):</span>
-    <span class="src">store</span>: <a href="#type.order_nesting.Store">Store</a>,
-<span class="k">pub:</span>
-    <a class="fn" href="#fn.order_nesting.Host.run">run</a>(job: <a href="#type.order_nesting.Job">Job</a>)
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Store
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Job
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Able
-{
-<span class="k">pub:</span>
-    <span class="src">leaf</span>: <a href="#type.order_nesting.Leaf">Leaf</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Leaf
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Report
-{
-<span class="k">pub:</span>
-    <span class="src">summary</span>: <a href="#type.order_nesting.Summary">Summary</a>,
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Summary
-<span class="gap"></span><span class="k">pub</span> <span class="k">struct</span> Orphan</code></pre>
-<p class="view">Documented</p>
 <h3 id="type.order_nesting.Run">Run</h3>
 <div class="doc">
 <p><span class="c">The main entry: it reaches the most declarations.</span></p>

@@ -29,28 +29,6 @@
 </ul>
 <h2 id="mod.attributes">attributes</h2>
 <p class="anatomy">crate root: 2 types, 1 function, 1 re-export; pub 4</p>
-<p class="view">At a glance</p>
-<pre class="glance"><code><span class="k">pub</span> <span class="k">struct</span> Record
-{
-<span class="k">pub:</span>
-    <span class="src">name</span>: String, <span class="dim">[[serde(rename = "id")]]</span>
-    <span class="src">cache</span>: u8, <span class="dim">[[doc(hidden)]]</span>
-<span class="k">pub(self):</span>
-    <span class="src">count</span>: u8,
-<span class="k">pub:</span>
-    <span class="k">static</span> <a class="fn" href="#fn.attributes.Record.empty">empty</a>() -&gt;
-        <a href="#type.attributes.Record">Record</a> <span class="dim">[[must_use = "a record does nothing until it is stored"]]</span>
-    <a class="fn" href="#fn.attributes.Record.name">name</a>() -&gt; str&amp; <span class="dim">[[must_use]]</span> <span class="dim">[[track_caller]]</span>
-}
-<span class="gap"></span><span class="k">pub</span> <span class="k">enum</span> Level : Clone, Copy
-{
-    <span class="src">Top</span> = 2,
-    <span class="src">Low</span> = 0,
-}
-<span class="gap"></span><span class="k">pub:</span>
-<span class="k">using</span> Row = <a href="#type.attributes.Record">Record</a>
-<a class="fn" href="#fn.attributes.helper">helper</a>() <span class="dim">[[deprecated]]</span> <span class="dim">[[doc(hidden)]]</span></code></pre>
-<p class="view">Documented</p>
 <h3 id="type.attributes.Record">Record</h3>
 <p class="mark" id="macro.1"><b class="m">MACRO</b> derive: serde::Serialize</p>
 <div class="doc">

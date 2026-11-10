@@ -33,18 +33,6 @@ pub(crate) fn decl_block(krate: &Crate, id: DeclId) -> Block {
     block_of(krate, &krate.decls[id], Head::Written)
 }
 
-/// Builds the block the compact view reads for a declaration that has a
-/// comment on a trait impl: the same block laid out without those comments,
-/// so its base list keeps its shortest form. A declaration with no such
-/// comment has one block for both views, and this returns `None`.
-pub(crate) fn compact_block(krate: &Crate, id: DeclId) -> Option<Block> {
-    Some(block_of(
-        krate,
-        &uncommented(&krate.decls[id])?,
-        Head::Written,
-    ))
-}
-
 /// Builds the block of one declaration as a user of a public surface sees
 /// it, under the name that user writes: its header without `pub`, its `pub`
 /// members, none hidden from the docs, and no word of how far anything
@@ -52,27 +40,6 @@ pub(crate) fn compact_block(krate: &Crate, id: DeclId) -> Option<Block> {
 /// keeps its shape.
 pub(crate) fn public_block(krate: &Crate, id: DeclId, name: &str) -> Block {
     block_of(krate, &public_decl(krate, id, name), Head::Surface)
-}
-
-/// Like `compact_block`, for the block `public_block` builds.
-pub(crate) fn compact_public_block(krate: &Crate, id: DeclId, name: &str) -> Option<Block> {
-    Some(block_of(
-        krate,
-        &uncommented(&public_decl(krate, id, name))?,
-        Head::Surface,
-    ))
-}
-
-/// Returns a declaration without the comments of its trait impls, or `None`
-/// when it has none. The comments of its inherent impls stay: they are
-/// comment lines of the body, which the compact view leaves out itself.
-fn uncommented(decl: &Decl) -> Option<Decl> {
-    if decl.impl_notes.iter().all(|group| group.base.is_none()) {
-        return None;
-    }
-    let mut decl = decl.clone();
-    decl.impl_notes.retain(|group| group.base.is_none());
-    Some(decl)
 }
 
 /// Returns a declaration as a user of a public surface sees it, under the
