@@ -4,7 +4,8 @@
 //! those users see it, with its `pub` members alone and no `pub` in a type's
 //! header, which every item of the page is. Each module shows its
 //! items twice, at a glance and documented, and each item says where the
-//! crate that defines it writes it.
+//! crate that defines it writes it. The sidebar lists the crate root with
+//! the modules of the API indented below it.
 //!
 //! The page also reads what the code of those items names. A type that no
 //! other item of the API names is where a reader starts, so the sidebar
@@ -177,17 +178,11 @@ pub(crate) fn fragment(
     };
     let via = view.via(&names.outside);
     let outside: usize = via.values().map(Vec::len).sum();
-    let mut out = String::from("<nav>\n<ul>\n<li><a href=\"#api\">API</a>\n<ul>\n");
-    for (path, (_, items)) in &groups {
-        let _ = writeln!(
-            out,
-            "<li><a href=\"#{}\">{}</a> <span class=\"dim\">{}</span></li>",
-            attr(&module_id(path)),
-            escape(&module_label(title, path)),
-            items.len()
-        );
-    }
-    out.push_str("</ul>\n</li>\n");
+    let mut out = String::from("<nav>\n<ul>\n");
+    let counts: Vec<(&[String], usize)> = (groups.iter())
+        .map(|(path, (_, items))| (path.as_slice(), items.len()))
+        .collect();
+    api_tree(&mut out, title, &counts);
     if outside > 0 {
         let _ = writeln!(
             out,
@@ -431,6 +426,48 @@ impl Named {
     fn is_root(&self, used: &BTreeSet<(usize, Reach)>) -> bool {
         matches!(self.item, Some(reach @ Reach::Decl(_)) if !used.contains(&(self.owner, reach)))
     }
+}
+
+/// Writes the sidebar's entry of the API as a tree: the crate root, and
+/// indented below it each module of the API by its path, so that no module
+/// reads as a sibling of the crate. Each has the count of its items, and
+/// `counts` gives them in page order, crate root first. A crate root that
+/// holds no item of the API has no section, so its name is plain text.
+fn api_tree(out: &mut String, title: &str, counts: &[(&[String], usize)]) {
+    out.push_str("<li><a href=\"#api\">API</a>\n<ul>\n");
+    let modules = match counts {
+        [] => {
+            out.push_str("</ul>\n</li>\n");
+            return;
+        }
+        [(path, count), modules @ ..] if path.is_empty() => {
+            let _ = write!(out, "<li>{}", module_entry(title, path, *count));
+            modules
+        }
+        modules => {
+            let _ = write!(out, "<li>{}", escape(title));
+            modules
+        }
+    };
+    if modules.is_empty() {
+        out.push_str("</li>\n");
+    } else {
+        out.push_str("\n<ul>\n");
+        for (path, count) in modules {
+            let _ = writeln!(out, "<li>{}</li>", module_entry(title, path, *count));
+        }
+        out.push_str("</ul>\n</li>\n");
+    }
+    out.push_str("</ul>\n</li>\n");
+}
+
+/// Returns the link to a module's section, with the count of its items.
+fn module_entry(title: &str, path: &[String], count: usize) -> String {
+    format!(
+        "<a href=\"#{}\">{}</a> <span class=\"dim\">{count}</span>",
+        attr(&module_id(path)),
+        escape(&module_label(title, path))
+    )
 }
 
 /// Writes the sidebar's list of every symbol of the API by name, under a
