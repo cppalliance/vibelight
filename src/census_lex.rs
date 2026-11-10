@@ -24,7 +24,8 @@ const KEYWORDS: [&str; 51] = [
     "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
-/// The word that starts a macro definition, which names no item either.
+/// The word that, before a `!`, starts a macro definition and names no
+/// item there. Anywhere else it is a name, such as a module's.
 const MACRO_RULES: &str = "macro_rules";
 
 /// The keywords that may start a path.
@@ -247,7 +248,9 @@ impl Toks {
     fn form(&self, i: usize) -> Option<Form> {
         let (word, keyword) = self.ident(i)?;
         let lifetime = i > 0 && matches!(self.tok(i - 1), Some(Tok::Punct('\'', _)));
-        if keyword || word == MACRO_RULES || lifetime {
+        let defines =
+            word == MACRO_RULES && matches!(self.tok(i + 1), Some(Tok::Punct('!', false)));
+        if keyword || defines || lifetime {
             return None;
         }
         if i > 0 && self.dot(i - 1) {
@@ -320,6 +323,13 @@ mod tests {
                 (s("type"), Form::Plain, false),
             ]
         );
+    }
+
+    #[test]
+    fn macro_rules_is_a_name_unless_it_starts_a_macro_definition() {
+        let found = names("mod macro_rules;\nuse crate::macro_rules::Rules;\nmacro_rules! m {}\n");
+        let words: Vec<&str> = found.iter().map(|(n, _, _)| n.as_str()).collect();
+        assert_eq!(words, ["macro_rules", "macro_rules", "Rules", "m"]);
     }
 
     #[test]
