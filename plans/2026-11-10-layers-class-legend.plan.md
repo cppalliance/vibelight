@@ -4,25 +4,25 @@ overview: State vibelight's goal in its AGENTS.md, show the uses between crates 
 todos:
   - id: agents-goal
     content: Replace the second bullet of vibelight/AGENTS.md with the three goal bullets of step 1, commit
-    status: in_progress
+    status: completed
   - id: sample-page
     content: Render the sample page in scratch (layers table, legend with demo, keyword cases, Prompt both ways), show a screenshot, wait for approval
-    status: pending
+    status: completed
   - id: uses-table
     content: "Home page: Uses between outlines becomes a table of layers (layer, crate, uses, used by, instability), highest layer first, with chips colored by role; a hint that explains layers and instability, with a Wikipedia link; the counting rule moves to the legend; index.md stays; tests, README, commit"
-    status: pending
+    status: completed
   - id: api-users
     content: "Facade pages: each item's Defined in line ends with 'not used by N of M' when N of the facade's M users never use it; no list of crates and no new line; a dim sidebar name when none uses it; two numbers in the opening sentence and one on the home page; a free function beside module_graph::crates; tests, values golden, legend, README, commit"
-    status: pending
+    status: completed
   - id: keyword-labels
     content: "Keyword and label rule on every page: decl.rs, groups.rs, render_html.rs, goldens with diff classifier, legend/README/AGENTS text, tests, commit"
-    status: pending
+    status: completed
   - id: facade-private-data
     content: Facade pages show private fields dim, no comments, packed; dim marker spans; names() and links skip them; replace 47b151a tuple code; tests, goldens, docs, commit
-    status: pending
+    status: completed
   - id: legend-demo
     content: Legend demo rendered at run time from an embedded Rust source; modtree entry from text; style and browse test; unit test pins the demo; commit
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -145,3 +145,21 @@ The second bullet of [vibelight/AGENTS.md](vibelight/AGENTS.md), which starts "T
 - Steps 4 and 6 both change what a facade's item shows; step 6 must leave the count on the `Defined in` line as step 4 put it.
 - `block_of` and `body` are near the 100-line function limit; expect to split one.
 - If building a page document for the demo at run time proves heavy, fall back to a stored block that a test renders and compares, which still catches drift.
+
+## Outcome
+
+Everything in the plan is built, one commit for each step, and `cargo fmt`, `cargo clippy --all-targets`, and `cargo test` pass: 475 unit tests and 169 integration tests. With each build, runvil was outlined into a scratch folder and checked in a headless browser over a temporary localhost server. On runvil:
+
+- **Layers:** 30 crates in 12 layers.
+- **Unused counts:** 4 crates use the `runvil` facade. None of them uses 57 of its 122 items, and 120 items carry a count.
+- **Keyword and labels:** 44 golden pages changed. A scratch script applied the rule to the text of each old block and compared the result with the new block: 98 labels went, 26 headers read `class`, and nothing else changed in the text. No markdown golden changed.
+
+Where the build differs from the plan:
+
+- **The link to Wikipedia** has no `target`. Cursor's browser opened no tab for a link with a target. It follows a plain link, and Back returns to the outline.
+- **A comment box right under the opening brace** has the `first` class in every type. So the first comment in the body of an enum and of a trait lost the small space above it too, in 15 blocks.
+- **Private data had no golden:** no facade of the fixtures showed a type with private fields. The `values` fixture got two such types in `origin` that `relay` re-exports, and a third type that only private data names, so `relay.html` pins the feature. `relay` could not declare them itself: with its own items as half its surface, inside the family of `front`, it would stop being a facade.
+- **The opening sentence of a facade's page** reads "Each shows what a user of X can name, and a type's private data, dim.", then how many crates use the facade and how many items none of them uses.
+- **The legend** has a first line that says what the sample is. The sample shows the notation as the pages print it, such as `str&` for `&str` and `Sample(u32&)` for `From<u32>`.
+- **The goldens** were rewritten by a scratch script that reads a run as the tests do. Before each use, a dry run that changed nothing checked the script against every golden, HTML and markdown.
+- **The sample page of step 2** showed counts read from the markdown records. The built counts differ a little, because they count production code only and count a member's use for its type.
