@@ -1,9 +1,12 @@
-//! Writes a run's files into its folders. A file whose content is the same
-//! is left alone, so its stamp keeps the time its content last changed.
-//! The folders hold only what the last run wrote: an outline that no crate
-//! of the run writes any more is removed, and every other file is left
-//! alone. Vibelight's own folder also gets a `.gitignore`, so no outline is
-//! ever committed.
+//! Writes a run's files into its folders: the HTML file into the base
+//! folder, and the markdown outlines and their index into its `md` folder.
+//! A file whose content is the same is left alone, so its stamp keeps the
+//! time its content last changed. The folders hold only what the last run
+//! wrote: an outline that no crate of the run writes any more is removed,
+//! and so is each file that an earlier release left where it wrote, the
+//! markdown in the base folder and the HTML in its `html` folder. Every
+//! other file is left alone. Vibelight's own folder also gets a
+//! `.gitignore`, so no outline is ever committed.
 
 use std::collections::BTreeSet;
 use std::fs::{self, File};
@@ -12,12 +15,18 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
+use crate::index;
 use crate::settings::Plan;
 use crate::stamp;
 
-/// The `.gitignore` of vibelight's own folder: the outlines, the index, the
-/// HTML file, and the script files that earlier releases wrote beside it.
+/// The `.gitignore` of vibelight's own folder: the outlines and the index,
+/// in any folder below it, the HTML file, and the script files that
+/// earlier releases wrote beside it.
 const GITIGNORE: &str = "*.md\n*.html\n*.js\n";
+
+/// The folder, below the base folder, that earlier releases wrote the HTML
+/// into, when the markdown went into the base folder itself.
+const OLD_HTML: &str = "html";
 
 /// The `.gitignore` that earlier releases wrote. A run replaces a file that
 /// holds exactly this and leaves any other `.gitignore` alone.
@@ -32,24 +41,30 @@ pub(crate) struct Written {
     pub(crate) upgraded: Option<PathBuf>,
     /// The outlines the run removed, sorted.
     pub(crate) removed: Vec<PathBuf>,
+    /// The files the run removed from where an earlier release wrote them,
+    /// sorted: its outlines and its index in the base folder, and its page
+    /// and script files in the `html` folder.
+    pub(crate) moved: Vec<PathBuf>,
 }
 
 /// Creates the folders, writes every file whose content changed, gives
 /// vibelight's own folder its `.gitignore` when it has none, and removes
-/// the outlines no crate of the run writes.
+/// the outlines no crate of the run writes, with what an earlier release
+/// left where it wrote. That release's `html` folder goes too when the run
+/// empties it.
 ///
 /// # Errors
 /// Returns an error when a folder cannot be created or a file cannot be
 /// written or removed.
 pub(crate) fn write(files: &[(PathBuf, String)], plan: &Plan) -> Result<Written> {
-    let markdown = plan.markdown_dir().to_path_buf();
-    let html = plan.html().dir;
-    for dir in [&markdown, &html] {
+    let base = plan.base();
+    let markdown = plan.markdown_dir();
+    for dir in [base, markdown.as_path()] {
         fs::create_dir_all(dir)
             .with_context(|| format!("cannot create output directory {}", dir.display()))?;
     }
     let mut written = Written::default();
-    let ignore = markdown.join(".gitignore");
+    let ignore = base.join(".gitignore");
     if plan.owned {
         if !ignore.exists() {
             fs::write(&ignore, GITIGNORE)
@@ -68,11 +83,20 @@ pub(crate) fn write(files: &[(PathBuf, String)], plan: &Plan) -> Result<Written>
     }
     let kept: BTreeSet<&Path> = files.iter().map(|(path, _)| path.as_path()).collect();
     written.removed = stale(&markdown, "md", &kept);
-    written.removed.extend(stale(&html, "html", &kept));
-    written.removed.extend(stale(&html, "js", &kept));
+    written.removed.extend(stale(base, "html", &kept));
     written.removed.sort();
-    for path in &written.removed {
+    let old_html = base.join(OLD_HTML);
+    written.moved = stale(base, "md", &kept);
+    written.moved.extend(stale(&old_html, "html", &kept));
+    written.moved.extend(stale(&old_html, "js", &kept));
+    written.moved.sort();
+    for path in written.removed.iter().chain(&written.moved) {
         fs::remove_file(path).with_context(|| format!("cannot remove {}", path.display()))?;
+    }
+    if written.moved.iter().any(|path| path.starts_with(&old_html)) {
+        // The folder goes only when the run emptied it: removing a folder
+        // that still holds a file fails, and that file's owner keeps it.
+        let _ = fs::remove_dir(&old_html);
     }
     Ok(written)
 }
@@ -112,7 +136,9 @@ fn stale(dir: &Path, ext: &str, kept: &BTreeSet<&Path>) -> Vec<PathBuf> {
 /// stamp comment and then the doctype; one of the script files an earlier
 /// release wrote beside its page. A markdown outline of an older release
 /// counts too, so a stale one is still cleaned up: a stamp line, a blank
-/// line, and a crate anchor, or the anchor first.
+/// line, and a crate anchor, or the anchor first. So does the index of a
+/// run, which an earlier release wrote in the base folder: its heading, a
+/// blank line, and its opening words.
 fn is_outline(path: &Path) -> bool {
     let Ok(file) = File::open(path) else {
         return false;
@@ -132,6 +158,7 @@ fn is_outline(path: &Path) -> bool {
         || OLD_SCRIPTS.iter().any(|start| head[0].starts_with(start))
         || is_anchor(&head[0])
         || (stamped && head[1].is_empty() && is_anchor(&head[2]))
+        || (head[0] == index::HEADING && head[1].is_empty() && head[2].starts_with(index::OPENING))
 }
 
 /// How the header record on a markdown outline's second line starts.
@@ -190,6 +217,19 @@ mod tests {
             [dir.join("new.md"), dir.join("old.md")]
         );
         assert_eq!(stale(dir, "html", &kept), [dir.join("old.html")]);
+    }
+
+    #[test]
+    fn the_index_of_a_run_counts_and_another_file_of_its_name_does_not() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("index.md");
+        fs::write(&path, index::render(&[])).unwrap();
+        assert!(
+            is_outline(&path),
+            "an earlier release wrote its index in the base folder"
+        );
+        fs::write(&path, "# Outlines\n\nKept by hand.\n").unwrap();
+        assert!(!is_outline(&path), "a person wrote this one");
     }
 
     #[test]

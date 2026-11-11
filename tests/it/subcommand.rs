@@ -91,12 +91,11 @@ fn the_shim_passes_a_run_through_to_the_tool() {
         String::from_utf8_lossy(&out.stderr)
     );
     assert!(
-        out_dir.join("demo.md").is_file(),
+        crate::support::markdown(&out_dir).join("demo.md").is_file(),
         "the run wrote its outline"
     );
     assert!(
-        (crate::support::read_pages(&out_dir.join("html")).iter())
-            .any(|(name, _)| name == "demo.html"),
+        (crate::support::read_pages(&out_dir).iter()).any(|(name, _)| name == "demo.html"),
         "the run wrote its page"
     );
 }

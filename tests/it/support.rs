@@ -110,15 +110,21 @@ pub(crate) fn outputs_with_streams(
     )
 }
 
-/// Reads the outlines a run wrote into `out`: the markdown files in it,
-/// less the index, and the pages in its `html` folder, less the index, each
-/// named `<stem>.html`, sorted by name.
+/// The folder of the markdown outlines and their index of a run that wrote
+/// into `out`: its `md` folder.
+pub(crate) fn markdown(out: &Path) -> PathBuf {
+    out.join("md")
+}
+
+/// Reads the outlines a run wrote into `out`: the markdown files in its
+/// `md` folder, less the index, and the pages of its HTML file, less the
+/// overview, each named `<stem>.html`, sorted by name.
 pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
-    let mut files: Vec<(String, String)> = read_outputs(out)
+    let mut files: Vec<(String, String)> = read_outputs(&markdown(out))
         .into_iter()
         .filter(|(name, _)| has_ext(name, "md") && name != "index.md")
         .chain(
-            read_pages(&out.join("html"))
+            read_pages(out)
                 .into_iter()
                 .filter(|(name, _)| name != "index.html"),
         )
@@ -127,7 +133,7 @@ pub(crate) fn read_run(out: &Path) -> Vec<(String, String)> {
     files
 }
 
-/// How the data block of an HTML folder's one file opens.
+/// How the data block of a run's HTML file opens.
 const DATA_OPEN: &str = "<script type=\"application/json\" id=\"vibelight-data\">";
 
 /// What a packed page's stamp line holds in place of its time.
@@ -136,11 +142,12 @@ const PLACEHOLDER: &str = "0000-00-00T00:00:00Z";
 /// How a page's stamp line starts, the one line that gets its time back.
 const STAMP_LINE: &str = "<p class=\"stamp\">Updated ";
 
-/// Reads every page that an HTML folder's one file, `index.html`, holds:
-/// the content its app shows for each, with its stamp put back, named
-/// `<stem>.html`, sorted by name. A folder without the file holds no page.
-pub(crate) fn read_pages(html: &Path) -> Vec<(String, String)> {
-    let Ok(file) = fs::read_to_string(html.join("index.html")) else {
+/// Reads every page that the HTML file of a run, `index.html` in the
+/// folder `out` it wrote into, holds: the content its app shows for each,
+/// with its stamp put back, named `<stem>.html`, sorted by name. A folder
+/// without the file holds no page.
+pub(crate) fn read_pages(out: &Path) -> Vec<(String, String)> {
+    let Ok(file) = fs::read_to_string(out.join("index.html")) else {
         return Vec::new();
     };
     let mut pages: Vec<(String, String)> = data_block(&file)["pages"]
@@ -166,18 +173,19 @@ pub(crate) fn read_pages(html: &Path) -> Vec<(String, String)> {
     pages
 }
 
-/// Returns the content of the page `stem` that an HTML folder holds.
-pub(crate) fn page(html: &Path, stem: &str) -> String {
+/// Returns the content of the page `stem` that the HTML file in `out`
+/// holds.
+pub(crate) fn page(out: &Path, stem: &str) -> String {
     let name = format!("{stem}.html");
-    read_pages(html)
+    read_pages(out)
         .into_iter()
         .find_map(|(page, content)| (page == name).then_some(content))
-        .unwrap_or_else(|| panic!("the folder holds no page {stem}"))
+        .unwrap_or_else(|| panic!("the file holds no page {stem}"))
 }
 
-/// Returns the search index that an HTML folder's one file holds.
-pub(crate) fn search_index(html: &Path) -> Value {
-    let file = fs::read_to_string(html.join("index.html")).expect("the folder has its file");
+/// Returns the search index that the HTML file in `out` holds.
+pub(crate) fn search_index(out: &Path) -> Value {
+    let file = fs::read_to_string(out.join("index.html")).expect("the folder has its file");
     let search = data_block(&file)["search"]
         .as_str()
         .map(unpack)
@@ -185,7 +193,7 @@ pub(crate) fn search_index(html: &Path) -> Value {
     serde_json::from_str(&search).expect("the search index is JSON")
 }
 
-/// Returns the data block of an HTML folder's one file.
+/// Returns the data block of a run's HTML file.
 pub(crate) fn data_block(file: &str) -> Value {
     let (_, rest) = file
         .split_once(DATA_OPEN)

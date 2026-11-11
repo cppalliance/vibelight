@@ -9,7 +9,7 @@ use std::path::Path;
 use std::process::Output;
 
 use crate::config::{MEMBERS, garden, lines};
-use crate::support::{page, read_outputs, vibelight};
+use crate::support::{markdown, page, read_outputs, vibelight};
 
 const LATER: &str = "1798761600";
 const LATER_STAMP: &str = "*Updated 2027-01-01T00:00:00Z*";
@@ -41,19 +41,20 @@ fn a_second_run_at_another_time_rewrites_nothing_and_still_lists_every_file() {
     assert!(first.status.success(), "{:?}", lines(&first.stderr));
     let folder = repo.join(".vibelight");
     let before = read_outputs(&folder);
-    let html_before = read_outputs(&folder.join("html"));
+    let markdown_before = read_outputs(&markdown(&folder));
+    assert_eq!(markdown_before.len(), 4, "three outlines and the index");
     let second = run_at(&repo, LATER, &[]);
     assert!(second.status.success(), "{:?}", lines(&second.stderr));
     assert_eq!(lines(&second.stdout), lines(&first.stdout));
     assert_eq!(lines(&second.stdout).len(), 5);
     assert_eq!(read_outputs(&folder), before);
-    assert_eq!(read_outputs(&folder.join("html")), html_before);
-    assert_eq!(first_line(&folder.join("alpha.md")), FIRST_STAMP);
+    assert_eq!(read_outputs(&markdown(&folder)), markdown_before);
+    assert_eq!(first_line(&markdown(&folder).join("alpha.md")), FIRST_STAMP);
 }
 
-/// Returns the stamp line of a page, which the HTML folder's one file holds.
+/// Returns the stamp line of a page, which the one HTML file holds.
 fn page_stamp(folder: &Path, stem: &str) -> String {
-    page(&folder.join("html"), stem)
+    page(folder, stem)
         .lines()
         .find(|line| line.starts_with("<p class=\"stamp\">"))
         .expect("a page has a stamp")
@@ -64,7 +65,7 @@ fn page_stamp(folder: &Path, stem: &str) -> String {
 fn restamped(folder: &Path) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for stem in ["alpha", "beta", "facade"] {
-        let md = first_line(&folder.join(format!("{stem}.md")));
+        let md = first_line(&markdown(folder).join(format!("{stem}.md")));
         out.push((format!("{stem}.md"), md == LATER_STAMP));
         let page = page_stamp(folder, stem);
         out.push((format!("{stem}.html"), page.contains("2027-01-01")));
@@ -107,7 +108,7 @@ fn a_changed_declaration_restamps_only_the_files_that_show_it() {
         ]),
         "facade's page shows alpha's trait as its own API"
     );
-    assert!(page(&folder.join("html"), "alpha").contains(
+    assert!(page(&folder, "alpha").contains(
         "<main>\n<p class=\"stamp\">Updated \
          <time datetime=\"2027-01-01T00:00:00Z\">2027-01-01T00:00:00Z</time></p>\n<h1 "
     ));
@@ -134,7 +135,7 @@ fn a_changed_doc_restamps_the_files_that_quote_it() {
         ]),
         "facade's markdown quotes alpha's doc summary, and its page shows alpha's declaration"
     );
-    let facade = fs::read_to_string(folder.join("facade.md")).unwrap();
+    let facade = fs::read_to_string(markdown(&folder).join("facade.md")).unwrap();
     assert!(facade.contains("\"summary\":\"A meter that reads one gauge.\""));
 }
 

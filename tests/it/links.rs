@@ -8,8 +8,8 @@
 use std::fs;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, has_ext, input_of, locations, page, read_plain, read_run,
-    root_of, run, split_location,
+    copy_dir, fixture_names, fixtures, has_ext, input_of, locations, markdown, page, read_plain,
+    read_run, root_of, run, split_location,
 };
 
 #[test]
@@ -19,10 +19,11 @@ fn links_golden_matches_with_the_output_beside_the_crate() {
     copy_dir(&fixtures().join("links"), &copy);
     let out = copy.join("out");
     assert!(run(&copy, &out).status.success());
-    let markdown = fs::read_to_string(out.join("links.md")).expect("the outline was written");
+    let outline =
+        fs::read_to_string(markdown(&out).join("links.md")).expect("the outline was written");
     for (actual, golden) in [
-        (markdown, "expected.md"),
-        (page(&out.join("html"), "links"), "expected.html"),
+        (outline, "expected.md"),
+        (page(&out, "links"), "expected.html"),
     ] {
         let expected = fs::read_to_string(copy.join(golden)).expect("the golden is readable");
         assert!(
@@ -113,10 +114,11 @@ fn locations_and_links_resolve_from_inside_beside_and_above_the_crate() {
         tmp.path().join("work"),
     ];
     let mut roots = Vec::new();
-    let mut markdown = Vec::new();
+    let mut outlines = Vec::new();
     for out in places {
         assert!(run(&crate_dir, &out).status.success());
-        let md = fs::read_to_string(out.join("links.md")).expect("the outline was written");
+        let folder = markdown(&out);
+        let md = fs::read_to_string(folder.join("links.md")).expect("the outline was written");
         let root = root_of(&md);
         assert!(!root.contains('\\'), "{root}");
         let found = locations(&md);
@@ -125,23 +127,22 @@ fn locations_and_links_resolve_from_inside_beside_and_above_the_crate() {
             let (stem, file) = split_location(&loc);
             assert_eq!(stem, None, "{loc}");
             assert!(
-                out.join(&root).join(file).is_file(),
+                folder.join(&root).join(file).is_file(),
                 "{root} and {loc} do not resolve from {}",
-                out.display()
+                folder.display()
             );
         }
         assert!(
             md.contains("\"loc\":\"src/lib.rs:6\""),
             "a location's file is relative to the crate"
         );
-        let html = out.join("html");
-        let found = targets(&page(&html, "links"));
-        assert!(found.len() > 5, "too few links in {}", html.display());
+        let found = targets(&page(&out, "links"));
+        assert!(found.len() > 5, "too few links in {}", out.display());
         for target in found {
             assert!(
-                html.join(&target).exists(),
+                out.join(&target).exists(),
                 "{target} does not resolve from {}",
-                html.display()
+                out.display()
             );
             assert!(
                 !target.contains('\\') && !target.contains("?\\"),
@@ -149,11 +150,15 @@ fn locations_and_links_resolve_from_inside_beside_and_above_the_crate() {
             );
         }
         roots.push(root);
-        markdown.push(rootless(&md));
+        outlines.push(rootless(&md));
     }
-    assert_eq!(roots, ["..", "../links", "links"]);
+    assert_eq!(
+        roots,
+        ["../..", "../../links", "../links"],
+        "the markdown is one folder below the folder the run writes into"
+    );
     assert!(
-        markdown.iter().all(|md| *md == markdown[0]),
+        outlines.iter().all(|md| *md == outlines[0]),
         "only the header's root depends on where the run writes"
     );
 }

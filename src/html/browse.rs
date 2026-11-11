@@ -1,4 +1,4 @@
-//! The HTML folder's one file, `index.html`, which works from `file:`.
+//! The one HTML file of a run, `index.html`, which works from `file:`.
 //! Cursor's browser drops every click on a link to a `file:` URL, so the
 //! whole HTML is one page that never leaves itself: the style sheet, the
 //! app that `browse.js` holds, and every outline's page and the search
@@ -18,7 +18,7 @@ use crate::stamp;
 /// The app, which the file holds in its last script element.
 pub(crate) const SCRIPT: &str = include_str!("browse.js");
 
-/// The folder's one file.
+/// The name of the HTML file, in the base folder of the run's output.
 pub(crate) const FILE: &str = "index.html";
 
 /// The stem of the overview's page, which the app shows first.
@@ -34,7 +34,7 @@ pub(crate) struct Page<'a> {
     pub(crate) content: &'a str,
 }
 
-/// Writes the folder's one file, with `stamp` on its first line: the style
+/// Writes the HTML file, with `stamp` on its first line: the style
 /// sheet, the data block, and the app. The data block holds the search
 /// index and each page packed, one page to a line, with the page's stamp
 /// beside its packed content, which holds the stamp's placeholder. A page

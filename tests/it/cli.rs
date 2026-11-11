@@ -4,7 +4,8 @@
 use std::fs;
 
 use crate::support::{
-    copy_dir, fixture_names, fixtures, input_of, outputs, read_run, run, rust_files, vibelight,
+    copy_dir, fixture_names, fixtures, input_of, markdown, outputs, read_run, run, rust_files,
+    vibelight,
 };
 
 #[test]
@@ -22,8 +23,8 @@ fn a_second_run_gives_identical_bytes() {
     );
     assert_eq!(one, read_run(&second));
     assert_eq!(
-        fs::read(first.join("index.md")).unwrap(),
-        fs::read(second.join("index.md")).unwrap()
+        fs::read(markdown(&first).join("index.md")).unwrap(),
+        fs::read(markdown(&second).join("index.md")).unwrap()
     );
 }
 
@@ -52,17 +53,18 @@ fn a_missing_output_folder_is_created_and_files_are_overwritten() {
     let out = tmp.path().join("a").join("b");
     let input = fixtures().join("structs");
     assert!(run(&input, &out).status.success());
-    fs::write(out.join("structs.md"), "stale").expect("the output is writable");
+    let outline = markdown(&out).join("structs.md");
+    fs::write(&outline, "stale").expect("the output is writable");
     assert!(run(&input, &out).status.success());
-    let text = fs::read_to_string(out.join("structs.md")).expect("the outline was written");
+    let text = fs::read_to_string(&outline).expect("the outline was written");
     assert!(text.starts_with(
         "*Updated 2026-01-01T00:00:00Z*\n\
          {\"k\":\"vibelight-outline\",\"schema\":2,\"crate\":\"structs\",\"target\":\"lib\",\
          \"root\":\""
     ));
     assert!(
-        (crate::support::read_pages(&out.join("html")).iter())
-            .any(|(name, _)| name == "structs.html")
+        (crate::support::read_pages(&out).iter()).any(|(name, _)| name == "structs.html"),
+        "the HTML file is in the folder itself"
     );
     assert!(
         !out.join(".gitignore").exists(),
@@ -87,11 +89,12 @@ fn stdout_lists_the_written_paths_sorted() {
     assert_eq!(
         names,
         [
-            "html/index.html",
-            "out/index.md",
-            "out/multi-cli.md",
-            "out/multi.md"
-        ]
+            "out/index.html",
+            "md/index.md",
+            "md/multi-cli.md",
+            "md/multi.md"
+        ],
+        "the HTML file is in the folder, and the markdown in its `md` folder"
     );
 }
 
@@ -100,10 +103,10 @@ fn the_markdown_index_reports_each_outline_size_and_the_overview_lists_each_page
     let tmp = tempfile::tempdir().expect("a temporary folder can be made");
     let out = tmp.path().join("out");
     assert!(run(&fixtures().join("multi"), &out).status.success());
-    let index = fs::read_to_string(out.join("index.md")).expect("the index was written");
-    let page = crate::support::page(&out.join("html"), "index");
+    let index = fs::read_to_string(markdown(&out).join("index.md")).expect("the index was written");
+    let page = crate::support::page(&out, "index");
     for stem in ["multi", "multi-cli"] {
-        let bytes = fs::read(out.join(format!("{stem}.md")))
+        let bytes = fs::read(markdown(&out).join(format!("{stem}.md")))
             .expect("the outline was written")
             .len();
         let kb = bytes.div_ceil(1024);

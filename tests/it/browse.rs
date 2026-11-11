@@ -1,7 +1,7 @@
-//! The HTML folder is one file that works from `file:`: `index.html` holds
-//! the app and, packed in its data block, each outline's page and the
-//! search index. Cursor's browser drops a click on a link to a `file:` URL,
-//! so no page is an HTML file of its own.
+//! The HTML is one file that works from `file:`: `index.html`, in the
+//! folder a run writes into, holds the app and, packed in its data block,
+//! each outline's page and the search index. Cursor's browser drops a click
+//! on a link to a `file:` URL, so no page is an HTML file of its own.
 
 use std::fs;
 use std::path::Path;
@@ -14,16 +14,21 @@ fn read(dir: &Path, name: &str) -> String {
 }
 
 #[test]
-fn the_folder_is_one_file_that_holds_the_app_and_every_page() {
+fn the_html_is_one_file_that_holds_the_app_and_every_page() {
     let (_tmp, repo) = garden(MEMBERS);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
-    let html = repo.join(".vibelight").join("html");
-    let names: Vec<String> = fs::read_dir(&html)
+    let html = repo.join(".vibelight");
+    let mut names: Vec<String> = fs::read_dir(&html)
         .unwrap()
         .map(|entry| entry.unwrap().file_name().into_string().unwrap())
         .collect();
-    assert_eq!(names, ["index.html"]);
+    names.sort();
+    assert_eq!(
+        names,
+        [".gitignore", "index.html", "md"],
+        "the folder holds the one HTML file, the folder of the markdown, and no `html` folder"
+    );
     let file = read(&html, "index.html");
     let app = fs::read_to_string(
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -59,7 +64,7 @@ fn the_folder_is_one_file_that_holds_the_app_and_every_page() {
 fn the_pages_keep_their_links_to_each_other() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let index = page(&repo.join(".vibelight").join("html"), "index");
+    let index = page(&repo.join(".vibelight"), "index");
     for stem in ["alpha", "beta", "facade"] {
         assert!(
             index.contains(&format!("href=\"{stem}.html\">{stem}</a>")),
@@ -73,7 +78,7 @@ fn overview(config: &str) -> String {
     let (_tmp, repo) = garden(config);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
-    page(&repo.join(".vibelight").join("html"), "index")
+    page(&repo.join(".vibelight"), "index")
 }
 
 #[test]
@@ -144,7 +149,7 @@ fn symbol(page: &str, name: &str) -> String {
 fn a_facade_s_symbol_list_prints_bold_each_type_no_other_item_of_its_api_names() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let page = page(&repo.join(".vibelight").join("html"), "facade");
+    let page = page(&repo.join(".vibelight"), "facade");
     // `Panel` holds a `Meter` and implements `Reads`, `show` takes a
     // `Reads`, and `Meter` holds a `Gauge`. Nothing names `Panel`. Nothing
     // names `show` either, but no declaration can name a function, so the
@@ -170,7 +175,7 @@ fn a_facade_s_symbol_list_prints_bold_each_type_no_other_item_of_its_api_names()
 fn a_facade_lists_what_its_code_names_and_does_not_re_export() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let page = page(&repo.join(".vibelight").join("html"), "facade");
+    let page = page(&repo.join(".vibelight"), "facade");
     // `Meter` holds a `Valve` of beta, which the facade does not re-export.
     // The stray and vendored types are of crates outside the run.
     assert!(page.contains(
@@ -214,7 +219,7 @@ fn what_a_facade_names_is_listed_under_the_facade_that_re_exports_it() {
     .unwrap();
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success(), "{:?}", lines(&result.stderr));
-    let html = repo.join(".vibelight").join("html");
+    let html = repo.join(".vibelight");
     let facade = page(&html, "facade");
     assert!(
         facade.ends_with(
@@ -242,7 +247,7 @@ fn what_a_facade_names_is_listed_under_the_facade_that_re_exports_it() {
 fn the_search_index_lists_every_id_that_a_page_declares() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let html = repo.join(".vibelight").join("html");
+    let html = repo.join(".vibelight");
     let index = search_index(&html);
     let pages: Vec<&str> = index["pages"]
         .as_array()
@@ -281,17 +286,17 @@ fn the_search_index_lists_every_id_that_a_page_declares() {
 }
 
 #[test]
-fn a_run_lists_the_folder_s_one_file_on_stdout() {
+fn a_run_lists_the_one_html_file_on_stdout() {
     let (_tmp, repo) = garden(MEMBERS);
     let result = vibelight_in(&repo, &[]);
     assert!(result.status.success());
     let listed: Vec<String> = lines(&result.stdout)
         .into_iter()
-        .filter(|path| (Path::new(path).parent()).is_some_and(|dir| dir.ends_with("html")))
+        .filter(|path| (Path::new(path).extension()).is_some_and(|ext| ext == "html"))
         .collect();
     assert_eq!(listed.len(), 1, "{listed:?}");
     assert!(
-        Path::new(&listed[0]).ends_with(".vibelight/html/index.html"),
+        Path::new(&listed[0]).ends_with(".vibelight/index.html"),
         "{listed:?}"
     );
 }
@@ -300,7 +305,7 @@ fn a_run_lists_the_folder_s_one_file_on_stdout() {
 fn a_changed_stamp_alone_leaves_the_file_alone() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
-    let html = repo.join(".vibelight").join("html");
+    let html = repo.join(".vibelight");
     let before = read(&html, "index.html");
     let result = crate::support::vibelight()
         .env("SOURCE_DATE_EPOCH", "1798761600")
@@ -350,7 +355,9 @@ fn a_run_upgrades_the_gitignore_of_an_earlier_release_and_leaves_an_edited_one()
 fn a_page_of_an_earlier_release_is_removed() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
+    // An earlier release wrote a page for each crate into `html`.
     let html = repo.join(".vibelight").join("html");
+    fs::create_dir(&html).unwrap();
     let old = "<!-- Updated 2026-01-01T00:00:00Z -->\n<!DOCTYPE html>\n<html>\n";
     fs::write(html.join("alpha.html"), old).unwrap();
     let result = vibelight_in(&repo, &[]);
@@ -359,7 +366,7 @@ fn a_page_of_an_earlier_release_is_removed() {
     assert!(
         lines(&result.stderr)
             .iter()
-            .any(|note| note.contains("alpha.html: no crate of this run writes it")),
+            .any(|note| note.starts_with("note: removed 1 file that an earlier release wrote: ")),
         "{:?}",
         lines(&result.stderr)
     );
@@ -370,6 +377,7 @@ fn the_script_files_of_an_earlier_release_are_removed() {
     let (_tmp, repo) = garden(MEMBERS);
     assert!(vibelight_in(&repo, &[]).status.success());
     let html = repo.join(".vibelight").join("html");
+    fs::create_dir(&html).unwrap();
     let old = [
         (
             "alpha.page.js",
@@ -389,11 +397,12 @@ fn the_script_files_of_an_earlier_release_are_removed() {
     let notes = lines(&result.stderr);
     for (name, _) in old {
         assert!(!html.join(name).exists(), "{name} is still there");
-        assert!(
-            notes
-                .iter()
-                .any(|note| note.contains(&format!("{name}: no crate of this run writes it"))),
-            "{name}: {notes:?}"
-        );
     }
+    assert!(
+        notes
+            .iter()
+            .any(|note| note.starts_with("note: removed 3 files that an earlier release wrote: ")),
+        "{notes:?}"
+    );
+    assert!(!html.exists(), "the run emptied the folder, so it went");
 }

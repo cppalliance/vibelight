@@ -78,8 +78,8 @@ struct Args {
     /// Crate directories or their `Cargo.toml` files, or a single `.rs`
     /// file, in place of the crates `vibelight.toml` chooses.
     crate_paths: Vec<PathBuf>,
-    /// The folder to write into, in place of the config's: the markdown
-    /// files and the index go in it, and the HTML files in its `html`
+    /// The folder to write into, in place of the config's: the HTML file
+    /// goes in it, and the markdown files and their index in its `md`
     /// folder. It is created if missing.
     #[arg(short, long, value_name = "DIR")]
     out: Option<PathBuf>,
@@ -151,6 +151,9 @@ fn run(args: &Args) -> Result<ExitCode> {
             shown(path, &cwd)
         ));
     }
+    if !written.moved.is_empty() {
+        notes.push(moved_note(written.moved.len(), &plan, &cwd));
+    }
     for note in &notes {
         eprintln!("note: {note}");
     }
@@ -179,6 +182,19 @@ fn run(args: &Args) -> Result<ExitCode> {
         eprintln!("{count} warning{}", plural(count));
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// Returns the one note for the `count` files that a run removed from
+/// where an earlier release wrote them: how many, and where the HTML and
+/// the markdown are now.
+fn moved_note(count: usize, plan: &settings::Plan, cwd: &Path) -> String {
+    format!(
+        "removed {count} file{} that an earlier release wrote: the HTML is now {} and the \
+         markdown is in {}",
+        plural(count),
+        shown(&plan.html().dir.join(html::browse::FILE), cwd),
+        shown(&plan.markdown_dir(), cwd)
+    )
 }
 
 /// Stops with clap's usage error, which exits with 2.

@@ -15,6 +15,10 @@ pub(crate) struct Output {
     pub(crate) dir: PathBuf,
 }
 
+/// The folder of the markdown outlines and their index, below the base
+/// folder.
+const MARKDOWN: &str = "md";
+
 /// What a run covers and where it writes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Plan {
@@ -22,7 +26,8 @@ pub(crate) struct Plan {
     pub(crate) selection: Option<Selection>,
     pub(crate) follow: Vec<String>,
     pub(crate) exclude: Exclude,
-    /// The base folder; the HTML files go in its `html` folder.
+    /// The base folder: the HTML file goes in it, and the markdown outlines
+    /// and their index go in its `md` folder.
     out: PathBuf,
     /// True when the folder is vibelight's own rather than one `-o` names,
     /// so the run keeps a `.gitignore` in it.
@@ -38,14 +43,22 @@ pub(crate) struct Plan {
 }
 
 impl Plan {
-    /// The folder of the markdown outlines and the index.
-    pub(crate) fn markdown_dir(&self) -> &Path {
+    /// The base folder, which holds the HTML file, the folder of the
+    /// markdown, and, when it is vibelight's own, its `.gitignore`.
+    pub(crate) fn base(&self) -> &Path {
         &self.out
     }
 
+    /// The folder of the markdown outlines and their index: `md` in the
+    /// base folder.
+    pub(crate) fn markdown_dir(&self) -> PathBuf {
+        self.out.join(MARKDOWN)
+    }
+
+    /// Where the HTML file goes: the base folder itself.
     pub(crate) fn html(&self) -> Output {
         Output {
-            dir: self.out.join("html"),
+            dir: self.out.clone(),
         }
     }
 }
@@ -116,7 +129,8 @@ mod tests {
         assert_eq!(plan.selection, None);
         assert_eq!(plan.out, PathBuf::from(".vibelight"));
         assert!(plan.owned);
-        assert_eq!(plan.html().dir, Path::new(".vibelight").join("html"));
+        assert_eq!(plan.html().dir, Path::new(".vibelight"));
+        assert_eq!(plan.markdown_dir(), Path::new(".vibelight").join("md"));
     }
 
     #[test]
@@ -156,6 +170,7 @@ mod tests {
         let plan = plan(&[], Some(Path::new("elsewhere")), Some(&config()));
         assert_eq!(plan.out, PathBuf::from("elsewhere"));
         assert!(!plan.owned);
-        assert_eq!(plan.markdown_dir(), Path::new("elsewhere"));
+        assert_eq!(plan.base(), Path::new("elsewhere"));
+        assert_eq!(plan.markdown_dir(), Path::new("elsewhere").join("md"));
     }
 }

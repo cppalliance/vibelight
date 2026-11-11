@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use crate::support::{
-    copy_dir, fixtures, has_ext, locations, read_outputs, read_plain, read_run, root_of,
+    copy_dir, fixtures, has_ext, locations, markdown, read_outputs, read_plain, read_run, root_of,
     split_location, vibelight,
 };
 
@@ -93,25 +93,33 @@ fn with_no_arguments_the_config_runs_from_a_subfolder_into_its_own_folders() {
         "the run is the goldens plus links and the markdown's root"
     );
     let alpha_md = &files[1].1;
-    assert_eq!(root_of(alpha_md), "../crates/alpha");
+    let md = markdown(&out);
+    assert_eq!(
+        root_of(alpha_md),
+        "../../crates/alpha",
+        "the root leads from the markdown's folder, one below the run's"
+    );
     assert!(alpha_md.contains("\"loc\":\"src/lib.rs:6\""));
     for loc in locations(alpha_md) {
         let (stem, file) = split_location(&loc);
         let root = stem.map_or_else(
             || root_of(alpha_md),
-            |stem| root_of(&fs::read_to_string(out.join(format!("{stem}.md"))).unwrap()),
+            |stem| root_of(&fs::read_to_string(md.join(format!("{stem}.md"))).unwrap()),
         );
-        assert!(out.join(root).join(file).is_file(), "{loc}");
+        assert!(md.join(root).join(file).is_file(), "{loc}");
     }
     let alpha_page = &files[0].1;
-    assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L6\""));
-    assert!(alpha_page.contains("href=\"../../crates/alpha/src/lib.rs#L18\""));
+    assert!(
+        alpha_page.contains("href=\"../crates/alpha/src/lib.rs#L6\""),
+        "a source link leads from the run's folder, which holds the HTML file"
+    );
+    assert!(alpha_page.contains("href=\"../crates/alpha/src/lib.rs#L18\""));
     assert!(
         files[4]
             .1
             .contains("<a class=\"cross\" href=\"alpha.html#type.alpha.Meter\">")
     );
-    let index = fs::read_to_string(out.join("index.md")).unwrap();
+    let index = fs::read_to_string(md.join("index.md")).unwrap();
     assert!(
         index.contains("- [alpha.md](alpha.md): `crates/alpha`, selected, "),
         "{index}"
@@ -174,15 +182,15 @@ fn a_repository_without_a_config_gets_one_that_chooses_its_crates() {
         "{stderr:?}"
     );
     let out = repo.join(".vibelight");
-    let markdown: Vec<(String, String)> = read_run(&out)
+    let outlines: Vec<(String, String)> = read_run(&out)
         .into_iter()
         .filter(|(name, _)| has_ext(name, "md"))
         .collect();
     assert_eq!(
-        names(&markdown),
+        names(&outlines),
         ["alpha.md", "beta.md", "delta.md", "facade.md", "gamma.md"]
     );
-    let index = fs::read_to_string(out.join("index.md")).unwrap();
+    let index = fs::read_to_string(markdown(&out).join("index.md")).unwrap();
     for (stem, dir, how) in [
         ("alpha", "crates/alpha", "selected"),
         ("delta", "crates/delta", "followed"),
@@ -242,11 +250,11 @@ fn crate_arguments_choose_the_crates_and_the_config_still_places_the_files() {
     let stdout = lines(&result.stdout);
     assert_eq!(stdout.len(), 3, "{stdout:?}");
     assert!(
-        Path::new(&stdout[0]).ends_with("docs/beta.md"),
+        Path::new(&stdout[0]).ends_with("docs/index.html"),
         "{stdout:?}"
     );
-    assert!(Path::new(&stdout[1]).ends_with("docs/html/index.html"));
-    assert!(Path::new(&stdout[2]).ends_with("docs/index.md"));
+    assert!(Path::new(&stdout[1]).ends_with("docs/md/beta.md"));
+    assert!(Path::new(&stdout[2]).ends_with("docs/md/index.md"));
     assert!(repo.join("docs").join(".gitignore").is_file());
     let alone = tmp.path().join("alone");
     let result = vibelight_in(&repo, &["crates/beta", "-o", alone.to_str().unwrap()]);

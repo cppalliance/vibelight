@@ -2,7 +2,8 @@
 //! resolved against one fixed crate map, then each target's markdown is
 //! rendered from the run's analysis view and each crate's HTML document is
 //! built and rendered, a facade's as its public API, all in memory, ready
-//! to write, with the files of the HTML folder that no one target writes.
+//! to write, with the index of the markdown and the one HTML file, which
+//! holds every page.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -33,7 +34,7 @@ use crate::{
 pub(crate) struct Outcome {
     /// Each file the run writes, with its text: for each target in output
     /// stem order its markdown outline, then the markdown index, and the
-    /// HTML folder's one file, which holds every target's page.
+    /// one HTML file, which holds every target's page.
     pub(crate) files: Vec<(PathBuf, String)>,
     pub(crate) warnings: Vec<Warning>,
     pub(crate) unresolved: usize,
@@ -217,7 +218,7 @@ fn analyze(
     plan: &Plan,
     stamp: &str,
 ) -> Result<Analyzed> {
-    let markdown = plan.markdown_dir();
+    let markdown = &plan.markdown_dir();
     if cfg!(debug_assertions) {
         for krate in krates {
             collect::check::validate_body_facts(krate)?;
@@ -290,7 +291,8 @@ struct Parts<'a> {
 }
 
 impl Parts<'_> {
-    /// Builds the document, its source links measured from the HTML folder.
+    /// Builds the document, its source links measured from the folder of
+    /// the HTML file.
     fn build(&self, output: &Output) -> Result<Built> {
         let decls = 0..self.krate.decls.len();
         let blocks: Vec<Block> = decls
@@ -402,7 +404,7 @@ pub(crate) fn crate_map(
 }
 
 /// A link to the source line of a location, one per target, relative to
-/// the HTML folder.
+/// the folder of the HTML file.
 type MemberLink<'a> = Box<dyn Fn(Loc) -> String + 'a>;
 
 /// Returns each target's member links, in target order.
@@ -504,8 +506,7 @@ fn page_content(
     }
 }
 
-/// What the HTML folder's one file is made of, beside the overview it
-/// builds.
+/// What the HTML file is made of, beside the overview it builds.
 struct Folder<'a> {
     base: &'a Path,
     rows: &'a [root_page::Row],
@@ -553,7 +554,7 @@ fn row(target: &Target, dir: String, doc: &Document) -> root_page::Row {
     }
 }
 
-/// Adds the HTML folder's one file: the overview's page, then each target's,
+/// Adds the HTML file, in `dir`: the overview's page, then each target's,
 /// and the search index. The overview takes its name from the base folder
 /// of the run. A page that the file already on disk holds unchanged keeps
 /// that file's stamp for it.

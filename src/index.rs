@@ -8,6 +8,13 @@ use std::fmt::Write as _;
 /// The index's file name in the markdown folder.
 pub(crate) const FILE: &str = "index.md";
 
+/// The index's first line, its heading.
+pub(crate) const HEADING: &str = "# Outlines";
+
+/// How the index's third line starts. With the heading it marks an index,
+/// so a run can remove one that an earlier release left in another folder.
+pub(crate) const OPENING: &str = "Each markdown outline of the run:";
+
 /// One outline of the run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Entry {
@@ -30,11 +37,11 @@ pub(crate) struct Entry {
 /// Renders the index, one line per entry in the order given, then the
 /// uses between outlines when some outline uses another.
 pub(crate) fn render(entries: &[Entry]) -> String {
-    let mut out = String::from(
-        "# Outlines\n\n\
-         Each markdown outline of the run: its crate's folder, whether the run \
+    let mut out = format!(
+        "{HEADING}\n\n\
+         {OPENING} its crate's folder, whether the run \
          selected the crate or followed a path dependency to it, and its size. \
-         Each has an HTML page of the same name in `html`.\n\n",
+         Each has an HTML page of the same name in `../index.html`.\n\n",
     );
     for entry in entries {
         let how = if entry.followed {
@@ -120,7 +127,16 @@ mod tests {
             entry("alpha", "crates/alpha", false, 1),
             entry("delta", "crates/delta", true, 2049),
         ]);
-        assert!(text.starts_with("# Outlines\n\n"), "{text}");
+        assert!(
+            text.starts_with(
+                "# Outlines\n\nEach markdown outline of the run: its crate's folder, "
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains(" Each has an HTML page of the same name in `../index.html`.\n\n"),
+            "the HTML file is one folder up from the markdown: {text}"
+        );
         assert!(text.ends_with(
             "\n\n- [alpha.md](alpha.md): `crates/alpha`, selected, 1 KB\n\
              - [delta.md](delta.md): `crates/delta`, followed, 3 KB\n"

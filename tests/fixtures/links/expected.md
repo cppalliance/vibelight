@@ -1,5 +1,5 @@
 *Updated 2026-01-01T00:00:00Z*
-{"k":"vibelight-outline","schema":2,"crate":"links","target":"lib","root":".."}
+{"k":"vibelight-outline","schema":2,"crate":"links","target":"lib","root":"../.."}
 {"k":"modules","items":[{"path":"crate","from":16,"to":33},{"path":"parts","from":34,"to":39}]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Gauge"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:12"],"limits":["macros"]}
 {"k":"lead","id":"pub-off-surface","mode":"resolved","subjects":["parts::Part"],"evidence":"`pub`, but no public path from the crate root reaches it","locs":["src/parts.rs:9"],"limits":["macros"]}

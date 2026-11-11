@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use crate::config::{MEMBERS, lines, vibelight_in};
-use crate::support::{self, copy_dir, fixtures, has_ext, read_outputs, read_plain};
+use crate::support::{self, copy_dir, fixtures, has_ext, markdown, read_outputs, read_plain};
 
 fn workspaces() -> PathBuf {
     fixtures().join("workspaces")
@@ -178,14 +178,14 @@ fn every_link_lands(name: &str) -> Links {
     let out = repo.join("out");
     assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
     let mut pages: Vec<(String, PathBuf, String)> = Vec::new();
-    for (file, page) in read_outputs(&out) {
+    let md = markdown(&out);
+    for (file, page) in read_outputs(&md) {
         if file != "index.md" && has_ext(&file, "md") {
-            pages.push((file, out.clone(), page));
+            pages.push((file, md.clone(), page));
         }
     }
-    let html = out.join("html");
-    for (file, page) in crate::support::read_pages(&html) {
-        pages.push((file, html.clone(), page));
+    for (file, page) in crate::support::read_pages(&out) {
+        pages.push((file, out.clone(), page));
     }
     let mut counts = Links {
         same: 0,
@@ -293,7 +293,7 @@ fn a_function_re_exported_twice_links_to_the_crate_that_defines_it() {
             .contains("<code><span class=\"c\"><a href=\"#api.measure\">measure</a></span></code>"),
         "a doc link to a name that front's API shows goes to its heading on front's page"
     );
-    let index = fs::read_to_string(repo.join("out").join("index.md")).unwrap();
+    let index = fs::read_to_string(markdown(&repo.join("out")).join("index.md")).unwrap();
     assert!(
         index.ends_with(
             "- `front` uses `relay` (4 items); instability 1.00\n\
@@ -412,7 +412,8 @@ fn two_crates_that_would_write_one_file_name_are_an_error() {
 fn external_records_show_the_doc_summary_of_an_item_from_another_crate_of_the_run() {
     let (_tmp, repo) = copy("garden");
     assert!(vibelight_in(&repo, &["-o", "out"]).status.success());
-    let facade = fs::read_to_string(repo.join("out").join("facade.md")).unwrap();
+    let md = markdown(&repo.join("out"));
+    let facade = fs::read_to_string(md.join("facade.md")).unwrap();
     assert!(
         facade.contains(
             "{\"k\":\"external\",\"path\":\"alpha::Meter\",\"uses\":1,\"named_by\":[\"Panel\"],\
@@ -422,7 +423,7 @@ fn external_records_show_the_doc_summary_of_an_item_from_another_crate_of_the_ru
         ),
         "{facade}"
     );
-    let alpha = fs::read_to_string(repo.join("out").join("alpha.md")).unwrap();
+    let alpha = fs::read_to_string(md.join("alpha.md")).unwrap();
     assert!(
         alpha.contains(
             "{\"k\":\"external\",\"path\":\"delta::Stray\",\"uses\":1,\"named_by\":[\"Meter\"]}\n"

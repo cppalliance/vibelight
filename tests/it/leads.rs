@@ -55,7 +55,8 @@ fn a_crate_with_slop_prints_its_leads_first_with_modes_and_limits() {
     let out = tmp.path().join("out");
     let result = run(&dir, &out);
     assert!(result.status.success(), "{:?}", result.stderr);
-    let text = fs::read_to_string(out.join("sloppy.md")).expect("the outline was written");
+    let text = fs::read_to_string(crate::support::markdown(&out).join("sloppy.md"))
+        .expect("the outline was written");
     let records = records(&text);
     assert_eq!(records[0]["k"], "vibelight-outline");
     assert_eq!(records[0]["schema"], 2);

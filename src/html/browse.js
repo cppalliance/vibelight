@@ -1,7 +1,7 @@
 // vibelight: the outlines as one page that works from file:.
 //
 // Cursor's browser drops every link click that leads to a file: URL, so the
-// HTML folder is one file, index.html, which holds this app and, in its data
+// HTML is one file, index.html, which holds this app and, in its data
 // block, every outline's page and the search index, each compressed and
 // written as base64. The app unpacks a page when a tab first shows it, which
 // is no navigation. The address names the shown page as #<page>/<id>, a
