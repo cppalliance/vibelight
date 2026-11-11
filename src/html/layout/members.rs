@@ -1,7 +1,7 @@
 //! Lays out the entries between a type's braces: members and variants.
 
 use crate::access::Access;
-use crate::html::layout::groups::{Entry, reaches_line, spaced};
+use crate::html::layout::groups::{Entry, packed, reaches_line};
 use crate::html::layout::marker::Marker;
 use crate::html::layout::{
     Line, Span, above, attributes_end, code, const_line, fn_lines, key, note_lines, plain,
@@ -171,7 +171,7 @@ pub(crate) fn variant_entry(variant: &Variant, refs: &[TypeRef]) -> Entry {
 }
 
 /// Returns a struct-like variant with one field per line, each field's
-/// comments above it.
+/// comments above it, and no blank line between two fields with none.
 fn expanded_variant(
     name: Span,
     fields: &[Param],
@@ -190,7 +190,7 @@ fn expanded_variant(
             trailing: None,
         },
     ];
-    lines.extend(spaced(fields.iter().map(|field| {
+    lines.extend(packed(fields.iter().map(|field| {
         let mut field_lines = note_lines(&field.meta.notes, 8, Marker::DOC);
         let mut spans = code(&field.text);
         spans.push(plain(","));
@@ -214,9 +214,10 @@ fn expanded_variant(
 
 /// Returns one line per parameter, comments above each, every line but
 /// the last ending in a comma; a tuple field starts with its visibility.
-/// On a public surface, `surface`, a field that is not `pub` prints dim.
+/// Two fields with no comment have no blank line between them. On a public
+/// surface, `surface`, a field that is not `pub` prints dim.
 pub(crate) fn param_lines(fields: &[Param], indent: usize, surface: bool) -> Vec<Line> {
-    spaced(fields.iter().enumerate().map(|(i, field)| {
+    packed(fields.iter().enumerate().map(|(i, field)| {
         let mut lines = note_lines(&field.meta.notes, indent, Marker::DOC);
         let mut spans = field_spans(field, surface);
         if i + 1 < fields.len() {

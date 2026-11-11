@@ -77,8 +77,8 @@
 <pre><code><span class="k">pub</span> <span class="k">struct</span> Timer : Display
 {
     <span class="src">laps</span>: Map&lt;u32, String&gt;,
-<span class="gap"></span>    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
-<span class="gap"></span>    <span class="src">period</span>: ::std::time::Duration,
+    <span class="src">names</span>: std::collections::BTreeMap&lt;u32, String&gt;,
+    <span class="src">period</span>: ::std::time::Duration,
 <span class="gap"></span>    <span class="src" id="fn.spellings.Timer.next">next</span>(clock: <a href="#type.spellings.Clock">crate::Clock</a>&amp;) -&gt; std::option::Option&lt;<a href="#type.spellings.Clock">Clock</a>&gt;
 <span class="gap"></span>    <span class="src" id="fn.spellings.Timer.wait">wait</span>(extra: std::time::Duration) -&gt; Vec&lt;String&gt;
 }</code></pre>
@@ -91,8 +91,8 @@
 {
 <div class="mc first" style="margin-left:calc(4ch - .9rem)"><span class="c">When the alarm rings; see </span><code><span class="c">core::option::Option</span></code><span class="c">.</span></div>    <span class="src">alarm</span>: Option&lt;u8&gt;,
 <span class="gap"></span>    <span class="src">label</span>: String,
-<span class="gap"></span>    <span class="src">snooze</span>: Option&lt;u8&gt;,
-<span class="gap"></span>    <span class="src">step</span>: core::time::Duration,
+    <span class="src">snooze</span>: Option&lt;u8&gt;,
+    <span class="src">step</span>: core::time::Duration,
 }</code></pre>
 <h3 id="type.spellings.Duration">Duration</h3>
 <div class="doc">

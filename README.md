@@ -260,7 +260,6 @@ Every type prints as one C++-style block with its visibility as written and the 
 pub class Cursor
 {
     text: String,
-
     pos: usize,
 
     static new(text: String) -> Cursor
@@ -287,7 +286,6 @@ pub(crate):
 
 pub(self):
     cache: HashMap<Key, Value>,
-
     name: String,
 
 pub:
@@ -304,7 +302,7 @@ A node that reaches less far than its visibility says, because a module around i
 
 A module's coupling line reads the same uses as the markdown's `deps` records: it lists the modules that use the module's items and the modules whose items it uses, each with the number of distinct items used, and gives the module's instability, `fan_out / (fan_in + fan_out)`, with two decimals. It counts each use under the module where the code is written, so moving an impl block or other code to another module changes the line, as it changes source links.
 
-The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. The data keeps its declared order. The other members are grouped (associated types, constants, special members, static functions, then member functions) and sorted by name inside each group.
+The `fn` keyword and the bodies are gone. A method that takes `&self` gets no marker, a method that takes `&mut self` gets `mut` after its parameter list, a method that takes `self` in any other way keeps it as its first parameter, and only a function with no receiver is `static`. A bare `&` is read-only, as in Rust, and `mut` marks what can change, so `&str` prints as `str&` and `&mut T` as `T mut&`. The data keeps its declared order. Fields that are one line each follow one another with no blank line, and so do an enum's variants, so data with no comments reads as a table. A field or a variant with a comment, a `cfg` line, or an attribute line above it has a blank line on each side, which shows what the lines above it belong to. The other members are grouped (associated types, constants, special members, static functions, then member functions) and sorted by name inside each group, with a blank line between every two.
 
 Comments stay with what they belong to. Each impl block's comments sit under a line in the type's block that names the trait, or the type for an inherent impl, a comment above a `pub use` group prints above the whole group, and a comment inside the braces stays with the name after it. A declaration's doc comment prints as prose, in the page's own typeface rather than the code font: consecutive lines join one paragraph, a blank line starts a new one, a `- ` or `* ` line starts a bullet list, a `# Errors` line becomes a small heading, and a fenced example stays exactly as written in the code font. Text in `backticks` prints in the code font wherever it appears, so a name reads as a name inside a sentence. A comment above a member reflows as one paragraph, at most 80 characters wide: its line breaks, and the blank lines between its paragraphs, become spaces, and a `cfg` condition or a `# Errors` heading keeps its own line. It sits in a box with no fill and no outline, so only its text shows, lined up with the member's own text, and the member's declaration follows on the very next line. A little space sets a box off from the member above it, and the box of the first member under a label, such as `pub:`, has none: its comment starts on the line after the label.
 

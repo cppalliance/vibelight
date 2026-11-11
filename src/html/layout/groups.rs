@@ -1,6 +1,8 @@
 //! The groups of a type body or a module block: sortable entries, the
 //! sections they print in, labeled by visibility, and the blank lines
-//! between them.
+//! between them. A blank line parts every two entries, but for a type's
+//! data: fields, or an enum's variants, that are one line each follow one
+//! another with no blank line.
 
 use std::collections::BTreeMap;
 
@@ -170,6 +172,46 @@ pub(crate) fn spaced(members: impl IntoIterator<Item = Vec<Line>>) -> Vec<Line> 
     out
 }
 
+/// Joins the lines of each field of a list: one blank line between two
+/// fields, but none between two that are one line each. So fields with
+/// nothing above them print as a table, and a field with a comment keeps a
+/// blank line on each side, which sets its comment apart.
+pub(crate) fn packed(fields: impl IntoIterator<Item = Vec<Line>>) -> Vec<Line> {
+    let mut out = Vec::new();
+    let mut bare = false;
+    for lines in fields {
+        let one = lines.len() == 1;
+        let together = bare && one;
+        if !(out.is_empty() || together) {
+            out.push(Line::default());
+        }
+        bare = one;
+        out.extend(lines);
+    }
+    out
+}
+
+/// Packs the data entries of a type, its fields or an enum's variants, in
+/// the order given: each run of entries that are one line each becomes one
+/// entry, so the blank line that goes between two entries parts no two of
+/// them, as in `packed`. An entry of more lines stays as it is.
+pub(crate) fn pack(entries: Vec<Entry>) -> Vec<Entry> {
+    let mut out: Vec<Entry> = Vec::new();
+    let mut bare = false;
+    for entry in entries {
+        let one = entry.lines.len() == 1;
+        match out.last_mut() {
+            Some(run) if bare && one => {
+                run.lines.extend(entry.lines);
+                run.repeats.extend(entry.repeats);
+            }
+            _ => out.push(entry),
+        }
+        bare = one;
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -210,6 +252,65 @@ mod tests {
             "w: i32,",
         ];
         assert_eq!(text(&spaced(members)), expected);
+    }
+
+    #[test]
+    fn fields_of_one_line_each_follow_one_another_and_a_comment_keeps_its_blank_lines() {
+        let fields = || {
+            vec![
+                lines(&["a: u8,"]),
+                lines(&["b: u8,"]),
+                lines(&["/// Counts the reads.", "c: u8,"]),
+                lines(&["d: u8,"]),
+                lines(&["e: u8,"]),
+                lines(&["[[serde(skip)]]", "f: u8,"]),
+                lines(&["/// The last one.", "g: u8,"]),
+            ]
+        };
+        let expected = [
+            "a: u8,",
+            "b: u8,",
+            "",
+            "/// Counts the reads.",
+            "c: u8,",
+            "",
+            "d: u8,",
+            "e: u8,",
+            "",
+            "[[serde(skip)]]",
+            "f: u8,",
+            "",
+            "/// The last one.",
+            "g: u8,",
+        ];
+        assert_eq!(
+            text(&packed(fields())),
+            expected,
+            "a field with a line above it has a blank line on each side"
+        );
+        let entries: Vec<Entry> = (fields().into_iter())
+            .map(|lines| Entry {
+                name: String::new(),
+                lines,
+                repeats: Vec::new(),
+            })
+            .collect();
+        let packed_entries = pack(entries);
+        let sizes: Vec<usize> = packed_entries.iter().map(|e| e.lines.len()).collect();
+        assert_eq!(
+            sizes,
+            [2, 2, 2, 2, 2],
+            "each run of bare fields is one entry"
+        );
+        let mut block = Block::default();
+        join_groups(vec![packed_entries], &mut block);
+        assert_eq!(
+            text(&block.lines),
+            expected,
+            "packed entries join to what `packed` gives"
+        );
+        assert_eq!(text(&packed(vec![lines(&["a: u8,"])])), ["a: u8,"]);
+        assert!(pack(Vec::new()).is_empty());
     }
 
     #[test]

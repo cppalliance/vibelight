@@ -3,7 +3,8 @@
 use crate::access::Access;
 use crate::access_stamp::Stamp;
 use crate::html::layout::groups::{
-    Entry, Label, Labels, Sections, add, join_sections, label, reaches_line, sort_entries, spaced,
+    Entry, Label, Labels, Sections, add, join_sections, label, pack, reaches_line, sort_entries,
+    spaced,
 };
 use crate::html::layout::head::header_lines;
 use crate::html::layout::marker::Marker;
@@ -261,7 +262,9 @@ pub(crate) fn body(krate: &Crate, parts: &BodyParts<'_>) -> Block {
 /// What goes between a type's braces, sorted and not yet joined: first what
 /// has no label of its own, an enum's variants or a trait's members, then
 /// macro marks and unsupported lines; then the data, a struct's fields, and
-/// then every other member, each set in sections by visibility.
+/// then every other member, each set in sections by visibility. Variants
+/// and fields that are one line each are packed, so they print with no
+/// blank line between them.
 struct Sorted {
     first: Vec<Vec<Entry>>,
     data: Sections,
@@ -301,8 +304,13 @@ impl Sorted {
         for group in first.iter_mut().chain(members.values_mut().flatten()) {
             sort_entries(group, refs);
         }
+        // The data prints as a table where nothing sits above it: fields
+        // and variants of one line each follow one another.
         if let Some(variants) = parts.variants {
-            first[2] = variants.iter().map(|v| variant_entry(v, refs)).collect();
+            first[2] = pack(variants.iter().map(|v| variant_entry(v, refs)).collect());
+        }
+        for groups in data.values_mut() {
+            groups[2] = pack(std::mem::take(&mut groups[2]));
         }
         if let Some(entry) = special_entry(parts.special, parts.name, refs) {
             add(&mut members, parts.own.clone(), 6, 3, entry);
